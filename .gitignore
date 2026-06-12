@@ -1,0 +1,186 @@
+@"
+# =========================================================
+# Daybed - Git ignored files
+# =========================================================
+
+# -------------------------
+# Operating system files
+# -------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+`$RECYCLE.BIN/
+
+# -------------------------
+# Editor / IDE files
+# -------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*.temp
+
+# -------------------------
+# Environment variables
+# -------------------------
+.env
+.env.*
+!.env.example
+
+# -------------------------
+# Python / Django
+# -------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pyc
+
+.Python
+.python-version
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Django local files
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+local_settings.py
+
+# Django migrations cache / generated artifacts
+*.log
+
+# Python packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+
+# Type checking / linting caches
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pyre/
+.pytype/
+
+# uv
+uv.lock
+
+# -------------------------
+# Node / React / Vite
+# -------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+.vite/
+
+# Frontend environment files
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Vite / React local files
+*.local
+
+# -------------------------
+# Package manager lock files
+# -------------------------
+# Keep package-lock.json tracked for reproducible npm installs.
+# package-lock.json
+
+# -------------------------
+# Logs
+# -------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -------------------------
+# Database / local data
+# -------------------------
+*.sqlite3
+*.sqlite
+*.db
+
+# -------------------------
+# Uploaded/generated files
+# -------------------------
+uploads/
+media/
+staticfiles/
+reports/
+exports/
+
+# -------------------------
+# Docker / infrastructure local overrides
+# -------------------------
+docker-compose.override.yml
+.docker/
+
+# -------------------------
+# Secrets / credentials
+# -------------------------
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+service-account*.json
+
+# -------------------------
+# Misc
+# -------------------------
+.cache/
+tmp/
+temp/
+"@ | Set-Content .gitignore
