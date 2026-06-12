@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 
-function CustomerLayout() {
-  return <Outlet />
+function CustomerLayout({ children }) {
+  return children ?? <Outlet />
 }
 
 export default CustomerLayout

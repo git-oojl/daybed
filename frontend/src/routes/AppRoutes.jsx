@@ -1,4 +1,6 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { accessGroups } from '../auth/viewerAccess.js'
 import AdminLayout from '../layouts/AdminLayout.jsx'
 import BackOfficeLayout from '../layouts/BackOfficeLayout.jsx'
 import CheckoutLayout from '../layouts/CheckoutLayout.jsx'
@@ -35,7 +37,17 @@ import UnauthorizedPage from '../pages/support/UnauthorizedPage.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
 import { routePaths } from './routePaths.js'
 
+const DevPreviewPage = import.meta.env.DEV
+  ? lazy(() => import('../dev-preview/DevPreviewPage.jsx'))
+  : null
+
+const DevViewSwitcher = import.meta.env.DEV
+  ? lazy(() => import('../dev-preview/DevViewSwitcher.jsx'))
+  : null
+
 function AppRoutes() {
+  const showDevTools = import.meta.env.DEV
+
   return (
     <BrowserRouter>
       <Routes>
@@ -47,14 +59,36 @@ function AppRoutes() {
         </Route>
 
         <Route element={<CustomerLayout />}>
-          <Route path={routePaths.account.login} element={<LoginPage />} />
-          <Route path={routePaths.account.register} element={<RegisterPage />} />
-          <Route path={routePaths.account.profile} element={<ProfilePage />} />
-          <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
-          <Route path={routePaths.account.orderDetail} element={<OrderDetailPage />} />
+          <Route
+            element={
+              <ProtectedRoute allowedViewers={accessGroups.guestOnly}>
+                <Outlet />
+              </ProtectedRoute>
+            }
+          >
+            <Route path={routePaths.account.login} element={<LoginPage />} />
+            <Route path={routePaths.account.register} element={<RegisterPage />} />
+          </Route>
+          <Route
+            element={
+              <ProtectedRoute allowedViewers={accessGroups.customerAccount}>
+                <Outlet />
+              </ProtectedRoute>
+            }
+          >
+            <Route path={routePaths.account.profile} element={<ProfilePage />} />
+            <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
+            <Route path={routePaths.account.orderDetail} element={<OrderDetailPage />} />
+          </Route>
         </Route>
 
-        <Route element={<CheckoutLayout />}>
+        <Route
+          element={
+            <ProtectedRoute allowedViewers={accessGroups.checkout}>
+              <CheckoutLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path={routePaths.checkout.cart} element={<CartPage />} />
           <Route path={routePaths.checkout.summary} element={<CheckoutSummaryPage />} />
           <Route path={routePaths.checkout.confirmation} element={<OrderConfirmationPage />} />
@@ -63,7 +97,7 @@ function AppRoutes() {
 
         <Route
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedViewers={accessGroups.backOffice}>
               <BackOfficeLayout />
             </ProtectedRoute>
           }
@@ -78,7 +112,7 @@ function AppRoutes() {
 
         <Route
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedViewers={accessGroups.adminOnly}>
               <AdminLayout />
             </ProtectedRoute>
           }
@@ -89,6 +123,17 @@ function AppRoutes() {
           <Route path={routePaths.admin.basicSettings} element={<BasicSettingsPage />} />
         </Route>
 
+        {showDevTools && DevPreviewPage ? (
+          <Route
+            path="/dev/preview"
+            element={
+              <Suspense fallback={null}>
+                <DevPreviewPage />
+              </Suspense>
+            }
+          />
+        ) : null}
+
         <Route element={<SupportLayout />}>
           <Route path={routePaths.support.unauthorized} element={<UnauthorizedPage />} />
           <Route path={routePaths.support.loadingStates} element={<LoadingStatesPage />} />
@@ -97,6 +142,11 @@ function AppRoutes() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      {showDevTools && DevViewSwitcher ? (
+        <Suspense fallback={null}>
+          <DevViewSwitcher />
+        </Suspense>
+      ) : null}
     </BrowserRouter>
   )
 }

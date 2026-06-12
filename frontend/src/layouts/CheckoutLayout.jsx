@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom'
 
-function CheckoutLayout() {
-  return <Outlet />
+function CheckoutLayout({ children }) {
+  return children ?? <Outlet />
 }
 
 export default CheckoutLayout
