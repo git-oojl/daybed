@@ -8,6 +8,12 @@ Este proyecto es una aplicación full-stack para una tienda de muebles. Utiliza 
 
 Antes de comenzar, asegúrate de tener instalado lo siguiente:
 
+* **Node.js LTS**: [Descargar Node.js](https://nodejs.org/)
+
+* **Git**: [Instalar Git](https://git-scm.com/downloads)
+
+* **Visual Studio Code**: recomendado para trabajar con las extensiones del proyecto.
+
 * **uv**: [Instalar uv](https://github.com/astral-sh/uv)
 
   ```powershell
@@ -51,12 +57,6 @@ Antes de comenzar, asegúrate de tener instalado lo siguiente:
   ```powershell
   uv python install 3.12
   ```
-
-* **Node.js LTS**: [Descargar Node.js](https://nodejs.org/)
-
-* **Git**: [Instalar Git](https://git-scm.com/downloads)
-
-* **Visual Studio Code**: recomendado para trabajar con las extensiones del proyecto.
 
 Verifica la instalación:
 
