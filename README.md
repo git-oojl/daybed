@@ -172,7 +172,7 @@ cd frontend
 ### Instalar dependencias
 
 ```powershell
-npm install
+npm ci
 ```
 
 ### Crear archivo de variables de entorno
