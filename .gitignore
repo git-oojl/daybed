@@ -45,7 +45,6 @@ __pycache__/
 *.pyc
 
 .Python
-.python-version
 
 # Virtual environments
 .venv/
