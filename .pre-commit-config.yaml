@@ -1,12 +1,16 @@
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+  - repo: local
     hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        files: ^backend/
+      - id: backend-ruff
+        name: backend ruff check
+        entry: powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location backend; uv run ruff check ."
+        language: system
+        pass_filenames: false
+        files: ^backend/.*\.py$
+
+      - id: backend-black
+        name: backend black check
+        entry: powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location backend; uv run black --check ."
+        language: system
+        pass_filenames: false
+        files: ^backend/.*\.py$
