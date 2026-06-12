@@ -14,7 +14,43 @@ Antes de comenzar, asegúrate de tener instalado lo siguiente:
   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
   ```
 
-  Si PowerShell no reconoce `uv` después de instalarlo, cierra y vuelve a abrir la terminal.
+  Si PowerShell no reconoce `uv` después de instalarlo, agrega temporalmente la ruta de uv a la sesión actual:
+
+  ```powershell
+  $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
+  ```
+
+  Para guardar esa ruta de forma permanente en las variables de entorno del usuario:
+
+  ```powershell
+  [Environment]::SetEnvironmentVariable("Path", $env:USERPROFILE + "\.local\bin;" + [Environment]::GetEnvironmentVariable("Path", "User"), "User")
+  ```
+
+  Para que `uv` use versiones de Python gestionadas por `uv`, configura esta variable en la sesión actual:
+
+  ```powershell
+  $env:UV_MANAGED_PYTHON = "true"
+  ```
+
+  Para guardarla de forma permanente:
+
+  ```powershell
+  [Environment]::SetEnvironmentVariable("UV_MANAGED_PYTHON", "true", "User")
+  ```
+
+  Después de configurar variables permanentes, cierra y vuelve a abrir PowerShell.
+
+  Verifica que `uv` funcione:
+
+  ```powershell
+  uv --version
+  ```
+
+  Instala Python 3.12 mediante `uv`:
+
+  ```powershell
+  uv python install 3.12
+  ```
 
 * **Node.js LTS**: [Descargar Node.js](https://nodejs.org/)
 
