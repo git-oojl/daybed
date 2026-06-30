@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 
 from apps.cart.models import Cart, CartItem
 from apps.catalog.models import Category, Product
+from apps.inventory.models import InventoryMovement
 from apps.orders.models import Order
 
 pytestmark = pytest.mark.django_db
@@ -185,6 +186,13 @@ def test_stock_decreases_only_when_order_is_confirmed_and_not_twice():
     order = Order.objects.get(id=order_id)
     assert order.status == Order.Status.CONFIRMED
     assert order.stock_decremented_at is not None
+
+    movement = InventoryMovement.objects.get(order=order, product=product)
+    assert movement.movement_type == InventoryMovement.Types.ORDER_CONFIRMED
+    assert movement.quantity_delta == -2
+    assert movement.previous_stock == 5
+    assert movement.new_stock == 3
+    assert movement.created_by == employee
 
 
 def test_confirm_validates_stock_before_decrementing():

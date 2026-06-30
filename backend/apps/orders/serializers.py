@@ -110,8 +110,10 @@ class OrderStatusSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         status = validated_data["status"]
+        request = self.context.get("request")
+        actor = request.user if request and request.user.is_authenticated else None
         try:
-            instance.transition_to(status)
+            instance.transition_to(status, actor=actor)
         except DjangoValidationError as exc:
             raise serializers.ValidationError({"status": exc.messages}) from exc
         return instance

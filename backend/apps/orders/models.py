@@ -74,7 +74,7 @@ class Order(models.Model):
             )
 
     @transaction.atomic
-    def confirm(self):
+    def confirm(self, actor=None):
         self.validate_status_transition(self.Status.CONFIRMED)
         if self.status == self.Status.CONFIRMED and self.stock_decremented_at:
             return
@@ -101,8 +101,22 @@ class Order(models.Model):
 
         for item in items:
             product = products[item.product_id]
+            previous_stock = product.stock
             product.stock -= item.quantity
             product.save(update_fields=("stock", "updated_at"))
+
+            from apps.inventory.models import InventoryMovement
+            from apps.inventory.services import record_inventory_movement
+
+            record_inventory_movement(
+                product=product,
+                movement_type=InventoryMovement.Types.ORDER_CONFIRMED,
+                previous_stock=previous_stock,
+                new_stock=product.stock,
+                reason=f"Order #{self.id} confirmed",
+                order=self,
+                created_by=actor,
+            )
 
         from django.utils import timezone
 
@@ -110,9 +124,9 @@ class Order(models.Model):
         self.stock_decremented_at = timezone.now()
         self.save(update_fields=("status", "stock_decremented_at", "updated_at"))
 
-    def transition_to(self, status):
+    def transition_to(self, status, actor=None):
         if status == self.Status.CONFIRMED:
-            self.confirm()
+            self.confirm(actor=actor)
             return
         self.validate_status_transition(status)
         if status != self.status:
