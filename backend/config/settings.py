@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 
 import environ
@@ -9,6 +10,14 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, True),
     DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:5173"]),
+    NOMINATIM_BASE_URL=(str, "https://nominatim.openstreetmap.org"),
+    NOMINATIM_USER_AGENT=(str, "daybed-student-project/1.0"),
+    OPENROUTESERVICE_BASE_URL=(str, "https://api.openrouteservice.org"),
+    OPENROUTESERVICE_API_KEY=(str, ""),
+    STORE_LATITUDE=(float, 32.5149),
+    STORE_LONGITUDE=(float, -117.0382),
+    DELIVERY_BASE_FEE=(str, "80.00"),
+    DELIVERY_PRICE_PER_KM=(str, "8.00"),
 )
 
 env_file = BASE_DIR / ".env"
@@ -123,6 +132,15 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
+
+NOMINATIM_BASE_URL = env("NOMINATIM_BASE_URL").rstrip("/")
+NOMINATIM_USER_AGENT = env("NOMINATIM_USER_AGENT")
+OPENROUTESERVICE_BASE_URL = env("OPENROUTESERVICE_BASE_URL").rstrip("/")
+OPENROUTESERVICE_API_KEY = env("OPENROUTESERVICE_API_KEY")
+STORE_LATITUDE = env("STORE_LATITUDE")
+STORE_LONGITUDE = env("STORE_LONGITUDE")
+DELIVERY_BASE_FEE = Decimal(env("DELIVERY_BASE_FEE"))
+DELIVERY_PRICE_PER_KM = Decimal(env("DELIVERY_PRICE_PER_KM"))
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
