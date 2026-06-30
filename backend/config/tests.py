@@ -49,3 +49,7 @@ class FoundationApiTests(SimpleTestCase):
             settings.REST_FRAMEWORK["DEFAULT_SCHEMA_CLASS"]
             == "drf_spectacular.openapi.AutoSchema"
         )
+
+    def test_simplejwt_signing_key_is_not_the_short_placeholder_secret(self):
+        assert len(settings.SIMPLE_JWT["SIGNING_KEY"]) >= 32
+        assert settings.SIMPLE_JWT["SIGNING_KEY"] != "change-me"

@@ -10,6 +10,7 @@ env = environ.Env(
     DJANGO_DEBUG=(bool, True),
     DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:5173"]),
+    DJANGO_JWT_SIGNING_KEY=(str, ""),
     NOMINATIM_BASE_URL=(str, "https://nominatim.openstreetmap.org"),
     NOMINATIM_USER_AGENT=(str, "daybed-student-project/1.0"),
     OPENROUTESERVICE_BASE_URL=(str, "https://api.openrouteservice.org"),
@@ -28,6 +29,9 @@ SECRET_KEY = env(
     "DJANGO_SECRET_KEY",
     default="django-insecure-daybed-local-development-only",
 )
+JWT_SIGNING_KEY = env("DJANGO_JWT_SIGNING_KEY") or SECRET_KEY
+if len(JWT_SIGNING_KEY) < 32:
+    JWT_SIGNING_KEY = "django-insecure-daybed-local-jwt-signing-key-change-me"
 
 DEBUG = env("DJANGO_DEBUG")
 
@@ -155,6 +159,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "PAGE_SIZE": 20,
+}
+
+SIMPLE_JWT = {
+    "SIGNING_KEY": JWT_SIGNING_KEY,
 }
 
 SPECTACULAR_SETTINGS = {
