@@ -5,241 +5,429 @@ import {
   Container,
   Typography,
   Grid,
-  Button,
   Paper,
-  Divider,
+  Button,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import LinearProgress from "@mui/material/LinearProgress";
 
 const OrderConfirmationPage = () => {
+
   const orderData = {
     id: "#DAY-001",
     estimatedDate: "30 de junio, 2028",
-    items: [
-      { name: "Sofa Esquinero", price: 8999, quantity: 1 },
-      { name: "Mesa de Centro", price: 2499, quantity: 2 },
-    ],
-    subtotal: 13997,
-    shipping: 500,
-    total: 14497,
-    paymentMethod: "Tarjeta de crédito",
-    address: "Calle 123, Colonia Centro, CP 12345",
+    subtotal: "$13,997 MX",
+    shipping: "$500 MX",
+    total: "$14,497 MX",
   };
 
   return (
-    <Box sx={{ bgcolor: "#FDF5E6", minHeight: "100vh", py: 4 }}>
-      <Container maxWidth="lg">
+    <Box
+      sx={{
+        background: "#F8F4EC",
+        minHeight: "100vh",
+      }}
+    >
+
+      {/* Header lo agregará Jenny */}
+
+      <Container
+        maxWidth={false}
+        sx={{
+          width: "90%",
+          maxWidth: "1350px",
+          py: 5,
+        }}
+      >
+
         {/* Ruta */}
-        <Typography variant="body2" sx={{ mb: 2, color: "#666" }}>
+
+        <Typography
+          sx={{
+            fontSize: 14,
+            color: "#666",
+            mb: 2,
+          }}
+        >
           Inicio &gt; Dashboard &gt; Checkout &gt; Confirmación de pedido
         </Typography>
 
+        {/* Título */}
+
         <Typography
-          variant="h4"
           sx={{
+            fontSize: 28,
+            fontWeight: 700,
+            color: "#8A4B08",
+            fontFamily: "Georgia",
             mb: 4,
-            fontWeight: "bold",
-            color: "#8B4513",
-            fontFamily: "Playfair Display, serif",
           }}
         >
           Confirmación de Pedido
         </Typography>
 
-        {/* Mensaje de éxito */}
+        {/* Mensaje */}
+
         <Paper
+          elevation={1}
           sx={{
-            p: 4,
-            mb: 4,
-            bgcolor: "white",
-            textAlign: "center",
             borderRadius: 2,
+            py: 5,
+            mb: 5,
+            textAlign: "center",
           }}
         >
-          <CheckCircleIcon sx={{ fontSize: 64, color: "#4CAF50", mb: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
+          <CheckCircleIcon
+            sx={{
+              fontSize: 60,
+              color: "#4CAF50",
+              mb: 2,
+            }}
+          />
+
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: 24,
+            }}
+          >
             ¡PEDIDO CON ÉXITO! ✅
           </Typography>
+
         </Paper>
 
-        <Grid container spacing={4}>
-          {/* Columna izquierda */}
-          <Grid item xs={12} md={7}>
-            <Paper sx={{ p: 3, mb: 3, bgcolor: "white", borderRadius: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#8B4513", mb: 2 }}>
-                Resumen de pedido
-              </Typography>
+        {/* CONTENIDO */}
 
-              {orderData.items.map((item, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    py: 1,
-                    borderBottom: index < orderData.items.length - 1 ? "1px solid #eee" : "none",
-                  }}
-                >
-                  <Typography>
-                    {item.name} x {item.quantity}
-                  </Typography>
-                  <Typography>${(item.price * item.quantity).toLocaleString()} MX</Typography>
-                </Box>
-              ))}
+        <Grid
+          container
+          spacing={4}
+          justifyContent="center"
+          alignItems="flex-start"
+        >
+                  {/* COLUMNA IZQUIERDA */}
 
-              <Divider sx={{ my: 2 }} />
+          <Grid item xs={12} md={3}>
 
-              <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.5 }}>
-                <Typography>Subtotal</Typography>
-                <Typography>${orderData.subtotal.toLocaleString()} MX</Typography>
-              </Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.5 }}>
-                <Typography>Envío</Typography>
-                <Typography>${orderData.shipping.toLocaleString()} MX</Typography>
-              </Box>
+            <Paper
+              elevation={1}
+              sx={{
+                background: "#F8F2E8",
+                border: "1px solid #B78B47",
+                mb: 3,
+              }}
+            >
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
+                  background: "#E6C894",
+                  textAlign: "center",
                   py: 1,
                   fontWeight: "bold",
-                  borderTop: "2px solid #8B4513",
-                  mt: 1,
                 }}
               >
-                <Typography sx={{ fontWeight: "bold" }}>Total</Typography>
-                <Typography sx={{ fontWeight: "bold", color: "#8B4513" }}>
-                  ${orderData.total.toLocaleString()} MX
-                </Typography>
+                Número de pedido
               </Box>
-            </Paper>
 
-            <Paper sx={{ p: 3, mb: 3, bgcolor: "white", borderRadius: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                💳 Método de pago
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#666", mb: 2 }}>
-                {orderData.paymentMethod}
-              </Typography>
-
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
-                📍 Dirección de envío
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#666" }}>
-                {orderData.address}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          {/* Columna derecha */}
-          <Grid item xs={12} md={5}>
-            <Paper sx={{ p: 3, mb: 3, bgcolor: "white", borderRadius: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#8B4513", mb: 2 }}>
-                Detalles del pedido
-              </Typography>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#666" }}>
-                  Número de pedido
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
+              <Box
+                sx={{
+                  py: 3,
+                  textAlign: "center",
+                }}
+              >
+                <Typography fontWeight="bold">
                   {orderData.id}
                 </Typography>
               </Box>
 
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#666" }}>
-                  Fecha estimada de entrega
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
+            </Paper>
+
+            <Paper
+              elevation={1}
+              sx={{
+                background: "#F8F2E8",
+                border: "1px solid #B78B47",
+              }}
+            >
+              <Box
+                sx={{
+                  background: "#E6C894",
+                  textAlign: "center",
+                  py: 1,
+                  fontWeight: "bold",
+                }}
+              >
+                Fecha estimada de entrega
+              </Box>
+
+              <Box
+                sx={{
+                  py: 3,
+                  textAlign: "center",
+                }}
+              >
+                <Typography>
                   {orderData.estimatedDate}
                 </Typography>
               </Box>
+
             </Paper>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                component={Link}
-                to="/cuenta/pedidos"
-                sx={{
-                  bgcolor: "#8B4513",
-                  "&:hover": { bgcolor: "#5C2E0B" },
-                  py: 1.5,
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                }}
-              >
-                Ver mis pedidos
-              </Button>
-
-              <Button
-                fullWidth
-                variant="outlined"
-                component={Link}
-                to="/catalogo"
-                sx={{
-                  borderColor: "#8B4513",
-                  color: "#8B4513",
-                  "&:hover": { bgcolor: "#8B4513", color: "white" },
-                  py: 1.5,
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                }}
-              >
-                Seguir comprando
-              </Button>
-            </Box>
           </Grid>
+
+          {/* COLUMNA CENTRO */}
+
+          <Grid item xs={12} md={4}>
+
+            <Paper
+              elevation={1}
+              sx={{
+                background: "#F8F2E8",
+                border: "1px solid #B78B47",
+              }}
+            >
+
+              <Box
+                sx={{
+                  background: "#E6C894",
+                  textAlign: "center",
+                  py: 1,
+                  fontWeight: "bold",
+                }}
+              >
+                Resumen de pedido
+              </Box>
+
+              <Box sx={{ p: 3 }}>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 2,
+                  }}
+                >
+                  <Typography>Sofá Esquinero</Typography>
+                  <Typography>1</Typography>
+                  <Typography>$8,999 MX</Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 3,
+                  }}
+                >
+                  <Typography>Mesa de Centro</Typography>
+                  <Typography>2</Typography>
+                  <Typography>$4,998 MX</Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    borderTop: "1px solid #CCC",
+                    pt: 2,
+                  }}
+                >
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography>Subtotal</Typography>
+                    <Typography>{orderData.subtotal}</Typography>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography>Envío</Typography>
+                    <Typography>{orderData.shipping}</Typography>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      borderTop: "2px solid #B78B47",
+                      pt: 1,
+                    }}
+                  >
+                    <Typography fontWeight="bold">
+                      Total
+                    </Typography>
+
+                    <Typography
+                      fontWeight="bold"
+                      color="#8A4B08"
+                    >
+                      {orderData.total}
+                    </Typography>
+
+                  </Box>
+
+                </Box>
+
+              </Box>
+
+            </Paper>
+
+          </Grid>
+
+          {/* COLUMNA DERECHA */}
+
+          <Grid item xs={12} md={3}>
+
+            <Paper
+              elevation={1}
+              sx={{
+                background: "#FFF",
+                p: 3,
+                mb: 3,
+              }}
+            >
+
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  color: "#8A4B08",
+                  mb: 3,
+                }}
+              >
+                Método de pago
+              </Typography>
+
+              <Typography sx={{ mb: 4 }}>
+                Tarjeta de crédito
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  color: "#8A4B08",
+                  mb: 2,
+                }}
+              >
+                Dirección de envío
+              </Typography>
+
+              <Typography>
+                Calle 123, Colonia Centro, CP 12345
+              </Typography>
+
+            </Paper>
+
+            <Button
+              fullWidth
+              component={Link}
+              to="/cuenta/pedidos"
+              variant="contained"
+              sx={{
+                mb: 2,
+                py: 1.5,
+                bgcolor: "#8A4B08",
+                "&:hover": {
+                  bgcolor: "#6F3905",
+                },
+              }}
+            >
+              VER MIS PEDIDOS
+            </Button>
+
+            <Button
+              fullWidth
+              component={Link}
+              to="/catalogo"
+              variant="outlined"
+              sx={{
+                py: 1.5,
+                borderColor: "#8A4B08",
+                color: "#8A4B08",
+              }}
+            >
+              SEGUIR COMPRANDO
+            </Button>
+                      </Grid>
+
         </Grid>
 
-        {/* Beneficios */}
-        <Grid container spacing={3} sx={{ mt: 6 }}>
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
+      </Container>
+
+      {/* Beneficios */}
+
+      <Box
+        sx={{
+          mt: 6,
+          py: 5,
+          background: "#EFE7DB",
+        }}
+      >
+        <Container
+          maxWidth={false}
+          sx={{
+            width: "90%",
+            maxWidth: "1350px",
+          }}
+        >
+          <Grid container spacing={4} textAlign="center">
+            <Grid item xs={6} md={3}>
+              <Typography fontWeight="bold">
                 CALIDAD SUPERIOR
               </Typography>
-              <Typography variant="body2" sx={{ color: "#666" }}>
+
+              <Typography color="text.secondary">
                 Fabricado con materiales de primera calidad.
               </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
+            </Grid>
+
+            <Grid item xs={6} md={3}>
+              <Typography fontWeight="bold">
                 Protección de garantía
               </Typography>
-              <Typography variant="body2" sx={{ color: "#666" }}>
-                garantía de 2 años.
+
+              <Typography color="text.secondary">
+                Garantía de 2 años.
               </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
+            </Grid>
+
+            <Grid item xs={6} md={3}>
+              <Typography fontWeight="bold">
                 Envío gratis
               </Typography>
-              <Typography variant="body2" sx={{ color: "#666" }}>
-                pedidos +$20,000.
+
+              <Typography color="text.secondary">
+                Pedidos mayores a $20,000.
               </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: "center" }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333" }}>
+            </Grid>
+
+            <Grid item xs={6} md={3}>
+              <Typography fontWeight="bold">
                 Soporte 24/7
               </Typography>
-              <Typography variant="body2" sx={{ color: "#666" }}>
+
+              <Typography color="text.secondary">
                 Atención dedicada.
               </Typography>
-            </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      </Container>
+        </Container>
+      </Box>
+
     </Box>
   );
 };
 
 export default OrderConfirmationPage;
+
+                 
