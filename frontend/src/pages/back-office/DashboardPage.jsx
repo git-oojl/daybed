@@ -1,158 +1,319 @@
-import "../../assets/dashboard-page.css";
+import React from "react";
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Paper,
+} from "@mui/material";
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   return (
-    <div className="dashboard-page">
+    <Box sx={{ background: "#F7F5F2" }}>
 
       {/* HERO */}
+      <Box
+        sx={{
+          height: 300,
+          backgroundRepeat: "no-repeat",
+          backgroundImage: "url('/hero.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: 56,
+            fontWeight: 700,
+          }}
+        >
+          Dashboard
+        </Typography>
 
-      <section className="dashboard-hero">
-        <div className="dashboard-overlay">
-          <h1>Dashboard</h1>
-
-          <p>
-            Inicio <span>&gt;</span> Dashboard
-          </p>
-        </div>
-      </section>
+        <Typography
+              variant="body2"
+              fontWeight="bold"
+          >
+          Inicio &gt; Dashboard
+        </Typography>
+      </Box>
 
       {/* CONTENIDO */}
 
-      <section className="dashboard-container">
+      <Container
+  maxWidth={false}
+  sx={{
+    width: "92%",
+    maxWidth: "1400px",
+    mx: "auto",
+    py: 6,
+  }}
+>
 
-        <div className="metrics-grid">
+        <Grid container spacing={3}>
 
-          <div className="metric-card">
-            <div className="metric-header">
-              Pedidos totales
-            </div>
+          {/* IZQUIERDA */}
 
-            <div className="metric-body">
-              <div className="metric-row">
-                <span>Pedidos mes actual</span>
-                <span>124</span>
-              </div>
+          <Grid item xs={12} lg={9}>
 
-              <div className="metric-row">
-                <span>Pedidos del mes anterior</span>
-                <span>112</span>
-              </div>
+            <Grid container spacing={3}>
 
-              <p className="metric-highlight">
-                +12 pedidos este mes
-              </p>
-            </div>
-          </div>
+              {/* PEDIDOS */}
 
-          <div className="metric-card">
-            <div className="metric-header">
-              Ventas
-            </div>
+              <Grid item xs={12} lg={3}>
+                <Paper elevation={0} sx={{
+    background:"#F4F0EA",
+    borderRadius:0,
+    minHeight:260,
+}}>
+                  <Box sx={{background:"#D8BB87",p:1,textAlign:"center",fontWeight:"bold"}}>
+                    Pedidos totales
+                  </Box>
 
-            <div className="metric-body">
-              <div className="metric-row">
-                <span>Ventas mes actual</span>
-                <span>$45,230 MX</span>
-              </div>
+                  <Box
+    sx={{
+        p:3,
+        minHeight:220,
+    }}
+>
+                    <Box sx={{display:"flex",justifyContent:"space-between",mb:3}}>
+                      <Typography>Pedidos mes actual</Typography>
+                      <Typography>124</Typography>
+                    </Box>
 
-              <div className="metric-row">
-                <span>Ventas mes anterior</span>
-                <span>$41,611 MX</span>
-              </div>
+                    <Box sx={{display:"flex",justifyContent:"space-between"}}>
+                      <Typography>Pedidos mes anterior</Typography>
+                      <Typography>112</Typography>
+                    </Box>
 
-              <p className="metric-highlight">
-                +8% ventas este mes
-              </p>
-            </div>
-          </div>
+                    <Typography
+                      sx={{
+                        color:"#C6932E",
+                        mt:6,
+                        fontWeight:600
+                      }}
+                    >
+                      +12 pedidos este mes
+                    </Typography>
 
-          <div className="metric-card">
-            <div className="metric-header">
-              Productos bajos
-            </div>
+                  </Box>
+                </Paper>
+              </Grid>
 
-            <div className="metric-body">
-              <div className="metric-row">
-                <span>Stock total</span>
-                <span>8</span>
-              </div>
+              {/* VENTAS */}
 
-              <p className="metric-highlight">
-                Necesitan reabastecer
-              </p>
-            </div>
-          </div>
+              <Grid item xs={12} md={4}>
+                <Paper elevation={0} sx={{ background:"#F4F0EA" }}>
+                  <Box sx={{background:"#D8BB87",p:1,textAlign:"center",fontWeight:"bold"}}>
+                    Ventas
+                  </Box>
 
-        </div>
+                  <Box sx={{p:3,minHeight:220}}>
 
-        {/* TABLA */}
+                    <Box sx={{display:"flex",justifyContent:"space-between",mb:3}}>
+                      <Typography>Ventas mes actual</Typography>
+                      <Typography>$45,230 MX</Typography>
+                    </Box>
 
-        <div className="sales-card">
+                    <Box sx={{display:"flex",justifyContent:"space-between"}}>
+                      <Typography>Ventas mes anterior</Typography>
+                      <Typography>$41,611 MX</Typography>
+                    </Box>
 
-          <div className="sales-title">
-            Ventas por mes
-          </div>
+                    <Typography
+                      sx={{
+                        color:"#C6932E",
+                        mt:6,
+                        fontWeight:600
+                      }}
+                    >
+                      +8% ventas este mes
+                    </Typography>
 
-          <div className="sales-row">
-            <span>Enero</span>
-            <span>$5,000 MX</span>
-          </div>
+                  </Box>
 
-          <div className="sales-row">
-            <span>Febrero</span>
-            <span>$8,000 MX</span>
-          </div>
+                </Paper>
+              </Grid>
 
-          <div className="sales-row">
-            <span>Marzo</span>
-            <span>$12,000 MX</span>
-          </div>
+              {/* PRODUCTOS */}
 
-          <div className="sales-row">
-            <span>Abril</span>
-            <span>$15,000 MX</span>
-          </div>
+              <Grid item xs={12} md={4}>
+                <Paper elevation={0} sx={{ background:"#F4F0EA" }}>
+                  <Box sx={{background:"#D8BB87",p:1,textAlign:"center",fontWeight:"bold"}}>
+                    Productos bajos
+                  </Box>
 
-          <div className="sales-row">
-            <span>Mayo</span>
-            <span>$20,000 MX</span>
-          </div>
+                  <Box sx={{p:4,minHeight:220}}>
 
-          <div className="sales-footer">
-            <span>Ventas del día</span>
-            <span>$1,250 MX</span>
-          </div>
+                    <Box sx={{display:"flex",justifyContent:"space-between"}}>
+                      <Typography>Stock total</Typography>
+                      <Typography>8</Typography>
+                    </Box>
 
-        </div>
+                    <Typography
+                      sx={{
+                        color:"#C6932E",
+                        mt:8,
+                        fontWeight:600
+                      }}
+                    >
+                      Necesitan reabastecer
+                    </Typography>
 
-      </section>
+                  </Box>
+
+                </Paper>
+              </Grid>
+
+            </Grid>
+
+          </Grid>
+
+          {/* DERECHA */}
+
+          <Grid item xs={12} md={4}>
+
+         <Paper
+            elevation={0}
+            sx={{
+             background:"#F4F0EA",
+             height:"100%",
+             borderRadius:0,
+                  }}
+              >
+
+              <Box
+                sx={{
+                  background:"#D8BB87",
+                  p:1,
+                  textAlign:"center",
+                  fontWeight:"bold"
+                }}
+              >
+                Ventas por mes
+              </Box>
+
+              {[
+                ["Enero","$5,000 MX"],
+                ["Febrero","$8,000 MX"],
+                ["Marzo","$12,000 MX"],
+                ["Abril","$15,000 MX"],
+                ["Mayo","$20,000 MX"],
+              ].map((item)=>(
+                <Box
+                  key={item[0]}
+                  sx={{
+                    display:"flex",
+                    justifyContent:"space-between",
+                    p:2
+                  }}
+                >
+                  <Typography>{item[0]}</Typography>
+                  <Typography>{item[1]}</Typography>
+                </Box>
+              ))}
+
+              <Box
+                sx={{
+                  background:"#D8BB87",
+                  display:"flex",
+                  justifyContent:"space-between",
+                  p:2,
+                  fontWeight:"bold"
+                }}
+              >
+                <Typography fontWeight="bold">
+                  Ventas del día
+                </Typography>
+
+                <Typography fontWeight="bold">
+                  $1,250 MX
+                </Typography>
+
+              </Box>
+
+            </Paper>
+
+          </Grid>
+
+        </Grid>
+
+      </Container>
 
       {/* BENEFICIOS */}
 
-      <section className="dashboard-benefits">
+      <Box
+        sx={{
+          background:"#EFE7DB",
+          py:5
+        }}
+      >
+        <Container
+  maxWidth={false}
+  sx={{
+    width: "90%",
+    maxWidth: "1400px",
+    margin: "0 auto",
+  }}
+>
+          <Grid
+    container
+    spacing={4}
+    justifyContent="space-between"
+    textAlign="center"
+>
 
-        <div>
-          <h3>CALIDAD SUPERIOR</h3>
-          <p>Fabricado con materiales de primera</p>
-        </div>
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography fontWeight="bold">
+                CALIDAD SUPERIOR
+              </Typography>
 
-        <div>
-          <h3>Protección de garantía</h3>
-          <p>garantía de 2 años</p>
-        </div>
+              <Typography color="text.secondary">
+                Fabricado con materiales de primera
+              </Typography>
+            </Grid>
 
-        <div>
-          <h3>Envío gratis</h3>
-          <p>pedidos +$20,000</p>
-        </div>
+            <Grid item xs={6} md={3}>
+              <Typography fontWeight="bold">
+                Protección de garantía
+              </Typography>
 
-        <div>
-          <h3>Soporte 24/7</h3>
-          <p>Atención dedicada</p>
-        </div>
+              <Typography color="text.secondary">
+                garantía de 2 años
+              </Typography>
+            </Grid>
 
-      </section>
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography fontWeight="bold">
+                Envío gratis
+              </Typography>
 
-    </div>
+              <Typography color="text.secondary">
+                pedidos +$20,000
+              </Typography>
+            </Grid>
+
+           <Grid item xs={12} sm={6} md={3}>
+              <Typography fontWeight="bold">
+                Soporte 24/7
+              </Typography>
+
+              <Typography color="text.secondary">
+                Atención dedicada
+              </Typography>
+            </Grid>
+
+          </Grid>
+
+        </Container>
+      </Box>
+
+    </Box>
   );
-}
+};
+
+export default DashboardPage;
