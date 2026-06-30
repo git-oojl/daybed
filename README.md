@@ -1,334 +1,147 @@
 # Daybed
 
-Este proyecto es una aplicación full-stack para una tienda de muebles. Utiliza **Django** y **Django REST Framework** en el backend, y **React** con **Vite** en el frontend. Seguimos el estándar de equipo utilizando `uv` para la gestión de dependencias y entorno de Python.
+Daybed es una aplicación web full-stack para una tienda de muebles. El proyecto combina un backend en **Django REST Framework** con un frontend en **React/Vite** para cubrir un flujo académico realista: catálogo, cuentas de cliente, carrito, checkout simulado, estimación de entrega, pedidos, inventario y panel interno.
 
----
+El MVP no procesa pagos reales ni gestiona logística real. La entrega se estima con APIs externas desde el backend y los pedidos se manejan con estados internos.
 
-## Requisitos previos
+## Estado del proyecto
 
-Antes de comenzar, asegúrate de tener instalado lo siguiente:
+La base backend ya incluye:
 
-* **Node.js LTS**: [Descargar Node.js](https://nodejs.org/)
+- API REST con Django REST Framework.
+- Autenticación JWT.
+- Usuario personalizado con roles `cliente`, `empleado` y `administrador`.
+- Catálogo público y endpoints de gestión para personal.
+- Carrito autenticado para clientes.
+- Checkout simulado y creación de pedidos.
+- Estimación de entrega mediante servicios externos encapsulados en backend.
+- Gestión operativa de inventario.
+- Métricas básicas de dashboard.
+- Pruebas backend con `pytest`.
+- Herramientas de calidad con `ruff` y `black`.
 
-* **Git**: [Instalar Git](https://git-scm.com/downloads)
+El frontend contiene estructura y vistas base para que el equipo implemente UI e integración con la API.
 
-* **Visual Studio Code**: recomendado para trabajar con las extensiones del proyecto.
-
-* **uv**: [Instalar uv](https://github.com/astral-sh/uv)
-
-  ```powershell
-  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-  ```
-
-  Si PowerShell no reconoce `uv` después de instalarlo, agrega temporalmente la ruta de uv a la sesión actual:
-
-  ```powershell
-  $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
-  ```
-
-  Para guardar esa ruta de forma permanente en las variables de entorno del usuario:
-
-  ```powershell
-  [Environment]::SetEnvironmentVariable("Path", $env:USERPROFILE + "\.local\bin;" + [Environment]::GetEnvironmentVariable("Path", "User"), "User")
-  ```
-
-  Para que `uv` use versiones de Python gestionadas por `uv`, configura esta variable en la sesión actual:
-
-  ```powershell
-  $env:UV_MANAGED_PYTHON = "true"
-  ```
-
-  Para guardarla de forma permanente:
-
-  ```powershell
-  [Environment]::SetEnvironmentVariable("UV_MANAGED_PYTHON", "true", "User")
-  ```
-
-  Después de configurar variables permanentes, cierra y vuelve a abrir PowerShell.
-
-  Verifica que `uv` funcione:
-
-  ```powershell
-  uv --version
-  ```
-
-  Instala Python 3.12 mediante `uv`:
-
-  ```powershell
-  uv python install 3.12
-  ```
-
-Verifica la instalación:
-
-```powershell
-uv --version
-```
-
-```powershell
-node --version
-```
-
-```powershell
-npm --version
-```
-
-```powershell
-git --version
-```
-
----
-
-## Preparación del proyecto en Windows
-
-### 1. Clonar el repositorio
-
-Abre PowerShell en la carpeta donde quieras guardar el proyecto y ejecuta:
-
-```powershell
-git clone https://github.com/git-oojl/daybed.git
-```
-
-```powershell
-cd daybed
-```
-
----
-
-## 2. Backend: Django + uv
-
-El backend utiliza `uv` para gestionar el entorno virtual y las dependencias de Python.
-
-### Entrar a la carpeta del backend
-
-```powershell
-cd backend
-```
-
-### Sincronizar dependencias
-
-```powershell
-uv sync
-```
-
-### Crear archivo de variables de entorno
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Si vas a trabajar con la estimación de entregas, agrega tu API key de OpenRouteService en `backend/.env`.
-
-### Ejecutar migraciones
-
-```powershell
-uv run python manage.py migrate
-```
-
-### Verificar configuración de Django
-
-```powershell
-uv run python manage.py check
-```
-
-### Iniciar servidor de desarrollo
-
-```powershell
-uv run python manage.py runserver
-```
-
-El backend quedará disponible en:
-
-```text
-http://localhost:8000
-```
-
-> [!IMPORTANT]
-> No ejecutes comandos de Django usando `python` directamente. Usa siempre `uv run python` para asegurar que se utilice el entorno correcto.
->
-> Correcto:
->
-> ```powershell
-> uv run python manage.py migrate
-> ```
->
-> Evitar:
->
-> ```powershell
-> python manage.py migrate
-> ```
-
----
-
-## 3. Frontend: React + Vite
-
-Abre otra terminal desde la raíz del proyecto.
-
-### Entrar a la carpeta del frontend
-
-```powershell
-cd frontend
-```
-
-### Instalar dependencias
-
-```powershell
-npm ci
-```
-
-### Crear archivo de variables de entorno
-
-```powershell
-Copy-Item .env.example .env
-```
-
-El valor esperado para desarrollo local es:
-
-```env
-VITE_API_BASE_URL=http://localhost:8000/api
-```
-
-### Iniciar servidor de desarrollo
-
-```powershell
-npm run dev
-```
-
-El frontend quedará disponible en:
-
-```text
-http://localhost:5173
-```
-
----
-
-## Calidad de código
-
-Este proyecto usa herramientas de formato y revisión, pero **no se ejecutan automáticamente en cada commit para todo el equipo**. Para evitar commits lentos, cada integrante debe usar las extensiones recomendadas de VS Code y ejecutar revisiones manuales antes de subir cambios importantes o abrir un Pull Request.
-
-### Extensiones recomendadas de VS Code
-
-Al abrir el proyecto en VS Code, aparecerán extensiones recomendadas para el workspace:
-
-* Prettier
-* ESLint
-* EditorConfig
-
-Estas extensiones ayudan a mantener formato consistente y detectar errores comunes mientras se trabaja.
-
-### Frontend
-
-Antes de subir cambios del frontend, ejecuta desde `/frontend`:
-
-```powershell
-npm run format
-```
-
-```powershell
-npm run lint
-```
-
-```powershell
-npm run build
-```
-
-### Backend
-
-El backend será mantenido por los integrantes asignados a Django. Las revisiones del backend se ejecutan desde `/backend` con `uv`:
-
-```powershell
-uv run ruff check . --fix
-```
-
-```powershell
-uv run black .
-```
-
-```powershell
-uv run python manage.py check
-```
-
-```powershell
-uv run pytest
-```
-
----
-
-## Estructura del proyecto
+## Estructura
 
 ```text
 daybed/
-├── backend/
-│   ├── apps/
-│   ├── config/
-│   ├── manage.py
-│   └── pyproject.toml
-├── frontend/
-│   ├── src/
-│   └── package.json
-├── docs/
-├── infra/
+├── backend/        # API Django/DRF
+├── frontend/       # React/Vite
+├── docs/           # Documentación técnica y funcional
+├── infra/          # Espacio reservado para infraestructura futura
 ├── .gitignore
 └── README.md
 ```
 
-* `/backend`: lógica del servidor, API, modelos y configuración de Django.
-* `/frontend`: interfaz de usuario con React y Vite.
-* `/docs`: documentación técnica y decisiones del proyecto.
-* `/infra`: espacio reservado para infraestructura futura.
-* `backend/pyproject.toml`: configuración de dependencias de Python gestionadas con `uv`.
-* `frontend/package.json`: configuración de dependencias y scripts de JavaScript.
+## Requisitos
 
----
+- Git.
+- Python 3.12 gestionado con `uv`.
+- Node.js LTS y npm.
+- WSL2/Linux recomendado para desarrollo local.
 
-## Flujo básico con Git
+## Configuración rápida en WSL2/Linux
 
-Antes de empezar a trabajar:
+Clonar el proyecto:
 
-```powershell
-git pull origin main
+```bash
+git clone <URL_DEL_REPOSITORIO>
+cd daybed
 ```
 
-Crear una rama nueva:
+Backend:
 
-```powershell
-git checkout -b feature/nombre-de-la-funcionalidad
+```bash
+cd backend
+uv sync
+cp .env.example .env
+uv run python manage.py migrate
+uv run python manage.py check
+uv run python manage.py runserver
 ```
 
-Guardar cambios:
+Frontend, en otra terminal:
 
-```powershell
-git add .
+```bash
+cd frontend
+npm ci
+cp .env.example .env
+npm run dev
 ```
 
-```powershell
-git commit -m "feat: describe el cambio"
-```
-
-Subir rama:
-
-```powershell
-git push -u origin feature/nombre-de-la-funcionalidad
-```
-
-Después abre un Pull Request hacia `main`.
-
----
-
-## Convención de commits
-
-Usa mensajes cortos y claros:
+URLs locales principales:
 
 ```text
-feat: agrega catálogo de productos
-fix: corrige validación del carrito
-docs: actualiza instrucciones de instalación
-chore: configura herramientas del proyecto
-refactor: reorganiza componentes del frontend
-test: agrega pruebas de pedidos
+Backend: http://localhost:8000
+API docs: http://localhost:8000/api/docs/
+Frontend: http://localhost:5173
 ```
 
----
+## Variables de entorno
 
-## Estado del proyecto
+No se debe versionar ningún archivo `.env`. Cada integrante debe crear su copia local desde los ejemplos:
 
-Este repositorio está en fase inicial. La base del backend, frontend, documentación y estructura del proyecto está preparada para comenzar el desarrollo del MVP de Daybed.
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Para usar estimación real de distancia, `backend/.env` necesita una API key de OpenRouteService:
+
+```env
+OPENROUTESERVICE_API_KEY=tu-api-key-local
+```
+
+Las pruebas automatizadas no deben depender de servicios externos reales.
+
+## Comandos útiles
+
+Backend:
+
+```bash
+cd backend
+uv run python manage.py check
+uv run python manage.py makemigrations --check --dry-run
+uv run pytest -q
+uv run ruff check .
+uv run black --check .
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+## Documentación
+
+- [Backend](backend/README.md)
+- [Frontend](frontend/README.md)
+- [Índice de documentación](docs/README.md)
+- [Endpoints backend](docs/ENDPOINTS_BACKEND.md)
+- [Modelo de datos](docs/MODELO_DATOS.md)
+- [APIs externas](docs/API_EXTERNAS.md)
+- [Alcance del MVP](docs/ALCANCE.md)
+- [Decisiones técnicas](docs/DECISIONES_TECNICAS.md)
+- [Flujo de contribución](docs/CONTRIBUCION.md)
+
+## Convenciones de seguridad
+
+- No subir `.env`, bases SQLite locales, respaldos de base de datos, cachés ni archivos generados.
+- No usar credenciales reales en commits, issues, capturas o documentación.
+- No ejecutar comandos destructivos contra bases compartidas.
+- No hacer llamadas reales a pagos, correos, SMS, webhooks o servicios de producción.
+- No afirmar que Stripe, logística real o despliegue productivo existen si no están implementados y probados.
+
+## Notas para Windows
+
+El flujo recomendado es trabajar desde WSL2. Si se usa PowerShell, los comandos equivalentes principales son:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+En backend se mantiene la regla: usar siempre `uv run python manage.py ...`, no `python manage.py ...` directamente.

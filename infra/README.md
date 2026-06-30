@@ -1,13 +1,16 @@
 # Infraestructura
 
-Esta carpeta se reserva para archivos de infraestructura del proyecto.
+Esta carpeta queda reservada para infraestructura futura.
 
-En el MVP inicial no se agregan archivos Docker, Caddy, Nginx o despliegue hasta que hayan sido configurados y probados.
+En el MVP actual no hay despliegue productivo, Docker, Nginx, Caddy ni CI/CD documentados como funcionalidad terminada.
 
-Posibles archivos futuros:
+Posibles agregados futuros:
 
-- docker-compose.yml
-- Dockerfile.backend
-- Dockerfile.frontend
-- configuración de Caddy o Nginx
+- `docker-compose.yml`
+- Dockerfile para backend
+- Dockerfile para frontend
+- configuración de Nginx o Caddy
 - scripts de despliegue
+- documentación de variables para staging/producción
+
+No agregar archivos de infraestructura sin probarlos y documentar cómo se usan.

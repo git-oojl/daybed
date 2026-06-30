@@ -1,10 +1,25 @@
 # Documentación de Daybed
 
-Esta carpeta contiene documentación técnica y de planificación del proyecto.
+Esta carpeta centraliza la documentación funcional y técnica del proyecto.
 
-## Archivos sugeridos
+## Índice
 
-- ALCANCE.md: definición funcional del MVP.
-- API_EXTERNAS.md: integración con servicios externos.
-- DECISIONES_TECNICAS.md: decisiones importantes del equipo.
-- MODELO_DATOS.md: notas sobre entidades principales del sistema.
+| Archivo | Contenido |
+| --- | --- |
+| `ALCANCE.md` | Alcance funcional del MVP y límites del proyecto. |
+| `API_EXTERNAS.md` | Uso de Nominatim/OpenStreetMap y OpenRouteService. |
+| `DECISIONES_TECNICAS.md` | Decisiones de arquitectura y stack. |
+| `ENDPOINTS_BACKEND.md` | Resumen de endpoints REST del backend. |
+| `MODELO_DATOS.md` | Entidades principales y reglas de datos. |
+| `FRONTEND_VIEWS.md` | Estructura de vistas y rutas del frontend. |
+| `CONTRIBUCION.md` | Flujo recomendado de trabajo en Git y validación. |
+
+## Principio general
+
+La documentación debe distinguir entre:
+
+- Funcionalidad implementada.
+- Funcionalidad planeada.
+- Extensiones opcionales fuera del MVP.
+
+No documentar como terminado algo que todavía no esté implementado o verificado.
