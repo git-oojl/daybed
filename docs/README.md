@@ -11,8 +11,8 @@ Esta carpeta centraliza la documentación funcional y técnica del proyecto.
 | `DECISIONES_TECNICAS.md` | Decisiones de arquitectura y stack. |
 | `ENDPOINTS_BACKEND.md` | Resumen de endpoints REST del backend. |
 | `MODELO_DATOS.md` | Entidades principales y reglas de datos. |
-| `FRONTEND_VIEWS.md` | Estructura de vistas y rutas del frontend. |
-| `CONTRIBUCION.md` | Flujo recomendado de trabajo en Git y validación. |
+| `FRONTEND_VIEWS.md` | W.I.P. |
+| `CONTRIBUCION.md` | W.I.P. |
 
 ## Principio general
 
