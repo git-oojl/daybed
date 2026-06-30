@@ -30,7 +30,9 @@ urlpatterns = [
     path("api/accounts/", include("apps.accounts.urls")),
     path("api/cart/", include("apps.cart.urls")),
     path("api/catalog/", include("apps.catalog.urls")),
+    path("api/dashboard/", include("apps.dashboard.urls")),
     path("api/delivery/", include("apps.delivery.urls")),
+    path("api/inventory/", include("apps.inventory.urls")),
     path("api/", include("apps.orders.urls")),
     path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
