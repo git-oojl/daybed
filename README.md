@@ -142,6 +142,34 @@ El backend quedará disponible en:
 http://localhost:8000
 ```
 
+### Resumen del backend
+
+El backend expone una API REST para las funciones principales del MVP:
+
+* autenticación y usuarios con roles;
+* catálogo de productos y categorías;
+* carrito de compras;
+* órdenes y checkout simulado;
+* inventario;
+* estimación de entrega;
+* métricas básicas del dashboard.
+
+Los módulos principales del backend están organizados en `/backend/apps`:
+
+* `accounts`: usuarios, autenticación y roles.
+* `catalog`: productos, categorías e imágenes.
+* `cart`: carrito del cliente.
+* `orders`: órdenes, estados y datos de entrega guardados.
+* `inventory`: control de stock y bajo inventario.
+* `delivery`: geocodificación, estimación de distancia y tarifa de entrega.
+* `dashboard`: métricas básicas para el back-office.
+
+Para más detalles de endpoints, variables de entorno, pruebas y comandos específicos del backend, revisa:
+
+```text
+backend/README.md
+```
+
 > [!IMPORTANT]
 > No ejecutes comandos de Django usando `python` directamente. Usa siempre `uv run python` para asegurar que se utilice el entorno correcto.
 >
@@ -197,6 +225,29 @@ El frontend quedará disponible en:
 
 ```text
 http://localhost:5173
+```
+
+---
+
+## Documentación del proyecto
+
+La documentación técnica del proyecto está en `/docs`.
+
+Archivos principales:
+
+* `docs/README.md`: índice general de documentación.
+* `docs/ALCANCE.md`: alcance del MVP y límites del proyecto.
+* `docs/API_EXTERNAS.md`: integración con Nominatim/OpenStreetMap y OpenRouteService.
+* `docs/ENDPOINTS_BACKEND.md`: resumen de endpoints del backend.
+* `docs/MODELO_DATOS.md`: resumen del modelo de datos.
+* `docs/DECISIONES_TECNICAS.md`: decisiones técnicas relevantes.
+
+También hay documentación específica en:
+
+```text
+backend/README.md
+frontend/README.md
+infra/README.md
 ```
 
 ---
@@ -261,10 +312,12 @@ daybed/
 │   ├── apps/
 │   ├── config/
 │   ├── manage.py
-│   └── pyproject.toml
+│   ├── pyproject.toml
+│   └── README.md
 ├── frontend/
 │   ├── src/
-│   └── package.json
+│   ├── package.json
+│   └── README.md
 ├── docs/
 ├── infra/
 ├── .gitignore
@@ -275,60 +328,7 @@ daybed/
 * `/frontend`: interfaz de usuario con React y Vite.
 * `/docs`: documentación técnica y decisiones del proyecto.
 * `/infra`: espacio reservado para infraestructura futura.
+* `backend/README.md`: guía específica para trabajar con el backend.
+* `frontend/README.md`: guía específica para trabajar con el frontend.
 * `backend/pyproject.toml`: configuración de dependencias de Python gestionadas con `uv`.
 * `frontend/package.json`: configuración de dependencias y scripts de JavaScript.
-
----
-
-## Flujo básico con Git
-
-Antes de empezar a trabajar:
-
-```powershell
-git pull origin main
-```
-
-Crear una rama nueva:
-
-```powershell
-git checkout -b feature/nombre-de-la-funcionalidad
-```
-
-Guardar cambios:
-
-```powershell
-git add .
-```
-
-```powershell
-git commit -m "feat: describe el cambio"
-```
-
-Subir rama:
-
-```powershell
-git push -u origin feature/nombre-de-la-funcionalidad
-```
-
-Después abre un Pull Request hacia `main`.
-
----
-
-## Convención de commits
-
-Usa mensajes cortos y claros:
-
-```text
-feat: agrega catálogo de productos
-fix: corrige validación del carrito
-docs: actualiza instrucciones de instalación
-chore: configura herramientas del proyecto
-refactor: reorganiza componentes del frontend
-test: agrega pruebas de pedidos
-```
-
----
-
-## Estado del proyecto
-
-Este repositorio está en fase inicial. La base del backend, frontend, documentación y estructura del proyecto está preparada para comenzar el desarrollo del MVP de Daybed.

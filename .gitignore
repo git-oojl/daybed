@@ -1,23 +1,28 @@
-@"
 # =========================================================
-# Daybed - Git ignored files
+# Daybed - archivos ignorados por Git
 # =========================================================
+# Objetivo: mantener el repositorio limpio de secretos, bases locales,
+# cachés, builds, archivos generados y respaldos temporales.
 
 # -------------------------
-# Operating system files
+# Sistema operativo
 # -------------------------
 .DS_Store
 .AppleDouble
 .LSOverride
+Icon?
 Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
 Desktop.ini
-`$RECYCLE.BIN/
+$RECYCLE.BIN/
+.Trashes/
+.Spotlight-V100/
+.fseventsd/
 
 # -------------------------
-# Editor / IDE files
+# Editores / IDE
 # -------------------------
 .idea/
 *.swp
@@ -26,13 +31,39 @@ Desktop.ini
 *.bak
 *.tmp
 *.temp
+*.orig
+*.rej
+*~
+
+# Mantener recomendaciones compartidas de VS Code, ignorar estado local.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 
 # -------------------------
-# Environment variables
+# Variables de entorno / secretos
 # -------------------------
 .env
 .env.*
 !.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets/
+credentials/
+service-account*.json
+*.local
 
 # -------------------------
 # Python / Django
@@ -42,27 +73,35 @@ __pycache__/
 *$py.class
 *.pyo
 *.pyd
-*.pyc
-
 .Python
 
-# Virtual environments
+# Entornos virtuales
 .venv/
 venv/
 env/
 ENV/
 
-# Django local files
-db.sqlite3
-db.sqlite3-journal
+# Bases locales y respaldos de BD
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite3.bak*
+*.sqlite3.pre-*
+*.sqlite
+*.sqlite.bak*
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.db.bak*
+
+# Archivos generados por Django en local
 media/
 staticfiles/
 local_settings.py
 
-# Django migrations cache / generated artifacts
-*.log
-
-# Python packaging
+# Empaquetado Python
 build/
 dist/
 downloads/
@@ -80,7 +119,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Test / coverage
+# Tests / cobertura / calidad
 .pytest_cache/
 .coverage
 .coverage.*
@@ -90,8 +129,6 @@ htmlcov/
 coverage.xml
 *.cover
 *.py,cover
-
-# Type checking / linting caches
 .mypy_cache/
 .dmypy.json
 dmypy.json
@@ -100,85 +137,63 @@ dmypy.json
 .pytype/
 
 # uv
-uv.lock
+# El lockfile SÍ debe versionarse para instalaciones reproducibles.
+!backend/uv.lock
 
 # -------------------------
 # Node / React / Vite
 # -------------------------
 node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.yarn-cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Build outputs
+# Builds y cachés frontend
 dist/
 dist-ssr/
 build/
 .vite/
+.eslintcache
+.parcel-cache/
+.next/
+out/
+coverage/
 
-# Frontend environment files
-frontend/.env
-frontend/.env.*
-!frontend/.env.example
-
-# Vite / React local files
-*.local
-
-# -------------------------
-# Package manager lock files
-# -------------------------
-# Keep package-lock.json tracked for reproducible npm installs.
-# package-lock.json
+# Lockfiles frontend
+# package-lock.json se mantiene versionado para npm ci reproducible.
+!frontend/package-lock.json
 
 # -------------------------
-# Logs
+# Logs y evidencia temporal
 # -------------------------
 logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# -------------------------
-# Database / local data
-# -------------------------
-*.sqlite3
-*.sqlite
-*.db
-
-# -------------------------
-# Uploaded/generated files
-# -------------------------
-uploads/
-media/
-staticfiles/
+incoming/
+evidence/
+artifacts/
 reports/
 exports/
+tmp/
+temp/
+.cache/
 
 # -------------------------
-# Docker / infrastructure local overrides
+# Infraestructura local
 # -------------------------
 docker-compose.override.yml
 .docker/
 
 # -------------------------
-# Secrets / credentials
+# Archivos comprimidos / entregables locales
 # -------------------------
-*.pem
-*.key
-*.crt
-*.p12
-*.pfx
-secrets/
-credentials/
-service-account*.json
-
-# -------------------------
-# Misc
-# -------------------------
-.cache/
-tmp/
-temp/
-"@ | Set-Content .gitignore
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
