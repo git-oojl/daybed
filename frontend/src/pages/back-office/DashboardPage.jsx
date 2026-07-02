@@ -1,158 +1,201 @@
-import "../../assets/dashboard-page.css";
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Button,
+  Paper,
+  Divider,
+} from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-export default function DashboardPage() {
+const OrderConfirmationPage = () => {
+  const orderData = {
+    id: "#DAY-001",
+    estimatedDate: "30 de junio, 2028",
+    items: [
+      { name: "Sofá Esquinero", price: 8999, quantity: 1 },
+      { name: "Mesa de Centro", price: 2499, quantity: 2 },
+    ],
+    subtotal: 13997,
+    shipping: 500,
+    total: 14497,
+    paymentMethod: "Tarjeta de crédito",
+    address: "Calle 123, Colonia Centro, CP 12345",
+    status: "Confirmado",
+  };
+
   return (
-    <div className="dashboard-page">
+    <Box sx={{ bgcolor: "#FDF5E6", minHeight: "100vh", py: 5 }}>
+      <Container maxWidth="lg">
+        <Typography variant="body2" sx={{ mb: 4, color: "#666" }}>
+          Inicio &gt; Dashboard &gt; Checkout &gt; Confirmación de pedido
+        </Typography>
 
-      {/* HERO */}
+        <Typography
+          variant="h4"
+          sx={{
+            mb: 4,
+            fontWeight: "bold",
+            color: "#8B4513",
+          }}
+        >
+          Confirmación de Pedido
+        </Typography>
 
-      <section className="dashboard-hero">
-        <div className="dashboard-overlay">
-          <h1>Dashboard</h1>
+        <Paper
+          sx={{
+            p: 4,
+            mb: 4,
+            bgcolor: "white",
+            textAlign: "center",
+            borderRadius: 2,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          <CheckCircleIcon sx={{ fontSize: 64, color: "#4CAF50", mb: 2 }} />
+          <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
+            ¡PEDIDO CON ÉXITO! 
+          </Typography>
+        </Paper>
 
-          <p>
-            Inicio <span>&gt;</span> Dashboard
-          </p>
-        </div>
-      </section>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={7}>
+            <Paper sx={{ p: 4, mb: 3, bgcolor: "white", borderRadius: 2, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#8B4513", mb: 3 }}>
+                Resumen de pedido
+              </Typography>
 
-      {/* CONTENIDO */}
+              {orderData.items.map((item, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    py: 1.5,
+                    borderBottom: index < orderData.items.length - 1 ? "1px solid #f0f0f0" : "none",
+                  }}
+                >
+                  <Typography variant="body2">
+                    {item.name} {item.quantity}
+                  </Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    ${(item.price * item.quantity).toLocaleString()} MX
+                  </Typography>
+                </Box>
+              ))}
 
-      <section className="dashboard-container">
+              <Divider sx={{ my: 2 }} />
 
-        <div className="metrics-grid">
+              <Box sx={{ display: "flex", justifyContent: "space-between", py: 1 }}>
+                <Typography variant="body2" color="text.secondary">Subtotal</Typography>
+                <Typography variant="body2" fontWeight="bold">${orderData.subtotal.toLocaleString()} MX</Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", py: 1 }}>
+                <Typography variant="body2" color="text.secondary">Envío</Typography>
+                <Typography variant="body2" fontWeight="bold">${orderData.shipping.toLocaleString()} MX</Typography>
+              </Box>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: "flex", justifyContent: "space-between", py: 1 }}>
+                <Typography variant="body2" fontWeight="bold">Total</Typography>
+                <Typography variant="body2" fontWeight="bold" color="#8B4513">
+                  ${orderData.total.toLocaleString()} MX
+                </Typography>
+              </Box>
+            </Paper>
 
-          <div className="metric-card">
-            <div className="metric-header">
-              Pedidos totales
-            </div>
+            <Paper sx={{ p: 4, mb: 3, bgcolor: "white", borderRadius: 2, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#333", mb: 1 }}>
+                Método de pago
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#666", mb: 2 }}>
+                {orderData.paymentMethod}
+              </Typography>
 
-            <div className="metric-body">
-              <div className="metric-row">
-                <span>Pedidos mes actual</span>
-                <span>124</span>
-              </div>
+              <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#333", mb: 1 }}>
+                Dirección de envío
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#666" }}>
+                {orderData.address}
+              </Typography>
+            </Paper>
+          </Grid>
 
-              <div className="metric-row">
-                <span>Pedidos del mes anterior</span>
-                <span>112</span>
-              </div>
+          <Grid item xs={12} md={5}>
+            <Paper sx={{ p: 4, mb: 3, bgcolor: "white", borderRadius: 2, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#8B4513", mb: 3 }}>
+                Detalles del pedido
+              </Typography>
 
-              <p className="metric-highlight">
-                +12 pedidos este mes
-              </p>
-            </div>
-          </div>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#666", mb: 1 }}>
+                  Número de pedido
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
+                  {orderData.id}
+                </Typography>
+              </Box>
 
-          <div className="metric-card">
-            <div className="metric-header">
-              Ventas
-            </div>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#666", mb: 1 }}>
+                  Estado del pedido
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: "bold", color: "#4CAF50" }}>
+                  {orderData.status}
+                </Typography>
+              </Box>
 
-            <div className="metric-body">
-              <div className="metric-row">
-                <span>Ventas mes actual</span>
-                <span>$45,230 MX</span>
-              </div>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#666", mb: 1 }}>
+                  Fecha estimada de entrega
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: "bold", color: "#333" }}>
+                  {orderData.estimatedDate}
+                </Typography>
+              </Box>
+            </Paper>
 
-              <div className="metric-row">
-                <span>Ventas mes anterior</span>
-                <span>$41,611 MX</span>
-              </div>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                component={Link}
+                to="/cuenta/pedidos"
+                sx={{
+                  bgcolor: "#8B4513",
+                  "&:hover": { bgcolor: "#5C2E0B" },
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                }}
+              >
+                Ver mis pedidos
+              </Button>
 
-              <p className="metric-highlight">
-                +8% ventas este mes
-              </p>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-header">
-              Productos bajos
-            </div>
-
-            <div className="metric-body">
-              <div className="metric-row">
-                <span>Stock total</span>
-                <span>8</span>
-              </div>
-
-              <p className="metric-highlight">
-                Necesitan reabastecer
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* TABLA */}
-
-        <div className="sales-card">
-
-          <div className="sales-title">
-            Ventas por mes
-          </div>
-
-          <div className="sales-row">
-            <span>Enero</span>
-            <span>$5,000 MX</span>
-          </div>
-
-          <div className="sales-row">
-            <span>Febrero</span>
-            <span>$8,000 MX</span>
-          </div>
-
-          <div className="sales-row">
-            <span>Marzo</span>
-            <span>$12,000 MX</span>
-          </div>
-
-          <div className="sales-row">
-            <span>Abril</span>
-            <span>$15,000 MX</span>
-          </div>
-
-          <div className="sales-row">
-            <span>Mayo</span>
-            <span>$20,000 MX</span>
-          </div>
-
-          <div className="sales-footer">
-            <span>Ventas del día</span>
-            <span>$1,250 MX</span>
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* BENEFICIOS */}
-
-      <section className="dashboard-benefits">
-
-        <div>
-          <h3>CALIDAD SUPERIOR</h3>
-          <p>Fabricado con materiales de primera</p>
-        </div>
-
-        <div>
-          <h3>Protección de garantía</h3>
-          <p>garantía de 2 años</p>
-        </div>
-
-        <div>
-          <h3>Envío gratis</h3>
-          <p>pedidos +$20,000</p>
-        </div>
-
-        <div>
-          <h3>Soporte 24/7</h3>
-          <p>Atención dedicada</p>
-        </div>
-
-      </section>
-
-    </div>
+              <Button
+                fullWidth
+                variant="outlined"
+                component={Link}
+                to="/catalogo"
+                sx={{
+                  borderColor: "#8B4513",
+                  color: "#8B4513",
+                  "&:hover": { bgcolor: "#8B4513", color: "white" },
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: "bold",
+                }}
+              >
+                Seguir comprando
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
-}
+};
+
+export default OrderConfirmationPage;
