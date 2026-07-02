@@ -1,5 +1,5 @@
-import ErrorMessage from '../../components/support/ErrorMessage.jsx'
-import SuccessMessage from '../../components/support/SuccessMessage.jsx'
+import ErrorMessage from "../../components/support/ErrorMessage.jsx";
+import SuccessMessage from "../../components/support/SuccessMessage.jsx";
 
 function FeedbackMessagesPage() {
   return (
@@ -17,7 +17,7 @@ function FeedbackMessagesPage() {
         <h2 id="mensajes-informativo">Mensaje informativo</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default FeedbackMessagesPage
+export default FeedbackMessagesPage;

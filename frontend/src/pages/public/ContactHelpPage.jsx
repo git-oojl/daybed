@@ -3,7 +3,9 @@ function ContactHelpPage() {
     <main>
       <h1>Contacto / Ayuda</h1>
       <section aria-labelledby="contacto--ayuda-informacion-de-contacto">
-        <h2 id="contacto--ayuda-informacion-de-contacto">Información de contacto</h2>
+        <h2 id="contacto--ayuda-informacion-de-contacto">
+          Información de contacto
+        </h2>
       </section>
       <section aria-labelledby="contacto--ayuda-canales-de-ayuda">
         <h2 id="contacto--ayuda-canales-de-ayuda">Canales de ayuda</h2>
@@ -15,7 +17,7 @@ function ContactHelpPage() {
         <h2 id="contacto--ayuda-formulario-de-ayuda">Formulario de ayuda</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default ContactHelpPage
+export default ContactHelpPage;

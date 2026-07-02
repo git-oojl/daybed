@@ -1,7 +1,7 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet } from "react-router-dom";
 
 function PublicLayout({ children }) {
-  return children ?? <Outlet />
+  return children ?? <Outlet />;
 }
 
-export default PublicLayout
+export default PublicLayout;

@@ -12,10 +12,12 @@ function CategoriesPage() {
         <h2 id="categorias-editar-categoria">Editar categoría</h2>
       </section>
       <section aria-labelledby="categorias-activar-o-desactivar-categoria">
-        <h2 id="categorias-activar-o-desactivar-categoria">Activar o desactivar categoría</h2>
+        <h2 id="categorias-activar-o-desactivar-categoria">
+          Activar o desactivar categoría
+        </h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default CategoriesPage
+export default CategoriesPage;

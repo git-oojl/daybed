@@ -1,4 +1,4 @@
-import LoadingState from '../../components/support/LoadingState.jsx'
+import LoadingState from "../../components/support/LoadingState.jsx";
 
 function LoadingStatesPage() {
   return (
@@ -15,7 +15,7 @@ function LoadingStatesPage() {
         <h2 id="estados-de-carga-formulario">Estado de carga de formulario</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default LoadingStatesPage
+export default LoadingStatesPage;

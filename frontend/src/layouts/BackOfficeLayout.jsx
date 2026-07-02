@@ -1,7 +1,7 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet } from "react-router-dom";
 
 function BackOfficeLayout({ children }) {
-  return children ?? <Outlet />
+  return children ?? <Outlet />;
 }
 
-export default BackOfficeLayout
+export default BackOfficeLayout;

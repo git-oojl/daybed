@@ -68,8 +68,7 @@ export default function CartPage() {
               </div>
 
               <div>
-                $
-                {(product.price * product.quantity).toLocaleString()}
+                ${(product.price * product.quantity).toLocaleString()}
                 .00 MX
               </div>
             </div>

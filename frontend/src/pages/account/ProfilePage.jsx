@@ -15,7 +15,7 @@ function ProfilePage() {
         <h2 id="perfil-acciones-de-cuenta">Acciones de cuenta</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default ProfilePage
+export default ProfilePage;

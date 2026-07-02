@@ -1,6 +1,6 @@
-import { useContext } from 'react'
-import { PreviewSessionContext } from './previewSessionContext.js'
+import { useContext } from "react";
+import { PreviewSessionContext } from "./previewSessionContext.js";
 
 export function usePreviewSession() {
-  return useContext(PreviewSessionContext)
+  return useContext(PreviewSessionContext);
 }

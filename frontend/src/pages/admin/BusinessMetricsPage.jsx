@@ -12,16 +12,22 @@ function BusinessMetricsPage() {
         <h2 id="metricas-del-negocio-pedidos-por-estado">Pedidos por estado</h2>
       </section>
       <section aria-labelledby="metricas-del-negocio-productos-con-bajo-stock">
-        <h2 id="metricas-del-negocio-productos-con-bajo-stock">Productos con bajo stock</h2>
+        <h2 id="metricas-del-negocio-productos-con-bajo-stock">
+          Productos con bajo stock
+        </h2>
       </section>
       <section aria-labelledby="metricas-del-negocio-promedio-de-costo-de-entrega">
-        <h2 id="metricas-del-negocio-promedio-de-costo-de-entrega">Promedio de costo de entrega</h2>
+        <h2 id="metricas-del-negocio-promedio-de-costo-de-entrega">
+          Promedio de costo de entrega
+        </h2>
       </section>
       <section aria-labelledby="metricas-del-negocio-promedio-de-distancia-estimada">
-        <h2 id="metricas-del-negocio-promedio-de-distancia-estimada">Promedio de distancia estimada</h2>
+        <h2 id="metricas-del-negocio-promedio-de-distancia-estimada">
+          Promedio de distancia estimada
+        </h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default BusinessMetricsPage
+export default BusinessMetricsPage;

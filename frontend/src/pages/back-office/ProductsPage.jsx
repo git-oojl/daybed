@@ -12,13 +12,15 @@ function ProductsPage() {
         <h2 id="productos-editar-producto">Editar producto</h2>
       </section>
       <section aria-labelledby="productos-activar-o-desactivar-producto">
-        <h2 id="productos-activar-o-desactivar-producto">Activar o desactivar producto</h2>
+        <h2 id="productos-activar-o-desactivar-producto">
+          Activar o desactivar producto
+        </h2>
       </section>
       <section aria-labelledby="productos-gestion-de-imagenes">
         <h2 id="productos-gestion-de-imagenes">Gestión de imágenes</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default ProductsPage
+export default ProductsPage;
