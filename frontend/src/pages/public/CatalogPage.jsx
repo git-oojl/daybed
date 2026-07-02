@@ -12,10 +12,12 @@ function CatalogPage() {
         <h2 id="catalogo-lista-de-productos">Lista de productos</h2>
       </section>
       <section aria-labelledby="catalogo-estado-vacio-si-no-hay-resultados">
-        <h2 id="catalogo-estado-vacio-si-no-hay-resultados">Estado vacío si no hay resultados</h2>
+        <h2 id="catalogo-estado-vacio-si-no-hay-resultados">
+          Estado vacío si no hay resultados
+        </h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default CatalogPage
+export default CatalogPage;

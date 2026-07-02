@@ -1,4 +1,4 @@
-import EmptyState from '../../components/support/EmptyState.jsx'
+import EmptyState from "../../components/support/EmptyState.jsx";
 
 function EmptyStatesPage() {
   return (
@@ -15,7 +15,7 @@ function EmptyStatesPage() {
         <h2 id="estados-vacios-lista">Estado vacío de lista</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default EmptyStatesPage
+export default EmptyStatesPage;

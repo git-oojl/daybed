@@ -15,7 +15,7 @@ function RegisterPage() {
         <h2 id="crear-cuenta-acciones-de-registro">Acciones de registro</h2>
       </section>
     </main>
-  )
+  );
 }
 
-export default RegisterPage
+export default RegisterPage;

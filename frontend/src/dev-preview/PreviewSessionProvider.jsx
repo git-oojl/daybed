@@ -1,4 +1,4 @@
-import { PreviewSessionContext } from './previewSessionContext.js'
+import { PreviewSessionContext } from "./previewSessionContext.js";
 
 function PreviewSessionProvider({ viewer, children }) {
   return (
@@ -10,7 +10,7 @@ function PreviewSessionProvider({ viewer, children }) {
     >
       {children}
     </PreviewSessionContext.Provider>
-  )
+  );
 }
 
-export default PreviewSessionProvider
+export default PreviewSessionProvider;

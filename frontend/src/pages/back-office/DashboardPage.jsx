@@ -3,7 +3,6 @@ import "../../assets/dashboard-page.css";
 export default function DashboardPage() {
   return (
     <div className="dashboard-page">
-
       {/* HERO */}
 
       <section className="dashboard-hero">
@@ -19,13 +18,9 @@ export default function DashboardPage() {
       {/* CONTENIDO */}
 
       <section className="dashboard-container">
-
         <div className="metrics-grid">
-
           <div className="metric-card">
-            <div className="metric-header">
-              Pedidos totales
-            </div>
+            <div className="metric-header">Pedidos totales</div>
 
             <div className="metric-body">
               <div className="metric-row">
@@ -38,16 +33,12 @@ export default function DashboardPage() {
                 <span>112</span>
               </div>
 
-              <p className="metric-highlight">
-                +12 pedidos este mes
-              </p>
+              <p className="metric-highlight">+12 pedidos este mes</p>
             </div>
           </div>
 
           <div className="metric-card">
-            <div className="metric-header">
-              Ventas
-            </div>
+            <div className="metric-header">Ventas</div>
 
             <div className="metric-body">
               <div className="metric-row">
@@ -60,16 +51,12 @@ export default function DashboardPage() {
                 <span>$41,611 MX</span>
               </div>
 
-              <p className="metric-highlight">
-                +8% ventas este mes
-              </p>
+              <p className="metric-highlight">+8% ventas este mes</p>
             </div>
           </div>
 
           <div className="metric-card">
-            <div className="metric-header">
-              Productos bajos
-            </div>
+            <div className="metric-header">Productos bajos</div>
 
             <div className="metric-body">
               <div className="metric-row">
@@ -77,21 +64,15 @@ export default function DashboardPage() {
                 <span>8</span>
               </div>
 
-              <p className="metric-highlight">
-                Necesitan reabastecer
-              </p>
+              <p className="metric-highlight">Necesitan reabastecer</p>
             </div>
           </div>
-
         </div>
 
         {/* TABLA */}
 
         <div className="sales-card">
-
-          <div className="sales-title">
-            Ventas por mes
-          </div>
+          <div className="sales-title">Ventas por mes</div>
 
           <div className="sales-row">
             <span>Enero</span>
@@ -122,15 +103,12 @@ export default function DashboardPage() {
             <span>Ventas del día</span>
             <span>$1,250 MX</span>
           </div>
-
         </div>
-
       </section>
 
       {/* BENEFICIOS */}
 
       <section className="dashboard-benefits">
-
         <div>
           <h3>CALIDAD SUPERIOR</h3>
           <p>Fabricado con materiales de primera</p>
@@ -150,9 +128,7 @@ export default function DashboardPage() {
           <h3>Soporte 24/7</h3>
           <p>Atención dedicada</p>
         </div>
-
       </section>
-
     </div>
   );
 }
