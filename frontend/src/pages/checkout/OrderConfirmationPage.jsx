@@ -1,433 +1,121 @@
-import React from "react";
 import { Link } from "react-router-dom";
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  Button,
-} from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import LinearProgress from "@mui/material/LinearProgress";
+import "../../assets/home-page.css";
+import "../../assets/cart-page.css";
+import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import { routePaths } from "../../routes/routePaths.js";
 
 const OrderConfirmationPage = () => {
-
   const orderData = {
     id: "#DAY-001",
-    estimatedDate: "30 de junio, 2028",
+    estimatedDate: "30 de junio, 2026",
     subtotal: "$13,997 MX",
     shipping: "$500 MX",
     total: "$14,497 MX",
   };
 
   return (
-    <Box
-      sx={{
-        background: "#F8F4EC",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="home-page order-page">
+      <HomeHeader />
 
-      {/* Header lo agregará Jenny */}
+      <section className="checkout-hero checkout-hero--order" aria-label="Confirmación de pedido">
+        <div className="checkout-hero__overlay">
+          <h1 className="checkout-hero__title">Confirmación de Pedido</h1>
+          <p className="checkout-hero__breadcrumb">
+            <Link to={routePaths.public.home}>Inicio</Link>
+            <span aria-hidden="true">&gt;</span>
+            Dashboard
+            <span aria-hidden="true">&gt;</span>
+            Checkout
+            <span aria-hidden="true">&gt;</span>
+            Confirmación de pedido
+          </p>
+        </div>
+      </section>
 
-      <Container
-        maxWidth={false}
-        sx={{
-          width: "90%",
-          maxWidth: "1350px",
-          py: 5,
-        }}
-      >
+      <main className="order-container">
+        <h2 className="order-success-title">¡PEDIDO CON EXITO!</h2>
 
-        {/* Ruta */}
+        <div className="order-grid">
+          <div className="order-grid__side">
+            <article className="order-card">
+              <header className="order-card__header">Numero de pedido</header>
+              <div className="order-card__body">
+                <p className="order-card__value">{orderData.id}</p>
+              </div>
+            </article>
 
-        <Typography
-          sx={{
-            fontSize: 14,
-            color: "#666",
-            mb: 2,
-          }}
-        >
-          Inicio &gt; Dashboard &gt; Checkout &gt; Confirmación de pedido
-        </Typography>
-
-        {/* Título */}
-
-        <Typography
-          sx={{
-            fontSize: 28,
-            fontWeight: 700,
-            color: "#8A4B08",
-            fontFamily: "Georgia",
-            mb: 4,
-          }}
-        >
-          Confirmación de Pedido
-        </Typography>
-
-        {/* Mensaje */}
-
-        <Paper
-          elevation={1}
-          sx={{
-            borderRadius: 2,
-            py: 5,
-            mb: 5,
-            textAlign: "center",
-          }}
-        >
-          <CheckCircleIcon
-            sx={{
-              fontSize: 60,
-              color: "#4CAF50",
-              mb: 2,
-            }}
-          />
-
-          <Typography
-            sx={{
-              fontWeight: 700,
-              fontSize: 24,
-            }}
-          >
-            ¡PEDIDO CON ÉXITO! ✅
-          </Typography>
-
-        </Paper>
-
-        {/* CONTENIDO */}
-
-        <Grid
-          container
-          spacing={4}
-          justifyContent="center"
-          alignItems="flex-start"
-        >
-                  {/* COLUMNA IZQUIERDA */}
-
-          <Grid item xs={12} md={3}>
-
-            <Paper
-              elevation={1}
-              sx={{
-                background: "#F8F2E8",
-                border: "1px solid #B78B47",
-                mb: 3,
-              }}
-            >
-              <Box
-                sx={{
-                  background: "#E6C894",
-                  textAlign: "center",
-                  py: 1,
-                  fontWeight: "bold",
-                }}
-              >
-                Número de pedido
-              </Box>
-
-              <Box
-                sx={{
-                  py: 3,
-                  textAlign: "center",
-                }}
-              >
-                <Typography fontWeight="bold">
-                  {orderData.id}
-                </Typography>
-              </Box>
-
-            </Paper>
-
-            <Paper
-              elevation={1}
-              sx={{
-                background: "#F8F2E8",
-                border: "1px solid #B78B47",
-              }}
-            >
-              <Box
-                sx={{
-                  background: "#E6C894",
-                  textAlign: "center",
-                  py: 1,
-                  fontWeight: "bold",
-                }}
-              >
+            <article className="order-card">
+              <header className="order-card__header">
                 Fecha estimada de entrega
-              </Box>
+              </header>
+              <div className="order-card__body">
+                <p>{orderData.estimatedDate}</p>
+              </div>
+            </article>
+          </div>
 
-              <Box
-                sx={{
-                  py: 3,
-                  textAlign: "center",
-                }}
-              >
-                <Typography>
-                  {orderData.estimatedDate}
-                </Typography>
-              </Box>
+          <article className="order-card order-card--summary">
+            <header className="order-card__header">Resumen de pedido</header>
+            <div className="order-card__body">
+              <div className="order-item">
+                <span>Sofa esquinero</span>
+                <span>1</span>
+                <span>$8,999 MX</span>
+              </div>
+              <div className="order-item">
+                <span>Mesa de Centro</span>
+                <span>2</span>
+                <span>$4,998 MX</span>
+              </div>
 
-            </Paper>
+              <div className="order-totals">
+                <div className="order-totals__row">
+                  <span>Subtotal</span>
+                  <span>{orderData.subtotal}</span>
+                </div>
+                <div className="order-totals__row">
+                  <span>Envio</span>
+                  <span>{orderData.shipping}</span>
+                </div>
+                <div className="order-totals__row order-totals__row--total">
+                  <span>Total</span>
+                  <span>{orderData.total}</span>
+                </div>
+              </div>
+            </div>
+          </article>
 
-          </Grid>
+          <div className="order-grid__side">
+            <article className="order-card">
+              <header className="order-card__header">Metodo de pago</header>
+              <div className="order-card__body">
+                <p>Tarjeta de crédito</p>
+              </div>
+            </article>
 
-          {/* COLUMNA CENTRO */}
+            <article className="order-card">
+              <header className="order-card__header">Dirección de envío</header>
+              <div className="order-card__body">
+                <p>Calle 123, Colonia Centro, CP 12345</p>
+              </div>
+            </article>
+          </div>
+        </div>
 
-          <Grid item xs={12} md={4}>
+        <div className="order-actions">
+          <Link to={routePaths.account.orders} className="order-btn">
+            Ver mis pedidos
+          </Link>
+          <Link to={routePaths.public.catalog} className="order-btn">
+            Seguir comprando
+          </Link>
+        </div>
+      </main>
 
-            <Paper
-              elevation={1}
-              sx={{
-                background: "#F8F2E8",
-                border: "1px solid #B78B47",
-              }}
-            >
-
-              <Box
-                sx={{
-                  background: "#E6C894",
-                  textAlign: "center",
-                  py: 1,
-                  fontWeight: "bold",
-                }}
-              >
-                Resumen de pedido
-              </Box>
-
-              <Box sx={{ p: 3 }}>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 2,
-                  }}
-                >
-                  <Typography>Sofá Esquinero</Typography>
-                  <Typography>1</Typography>
-                  <Typography>$8,999 MX</Typography>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 3,
-                  }}
-                >
-                  <Typography>Mesa de Centro</Typography>
-                  <Typography>2</Typography>
-                  <Typography>$4,998 MX</Typography>
-                </Box>
-
-                <Box
-                  sx={{
-                    borderTop: "1px solid #CCC",
-                    pt: 2,
-                  }}
-                >
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography>Subtotal</Typography>
-                    <Typography>{orderData.subtotal}</Typography>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mb: 1,
-                    }}
-                  >
-                    <Typography>Envío</Typography>
-                    <Typography>{orderData.shipping}</Typography>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      borderTop: "2px solid #B78B47",
-                      pt: 1,
-                    }}
-                  >
-                    <Typography fontWeight="bold">
-                      Total
-                    </Typography>
-
-                    <Typography
-                      fontWeight="bold"
-                      color="#8A4B08"
-                    >
-                      {orderData.total}
-                    </Typography>
-
-                  </Box>
-
-                </Box>
-
-              </Box>
-
-            </Paper>
-
-          </Grid>
-
-          {/* COLUMNA DERECHA */}
-
-          <Grid item xs={12} md={3}>
-
-            <Paper
-              elevation={1}
-              sx={{
-                background: "#FFF",
-                p: 3,
-                mb: 3,
-              }}
-            >
-
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  color: "#8A4B08",
-                  mb: 3,
-                }}
-              >
-                Método de pago
-              </Typography>
-
-              <Typography sx={{ mb: 4 }}>
-                Tarjeta de crédito
-              </Typography>
-
-              <Typography
-                sx={{
-                  fontWeight: 700,
-                  color: "#8A4B08",
-                  mb: 2,
-                }}
-              >
-                Dirección de envío
-              </Typography>
-
-              <Typography>
-                Calle 123, Colonia Centro, CP 12345
-              </Typography>
-
-            </Paper>
-
-            <Button
-              fullWidth
-              component={Link}
-              to="/cuenta/pedidos"
-              variant="contained"
-              sx={{
-                mb: 2,
-                py: 1.5,
-                bgcolor: "#8A4B08",
-                "&:hover": {
-                  bgcolor: "#6F3905",
-                },
-              }}
-            >
-              VER MIS PEDIDOS
-            </Button>
-
-            <Button
-              fullWidth
-              component={Link}
-              to="/catalogo"
-              variant="outlined"
-              sx={{
-                py: 1.5,
-                borderColor: "#8A4B08",
-                color: "#8A4B08",
-              }}
-            >
-              SEGUIR COMPRANDO
-            </Button>
-                      </Grid>
-
-        </Grid>
-
-      </Container>
-
-      {/* Beneficios */}
-
-      <Box
-        sx={{
-          mt: 6,
-          py: 5,
-          background: "#EFE7DB",
-        }}
-      >
-        <Container
-          maxWidth={false}
-          sx={{
-            width: "90%",
-            maxWidth: "1350px",
-          }}
-        >
-          <Grid container spacing={4} textAlign="center">
-            <Grid item xs={6} md={3}>
-              <Typography fontWeight="bold">
-                CALIDAD SUPERIOR
-              </Typography>
-
-              <Typography color="text.secondary">
-                Fabricado con materiales de primera calidad.
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6} md={3}>
-              <Typography fontWeight="bold">
-                Protección de garantía
-              </Typography>
-
-              <Typography color="text.secondary">
-                Garantía de 2 años.
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6} md={3}>
-              <Typography fontWeight="bold">
-                Envío gratis
-              </Typography>
-
-              <Typography color="text.secondary">
-                Pedidos mayores a $20,000.
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6} md={3}>
-              <Typography fontWeight="bold">
-                Soporte 24/7
-              </Typography>
-
-              <Typography color="text.secondary">
-                Atención dedicada.
-              </Typography>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-    </Box>
+      <HomeFooter />
+    </div>
   );
 };
 
 export default OrderConfirmationPage;
-
-                 
