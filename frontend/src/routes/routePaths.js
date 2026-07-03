@@ -19,7 +19,6 @@ export const routePaths = {
     confirmationDetail: "/pedido-confirmado/:orderId",
   },
   backOffice: {
-<<<<<<< Updated upstream
     dashboard: "/interno",
     products: "/interno/productos",
     categories: "/interno/categorias",
@@ -27,15 +26,6 @@ export const routePaths = {
     orders: "/interno/pedidos",
     orderDetail: "/interno/pedidos/:orderId",
   },
-=======
-  dashboard: '/dashboard',
-  products: '/dashboard/productos',
-  categories: '/dashboard/categorias',
-  inventory: '/dashboard/inventario',
-  orders: '/dashboard/pedidos',
-  orderDetail: '/dashboard/pedidos/:orderId',
-},
->>>>>>> Stashed changes
   admin: {
     internalUsers: "/admin/usuarios",
     rolesPermissions: "/admin/roles-permisos",
