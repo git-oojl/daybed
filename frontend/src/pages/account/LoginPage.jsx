@@ -27,67 +27,59 @@ import loginBackground from '../../assets/LoginPage.jpg';
 // ============================================
 
 const LoginContainer = styled(Box)(({ theme }) => ({
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  width: '100vw',
-  height: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: theme.spacing(2),
-  overflow: 'hidden',
+  minHeight: "100vh",
+  width: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: theme.spacing(4),
+  boxSizing: "border-box",
   backgroundImage: `url(${loginBackground})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(67, 42, 3, 0.75)',
-    zIndex: 0,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+
+  [theme.breakpoints.down("md")]: {
+    padding: theme.spacing(3),
   },
-  '@supports (-webkit-touch-callout: none)': {
-    height: '-webkit-fill-available',
+
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(3),
+    alignItems: "center",      // <-- importante
+    justifyContent: "center",  // <-- importante
+    minHeight: "100dvh",
   },
-  // 🔥 MEDIA QUERY PARA MÓVILES PEQUEÑOS - Ajuste del container
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(1), // Reducir padding del container
+
+  "@media (max-width:480px)": {
+    padding: theme.spacing(2),
+    alignItems: "center",
+    justifyContent: "center",
   },
 }));
-
 const LoginPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(5),
+  width: "100%",
   maxWidth: 440,
-  width: '100%',
+  padding: theme.spacing(5),
   borderRadius: 20,
-  boxShadow: '0 8px 40px rgba(74, 53, 32, 0.2)',
-  backgroundColor: '#FFF3E3',
-  position: 'relative',
-  zIndex: 1,
-  border: '1px solid #E8DCCC',
-  backdropFilter: 'blur(2px)',
-  
-  // 🔥 TABLETS Y MÓVILES GRANDES (sm)
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(3.5),
-    borderRadius: 16,
-    maxWidth: '95%',
-    margin: theme.spacing(1),
+  boxShadow: "0 8px 40px rgba(74,53,32,.2)",
+  backgroundColor: "#FFF3E3",
+  border: "1px solid #E8DCCC",
+
+  [theme.breakpoints.down("md")]: {
+    width: "85%",
+    maxWidth: 430,
   },
-  
-  // 🔥 MÓVILES PEQUEÑOS (xs) - CORREGIDO
-  [theme.breakpoints.down('xs')]: {
+
+ [theme.breakpoints.down("sm")]: {
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+  "@media (max-width:480px)": {
+    width: "95%",
+    maxWidth: 360,
     padding: theme.spacing(2.5),
-    borderRadius: 12,
-    maxWidth: '96%', // Aumentado de 98% para más margen
-    margin: theme.spacing(0.5),
+    borderRadius: 16,
   },
 }));
 
@@ -197,10 +189,24 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiInputBase-input': {
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
-  // 🔥 REDUCIR MARGEN EN MÓVILES
-  [theme.breakpoints.down('xs')]: {
-    marginBottom: theme.spacing(1.5),
+[theme.breakpoints.down("sm")]: {
+  flexDirection: "column",
+  alignItems: "center",
+  gap: theme.spacing(1),
+},
+
+"@media (max-width:480px)": {
+  marginBottom: theme.spacing(1.5),
+
+  "& .MuiInputBase-input": {
+    fontSize: 15,
+    padding: "13px",
   },
+
+  "& .MuiInputLabel-root": {
+    fontSize: 14,
+  },
+}
 }));
 
 const LoginButton = styled(Button)(({ theme }) => ({
@@ -266,6 +272,9 @@ const ForgotLink = styled(Link)(({ theme }) => ({
     fontSize: 13,
     padding: theme.spacing(0.5),
   },
+  "@media (max-width:480px)": {
+  fontSize: 13,
+}
 }));
 
 const RegisterLink = styled(Link)(({ theme }) => ({
@@ -308,7 +317,12 @@ const RegisterWrapper = styled(Box)(({ theme }) => ({
     fontSize: 15,
     fontFamily: '"Poppins", montserrat, sans-serif',
     [theme.breakpoints.down('xs')]: {
-      fontSize: 13, // 🔥 Fuente más pequeña en móviles
+      fontSize: 13, 
+      "@media (max-width:480px)": {
+  "& .MuiTypography-root": {
+    fontSize: 14,
+  },
+}
     },
   },
 }));
@@ -508,6 +522,7 @@ function LoginPage() {
       </LoginPaper>
     </LoginContainer>
   );
+  
 }
 
 export default LoginPage;

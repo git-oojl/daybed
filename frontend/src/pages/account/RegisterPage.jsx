@@ -50,77 +50,81 @@ const COLORS = {
 // ============================================
 
 const RegisterContainer = styled(Box)(({ theme }) => ({
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  width: '100vw',
-  height: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: theme.spacing(2),
-  overflow: 'hidden',
+  position: "relative",
+  width: "100%",
+  minHeight: "100vh",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: theme.spacing(4),
+
   backgroundImage: `url(${registerBackground})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  '&::before': {
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+
+  "&::before": {
     content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(67, 42, 3, 0.80)',
+    position: "absolute",
+    inset: 0,
+    backgroundColor: "rgba(67,42,3,.80)",
     zIndex: 0,
   },
-  '@supports (-webkit-touch-callout: none)': {
-    height: '-webkit-fill-available',
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1),
-  },
-}));
+[theme.breakpoints.down("sm")]: {
+  padding: theme.spacing(3),
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: "100dvh",
+},
 
+"@media (max-width:480px)": {
+  padding: theme.spacing(2),
+  alignItems: "center",
+  justifyContent: "center",
+},
+}));
 const RegisterPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4.5),
+  padding: theme.spacing(5),
+  width: "100%",
   maxWidth: 450,
-  width: '100%',
+
   borderRadius: 20,
-  boxShadow: '0 8px 40px rgba(74, 53, 32, 0.2)',
   backgroundColor: COLORS.background,
-  position: 'relative',
+  border: "1px solid #E8DCCC",
+  boxShadow: "0 8px 40px rgba(74,53,32,.2)",
+
+  position: "relative",
   zIndex: 1,
-  border: '1px solid #E8DCCC',
-  backdropFilter: 'blur(2px)',
-  maxHeight: '75vh',
-  overflowY: 'auto',
-  '&::-webkit-scrollbar': {
-    width: '4px',
+
+  overflowY: "auto",
+  maxHeight: "90vh",
+
+  "&::-webkit-scrollbar": {
+    width: 4,
   },
-  '&::-webkit-scrollbar-track': {
-    background: 'transparent',
-  },
-  '&::-webkit-scrollbar-thumb': {
+
+  "&::-webkit-scrollbar-thumb": {
     background: COLORS.border,
-    borderRadius: '10px',
+    borderRadius: 20,
   },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(3),
-    borderRadius: 16,
-    maxWidth: '95%',
-    margin: theme.spacing(1),
-    maxHeight: '95vh',
-  },
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(2.5),
-    borderRadius: 12,
-    maxWidth: '96%',
-    margin: theme.spacing(0.5),
-    maxHeight: '96vh',
-  },
+
+ [theme.breakpoints.down("md")]: {
+  width: "85%",
+  maxWidth: 430,
+},
+
+[theme.breakpoints.down("sm")]: {
+  width: "92%",
+  maxWidth: 400,
+  padding: theme.spacing(3),
+},
+
+"@media (max-width:480px)": {
+  width: "95%",
+  maxWidth: 360,
+  padding: theme.spacing(2.5),
+  borderRadius: 16,
+},
 }));
 
 //BRAND SECTION 
