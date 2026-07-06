@@ -122,6 +122,8 @@ MANIFEST
 .pytest_cache/
 .coverage
 .coverage.*
+!.coveragerc
+!backend/.coveragerc
 htmlcov/
 .tox/
 .nox/
