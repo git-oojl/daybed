@@ -1,3 +1,4 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +12,24 @@ from apps.orders.serializers import (
 )
 
 
+ORDER_ID_PARAMETER = OpenApiParameter(
+    name="id",
+    type=int,
+    location=OpenApiParameter.PATH,
+    description="ID del pedido.",
+)
+
+
+@extend_schema(
+    summary="Confirmar pedido",
+    description=(
+        "Crea un pedido a partir del carrito del cliente. Durante el proceso se "
+        "validan los datos de entrega, se calcula el total y se registra el pedido."
+    ),
+    request=CheckoutSerializer,
+    responses={201: OrderSerializer},
+    tags=["Pedidos"],
+)
 class CheckoutView(APIView):
     permission_classes = (IsCustomer,)
 
@@ -21,11 +40,26 @@ class CheckoutView(APIView):
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar pedidos del cliente",
+        description="Devuelve el historial de pedidos del cliente autenticado.",
+        tags=["Pedidos"],
+    ),
+    retrieve=extend_schema(
+        summary="Consultar pedido del cliente",
+        description="Devuelve el detalle de un pedido del cliente autenticado.",
+        parameters=[ORDER_ID_PARAMETER],
+        tags=["Pedidos"],
+    ),
+)
 class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = (IsCustomer,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Order.objects.none()
         return (
             Order.objects.filter(user=self.request.user)
             .prefetch_related("items")
@@ -33,6 +67,35 @@ class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar pedidos administrativos",
+        description="Permite al personal consultar y filtrar pedidos.",
+        tags=["Pedidos administrativos"],
+    ),
+    retrieve=extend_schema(
+        summary="Consultar pedido administrativo",
+        description="Permite al personal consultar el detalle de un pedido.",
+        parameters=[ORDER_ID_PARAMETER],
+        tags=["Pedidos administrativos"],
+    ),
+    update=extend_schema(
+        summary="Actualizar estado del pedido",
+        description="Permite al personal actualizar el estado de un pedido.",
+        request=OrderStatusSerializer,
+        responses=OrderSerializer,
+        parameters=[ORDER_ID_PARAMETER],
+        tags=["Pedidos administrativos"],
+    ),
+    partial_update=extend_schema(
+        summary="Actualizar estado del pedido parcialmente",
+        description="Permite al personal modificar el estado de un pedido.",
+        request=OrderStatusSerializer,
+        responses=OrderSerializer,
+        parameters=[ORDER_ID_PARAMETER],
+        tags=["Pedidos administrativos"],
+    ),
+)
 class StaffOrderViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,

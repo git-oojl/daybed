@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,6 +22,20 @@ class CustomerCartMixin:
         return cart
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Consultar carrito",
+        description="Devuelve el carrito activo del cliente autenticado.",
+        responses=CartSerializer,
+        tags=["Carrito"],
+    ),
+    delete=extend_schema(
+        summary="Vaciar carrito",
+        description="Elimina todos los productos del carrito del cliente.",
+        responses=CartSerializer,
+        tags=["Carrito"],
+    ),
+)
 class CartDetailView(CustomerCartMixin, APIView):
     def get(self, request):
         return Response(CartSerializer(self.get_cart()).data)
@@ -31,10 +46,30 @@ class CartDetailView(CustomerCartMixin, APIView):
         return Response(CartSerializer(cart).data)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Listar productos del carrito",
+        description="Devuelve los productos agregados al carrito del cliente.",
+        responses=CartItemSerializer(many=True),
+        tags=["Carrito"],
+    ),
+    post=extend_schema(
+        summary="Agregar producto al carrito",
+        description=(
+            "Agrega un producto activo al carrito. Si el producto ya existe en el "
+            "carrito, se incrementa la cantidad."
+        ),
+        request=CartItemWriteSerializer,
+        responses={201: CartItemSerializer, 200: CartItemSerializer},
+        tags=["Carrito"],
+    ),
+)
 class CartItemListView(CustomerCartMixin, generics.ListCreateAPIView):
     serializer_class = CartItemSerializer
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CartItem.objects.none()
         return (
             self.get_cart()
             .items.select_related("product", "product__category")
@@ -61,11 +96,41 @@ class CartItemListView(CustomerCartMixin, generics.ListCreateAPIView):
         return Response(CartItemSerializer(item).data, status=status_code)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Consultar producto del carrito",
+        description="Devuelve el detalle de un producto específico dentro del carrito.",
+        responses=CartItemSerializer,
+        tags=["Carrito"],
+    ),
+    put=extend_schema(
+        summary="Actualizar cantidad del producto",
+        description="Actualiza la cantidad de un producto dentro del carrito.",
+        request=CartItemQuantitySerializer,
+        responses=CartItemSerializer,
+        tags=["Carrito"],
+    ),
+    patch=extend_schema(
+        summary="Actualizar cantidad del producto parcialmente",
+        description="Actualiza la cantidad de un producto dentro del carrito.",
+        request=CartItemQuantitySerializer,
+        responses=CartItemSerializer,
+        tags=["Carrito"],
+    ),
+    delete=extend_schema(
+        summary="Eliminar producto del carrito",
+        description="Elimina un producto específico del carrito.",
+        responses={204: None},
+        tags=["Carrito"],
+    ),
+)
 class CartItemDetailView(CustomerCartMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CartItemSerializer
     http_method_names = ["get", "patch", "put", "delete", "head", "options"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CartItem.objects.none()
         return (
             self.get_cart()
             .items.select_related("product", "product__category")
