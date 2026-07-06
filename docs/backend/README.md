@@ -35,3 +35,14 @@ docs/backend/
     diagrama_erd_backend.png
     flujo_pedido.mmd
     flujo_pedido.png
+    
+## Cobertura de pruebas
+
+La cobertura de pruebas se puede generar localmente con:
+
+```bash
+cd backend
+uv run coverage erase
+uv run coverage run -m pytest
+uv run coverage report
+uv run coverage html
