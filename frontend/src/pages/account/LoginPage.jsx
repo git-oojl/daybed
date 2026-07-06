@@ -1,4 +1,4 @@
-// LoginPage.jsx
+// LoginPage.jsx - VERSIÓN FUSIONADA Y CORREGIDA
 import React, { useState } from 'react';
 import {
   Box,
@@ -23,60 +23,70 @@ import { styled } from '@mui/material/styles';
 import loginBackground from '../../assets/LoginPage.jpg';
 
 // ============================================
-// ESTILOS - MEDIA QUERIES OPTIMIZADOS
+// ESTILOS - FUSIÓN DE AMBOS CÓDIGOS
 // ============================================
 
 const LoginContainer = styled(Box)(({ theme }) => ({
-  minHeight: "100vh",
-  width: "100%",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
+  minHeight: '100vh',
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
   padding: theme.spacing(4),
-  boxSizing: "border-box",
+  boxSizing: 'border-box',
   backgroundImage: `url(${loginBackground})`,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  position: 'fixed',
+  right: 0,
+  left: 0,
+  top: 0,
 
-  [theme.breakpoints.down("md")]: {
+  // ===== MEDIA QUERIES (de tu compañero) =====
+  [theme.breakpoints.down('md')]: {
     padding: theme.spacing(3),
   },
 
-  [theme.breakpoints.down("sm")]: {
+  [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(3),
-    alignItems: "center",      // <-- importante
-    justifyContent: "center",  // <-- importante
-    minHeight: "100dvh",
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100dvh',
   },
 
-  "@media (max-width:480px)": {
+  '@media (max-width:480px)': {
     padding: theme.spacing(2),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }));
+
 const LoginPaper = styled(Paper)(({ theme }) => ({
-  width: "100%",
+  width: '100%',
   maxWidth: 440,
   padding: theme.spacing(5),
   borderRadius: 20,
-  boxShadow: "0 8px 40px rgba(74,53,32,.2)",
-  backgroundColor: "#FFF3E3",
-  border: "1px solid #E8DCCC",
+  boxShadow: '0 8px 40px rgba(74,53,32,0.2)',
+  backgroundColor: '#FFF3E3',
+  border: '1px solid #E8DCCC',
+  position: 'relative',
+  zIndex: 1,
+  backdropFilter: 'blur(2px)',
 
-  [theme.breakpoints.down("md")]: {
-    width: "85%",
+  // ===== MEDIA QUERIES (de tu compañero) =====
+  [theme.breakpoints.down('md')]: {
+    width: '85%',
     maxWidth: 430,
   },
 
- [theme.breakpoints.down("sm")]: {
-  alignItems: "center",
-  justifyContent: "center",
-},
+  [theme.breakpoints.down('sm')]: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  "@media (max-width:480px)": {
-    width: "95%",
+  '@media (max-width:480px)': {
+    width: '95%',
     maxWidth: 360,
     padding: theme.spacing(2.5),
     borderRadius: 16,
@@ -92,8 +102,8 @@ const LogoWrapper = styled(Box)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     gap: theme.spacing(1),
   },
-  [theme.breakpoints.down('xs')]: {
-    gap: theme.spacing(0.5), // 🔥 Menor gap en móviles
+  '@media (max-width:480px)': {
+    gap: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
   },
 }));
@@ -104,8 +114,8 @@ const LogoIcon = styled(StoreIcon)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     fontSize: 32,
   },
-  [theme.breakpoints.down('xs')]: {
-    fontSize: 28, // 🔥 Ícono más pequeño en móviles
+  '@media (max-width:480px)': {
+    fontSize: 28,
   },
 }));
 
@@ -120,8 +130,8 @@ const LogoText = styled(Typography)(({ theme }) => ({
     fontSize: 28,
     letterSpacing: 1,
   },
-  [theme.breakpoints.down('xs')]: {
-    fontSize: 22, // 🔥 Texto más pequeño en móviles
+  '@media (max-width:480px)': {
+    fontSize: 22,
     letterSpacing: 0.5,
   },
 }));
@@ -137,14 +147,15 @@ const SubtitleText = styled(Typography)(({ theme }) => ({
     fontSize: 14,
     marginBottom: theme.spacing(3),
   },
-  [theme.breakpoints.down('xs')]: {
+  '@media (max-width:480px)': {
     fontSize: 13,
-    marginBottom: theme.spacing(2), // 🔥 Menor margen en móviles
+    marginBottom: theme.spacing(2),
   },
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   marginBottom: theme.spacing(2.5),
+
   '& .MuiOutlinedInput-root': {
     borderRadius: 12,
     backgroundColor: '#FEFCF8',
@@ -162,10 +173,8 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     '&.Mui-error fieldset': {
       borderColor: '#C0392B',
     },
-    [theme.breakpoints.down('xs')]: {
-      borderRadius: 10,
-    },
   },
+
   '& .MuiInputLabel-root': {
     color: '#61470c',
     fontWeight: 500,
@@ -177,36 +186,45 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
       color: '#C0392B',
     },
   },
+
   '& .MuiInputLabel-shrink': {
     fontWeight: 600,
   },
+
   '& .MuiFormHelperText-root': {
     marginLeft: 0,
     fontWeight: 400,
     color: '#C0392B',
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
+
   '& .MuiInputBase-input': {
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
-[theme.breakpoints.down("sm")]: {
-  flexDirection: "column",
-  alignItems: "center",
-  gap: theme.spacing(1),
-},
 
-"@media (max-width:480px)": {
-  marginBottom: theme.spacing(1.5),
-
-  "& .MuiInputBase-input": {
-    fontSize: 15,
-    padding: "13px",
+  // ===== MEDIA QUERIES (de tu compañero) =====
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: theme.spacing(1),
   },
 
-  "& .MuiInputLabel-root": {
-    fontSize: 14,
+  '@media (max-width:480px)': {
+    marginBottom: theme.spacing(1.5),
+
+    '& .MuiInputBase-input': {
+      fontSize: 15,
+      padding: '13px',
+    },
+
+    '& .MuiInputLabel-root': {
+      fontSize: 14,
+    },
+
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 10,
+    },
   },
-}
 }));
 
 const LoginButton = styled(Button)(({ theme }) => ({
@@ -220,23 +238,28 @@ const LoginButton = styled(Button)(({ theme }) => ({
   fontFamily: '"Poppins", montserrat, sans-serif',
   transition: 'background-color 0.3s ease, transform 0.2s ease',
   boxShadow: '0 4px 12px #b88f2f84',
+  width: '100%',
+
   '&:hover': {
     backgroundColor: '#7a5d1a',
     transform: 'translateY(-2px)',
     boxShadow: '0 6px 20px #8b6b4c59',
   },
+
   '&:active': {
     transform: 'translateY(0)',
   },
+
   '&:disabled': {
     backgroundColor: '#D4C5B2',
     boxShadow: 'none',
     transform: 'none',
     color: '#A09080',
   },
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(1.2), // 🔥 Menor padding en móviles
-    fontSize: 14, // 🔥 Fuente más pequeña
+
+  '@media (max-width:480px)': {
+    padding: theme.spacing(1.2),
+    fontSize: 14,
   },
 }));
 
@@ -247,10 +270,11 @@ const LinksContainer = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(1),
   flexWrap: 'wrap',
   gap: theme.spacing(1),
-  [theme.breakpoints.down('xs')]: {
+
+  '@media (max-width:480px)': {
     flexDirection: 'column',
     gap: theme.spacing(0.5),
-    marginTop: theme.spacing(1.5), // 🔥 Menor margen en móviles
+    marginTop: theme.spacing(1.5),
     marginBottom: theme.spacing(0.5),
   },
 }));
@@ -263,18 +287,16 @@ const ForgotLink = styled(Link)(({ theme }) => ({
   textDecoration: 'none',
   fontFamily: '"Poppins", montserrat, sans-serif !important',
   transition: 'color 0.2s ease',
-  padding: theme.spacing(0.5), // 🔥 Área táctil más grande
+  padding: theme.spacing(0.5),
+
   '&:hover': {
     color: '#6B4F3A',
     textDecoration: 'underline',
   },
-  [theme.breakpoints.down('xs')]: {
+
+  '@media (max-width:480px)': {
     fontSize: 13,
-    padding: theme.spacing(0.5),
   },
-  "@media (max-width:480px)": {
-  fontSize: 13,
-}
 }));
 
 const RegisterLink = styled(Link)(({ theme }) => ({
@@ -283,8 +305,9 @@ const RegisterLink = styled(Link)(({ theme }) => ({
   cursor: 'pointer',
   textDecoration: 'none',
   fontFamily: '"Poppins", montserrat, sans-serif',
-  padding: theme.spacing(0.5), // 🔥 Área táctil más grande
+  padding: theme.spacing(0.5),
   transition: 'color 0.2s ease',
+
   '&:hover': {
     color: '#6B4F3A',
     textDecoration: 'underline',
@@ -293,36 +316,36 @@ const RegisterLink = styled(Link)(({ theme }) => ({
 
 const DividerStyled = styled(Divider)(({ theme }) => ({
   margin: theme.spacing(3, 0),
+
   '&::before, &::after': {
     borderColor: '#D4C5B2',
   },
+
   '& .MuiDivider-wrapper': {
     color: '#61470c',
     fontSize: 14,
     fontWeight: 400,
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
-  [theme.breakpoints.down('xs')]: {
-    margin: theme.spacing(2, 0), // 🔥 Menor margen en móviles
+
+  '@media (max-width:480px)': {
+    margin: theme.spacing(2, 0),
     '& .MuiDivider-wrapper': {
-      fontSize: 12, // 🔥 Fuente más pequeña en móviles
+      fontSize: 12,
     },
   },
 }));
 
 const RegisterWrapper = styled(Box)(({ theme }) => ({
   textAlign: 'center',
+
   '& .MuiTypography-root': {
     color: '#61470c',
     fontSize: 15,
     fontFamily: '"Poppins", montserrat, sans-serif',
-    [theme.breakpoints.down('xs')]: {
-      fontSize: 13, 
-      "@media (max-width:480px)": {
-  "& .MuiTypography-root": {
-    fontSize: 14,
-  },
-}
+
+    '@media (max-width:480px)': {
+      fontSize: 13,
     },
   },
 }));
@@ -427,7 +450,7 @@ function LoginPage() {
               backgroundColor: '#FDF2F0',
               border: '1px solid #F5D0CC',
               '& .MuiAlert-icon': { color: '#C0392B' },
-              '& .MuiAlert-message': { 
+              '& .MuiAlert-message': {
                 color: '#4A3520',
                 fontFamily: '"Poppins", montserrat, sans-serif',
               },
@@ -522,7 +545,6 @@ function LoginPage() {
       </LoginPaper>
     </LoginContainer>
   );
-  
 }
 
 export default LoginPage;
