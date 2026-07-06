@@ -1,0 +1,2752 @@
+openapi: 3.0.3
+info:
+  title: API de Daybed
+  version: 0.1.0
+  description: Documentación de la API REST del backend para la tienda de muebles
+    Daybed. Incluye autenticación, cuentas, catálogo, carrito, pedidos, inventario,
+    entregas y dashboard administrativo.
+paths:
+  /api/accounts/me/:
+    get:
+      operationId: accounts_me_retrieve
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    put:
+      operationId: accounts_me_update
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: accounts_me_partial_update
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfile'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/accounts/register/:
+    post:
+      operationId: accounts_register_create
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRegistration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerRegistration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRegistration'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerRegistration'
+          description: ''
+  /api/accounts/users/:
+    get:
+      operationId: accounts_users_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInternalUserList'
+          description: ''
+    post:
+      operationId: accounts_users_create
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InternalUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InternalUser'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalUser'
+          description: ''
+  /api/accounts/users/{id}/:
+    get:
+      operationId: accounts_users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este usuario.
+        required: true
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalUser'
+          description: ''
+    put:
+      operationId: accounts_users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este usuario.
+        required: true
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InternalUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InternalUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InternalUser'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalUser'
+          description: ''
+    patch:
+      operationId: accounts_users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este usuario.
+        required: true
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInternalUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedInternalUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedInternalUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalUser'
+          description: ''
+  /api/auth/token/:
+    post:
+      operationId: auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/token/refresh/:
+    post:
+      operationId: auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/cart/:
+    get:
+      operationId: cart_retrieve
+      description: Devuelve el carrito activo del cliente autenticado.
+      summary: Consultar carrito
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: cart_destroy
+      description: Elimina todos los productos del carrito del cliente.
+      summary: Vaciar carrito
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/cart/items/:
+    get:
+      operationId: cart_items_list
+      description: Devuelve los productos agregados al carrito del cliente.
+      summary: Listar productos del carrito
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCartItemList'
+          description: ''
+    post:
+      operationId: cart_items_create
+      description: Agrega un producto activo al carrito. Si el producto ya existe
+        en el carrito, se incrementa la cantidad.
+      summary: Agregar producto al carrito
+      tags:
+      - Carrito
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartItemWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartItemWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+  /api/cart/items/{id}/:
+    get:
+      operationId: cart_items_retrieve
+      description: Devuelve el detalle de un producto específico dentro del carrito.
+      summary: Consultar producto del carrito
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+    put:
+      operationId: cart_items_update
+      description: Actualiza la cantidad de un producto dentro del carrito.
+      summary: Actualizar cantidad del producto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Carrito
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemQuantity'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartItemQuantity'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartItemQuantity'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+    patch:
+      operationId: cart_items_partial_update
+      description: Actualiza la cantidad de un producto dentro del carrito.
+      summary: Actualizar cantidad del producto parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Carrito
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCartItemQuantity'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCartItemQuantity'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCartItemQuantity'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+    delete:
+      operationId: cart_items_destroy
+      description: Elimina un producto específico del carrito.
+      summary: Eliminar producto del carrito
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/catalog/categories/:
+    get:
+      operationId: catalog_categories_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+  /api/catalog/categories/{slug}/:
+    get:
+      operationId: catalog_categories_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/catalog/manage/categories/:
+    get:
+      operationId: catalog_manage_categories_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: catalog_manage_categories_create
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/catalog/manage/categories/{slug}/:
+    get:
+      operationId: catalog_manage_categories_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: catalog_manage_categories_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: catalog_manage_categories_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: catalog_manage_categories_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/catalog/manage/products/:
+    get:
+      operationId: catalog_manage_products_list
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category__slug
+        schema:
+          type: string
+      - in: query
+        name: color
+        schema:
+          type: string
+      - in: query
+        name: material
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: style
+        schema:
+          type: string
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: catalog_manage_products_create
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/catalog/manage/products/{id}/:
+    get:
+      operationId: catalog_manage_products_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este product.
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    put:
+      operationId: catalog_manage_products_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este product.
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Product'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Product'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: catalog_manage_products_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este product.
+        required: true
+      tags:
+      - catalog
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProduct'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: catalog_manage_products_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este product.
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/catalog/products/:
+    get:
+      operationId: catalog_products_list
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category__slug
+        schema:
+          type: string
+      - in: query
+        name: color
+        schema:
+          type: string
+      - in: query
+        name: material
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: style
+        schema:
+          type: string
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+  /api/catalog/products/{id}/:
+    get:
+      operationId: catalog_products_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este product.
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/checkout/:
+    post:
+      operationId: checkout_create
+      description: Crea un pedido a partir del carrito del cliente. Durante el proceso
+        se validan los datos de entrega, se calcula el total y se registra el pedido.
+      summary: Confirmar pedido
+      tags:
+      - Pedidos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/dashboard/metrics/:
+    get:
+      operationId: dashboard_metrics_retrieve
+      description: Devuelve métricas administrativas sobre pedidos, ventas simuladas,
+        inventario bajo, pedidos recientes y costos de entrega.
+      summary: Consultar métricas del dashboard
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetrics'
+          description: ''
+  /api/delivery/estimate/:
+    post:
+      operationId: delivery_estimate_create
+      description: Calcula distancia, duración aproximada y costo de entrega usando
+        una dirección o coordenadas enviadas por el cliente.
+      summary: Calcular estimación de entrega
+      tags:
+      - Entregas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryEstimateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeliveryEstimateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeliveryEstimateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryEstimateResponse'
+          description: ''
+  /api/delivery/geocode/:
+    post:
+      operationId: delivery_geocode_create
+      description: Convierte una dirección escrita por el cliente en coordenadas geográficas
+        para calcular la entrega.
+      summary: Geocodificar dirección
+      tags:
+      - Entregas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeocodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GeocodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GeocodeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeocodeResponse'
+          description: ''
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: Endpoint público para confirmar que la API está disponible.
+      summary: Verificar estado del backend
+      tags:
+      - Sistema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+          description: ''
+  /api/inventory/low-stock/:
+    get:
+      operationId: inventory_low_stock_list
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category__slug
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - inventory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryProductList'
+          description: ''
+  /api/inventory/movements/:
+    get:
+      operationId: inventory_movements_list
+      parameters:
+      - in: query
+        name: created_by
+        schema:
+          type: integer
+      - in: query
+        name: movement_type
+        schema:
+          type: string
+          enum:
+          - manual_adjustment
+          - order_confirmed
+        description: |-
+          * `manual_adjustment` - Manual adjustment
+          * `order_confirmed` - Order confirmed
+      - in: query
+        name: order
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - inventory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryMovementList'
+          description: ''
+  /api/inventory/products/:
+    get:
+      operationId: inventory_products_list
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: category__slug
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - inventory
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInventoryProductList'
+          description: ''
+  /api/inventory/products/{id}/stock/:
+    put:
+      operationId: inventory_products_stock_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockUpdate'
+          description: ''
+    patch:
+      operationId: inventory_products_stock_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - inventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStockUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStockUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStockUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockUpdate'
+          description: ''
+  /api/manage/orders/:
+    get:
+      operationId: manage_orders_list
+      description: Permite al personal consultar y filtrar pedidos.
+      summary: Listar pedidos administrativos
+      parameters:
+      - in: query
+        name: delivery_zone
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - confirmed
+          - delivered
+          - pending
+          - preparing
+          - shipped
+        description: |-
+          * `pending` - Pending
+          * `confirmed` - Confirmed
+          * `preparing` - Preparing
+          * `shipped` - Shipped
+          * `delivered` - Delivered
+          * `cancelled` - Cancelled
+      tags:
+      - Pedidos administrativos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+  /api/manage/orders/{id}/:
+    get:
+      operationId: manage_orders_retrieve
+      description: Permite al personal consultar el detalle de un pedido.
+      summary: Consultar pedido administrativo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: ID del pedido.
+        required: true
+      tags:
+      - Pedidos administrativos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    put:
+      operationId: manage_orders_update
+      description: Permite al personal actualizar el estado de un pedido.
+      summary: Actualizar estado del pedido
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: ID del pedido.
+        required: true
+      tags:
+      - Pedidos administrativos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderStatus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderStatus'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    patch:
+      operationId: manage_orders_partial_update
+      description: Permite al personal modificar el estado de un pedido.
+      summary: Actualizar estado del pedido parcialmente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: ID del pedido.
+        required: true
+      tags:
+      - Pedidos administrativos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatus'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/orders/:
+    get:
+      operationId: orders_list
+      description: Devuelve el historial de pedidos del cliente autenticado.
+      summary: Listar pedidos del cliente
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Qué campo usar para ordenar los resultados.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: Un término de búsqueda.
+        schema:
+          type: string
+      tags:
+      - Pedidos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+  /api/orders/{id}/:
+    get:
+      operationId: orders_retrieve
+      description: Devuelve el detalle de un pedido del cliente autenticado.
+      summary: Consultar pedido del cliente
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: ID del pedido.
+        required: true
+      tags:
+      - Pedidos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+components:
+  schemas:
+    Cart:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+          readOnly: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - items
+      - subtotal
+      - updated_at
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          allOf:
+          - $ref: '#/components/schemas/Product'
+          readOnly: true
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - line_total
+      - product
+      - quantity
+      - updated_at
+    CartItemQuantity:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - quantity
+    CartItemWrite:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - product_id
+      - quantity
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        slug:
+          type: string
+          maxLength: 140
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    Checkout:
+      type: object
+      properties:
+        original_address:
+          type: string
+          maxLength: 500
+        formatted_address:
+          type: string
+          maxLength: 500
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        distance_km:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+        estimated_duration_minutes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,1})?$
+        delivery_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        delivery_zone:
+          type: string
+          default: standard
+          maxLength: 80
+        geocoding_provider:
+          type: string
+          maxLength: 80
+        distance_provider:
+          type: string
+          maxLength: 80
+      required:
+      - delivery_fee
+      - distance_km
+      - estimated_duration_minutes
+      - formatted_address
+      - latitude
+      - longitude
+      - original_address
+    CustomerRegistration:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima 150 caracteres alfanuméricos.
+            Letras, dígitos y @/./+/-/_ únicamente.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          title: Nombre
+          maxLength: 150
+        last_name:
+          type: string
+          title: Apellido
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - id
+      - password
+      - role
+      - username
+    DashboardMetrics:
+      type: object
+      properties:
+        total_orders:
+          type: integer
+        total_simulated_sales:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        orders_by_status:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrdersByStatus'
+        low_stock_count:
+          type: integer
+        recent_orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecentOrder'
+        average_delivery_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        average_delivery_distance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+      required:
+      - average_delivery_distance
+      - average_delivery_fee
+      - low_stock_count
+      - orders_by_status
+      - recent_orders
+      - total_orders
+      - total_simulated_sales
+    DeliveryEstimateRequest:
+      type: object
+      properties:
+        address:
+          type: string
+          maxLength: 500
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+    DeliveryEstimateResponse:
+      type: object
+      properties:
+        origin_latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        origin_longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        destination_latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        destination_longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        distance_km:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+        estimated_duration_minutes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,1})?$
+        delivery_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        delivery_zone:
+          type: string
+        geocoding_provider:
+          type: string
+        distance_provider:
+          type: string
+      required:
+      - delivery_fee
+      - delivery_zone
+      - destination_latitude
+      - destination_longitude
+      - distance_km
+      - distance_provider
+      - estimated_duration_minutes
+      - origin_latitude
+      - origin_longitude
+    GeocodeRequest:
+      type: object
+      properties:
+        address:
+          type: string
+          maxLength: 500
+      required:
+      - address
+    GeocodeResponse:
+      type: object
+      properties:
+        original_address:
+          type: string
+        formatted_address:
+          type: string
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+        provider:
+          type: string
+      required:
+      - formatted_address
+      - latitude
+      - longitude
+      - original_address
+      - provider
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+      - status
+    InternalUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima 150 caracteres alfanuméricos.
+            Letras, dígitos y @/./+/-/_ únicamente.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          title: Nombre
+          maxLength: 150
+        last_name:
+          type: string
+          title: Apellido
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+          title: Activo
+          description: Indica si el usuario debe ser tratado como un usuario activo.
+            Desactive este campo en lugar de eliminar usuarios.
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Es staff
+          description: Indica si el usuario puede ingresar a este sitio de administración.
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Es superusuario
+          description: Indica que este usuario posee todos los permisos sin que sea
+            necesario asignarle los mismos en forma explícita.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Fecha de creación
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Último ingreso
+      required:
+      - date_joined
+      - email
+      - id
+      - is_staff
+      - is_superuser
+      - last_login
+      - username
+    InventoryMovement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        movement_type:
+          allOf:
+          - $ref: '#/components/schemas/MovementTypeEnum'
+          readOnly: true
+        quantity_delta:
+          type: integer
+          readOnly: true
+        previous_stock:
+          type: integer
+          readOnly: true
+        new_stock:
+          type: integer
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        order:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_by_username:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - created_by_username
+      - id
+      - movement_type
+      - new_stock
+      - order
+      - previous_stock
+      - product
+      - product_name
+      - quantity_delta
+      - reason
+    InventoryProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        category:
+          type: integer
+          readOnly: true
+        category_detail:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        stock:
+          type: integer
+          readOnly: true
+        minimum_stock:
+          type: integer
+          readOnly: true
+        low_stock:
+          type: boolean
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active
+      - category
+      - category_detail
+      - id
+      - low_stock
+      - minimum_stock
+      - name
+      - stock
+      - updated_at
+    MovementTypeEnum:
+      enum:
+      - manual_adjustment
+      - order_confirmed
+      type: string
+      description: |-
+        * `manual_adjustment` - Manual adjustment
+        * `order_confirmed` - Order confirmed
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        original_address:
+          type: string
+          readOnly: true
+        formatted_address:
+          type: string
+          readOnly: true
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+          readOnly: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,8})?$
+          readOnly: true
+        distance_km:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          readOnly: true
+        estimated_duration_minutes:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,1})?$
+          readOnly: true
+        delivery_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        delivery_zone:
+          type: string
+          readOnly: true
+        geocoding_provider:
+          type: string
+          readOnly: true
+        distance_provider:
+          type: string
+          readOnly: true
+        products_subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        stock_decremented_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - delivery_fee
+      - delivery_zone
+      - distance_km
+      - distance_provider
+      - estimated_duration_minutes
+      - formatted_address
+      - geocoding_provider
+      - id
+      - items
+      - latitude
+      - longitude
+      - original_address
+      - products_subtotal
+      - status
+      - stock_decremented_at
+      - total
+      - updated_at
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        quantity:
+          type: integer
+          readOnly: true
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - id
+      - line_total
+      - product
+      - product_name
+      - quantity
+      - unit_price
+    OrderStatus:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    OrdersByStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - status
+    PaginatedCartItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedInternalUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InternalUser'
+    PaginatedInventoryMovementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryMovement'
+    PaginatedInventoryProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryProduct'
+    PaginatedOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PatchedCartItemQuantity:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+    PatchedCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        slug:
+          type: string
+          maxLength: 140
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedInternalUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima 150 caracteres alfanuméricos.
+            Letras, dígitos y @/./+/-/_ únicamente.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        first_name:
+          type: string
+          title: Nombre
+          maxLength: 150
+        last_name:
+          type: string
+          title: Apellido
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+          title: Activo
+          description: Indica si el usuario debe ser tratado como un usuario activo.
+            Desactive este campo en lugar de eliminar usuarios.
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Es staff
+          description: Indica si el usuario puede ingresar a este sitio de administración.
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Es superusuario
+          description: Indica que este usuario posee todos los permisos sin que sea
+            necesario asignarle los mismos en forma explícita.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Fecha de creación
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Último ingreso
+    PatchedOrderStatus:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    PatchedProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 180
+        description:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        category:
+          type: integer
+        category_detail:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        material:
+          type: string
+          maxLength: 120
+        color:
+          type: string
+          maxLength: 80
+        style:
+          type: string
+          maxLength: 80
+        dimensions:
+          type: string
+          maxLength: 160
+        main_image:
+          type: string
+          format: uri
+        stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        minimum_stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        low_stock:
+          type: boolean
+          readOnly: true
+        active:
+          type: boolean
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedStockUpdate:
+      type: object
+      properties:
+        stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        minimum_stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reason:
+          type: string
+          writeOnly: true
+          maxLength: 255
+    PatchedUserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima 150 caracteres alfanuméricos.
+            Letras, dígitos y @/./+/-/_ únicamente.
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          title: Nombre
+          maxLength: 150
+        last_name:
+          type: string
+          title: Apellido
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 180
+        description:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        category:
+          type: integer
+        category_detail:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        material:
+          type: string
+          maxLength: 120
+        color:
+          type: string
+          maxLength: 80
+        style:
+          type: string
+          maxLength: 80
+        dimensions:
+          type: string
+          maxLength: 160
+        main_image:
+          type: string
+          format: uri
+        stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        minimum_stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        low_stock:
+          type: boolean
+          readOnly: true
+        active:
+          type: boolean
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - category_detail
+      - created_at
+      - description
+      - id
+      - images
+      - low_stock
+      - name
+      - price
+      - updated_at
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+        alt_text:
+          type: string
+          maxLength: 180
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - image
+    RecentOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - id
+      - status
+      - total
+    RoleEnum:
+      enum:
+      - cliente
+      - empleado
+      - administrador
+      type: string
+      description: |-
+        * `cliente` - Cliente
+        * `empleado` - Empleado
+        * `administrador` - Administrador
+    StatusEnum:
+      enum:
+      - pending
+      - confirmed
+      - preparing
+      - shipped
+      - delivered
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `confirmed` - Confirmed
+        * `preparing` - Preparing
+        * `shipped` - Shipped
+        * `delivered` - Delivered
+        * `cancelled` - Cancelled
+    StockUpdate:
+      type: object
+      properties:
+        stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        minimum_stock:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reason:
+          type: string
+          writeOnly: true
+          maxLength: 255
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          title: Nombre de usuario
+          description: Obligatorio. Longitud máxima 150 caracteres alfanuméricos.
+            Letras, dígitos y @/./+/-/_ únicamente.
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          title: Nombre
+          maxLength: 150
+        last_name:
+          type: string
+          title: Apellido
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 32
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+      required:
+      - email
+      - id
+      - role
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

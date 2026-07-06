@@ -1,0 +1,17 @@
+flowchart TD
+    A[Cliente / Frontend] --> B[API REST Django]
+    B --> C[Autenticación JWT]
+    B --> D[Módulo de Catálogo]
+    B --> E[Módulo de Carrito]
+    B --> F[Módulo de Pedidos]
+    B --> G[Módulo de Inventario]
+    B --> H[Módulo de Entregas]
+    B --> I[Dashboard / Métricas]
+
+    D --> J[(Base de Datos)]
+    E --> J
+    F --> J
+    G --> J
+    H --> J
+    I --> J
+    C --> J

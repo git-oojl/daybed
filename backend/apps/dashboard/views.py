@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db.models import Avg, Count, F, Q, Sum
+from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,6 +11,15 @@ from apps.dashboard.serializers import DashboardMetricsSerializer
 from apps.orders.models import Order
 
 
+@extend_schema(
+    summary="Consultar métricas del dashboard",
+    description=(
+        "Devuelve métricas administrativas sobre pedidos, ventas simuladas, "
+        "inventario bajo, pedidos recientes y costos de entrega."
+    ),
+    responses=DashboardMetricsSerializer,
+    tags=["Dashboard"],
+)
 class DashboardMetricsView(APIView):
     permission_classes = (IsEmployeeOrAdmin,)
 

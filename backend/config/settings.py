@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.inventory",
     "apps.delivery",
     "apps.dashboard",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -120,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "es-mx"
 
 TIME_ZONE = "UTC"
 
@@ -166,11 +167,16 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Daybed API",
-    "DESCRIPTION": "Backend API for the Daybed furniture store MVP.",
+    "TITLE": "API de Daybed",
+    "DESCRIPTION": (
+        "Documentación de la API REST del backend para la tienda de muebles Daybed. "
+        "Incluye autenticación, cuentas, catálogo, carrito, pedidos, inventario, "
+        "entregas y dashboard administrativo."
+    ),
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

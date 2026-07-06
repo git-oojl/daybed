@@ -1,8 +1,6 @@
 # =========================================================
 # Daybed - archivos ignorados por Git
 # =========================================================
-# Objetivo: mantener el repositorio limpio de secretos, bases locales,
-# cachés, builds, archivos generados y respaldos temporales.
 
 # -------------------------
 # Sistema operativo
@@ -20,6 +18,7 @@ $RECYCLE.BIN/
 .Trashes/
 .Spotlight-V100/
 .fseventsd/
+*.Zone.Identifier
 
 # -------------------------
 # Editores / IDE
@@ -135,13 +134,17 @@ dmypy.json
 .ruff_cache/
 .pyre/
 .pytype/
+.hypothesis/
+
+# Notebooks / exploración local
+.ipynb_checkpoints/
 
 # uv
 # El lockfile SÍ debe versionarse para instalaciones reproducibles.
 !backend/uv.lock
 
 # -------------------------
-# Node / React / Vite
+# Node / React / Vite / Mermaid
 # -------------------------
 node_modules/
 .npm/
@@ -152,6 +155,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Caches de herramientas Node
+.cache/
+.puppeteer-cache/
+.playwright/
+.turbo/
 
 # Builds y cachés frontend
 dist/
@@ -168,6 +177,29 @@ coverage/
 # package-lock.json se mantiene versionado para npm ci reproducible.
 !frontend/package-lock.json
 
+# Lockfile raíz opcional para tooling de documentación, por ejemplo Mermaid CLI.
+# Si existe package-lock.json en la raíz del repo, también se puede versionar.
+!package-lock.json
+
+# -------------------------
+# Documentación generada
+# -------------------------
+# Mantener versionables:
+# - docs/*.mmd
+# - docs/*.png
+# - docs/*.svg
+# - docs/openapi.yaml
+#
+# Ignorar JSON duplicado si ya se versiona openapi.yaml.
+docs/openapi.json
+
+# -------------------------
+# Parches / scripts temporales locales
+# -------------------------
+schema_docs.patch
+fix_settings_schema.py
+*.patch.local
+
 # -------------------------
 # Logs y evidencia temporal
 # -------------------------
@@ -180,7 +212,6 @@ reports/
 exports/
 tmp/
 temp/
-.cache/
 
 # -------------------------
 # Infraestructura local
