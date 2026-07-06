@@ -1,0 +1,11 @@
+flowchart TD
+    A[Cliente agrega productos al carrito] --> B[Confirma pedido]
+    B --> C[Validar stock]
+    C -->|Stock disponible| D[Crear pedido]
+    C -->|Sin stock| E[Rechazar operación]
+    D --> F[Descontar inventario]
+    F --> G[Calcular entrega estimada]
+    G --> H[Estado: pendiente]
+    H --> I[Estado: pagado]
+    I --> J[Estado: enviado]
+    J --> K[Estado: entregado]
