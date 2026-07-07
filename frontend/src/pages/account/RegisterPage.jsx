@@ -1,3 +1,4 @@
+// RegisterPage.jsx - VERSIÓN CORREGIDA Y OPTIMIZADA
 import React, { useState } from 'react';
 import {
   Box,
@@ -11,7 +12,6 @@ import {
   Alert,
   InputAdornment,
   IconButton,
- // Grid,
   MenuItem,
 } from '@mui/material';
 import {
@@ -46,10 +46,11 @@ const COLORS = {
 };
 
 // ============================================
-// ESTILOS PERSONALIZADOS 
+// ESTILOS PERSONALIZADOS - CORREGIDOS
 // ============================================
 
 const RegisterContainer = styled(Box)(({ theme }) => ({
+  // ===== ELIMINAR MARCO BLANCO =====
   position: 'fixed',
   top: 0,
   left: 0,
@@ -57,73 +58,94 @@ const RegisterContainer = styled(Box)(({ theme }) => ({
   bottom: 0,
   width: '100vw',
   height: '100vh',
+  // ===== FIN ELIMINAR MARCO =====
+
   display: 'flex',
-  alignItems: 'center',
   justifyContent: 'center',
-  padding: theme.spacing(2),
-  overflow: 'hidden',
+  alignItems: 'center',
+  padding: theme.spacing(3),
+  boxSizing: 'border-box',
   backgroundImage: `url(${registerBackground})`,
   backgroundSize: 'cover',
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(67, 42, 3, 0.80)',
-    zIndex: 0,
+
+  // ===== MEDIA QUERIES =====
+  [theme.breakpoints.down('md')]: {
+    padding: theme.spacing(3),
   },
-  '@supports (-webkit-touch-callout: none)': {
-    height: '-webkit-fill-available',
-  },
+
   [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1),
+    padding: theme.spacing(2),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  '@media (max-width:480px)': {
+    padding: theme.spacing(1.5),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }));
 
 const RegisterPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4.5),
-  maxWidth: 450,
+  padding: theme.spacing(4),
   width: '100%',
+  maxWidth: 480,
   borderRadius: 20,
-  boxShadow: '0 8px 40px rgba(74, 53, 32, 0.2)',
   backgroundColor: COLORS.background,
+  border: '1px solid #E8DCCC',
+  boxShadow: '0 8px 40px rgba(74,53,32,0.2)',
   position: 'relative',
   zIndex: 1,
-  border: '1px solid #E8DCCC',
-  backdropFilter: 'blur(2px)',
-  maxHeight: '75vh',
   overflowY: 'auto',
+  maxHeight: '84vh',
+
+  // Scrollbar personalizada
   '&::-webkit-scrollbar': {
-    width: '4px',
+    width: 4,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: COLORS.border,
+    borderRadius: 20,
   },
   '&::-webkit-scrollbar-track': {
     background: 'transparent',
   },
-  '&::-webkit-scrollbar-thumb': {
-    background: COLORS.border,
-    borderRadius: '10px',
+
+  // ===== MEDIA QUERIES =====
+  [theme.breakpoints.down('md')]: {
+    width: '90%',
+    maxWidth: 450,
+    padding: theme.spacing(3.5),
   },
+
   [theme.breakpoints.down('sm')]: {
+    width: '95%',
+    maxWidth: 400,
     padding: theme.spacing(3),
-    borderRadius: 16,
-    maxWidth: '95%',
-    margin: theme.spacing(1),
-    maxHeight: '95vh',
+    maxHeight: '60vh',
   },
-  [theme.breakpoints.down('xs')]: {
+
+  '@media (max-width:480px)': {
+    width: '96%',
+    maxWidth: 380,
     padding: theme.spacing(2.5),
-    borderRadius: 12,
-    maxWidth: '96%',
-    margin: theme.spacing(0.5),
-    maxHeight: '96vh',
+    borderRadius: 16,
+    maxHeight: '60vh',
+  },
+
+  '@media (max-width:360px)': {
+    padding: theme.spacing(2),
+    borderRadius: 14,
+    maxHeight: '50vh',
   },
 }));
 
-//BRAND SECTION 
+// ============================================
+// BRAND SECTION
+// ============================================
+
 const BrandSection = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -133,6 +155,9 @@ const BrandSection = styled(Box)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     gap: theme.spacing(1),
   },
+  '@media (max-width:480px)': {
+    gap: theme.spacing(0.8),
+  },
 }));
 
 const BrandIcon = styled(StoreIcon)(({ theme }) => ({
@@ -140,6 +165,9 @@ const BrandIcon = styled(StoreIcon)(({ theme }) => ({
   color: COLORS.primaryLight,
   [theme.breakpoints.down('sm')]: {
     fontSize: 30,
+  },
+  '@media (max-width:480px)': {
+    fontSize: 26,
   },
 }));
 
@@ -154,12 +182,16 @@ const BrandTitle = styled(Typography)(({ theme }) => ({
     fontSize: 26,
     letterSpacing: 1,
   },
-  [theme.breakpoints.down('xs')]: {
+  '@media (max-width:480px)': {
     fontSize: 22,
+    letterSpacing: 0.5,
   },
 }));
 
-//DIVIDER 
+// ============================================
+// DIVIDER
+// ============================================
+
 const DividerLine = styled(Box)(({ theme }) => ({
   width: '80px',
   height: '2px',
@@ -169,6 +201,10 @@ const DividerLine = styled(Box)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     width: '60px',
     margin: `${theme.spacing(1)} auto`,
+  },
+  '@media (max-width:480px)': {
+    width: '50px',
+    margin: `${theme.spacing(0.8)} auto`,
   },
 }));
 
@@ -180,6 +216,9 @@ const RegisterTitle = styled(Typography)(({ theme }) => ({
   fontFamily: '"Poppins", montserrat, sans-serif',
   [theme.breakpoints.down('sm')]: {
     fontSize: 18,
+  },
+  '@media (max-width:480px)': {
+    fontSize: 16,
   },
 }));
 
@@ -194,9 +233,16 @@ const RegisterSubtitle = styled(Typography)(({ theme }) => ({
     fontSize: 12,
     marginBottom: theme.spacing(2),
   },
+  '@media (max-width:480px)': {
+    fontSize: 11,
+    marginBottom: theme.spacing(1.5),
+  },
 }));
 
-//FORM GROUP
+// ============================================
+// FORM GROUP
+// ============================================
+
 const FormGroup = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   '&:last-of-type': {
@@ -204,6 +250,9 @@ const FormGroup = styled(Box)(({ theme }) => ({
   },
   [theme.breakpoints.down('sm')]: {
     marginBottom: theme.spacing(1.5),
+  },
+  '@media (max-width:480px)': {
+    marginBottom: theme.spacing(1.2),
   },
 }));
 
@@ -219,9 +268,16 @@ const FormLabel = styled(Typography)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     fontSize: 12,
   },
+  '@media (max-width:480px)': {
+    fontSize: 11,
+    marginBottom: theme.spacing(0.3),
+  },
 }));
 
-//STYLED TEXTFIELD
+// ============================================
+// STYLED TEXTFIELD
+// ============================================
+
 const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiOutlinedInput-root': {
     borderRadius: 10,
@@ -242,7 +298,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     },
   },
   '& .MuiInputLabel-root': {
-    display: 'none', 
+    display: 'none',
   },
   '& .MuiFormHelperText-root': {
     marginLeft: 0,
@@ -270,15 +326,30 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiInputAdornment-positionStart': {
     marginLeft: 4,
   },
+
+  // ===== MEDIA QUERIES =====
   [theme.breakpoints.down('sm')]: {
     '& .MuiInputBase-input, & .MuiSelect-select': {
       fontSize: 13,
       padding: '10px 12px',
     },
   },
+
+  '@media (max-width:480px)': {
+    '& .MuiInputBase-input, & .MuiSelect-select': {
+      fontSize: 12,
+      padding: '9px 10px',
+    },
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 8,
+    },
+  },
 }));
 
-// PASSWORD WRAPPER 
+// ============================================
+// PASSWORD WRAPPER
+// ============================================
+
 const PasswordWrapper = styled(Box)(({ theme }) => ({
   position: 'relative',
   width: '100%',
@@ -292,6 +363,10 @@ const PasswordWrapper = styled(Box)(({ theme }) => ({
     transform: 'translateY(-50%)',
   },
 }));
+
+// ============================================
+// REGISTER BUTTON
+// ============================================
 
 const RegisterButton = styled(Button)(({ theme }) => ({
   backgroundColor: COLORS.primary,
@@ -323,8 +398,19 @@ const RegisterButton = styled(Button)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(1.2),
     fontSize: 14,
+    marginTop: theme.spacing(1.2),
+  },
+  '@media (max-width:480px)': {
+    padding: theme.spacing(1),
+    fontSize: 13,
+    marginTop: theme.spacing(1),
+    borderRadius: 8,
   },
 }));
+
+// ============================================
+// CHECKBOX
+// ============================================
 
 const StyledFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   marginTop: theme.spacing(1),
@@ -344,7 +430,20 @@ const StyledFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
       fontSize: 12,
     },
   },
+  '@media (max-width:480px)': {
+    marginTop: theme.spacing(0.5),
+    '& .MuiCheckbox-root': {
+      padding: '4px',
+    },
+    '& .MuiFormControlLabel-label': {
+      fontSize: 11,
+    },
+  },
 }));
+
+// ============================================
+// LINKS
+// ============================================
 
 const LoginLink = styled(Link)(({ theme }) => ({
   color: COLORS.primary,
@@ -370,7 +469,17 @@ const FooterWrapper = styled(Box)(({ theme }) => ({
       fontSize: 12,
     },
   },
+  '@media (max-width:480px)': {
+    marginTop: theme.spacing(1.5),
+    '& .MuiTypography-root': {
+      fontSize: 12,
+    },
+  },
 }));
+
+// ============================================
+// ERROR ALERT
+// ============================================
 
 const ErrorAlert = styled(Alert)(({ theme }) => ({
   marginBottom: theme.spacing(2),
@@ -385,11 +494,18 @@ const ErrorAlert = styled(Alert)(({ theme }) => ({
     fontFamily: '"Poppins", montserrat, sans-serif',
     fontSize: 13,
   },
+  '@media (max-width:480px)': {
+    marginBottom: theme.spacing(1.5),
+    '& .MuiAlert-message': {
+      fontSize: 12,
+    },
+  },
 }));
 
 // ============================================
 // DATOS - ESTADOS DE MÉXICO
 // ============================================
+
 const ESTADOS_MEXICO = [
   'Aguascalientes', 'Baja California', 'Baja California Sur',
   'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México',
@@ -519,6 +635,9 @@ function RegisterPage() {
 
         {/* TÍTULOS */}
         <RegisterTitle variant="h2">Crear cuenta</RegisterTitle>
+        <RegisterSubtitle variant="body2">
+          Completa tus datos para registrarte
+        </RegisterSubtitle>
 
         {error && (
           <ErrorAlert severity="error">
@@ -527,7 +646,7 @@ function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} noValidate>
-          {/* NOMBRE - Label arriba del input */}
+          {/* NOMBRE */}
           <FormGroup>
             <FormLabel variant="body2">Nombre completo:</FormLabel>
             <StyledTextField

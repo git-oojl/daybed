@@ -1,168 +1,299 @@
-.dashboard-page {
-  background: #f7f7f7;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-/* HERO */
-
-.dashboard-hero {
-  height: 260px;
-
-  background-image: url("/hero.png");
-  background-size: cover;
-  background-position: center;
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #E8DCCC;
+  border-radius: 8px;
+  padding: 0 12px;
+  transition: border-color 0.2s ease;
 }
 
-.dashboard-overlay {
-  width: 100%;
-  height: 100%;
+.search-box:focus-within {
+  border-color: #8B5E3C;
+}
 
-  background: rgba(255, 255, 255, 0.45);
+.search-icon {
+  color: #7A6B5A;
+  font-size: 16px;
+  margin-right: 8px;
+}
 
+.search-input {
+  border: none;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: '"Poppins", sans-serif';
+  background: transparent;
+  width: 250px;
+  outline: none;
+  color: #333;
+}
+
+.search-input::placeholder {
+  color: #B3A088;
+}
+
+.filter-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6B4A2B;
+  font-weight: 600;
+  font-family: '"Poppins", sans-serif';
+}
+
+.filter-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  border: 1px solid #E8DCCC;
+  border-radius: 20px;
+  background: #FFFFFF;
+  color: #7A6B5A;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: '"Poppins", sans-serif';
+}
+
+.filter-btn:hover {
+  background: #F5EDE5;
+  border-color: #8B5E3C;
+}
+
+.filter-btn.active {
+  background: #8B5E3C;
+  color: #FFFFFF;
+  border-color: #8B5E3C;
+}
+
+.orders-table .customer-info {
   display: flex;
   flex-direction: column;
+}
+
+.orders-table .customer-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.orders-table .customer-email {
+  font-size: 12px;
+  color: #7A6B5A;
+}
+
+.orders-table .order-id {
+  font-weight: 600;
+  color: #6B4A2B;
+}
+
+.orders-table .order-total {
+  font-weight: 600;
+  color: #8B5E3C;
+}
+
+.orders-table .order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-view {
+  background-color: #6A5ACD;
+  color: #FFFFFF;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  font-family: '"Poppins", sans-serif';
+}
+
+.btn-view:hover {
+  background-color: #5A4ABD;
+}
+
+.pagination {
+  display: flex;
   justify-content: center;
   align-items: center;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid #E8DCCC;
 }
 
-.dashboard-overlay h1 {
-  font-size: 52px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.dashboard-overlay p {
+.pagination-btn {
+  padding: 8px 20px;
+  border: 1px solid #E8DCCC;
+  border-radius: 6px;
+  background: #FFFFFF;
+  color: #6B4A2B;
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: '"Poppins", sans-serif';
 }
 
-/* CONTENIDO */
-
-.dashboard-container {
-  max-width: 1200px;
-
-  margin: 60px auto;
-
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
+.pagination-btn:hover:not(:disabled) {
+  background: #8B5E3C;
+  color: #FFFFFF;
+  border-color: #8B5E3C;
 }
 
-/* TARJETAS */
-
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.metric-card {
-  background: #f4f0ea;
+.pagination-info {
+  color: #7A6B5A;
+  font-family: '"Poppins", sans-serif';
 }
 
-.metric-header {
-  background: #d6bb8c;
-
+.empty-state {
   text-align: center;
-
-  padding: 12px;
-
-  font-weight: 600;
+  padding: 40px 20px;
 }
 
-.metric-body {
-  padding: 20px;
-  min-height: 200px;
+.empty-state p {
+  color: #7A6B5A;
+  font-size: 16px;
+  margin-top: 12px;
+  font-family: '"Poppins", sans-serif';
 }
 
-.metric-row {
-  display: flex;
-  justify-content: space-between;
-
-  margin-bottom: 25px;
-
-  font-size: 14px;
-}
-
-.metric-highlight {
-  margin-top: 40px;
-
-  color: #c28c29;
-  font-weight: 600;
-}
-
-/* VENTAS */
-
-.sales-card {
-  background: #f4f0ea;
-}
-
-.sales-title {
-  background: #d6bb8c;
-
-  text-align: center;
-
-  padding: 12px;
-
-  font-weight: 600;
-}
-
-.sales-row {
-  display: flex;
-  justify-content: space-between;
-
-  padding: 12px 20px;
-
-  font-size: 14px;
-}
-
-.sales-footer {
-  margin-top: 40px;
-
-  background: #d6bb8c;
-
-  display: flex;
-  justify-content: space-between;
-
-  padding: 12px 20px;
-
-  font-weight: 600;
-}
-
-/* BENEFICIOS */
-
-.dashboard-benefits {
-  background: #f0e9df;
-
+.dashboard-stats-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
 
-  gap: 20px;
-
-  padding: 45px;
-
+.stat-summary-card {
+  background: #FFFFFF;
+  border: 1px solid #E8DCCC;
+  border-radius: 12px;
+  padding: 16px 20px;
   text-align: center;
 }
 
-.dashboard-benefits h3 {
-  margin-bottom: 10px;
+.stat-summary-label {
+  display: block;
+  font-size: 13px;
+  color: #7A6B5A;
+  font-weight: 500;
+  font-family: '"Poppins", sans-serif';
 }
 
-.dashboard-benefits p {
-  color: #666;
+.stat-summary-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #6B4A2B;
+  margin-top: 4px;
+  font-family: '"Playfair Display", serif';
 }
 
-/* RESPONSIVE */
-
-@media (max-width: 900px) {
-  .dashboard-container {
-    grid-template-columns: 1fr;
-    padding: 20px;
+@media (max-width: 992px) {
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
   }
 
-  .metrics-grid {
-    grid-template-columns: 1fr;
+  .search-box {
+    width: 100%;
   }
 
-  .dashboard-benefits {
+  .search-input {
+    width: 100%;
+  }
+
+  .dashboard-stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-options {
+    width: 100%;
+  }
+
+  .filter-btn {
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .dashboard-stats-summary {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .orders-table .customer-email {
+    display: none;
+  }
+
+  .table-actions {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-stats-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-summary-card {
+    padding: 12px;
+  }
+
+  .stat-summary-value {
+    font-size: 20px;
+  }
+
+  .filter-options {
+    gap: 4px;
+  }
+
+  .filter-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    min-width: 60px;
   }
 }

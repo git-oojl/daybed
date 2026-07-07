@@ -1,4 +1,23 @@
-import "./../../assets/cart-page.css";
+import "../../assets/home-page.css";
+import "../../assets/cart-page.css";
+import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import { Link } from "react-router-dom";
+import { routePaths } from "../../routes/routePaths.js";
+
+function IconTrash() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 7h16M9 7V5h6v2M10 11v6M14 11v6M6 7l1 12h10l1-12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export default function CartPage() {
   const products = [
@@ -25,103 +44,89 @@ export default function CartPage() {
   const total = subtotal + shipping;
 
   return (
-    <div className="cart-page">
-      {/* HERO */}
+    <div className="home-page cart-page">
+      <HomeHeader />
 
-      <section className="cart-hero">
-        <div className="cart-hero-overlay">
-          <h1>Carrito de compras</h1>
-
-          <p>
-            Inicio <span>&gt;</span> Carrito
+      <section className="checkout-hero" aria-label="Carrito de compras">
+        <div className="checkout-hero__overlay">
+          <h1 className="checkout-hero__title">Carrito de compras</h1>
+          <p className="checkout-hero__breadcrumb">
+            <Link to={routePaths.public.home}>Inicio</Link>
+            <span aria-hidden="true">&gt;</span>
+            Carrito
           </p>
         </div>
       </section>
 
-      {/* CONTENT */}
-
-      <section className="cart-container">
+      <main className="cart-container">
         <div className="cart-table">
           <div className="cart-header">
             <span>Productos</span>
             <span>Precio</span>
             <span>Cantidad</span>
             <span>Subtotal</span>
+            <span className="cart-header__action" aria-hidden="true" />
           </div>
 
           {products.map((product) => (
             <div className="cart-row" key={product.id}>
               <div className="product-info">
                 <img src={product.image} alt={product.name} />
-
                 <span>{product.name}</span>
               </div>
 
-              <div>${product.price.toLocaleString()} MX</div>
+              <div className="cart-row__price">
+                ${product.price.toLocaleString("es-MX")} MX
+              </div>
 
               <div className="quantity-box">
-                <button>-</button>
-
+                <button type="button" aria-label="Disminuir cantidad">
+                  -
+                </button>
                 <span>{product.quantity}</span>
-
-                <button>+</button>
+                <button type="button" aria-label="Aumentar cantidad">
+                  +
+                </button>
               </div>
 
-              <div>
-                ${(product.price * product.quantity).toLocaleString()}
-                .00 MX
+              <div className="cart-row__subtotal">
+                ${(product.price * product.quantity).toLocaleString("es-MX")}.00 MX
               </div>
+
+              <button
+                type="button"
+                className="cart-row__remove"
+                aria-label={`Eliminar ${product.name}`}
+              >
+                <IconTrash />
+              </button>
             </div>
           ))}
         </div>
 
-        {/* SUMMARY */}
+        <aside className="cart-summary">
+          <h2 className="cart-summary__title">Total de compra</h2>
 
-        <aside className="summary-card">
-          <h2>Total de compra</h2>
-
-          <div className="summary-row">
+          <div className="cart-summary-row">
             <span>Subtotal</span>
-            <span>${subtotal.toLocaleString()} MX</span>
+            <span>${subtotal.toLocaleString("es-MX")} MX</span>
           </div>
-
-          <div className="summary-row">
+          <div className="cart-summary-row">
             <span>Envío</span>
-            <span>${shipping.toLocaleString()} MX</span>
+            <span>${shipping.toLocaleString("es-MX")} MX</span>
           </div>
-
-          <div className="summary-row total">
+          <div className="cart-summary-row cart-summary-total">
             <span>Total</span>
-            <span>${total.toLocaleString()} MX</span>
+            <span>${total.toLocaleString("es-MX")} MX</span>
           </div>
 
-          <button className="pay-button">PAGAR</button>
+          <Link to={routePaths.checkout.summary} className="cart-pay-button">
+            PAGAR
+          </Link>
         </aside>
-      </section>
+      </main>
 
-      {/* FEATURES */}
-
-      <section className="cart-features">
-        <div>
-          <h3>CALIDAD SUPERIOR</h3>
-          <p>Fabricado con materiales premium</p>
-        </div>
-
-        <div>
-          <h3>Protección de garantía</h3>
-          <p>Garantía de 2 años</p>
-        </div>
-
-        <div>
-          <h3>Envío gratis</h3>
-          <p>Pedidos superiores a $20,000</p>
-        </div>
-
-        <div>
-          <h3>Soporte 24/7</h3>
-          <p>Atención dedicada</p>
-        </div>
-      </section>
+      <HomeFooter />
     </div>
   );
 }

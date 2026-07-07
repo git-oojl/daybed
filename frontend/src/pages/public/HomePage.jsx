@@ -709,7 +709,7 @@ function HomePage() {
           <div>
             <p className="home-footer__logo">Daybed.</p>
             <p className="home-footer__address">
-              400 University Drive Suite 200 Coral Gables, FL 33134 USA
+              Blvd. Cucapah 20100-Sur, El Lago, 22210 Tijuana, B.C., Mexico
             </p>
           </div>
 

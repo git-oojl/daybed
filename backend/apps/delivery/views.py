@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +24,16 @@ def _error_response(exc):
     )
 
 
+@extend_schema(
+    summary="Geocodificar dirección",
+    description=(
+        "Convierte una dirección escrita por el cliente en coordenadas geográficas "
+        "para calcular la entrega."
+    ),
+    request=GeocodeRequestSerializer,
+    responses=GeocodeResponseSerializer,
+    tags=["Entregas"],
+)
 class GeocodeView(APIView):
     permission_classes = (IsCustomer,)
 
@@ -39,6 +50,16 @@ class GeocodeView(APIView):
         return Response(response_serializer.data)
 
 
+@extend_schema(
+    summary="Calcular estimación de entrega",
+    description=(
+        "Calcula distancia, duración aproximada y costo de entrega usando una "
+        "dirección o coordenadas enviadas por el cliente."
+    ),
+    request=DeliveryEstimateRequestSerializer,
+    responses=DeliveryEstimateResponseSerializer,
+    tags=["Entregas"],
+)
 class DeliveryEstimateView(APIView):
     permission_classes = (IsCustomer,)
 

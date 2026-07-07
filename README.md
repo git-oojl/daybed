@@ -252,6 +252,19 @@ infra/README.md
 
 ---
 
+## Documentación técnica
+
+- [Documentación del backend](./docs/backend/README.md)
+- [Contrato OpenAPI](./docs/backend/openapi.yaml)
+
+---
+
+### Arquitectura del backend
+
+![Arquitectura del backend](./docs/backend/diagrams/arquitectura_backend.png)
+
+---
+
 ## Calidad de código
 
 Este proyecto usa herramientas de formato y revisión, pero **no se ejecutan automáticamente en cada commit para todo el equipo**. Para evitar commits lentos, cada integrante debe usar las extensiones recomendadas de VS Code y ejecutar revisiones manuales antes de subir cambios importantes o abrir un Pull Request.
