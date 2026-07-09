@@ -25,8 +25,7 @@ const PRODUCT = {
     "/images/maceta2.jpeg",
     "/images/maceta3.jpeg",
     "/images/maceta4.jpeg",
-    "/images/maceta5.jpeg"
-
+    "/images/maceta5.jpeg",
   ],
   galleryImages: [
     "/images/maceta1.jpeg",
@@ -94,7 +93,11 @@ function formatPrice(amount) {
 
 function IconStar({ filled }) {
   return (
-    <svg viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      aria-hidden="true"
+    >
       <path
         d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"
         stroke="currentColor"
@@ -107,7 +110,13 @@ function IconStar({ filled }) {
 
 function IconFacebook() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2Z" />
     </svg>
   );
@@ -115,7 +124,13 @@ function IconFacebook() {
 
 function IconLinkedIn() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
       <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-12h4v2a4 4 0 0 1 4-4Z" />
       <rect x="2" y="9" width="4" height="12" />
       <circle cx="4" cy="4" r="2" />
@@ -125,7 +140,13 @@ function IconLinkedIn() {
 
 function IconTwitter() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
       <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2Z" />
     </svg>
   );
@@ -147,15 +168,24 @@ export default function ProductDetailPage() {
       <nav className="product-breadcrumb" aria-label="Ruta de navegación">
         <div className="product-breadcrumb__inner">
           <Link to={routePaths.public.home}>Inicio</Link>
-          <span className="product-breadcrumb__separator" aria-hidden="true">&gt;</span>
+          <span className="product-breadcrumb__separator" aria-hidden="true">
+            &gt;
+          </span>
           <Link to={routePaths.public.catalog}>Tienda</Link>
-          <span className="product-breadcrumb__separator" aria-hidden="true">&gt;</span>
-          <span className="product-breadcrumb__current">{PRODUCT.subtitle}</span>
+          <span className="product-breadcrumb__separator" aria-hidden="true">
+            &gt;
+          </span>
+          <span className="product-breadcrumb__current">
+            {PRODUCT.subtitle}
+          </span>
         </div>
       </nav>
 
       <main className="product-detail">
-        <section className="product-detail__gallery" aria-label="Imágenes del producto">
+        <section
+          className="product-detail__gallery"
+          aria-label="Imágenes del producto"
+        >
           <div className="product-detail__thumbs">
             {PRODUCT.images.map((src, index) => (
               <button
@@ -175,17 +205,29 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        <section className="product-detail__info" aria-label="Información del producto">
+        <section
+          className="product-detail__info"
+          aria-label="Información del producto"
+        >
           <h1 className="product-detail__title">{fullTitle}</h1>
           <p className="product-detail__price">{formatPrice(PRODUCT.price)}</p>
 
           <div className="product-detail__rating">
-            <div className="product-detail__stars" aria-label={`${PRODUCT.rating} de 5 estrellas`}>
+            <div
+              className="product-detail__stars"
+              aria-label={`${PRODUCT.rating} de 5 estrellas`}
+            >
               {[1, 2, 3, 4, 5].map((star) => (
-                <IconStar key={star} filled={star <= Math.floor(PRODUCT.rating)} />
+                <IconStar
+                  key={star}
+                  filled={star <= Math.floor(PRODUCT.rating)}
+                />
               ))}
             </div>
-            <span className="product-detail__rating-divider" aria-hidden="true" />
+            <span
+              className="product-detail__rating-divider"
+              aria-hidden="true"
+            />
             <span>({PRODUCT.reviews} customer reviews)</span>
           </div>
 
@@ -243,7 +285,10 @@ export default function ProductDetailPage() {
                 +
               </button>
             </div>
-            <button type="button" className="product-detail__btn product-detail__btn--cart">
+            <button
+              type="button"
+              className="product-detail__btn product-detail__btn--cart"
+            >
               Agregar al carrito
             </button>
             <button type="button" className="product-detail__btn">
@@ -258,18 +303,28 @@ export default function ProductDetailPage() {
             </div>
             <div className="product-detail__meta-row">
               <span className="product-detail__meta-label">Categoría :</span>
-              <span className="product-detail__meta-value">{PRODUCT.category}</span>
+              <span className="product-detail__meta-value">
+                {PRODUCT.category}
+              </span>
             </div>
             <div className="product-detail__meta-row">
               <span className="product-detail__meta-label">Etiquetas :</span>
-              <span className="product-detail__meta-value">{PRODUCT.tags.join(", ")}</span>
+              <span className="product-detail__meta-value">
+                {PRODUCT.tags.join(", ")}
+              </span>
             </div>
             <div className="product-detail__meta-row product-detail__share">
               <span className="product-detail__meta-label">Compartir :</span>
               <div className="product-detail__share-icons">
-                <a href="#" aria-label="Compartir en Facebook"><IconFacebook /></a>
-                <a href="#" aria-label="Compartir en LinkedIn"><IconLinkedIn /></a>
-                <a href="#" aria-label="Compartir en Twitter"><IconTwitter /></a>
+                <a href="#" aria-label="Compartir en Facebook">
+                  <IconFacebook />
+                </a>
+                <a href="#" aria-label="Compartir en LinkedIn">
+                  <IconLinkedIn />
+                </a>
+                <a href="#" aria-label="Compartir en Twitter">
+                  <IconTwitter />
+                </a>
               </div>
             </div>
           </div>
@@ -299,13 +354,15 @@ export default function ProductDetailPage() {
           {activeTab === "descripcion" && <p>{PRODUCT.longDescription}</p>}
           {activeTab === "info" && (
             <p>
-              Material: Madera natural. Dimensiones: 13 cm / 15 cm de diámetro. Peso: 0.8 kg.
-              Incluye drenaje interno. Recomendado para uso interior y exterior protegido.
+              Material: Madera natural. Dimensiones: 13 cm / 15 cm de diámetro.
+              Peso: 0.8 kg. Incluye drenaje interno. Recomendado para uso
+              interior y exterior protegido.
             </p>
           )}
           {activeTab === "reviews" && (
             <p>
-              {PRODUCT.reviews} reseñas de clientes satisfechos con la calidad y el diseño de Potty.
+              {PRODUCT.reviews} reseñas de clientes satisfechos con la calidad y
+              el diseño de Potty.
             </p>
           )}
         </div>
@@ -314,12 +371,19 @@ export default function ProductDetailPage() {
       <div className="product-inline-gallery" aria-label="Galería de imágenes">
         {PRODUCT.galleryImages.map((src, index) => (
           <div key={src} className="product-inline-gallery__item">
-            <img src={src} alt={`${fullTitle} vista ${index + 1}`} loading="lazy" />
+            <img
+              src={src}
+              alt={`${fullTitle} vista ${index + 1}`}
+              loading="lazy"
+            />
           </div>
         ))}
       </div>
 
-      <section className="home-section product-related" aria-labelledby="productos-revelantes">
+      <section
+        className="home-section product-related"
+        aria-labelledby="productos-revelantes"
+      >
         <h2 id="productos-revelantes" className="home-section__title">
           Productos revelantes
         </h2>
@@ -339,14 +403,18 @@ export default function ProductDetailPage() {
                   </span>
                 )}
                 {product.isNew && !product.discount && (
-                  <span className="home-product__badge home-product__badge--new">New</span>
+                  <span className="home-product__badge home-product__badge--new">
+                    New
+                  </span>
                 )}
               </div>
               <div className="home-product__info">
                 <h3 className="home-product__name">{product.name}</h3>
                 <p className="home-product__desc">{product.description}</p>
                 <div className="home-product__prices">
-                  <span className="home-product__price">{formatPrice(product.price)}</span>
+                  <span className="home-product__price">
+                    {formatPrice(product.price)}
+                  </span>
                   {product.oldPrice && (
                     <span className="home-product__old-price">
                       {formatPrice(product.oldPrice)}

@@ -7,7 +7,13 @@ import { routePaths } from "../../routes/routePaths.js";
 
 function IconTrash() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M4 7h16M9 7V5h6v2M10 11v6M14 11v6M6 7l1 12h10l1-12"
         stroke="currentColor"
@@ -90,7 +96,8 @@ export default function CartPage() {
               </div>
 
               <div className="cart-row__subtotal">
-                ${(product.price * product.quantity).toLocaleString("es-MX")}.00 MX
+                ${(product.price * product.quantity).toLocaleString("es-MX")}.00
+                MX
               </div>
 
               <button

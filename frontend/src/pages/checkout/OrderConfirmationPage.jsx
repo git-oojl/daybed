@@ -18,7 +18,10 @@ const OrderConfirmationPage = () => {
     <div className="home-page order-page">
       <HomeHeader />
 
-      <section className="checkout-hero checkout-hero--order" aria-label="Confirmación de pedido">
+      <section
+        className="checkout-hero checkout-hero--order"
+        aria-label="Confirmación de pedido"
+      >
         <div className="checkout-hero__overlay">
           <h1 className="checkout-hero__title">Confirmación de Pedido</h1>
           <p className="checkout-hero__breadcrumb">

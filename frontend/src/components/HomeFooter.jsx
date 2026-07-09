@@ -22,8 +22,19 @@ const BENEFITS = [
     title: "CALIDAD SUPERIOR",
     text: "Fabricado con materiales de primera",
     icon: (
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M8 21h8M12 17v4M6 4h12l1 4-7 4-7-4 1-4Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M8 21h8M12 17v4M6 4h12l1 4-7 4-7-4 1-4Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -32,9 +43,26 @@ const BENEFITS = [
     title: "Protección de garantía",
     text: "Garantía de 2 años",
     icon: (
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 3l7 3v6c0 4.5-3.5 7.5-7 9-3.5-1.5-7-4.5-7-9V6l7-3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 3l7 3v6c0 4.5-3.5 7.5-7 9-3.5-1.5-7-4.5-7-9V6l7-3Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M9 12l2 2 4-4"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -43,9 +71,25 @@ const BENEFITS = [
     title: "Envío gratis",
     text: "Pedidos +$20,000",
     icon: (
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M3 7h11v8H3V7Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M14 10h4l3 3v2h-7v-5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M3 7h11v8H3V7Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M14 10h4l3 3v2h-7v-5Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
         <circle cx="7" cy="17" r="1.5" fill="currentColor" />
         <circle cx="17" cy="17" r="1.5" fill="currentColor" />
       </svg>
@@ -56,9 +100,25 @@ const BENEFITS = [
     title: "Soporte 24/7",
     text: "Atención dedicada",
     icon: (
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M4 14v-2a8 8 0 0 1 16 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M6 14h2v3H6v-3ZM16 14h2v3h-2v-3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M4 14v-2a8 8 0 0 1 16 0v2"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M6 14h2v3H6v-3ZM16 14h2v3h-2v-3Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -128,7 +188,9 @@ export default function HomeFooter() {
               Suscribirse
             </button>
           </form>
-          {newsletterMsg && <p className="home-newsletter__msg">{newsletterMsg}</p>}
+          {newsletterMsg && (
+            <p className="home-newsletter__msg">{newsletterMsg}</p>
+          )}
         </div>
       </div>
 
