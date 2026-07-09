@@ -12,53 +12,135 @@ import { routePaths } from "../../routes/routePaths.js";
 // ============================================
 function IconUser() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function IconLocation() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 21s-7-4.5-7-10a7 7 0 1 1 14 0c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      <circle cx="12" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 21s-7-4.5-7-10a7 7 0 1 1 14 0c0 5.5-7 10-7 10Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
 
 function IconTruck() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M16 3h4l2 4v6h-6V3ZM8 13h2M14 13h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="8" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-      <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M10.5 19h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M16 3h4l2 4v6h-6V3ZM8 13h2M14 13h2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M10.5 19h3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function IconCreditCard() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M2 8h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="2"
+        y="4"
+        width="20"
+        height="16"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M2 8h20"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function IconCheck() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 12l5 5L20 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function IconEdit() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 20h9M16.5 3.5l4 4L7 21l-5 1 1-5L16.5 3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 20h9M16.5 3.5l4 4L7 21l-5 1 1-5L16.5 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -97,8 +179,22 @@ export default function CheckoutSummaryPage() {
 
   // Datos de productos (simulados desde CartPage)
   const items = [
-    { id: 1, name: "Sofa Esquinero", price: 8999, quantity: 1, image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=200" },
-    { id: 2, name: "Mesa de Centro", price: 2499, quantity: 2, image: "https://images.unsplash.com/photo-1499933374294-4584851497cc?w=200" },
+    {
+      id: 1,
+      name: "Sofa Esquinero",
+      price: 8999,
+      quantity: 1,
+      image:
+        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=200",
+    },
+    {
+      id: 2,
+      name: "Mesa de Centro",
+      price: 2499,
+      quantity: 2,
+      image:
+        "https://images.unsplash.com/photo-1499933374294-4584851497cc?w=200",
+    },
   ];
 
   // Métodos de pago
@@ -106,7 +202,10 @@ export default function CheckoutSummaryPage() {
   const [envio, setEnvio] = useState("standard");
 
   // Cálculos
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const shippingCost = envio === "express" ? 600 : 500;
   const impuestos = Math.round(subtotal * 0.05);
   const total = subtotal + shippingCost + impuestos;
@@ -114,14 +213,20 @@ export default function CheckoutSummaryPage() {
   // Validación de campos
   const validateField = (name, value) => {
     if (value.trim() === "") return false;
-    if (name === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return false;
-    if (name === "telefono" && !/^[0-9]{10}$/.test(value.replace(/\s/g, ""))) return false;
+    if (name === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+      return false;
+    if (name === "telefono" && !/^[0-9]{10}$/.test(value.replace(/\s/g, "")))
+      return false;
     if (name === "codigoPostal" && !/^[0-9]{5}$/.test(value)) return false;
     return true;
   };
 
   const isFieldError = (name) => {
-    return touched[name] && !validateField(name, formData[name]) && formData[name] !== "";
+    return (
+      touched[name] &&
+      !validateField(name, formData[name]) &&
+      formData[name] !== ""
+    );
   };
 
   const isFormValid = () => {
@@ -153,11 +258,19 @@ export default function CheckoutSummaryPage() {
     if (isFormValid()) {
       // Marcar todos los campos como tocados
       const allTouched = {};
-      Object.keys(formData).forEach(key => { allTouched[key] = true; });
+      Object.keys(formData).forEach((key) => {
+        allTouched[key] = true;
+      });
       setTouched(allTouched);
 
       // Si todo es válido, proceder
-      console.log("Pedido confirmado", { ...formData, metodoPago, envio, items, total });
+      console.log("Pedido confirmado", {
+        ...formData,
+        metodoPago,
+        envio,
+        items,
+        total,
+      });
       navigate(routePaths.account.orders);
     }
   };
@@ -209,7 +322,9 @@ export default function CheckoutSummaryPage() {
             {/* DATOS DEL CLIENTE */}
             <div className="checkout-card">
               <h2 className="checkout-card__title">
-                <span className="checkout-card__icon"><IconUser /></span>
+                <span className="checkout-card__icon">
+                  <IconUser />
+                </span>
                 Datos del cliente
               </h2>
               <div className="checkout-card__body">
@@ -223,11 +338,15 @@ export default function CheckoutSummaryPage() {
                       value={formData.nombre}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("nombre") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("nombre") ? "checkout-input--error" : ""
+                      }
                       placeholder="Ana Martínez"
                     />
                     {isFieldError("nombre") && (
-                      <span className="checkout-field__error">Campo requerido</span>
+                      <span className="checkout-field__error">
+                        Campo requerido
+                      </span>
                     )}
                   </div>
                 </div>
@@ -242,11 +361,15 @@ export default function CheckoutSummaryPage() {
                       value={formData.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("email") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("email") ? "checkout-input--error" : ""
+                      }
                       placeholder="ana@email.com"
                     />
                     {isFieldError("email") && (
-                      <span className="checkout-field__error">Correo inválido</span>
+                      <span className="checkout-field__error">
+                        Correo inválido
+                      </span>
                     )}
                   </div>
                   <div className="checkout-field">
@@ -258,7 +381,9 @@ export default function CheckoutSummaryPage() {
                       value={formData.telefono}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("telefono") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("telefono") ? "checkout-input--error" : ""
+                      }
                       placeholder="5512345678"
                     />
                     {isFieldError("telefono") && (
@@ -272,7 +397,9 @@ export default function CheckoutSummaryPage() {
             {/* DIRECCIÓN DE ENTREGA */}
             <div className="checkout-card">
               <h2 className="checkout-card__title">
-                <span className="checkout-card__icon"><IconLocation /></span>
+                <span className="checkout-card__icon">
+                  <IconLocation />
+                </span>
                 Dirección de entrega
               </h2>
               <div className="checkout-card__body">
@@ -286,11 +413,15 @@ export default function CheckoutSummaryPage() {
                       value={formData.calle}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("calle") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("calle") ? "checkout-input--error" : ""
+                      }
                       placeholder="Av. Reforma 456"
                     />
                     {isFieldError("calle") && (
-                      <span className="checkout-field__error">Campo requerido</span>
+                      <span className="checkout-field__error">
+                        Campo requerido
+                      </span>
                     )}
                   </div>
                 </div>
@@ -305,11 +436,15 @@ export default function CheckoutSummaryPage() {
                       value={formData.colonia}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("colonia") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("colonia") ? "checkout-input--error" : ""
+                      }
                       placeholder="Col. Juárez"
                     />
                     {isFieldError("colonia") && (
-                      <span className="checkout-field__error">Campo requerido</span>
+                      <span className="checkout-field__error">
+                        Campo requerido
+                      </span>
                     )}
                   </div>
                 </div>
@@ -324,11 +459,15 @@ export default function CheckoutSummaryPage() {
                       value={formData.ciudad}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("ciudad") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("ciudad") ? "checkout-input--error" : ""
+                      }
                       placeholder="Ciudad de México"
                     />
                     {isFieldError("ciudad") && (
-                      <span className="checkout-field__error">Campo requerido</span>
+                      <span className="checkout-field__error">
+                        Campo requerido
+                      </span>
                     )}
                   </div>
                   <div className="checkout-field">
@@ -340,11 +479,15 @@ export default function CheckoutSummaryPage() {
                       value={formData.estado}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("estado") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("estado") ? "checkout-input--error" : ""
+                      }
                       placeholder="CDMX"
                     />
                     {isFieldError("estado") && (
-                      <span className="checkout-field__error">Campo requerido</span>
+                      <span className="checkout-field__error">
+                        Campo requerido
+                      </span>
                     )}
                   </div>
                 </div>
@@ -359,7 +502,11 @@ export default function CheckoutSummaryPage() {
                       value={formData.codigoPostal}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={isFieldError("codigoPostal") ? "checkout-input--error" : ""}
+                      className={
+                        isFieldError("codigoPostal")
+                          ? "checkout-input--error"
+                          : ""
+                      }
                       placeholder="06600"
                     />
                     {isFieldError("codigoPostal") && (
@@ -390,7 +537,8 @@ export default function CheckoutSummaryPage() {
                       Dirección validada
                     </p>
                     <p className="checkout-address-validation__desc">
-                      {formData.calle}, {formData.colonia}, {formData.ciudad}, {formData.estado} - CP {formData.codigoPostal}
+                      {formData.calle}, {formData.colonia}, {formData.ciudad},{" "}
+                      {formData.estado} - CP {formData.codigoPostal}
                     </p>
                     <div className="checkout-address-validation__actions">
                       <button type="button" className="checkout-btn--link">
@@ -408,12 +556,16 @@ export default function CheckoutSummaryPage() {
             {/* ESTIMACIÓN DE ENTREGA */}
             <div className="checkout-card">
               <h2 className="checkout-card__title">
-                <span className="checkout-card__icon"><IconTruck /></span>
+                <span className="checkout-card__icon">
+                  <IconTruck />
+                </span>
                 Estimación de entrega
               </h2>
               <div className="checkout-card__body">
                 <div className="checkout-shipping-options">
-                  <label className={`checkout-shipping-option ${envio === "standard" ? "checkout-shipping-option--selected" : ""}`}>
+                  <label
+                    className={`checkout-shipping-option ${envio === "standard" ? "checkout-shipping-option--selected" : ""}`}
+                  >
                     <input
                       type="radio"
                       name="envio"
@@ -422,13 +574,21 @@ export default function CheckoutSummaryPage() {
                       onChange={() => setEnvio("standard")}
                     />
                     <div className="checkout-shipping-option__info">
-                      <span className="checkout-shipping-option__title">Envío estándar</span>
-                      <span className="checkout-shipping-option__desc">3-5 días hábiles</span>
-                      <span className="checkout-shipping-option__price">{formatPrice(500)}</span>
+                      <span className="checkout-shipping-option__title">
+                        Envío estándar
+                      </span>
+                      <span className="checkout-shipping-option__desc">
+                        3-5 días hábiles
+                      </span>
+                      <span className="checkout-shipping-option__price">
+                        {formatPrice(500)}
+                      </span>
                     </div>
                   </label>
 
-                  <label className={`checkout-shipping-option ${envio === "express" ? "checkout-shipping-option--selected" : ""}`}>
+                  <label
+                    className={`checkout-shipping-option ${envio === "express" ? "checkout-shipping-option--selected" : ""}`}
+                  >
                     <input
                       type="radio"
                       name="envio"
@@ -437,16 +597,26 @@ export default function CheckoutSummaryPage() {
                       onChange={() => setEnvio("express")}
                     />
                     <div className="checkout-shipping-option__info">
-                      <span className="checkout-shipping-option__title">Envío express</span>
-                      <span className="checkout-shipping-option__desc">1-2 días hábiles</span>
-                      <span className="checkout-shipping-option__price">{formatPrice(600)}</span>
+                      <span className="checkout-shipping-option__title">
+                        Envío express
+                      </span>
+                      <span className="checkout-shipping-option__desc">
+                        1-2 días hábiles
+                      </span>
+                      <span className="checkout-shipping-option__price">
+                        {formatPrice(600)}
+                      </span>
                     </div>
                   </label>
                 </div>
 
                 <div className="checkout-estimated-date">
-                  <p className="checkout-estimated-date__label">Fecha estimada de entrega:</p>
-                  <p className="checkout-estimated-date__value">{getEstimatedDate()}</p>
+                  <p className="checkout-estimated-date__label">
+                    Fecha estimada de entrega:
+                  </p>
+                  <p className="checkout-estimated-date__value">
+                    {getEstimatedDate()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -454,12 +624,16 @@ export default function CheckoutSummaryPage() {
             {/* MÉTODO DE PAGO */}
             <div className="checkout-card">
               <h2 className="checkout-card__title">
-                <span className="checkout-card__icon"><IconCreditCard /></span>
+                <span className="checkout-card__icon">
+                  <IconCreditCard />
+                </span>
                 Método de pago
               </h2>
               <div className="checkout-card__body">
                 <div className="checkout-payment-options">
-                  <label className={`checkout-payment-option ${metodoPago === "card" ? "checkout-payment-option--selected" : ""}`}>
+                  <label
+                    className={`checkout-payment-option ${metodoPago === "card" ? "checkout-payment-option--selected" : ""}`}
+                  >
                     <input
                       type="radio"
                       name="metodoPago"
@@ -468,11 +642,15 @@ export default function CheckoutSummaryPage() {
                       onChange={() => setMetodoPago("card")}
                     />
                     <div className="checkout-payment-option__content">
-                      <span className="checkout-payment-option__label">Tarjeta de crédito/débito</span>
+                      <span className="checkout-payment-option__label">
+                        Tarjeta de crédito/débito
+                      </span>
                     </div>
                   </label>
 
-                  <label className={`checkout-payment-option ${metodoPago === "transfer" ? "checkout-payment-option--selected" : ""}`}>
+                  <label
+                    className={`checkout-payment-option ${metodoPago === "transfer" ? "checkout-payment-option--selected" : ""}`}
+                  >
                     <input
                       type="radio"
                       name="metodoPago"
@@ -481,11 +659,15 @@ export default function CheckoutSummaryPage() {
                       onChange={() => setMetodoPago("transfer")}
                     />
                     <div className="checkout-payment-option__content">
-                      <span className="checkout-payment-option__label">Transferencia bancaria</span>
+                      <span className="checkout-payment-option__label">
+                        Transferencia bancaria
+                      </span>
                     </div>
                   </label>
 
-                  <label className={`checkout-payment-option ${metodoPago === "cash" ? "checkout-payment-option--selected" : ""}`}>
+                  <label
+                    className={`checkout-payment-option ${metodoPago === "cash" ? "checkout-payment-option--selected" : ""}`}
+                  >
                     <input
                       type="radio"
                       name="metodoPago"
@@ -494,7 +676,9 @@ export default function CheckoutSummaryPage() {
                       onChange={() => setMetodoPago("cash")}
                     />
                     <div className="checkout-payment-option__content">
-                      <span className="checkout-payment-option__label">Efectivo contra entrega</span>
+                      <span className="checkout-payment-option__label">
+                        Efectivo contra entrega
+                      </span>
                     </div>
                   </label>
                 </div>
@@ -504,13 +688,21 @@ export default function CheckoutSummaryPage() {
                     <div className="checkout-row">
                       <div className="checkout-field checkout-field--full">
                         <label htmlFor="cardNumber">Número de tarjeta</label>
-                        <input type="text" id="cardNumber" placeholder="**** **** **** 1234" />
+                        <input
+                          type="text"
+                          id="cardNumber"
+                          placeholder="**** **** **** 1234"
+                        />
                       </div>
                     </div>
                     <div className="checkout-row">
                       <div className="checkout-field">
                         <label htmlFor="cardExpiry">Vigencia</label>
-                        <input type="text" id="cardExpiry" placeholder="MM/AA" />
+                        <input
+                          type="text"
+                          id="cardExpiry"
+                          placeholder="MM/AA"
+                        />
                       </div>
                       <div className="checkout-field">
                         <label htmlFor="cardCvv">CVV</label>
@@ -522,7 +714,10 @@ export default function CheckoutSummaryPage() {
 
                 {metodoPago === "transfer" && (
                   <div className="checkout-transfer-info">
-                    <p>Te enviaremos los datos para transferencia por correo electrónico.</p>
+                    <p>
+                      Te enviaremos los datos para transferencia por correo
+                      electrónico.
+                    </p>
                   </div>
                 )}
 
@@ -551,7 +746,9 @@ export default function CheckoutSummaryPage() {
                     />
                     <div className="checkout-item__info">
                       <p className="checkout-item__name">{item.name}</p>
-                      <p className="checkout-item__qty">Cantidad: {item.quantity}</p>
+                      <p className="checkout-item__qty">
+                        Cantidad: {item.quantity}
+                      </p>
                     </div>
                     <span className="checkout-item__price">
                       {formatPrice(item.price * item.quantity)}
@@ -617,7 +814,9 @@ export default function CheckoutSummaryPage() {
                   onClick={handleConfirm}
                   disabled={!isFormValid()}
                 >
-                  {!aceptTerms ? "Acepta términos para continuar" : "Confirmar pedido"}
+                  {!aceptTerms
+                    ? "Acepta términos para continuar"
+                    : "Confirmar pedido"}
                 </button>
 
                 {/* SEGURO */}
@@ -625,7 +824,7 @@ export default function CheckoutSummaryPage() {
                   Pago 100% seguro. Tus datos están protegidos.
                 </p>
               </div>
-            </div>          
+            </div>
           </aside>
         </form>
       </main>

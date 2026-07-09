@@ -735,160 +735,161 @@
     padding: 0.8rem;
   }
 
-/* ============================================
+  /* ============================================
    CHECKOUT PAGE STYLES - ACTUALIZADO
    ============================================ */
 
-/* ... (mantén todos los estilos anteriores) ... */
+  /* ... (mantén todos los estilos anteriores) ... */
 
-/* ===== MEJORAS EN FORMULARIOS ===== */
+  /* ===== MEJORAS EN FORMULARIOS ===== */
 
-/* Campos de formulario mejor distribuidos */
-.checkout-field--full {
-  grid-column: 1 / -1;
-}
+  /* Campos de formulario mejor distribuidos */
+  .checkout-field--full {
+    grid-column: 1 / -1;
+  }
 
-.checkout-field input,
-.checkout-field select {
-  padding: 12px 16px;
-  border: 1px solid #d4c5b2;
-  border-radius: 10px;
-  background: #fefcf8;
-  font-size: 14px;
-  font-family: "Poppins", sans-serif;
-  transition: all 0.2s ease;
-  outline: none;
-  width: 100%;
-  box-sizing: border-box;
-}
+  .checkout-field input,
+  .checkout-field select {
+    padding: 12px 16px;
+    border: 1px solid #d4c5b2;
+    border-radius: 10px;
+    background: #fefcf8;
+    font-size: 14px;
+    font-family: "Poppins", sans-serif;
+    transition: all 0.2s ease;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
 
-.checkout-field input:focus,
-.checkout-field select:focus {
-  border-color: #8b6b4c;
-  box-shadow: 0 0 0 3px rgba(139, 107, 76, 0.1);
-}
+  .checkout-field input:focus,
+  .checkout-field select:focus {
+    border-color: #8b6b4c;
+    box-shadow: 0 0 0 3px rgba(139, 107, 76, 0.1);
+  }
 
-.checkout-field input::placeholder {
-  color: #b3a088;
-  opacity: 1;
-}
+  .checkout-field input::placeholder {
+    color: #b3a088;
+    opacity: 1;
+  }
 
-.checkout-input--error {
-  border-color: #c0392b !important;
-  background: #fdf2f0 !important;
-}
+  .checkout-input--error {
+    border-color: #c0392b !important;
+    background: #fdf2f0 !important;
+  }
 
-.checkout-field__error {
-  font-size: 11px;
-  color: #c0392b;
-  font-family: "Poppins", sans-serif;
-  margin-top: 2px;
-}
+  .checkout-field__error {
+    font-size: 11px;
+    color: #c0392b;
+    font-family: "Poppins", sans-serif;
+    margin-top: 2px;
+  }
 
-.checkout-field label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #5a4a3a;
-  font-family: "Poppins", sans-serif;
-  margin-bottom: 4px;
-}
+  .checkout-field label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #5a4a3a;
+    font-family: "Poppins", sans-serif;
+    margin-bottom: 4px;
+  }
 
-/* ===== TÉRMINOS Y CONDICIONES ===== */
-.checkout-terms {
-  margin: 0.75rem 0 1rem 0;
-  padding: 0.75rem 1rem;
-  background: #f8f0e6;
-  border-radius: 10px;
-  border: 1px solid #e8dccc;
-}
+  /* ===== TÉRMINOS Y CONDICIONES ===== */
+  .checkout-terms {
+    margin: 0.75rem 0 1rem 0;
+    padding: 0.75rem 1rem;
+    background: #f8f0e6;
+    border-radius: 10px;
+    border: 1px solid #e8dccc;
+  }
 
-.checkout-terms__label {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  cursor: pointer;
-}
+  .checkout-terms__label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+  }
 
-.checkout-terms__checkbox {
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  margin-top: 2px;
-  accent-color: #977422;
-  cursor: pointer;
-}
+  .checkout-terms__checkbox {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-top: 2px;
+    accent-color: #977422;
+    cursor: pointer;
+  }
 
-.checkout-terms__text {
-  font-family: "Poppins", sans-serif;
-  font-size: 13px;
-  color: #5a4a3a;
-  line-height: 1.5;
-}
+  .checkout-terms__text {
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    color: #5a4a3a;
+    line-height: 1.5;
+  }
 
-.checkout-terms__link {
-  color: #977422;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
+  .checkout-terms__link {
+    color: #977422;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
 
-.checkout-terms__link:hover {
-  color: #7a5d1a;
-  text-decoration: underline;
-}
+  .checkout-terms__link:hover {
+    color: #7a5d1a;
+    text-decoration: underline;
+  }
 
-.checkout-terms__error {
-  font-size: 12px;
-  color: #c0392b;
-  font-family: "Poppins", sans-serif;
-  margin-top: 4px;
-  margin-left: 30px;
-}
+  .checkout-terms__error {
+    font-size: 12px;
+    color: #c0392b;
+    font-family: "Poppins", sans-serif;
+    margin-top: 4px;
+    margin-left: 30px;
+  }
 
-/* ===== BOTÓN CONFIRMAR MEJORADO ===== */
-.checkout-confirm-btn {
-  width: 100%;
-  padding: 1rem;
-  background: #977422;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: "Poppins", sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px #b88f2f84;
-}
+  /* ===== BOTÓN CONFIRMAR MEJORADO ===== */
+  .checkout-confirm-btn {
+    width: 100%;
+    padding: 1rem;
+    background: #977422;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px #b88f2f84;
+  }
 
-.checkout-confirm-btn:hover:not(:disabled):not(.checkout-confirm-btn--disabled) {
-  background: #7a5d1a;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px #8b6b4c59;
-}
+  .checkout-confirm-btn:hover:not(:disabled):not(
+      .checkout-confirm-btn--disabled
+    ) {
+    background: #7a5d1a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px #8b6b4c59;
+  }
 
-.checkout-confirm-btn:disabled,
-.checkout-confirm-btn--disabled {
-  background: #d4c5b2;
-  cursor: not-allowed;
-  box-shadow: none;
-  opacity: 0.7;
-}
+  .checkout-confirm-btn:disabled,
+  .checkout-confirm-btn--disabled {
+    background: #d4c5b2;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+  }
 
-/* ===== ICONOS EN TÍTULOS ===== */
-.checkout-card__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #977422;
-  flex-shrink: 0;
-}
+  /* ===== ICONOS EN TÍTULOS ===== */
+  .checkout-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: #977422;
+    flex-shrink: 0;
+  }
 
-.checkout-card__icon svg {
-  width: 20px;
-  height: 20px;
-}
-
+  .checkout-card__icon svg {
+    width: 20px;
+    height: 20px;
+  }
 }

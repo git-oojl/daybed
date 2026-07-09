@@ -12,7 +12,12 @@
   width: 100vw;
   height: 100vh;
   overflow-y: auto;
-  font-family: "Inter", "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Inter",
+    "Poppins",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   background: #f5f5f5;
   box-sizing: border-box;
 }
@@ -25,7 +30,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url('https://images.unsplash.com/photo-1618220179428-22790b461013?w=1920&q=80');
+  background-image: url("https://images.unsplash.com/photo-1618220179428-22790b461013?w=1920&q=80");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -154,14 +159,18 @@
 .admin-settings__card {
   background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
   border: 1px solid #e8e8e8;
   overflow: hidden;
   transition: box-shadow 0.3s ease;
 }
 
 .admin-settings__card:hover {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .admin-settings__card-header {
@@ -169,7 +178,7 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: #FFF3E3;
+  background: #fff3e3;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -349,13 +358,13 @@
 }
 
 .admin-settings__currency-btn--active {
-  border-color: #B88E2F;
-  background: #B88E2F;
+  border-color: #b88e2f;
+  background: #b88e2f;
   color: #ffffff;
 }
 
 .admin-settings__currency-btn--active:hover {
-  background: #B88E2F;
+  background: #b88e2f;
   color: #ffffff;
 }
 
@@ -552,7 +561,7 @@
 }
 
 .admin-settings__switch input:checked + .admin-settings__slider {
-  background: #B88E2F;
+  background: #b88e2f;
 }
 
 .admin-settings__switch input:checked + .admin-settings__slider::before {
@@ -589,17 +598,16 @@
 }
 
 .admin-settings__btn--primary {
-  background: #B88E2F;
+  background: #b88e2f;
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(26, 26, 46, 0.25);
 }
 
 .admin-settings__btn--primary:hover:not(:disabled) {
-  background: #B88E2F;
+  background: #b88e2f;
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(26, 26, 46, 0.35);
 }
-
 
 .admin-settings__btn--primary:disabled {
   opacity: 0.6;

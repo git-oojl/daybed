@@ -28,8 +28,8 @@
   padding: 40px !important;
   border-radius: 20px !important;
   box-shadow: 0 8px 40px rgba(74, 53, 32, 0.2) !important;
-  background-color: #FFF3E3 !important;
-  border: 1px solid #E8DCCC !important;
+  background-color: #fff3e3 !important;
+  border: 1px solid #e8dccc !important;
   position: relative !important;
   z-index: 1 !important;
   backdrop-filter: blur(2px) !important;
@@ -46,7 +46,7 @@
 
 .login-logo-icon {
   font-size: 40px !important;
-  color: #7B5D15 !important;
+  color: #7b5d15 !important;
 }
 
 .login-logo-text {
@@ -77,28 +77,34 @@
 /* Input root */
 .login-text-field .MuiOutlinedInput-root {
   border-radius: 12px !important;
-  background-color: #FEFCF8 !important;
+  background-color: #fefcf8 !important;
   transition: border-color 0.2s ease !important;
 }
 
 /* Fieldset (borde) */
 .login-text-field .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
-  border-color: #D4C5B2 !important;
+  border-color: #d4c5b2 !important;
   border-width: 1px !important;
 }
 
-.login-text-field .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: #8B6B4C !important;
+.login-text-field
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #8b6b4c !important;
   border-width: 1px !important;
 }
 
-.login-text-field .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #8B6B4C !important;
+.login-text-field
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #8b6b4c !important;
   border-width: 2px !important;
 }
 
-.login-text-field .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline {
-  border-color: #C0392B !important;
+.login-text-field
+  .MuiOutlinedInput-root.Mui-error
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #c0392b !important;
 }
 
 /* Label */
@@ -109,11 +115,11 @@
 }
 
 .login-text-field .MuiInputLabel-root.Mui-focused {
-  color: #8B6B4C !important;
+  color: #8b6b4c !important;
 }
 
 .login-text-field .MuiInputLabel-root.Mui-error {
-  color: #C0392B !important;
+  color: #c0392b !important;
 }
 
 .login-text-field .MuiInputLabel-shrink {
@@ -124,7 +130,7 @@
 .login-text-field .MuiFormHelperText-root {
   margin-left: 0 !important;
   font-weight: 400 !important;
-  color: #C0392B !important;
+  color: #c0392b !important;
   font-family: "Poppins", montserrat, sans-serif !important;
 }
 
@@ -147,14 +153,16 @@
 /* ===== BOTÓN DE LOGIN ===== */
 .login-button {
   background-color: #977422 !important;
-  color: #FFFFFF !important;
+  color: #ffffff !important;
   padding: 12.8px !important;
   border-radius: 12px !important;
   font-size: 16px !important;
   font-weight: 600 !important;
   text-transform: none !important;
   font-family: "Poppins", montserrat, sans-serif !important;
-  transition: background-color 0.3s ease, transform 0.2s ease !important;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease !important;
   box-shadow: 0 4px 12px #b88f2f84 !important;
   width: 100% !important;
   border: none !important;
@@ -172,10 +180,10 @@
 }
 
 .login-button:disabled {
-  background-color: #D4C5B2 !important;
+  background-color: #d4c5b2 !important;
   box-shadow: none !important;
   transform: none !important;
-  color: #A09080 !important;
+  color: #a09080 !important;
   cursor: not-allowed !important;
 }
 
@@ -190,7 +198,7 @@
 }
 
 .login-forgot-link {
-  color: #8B6B4C !important;
+  color: #8b6b4c !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   cursor: pointer !important;
@@ -201,12 +209,12 @@
 }
 
 .login-forgot-link:hover {
-  color: #6B4F3A !important;
+  color: #6b4f3a !important;
   text-decoration: underline !important;
 }
 
 .login-register-link {
-  color: #8B6B4C !important;
+  color: #8b6b4c !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   text-decoration: none !important;
@@ -216,7 +224,7 @@
 }
 
 .login-register-link:hover {
-  color: #6B4F3A !important;
+  color: #6b4f3a !important;
   text-decoration: underline !important;
 }
 
@@ -227,7 +235,7 @@
 
 .login-divider::before,
 .login-divider::after {
-  border-color: #D4C5B2 !important;
+  border-color: #d4c5b2 !important;
 }
 
 .login-divider .MuiDivider-wrapper {
@@ -252,16 +260,16 @@
 .login-alert {
   margin-bottom: 24px !important;
   border-radius: 12px !important;
-  background-color: #FDF2F0 !important;
-  border: 1px solid #F5D0CC !important;
+  background-color: #fdf2f0 !important;
+  border: 1px solid #f5d0cc !important;
 }
 
 .login-alert .MuiAlert-icon {
-  color: #C0392B !important;
+  color: #c0392b !important;
 }
 
 .login-alert .MuiAlert-message {
-  color: #4A3520 !important;
+  color: #4a3520 !important;
   font-family: "Poppins", montserrat, sans-serif !important;
 }
 

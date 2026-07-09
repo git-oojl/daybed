@@ -1,5 +1,5 @@
 // LoginPage.jsx
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Box,
   Paper,
@@ -12,25 +12,25 @@ import {
   Alert,
   InputAdornment,
   IconButton,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Email as EmailIcon,
   Lock as LockIcon,
   Visibility,
   VisibilityOff,
   Storefront as StoreIcon,
-} from '@mui/icons-material';
-import '../../assets/CSS/account/login-page.css'; // ← Importar CSS
-import loginBackground from '../../assets/LoginPage.jpg';
+} from "@mui/icons-material";
+import "../../assets/CSS/account/login-page.css"; // ← Importar CSS
+import loginBackground from "../../assets/LoginPage.jpg";
 
 function LoginPage() {
   const [formData, setFormData] = useState({
-    email: 'ejemplo01@email.com',
-    password: '12345',
+    email: "ejemplo01@email.com",
+    password: "12345",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [touched, setTouched] = useState({
     email: false,
     password: false,
@@ -55,7 +55,7 @@ function LoginPage() {
       ...formData,
       [name]: value,
     });
-    setError('');
+    setError("");
   };
 
   const handleBlur = (e) => {
@@ -68,26 +68,29 @@ function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!validateEmail(formData.email)) {
-      setError('Por favor, ingresa un correo electrónico válido');
+      setError("Por favor, ingresa un correo electrónico válido");
       return;
     }
 
     if (!validatePassword(formData.password)) {
-      setError('La contraseña debe tener al menos 4 caracteres');
+      setError("La contraseña debe tener al menos 4 caracteres");
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      if (formData.email === 'ejemplo01@email.com' && formData.password === '12345') {
-        console.log('Login exitoso');
-        window.location.href = '/dashboard';
+      if (
+        formData.email === "ejemplo01@email.com" &&
+        formData.password === "12345"
+      ) {
+        console.log("Login exitoso");
+        window.location.href = "/dashboard";
       } else {
-        setError('Correo o contraseña incorrectos');
+        setError("Correo o contraseña incorrectos");
       }
       setLoading(false);
     }, 1500);
@@ -97,8 +100,10 @@ function LoginPage() {
     setShowPassword(!showPassword);
   };
 
-  const showEmailError = touched.email && !isEmailValid && formData.email !== '';
-  const showPasswordError = touched.password && !isPasswordValid && formData.password !== '';
+  const showEmailError =
+    touched.email && !isEmailValid && formData.email !== "";
+  const showPasswordError =
+    touched.password && !isPasswordValid && formData.password !== "";
 
   return (
     <Box
@@ -135,11 +140,13 @@ function LoginPage() {
             onBlur={handleBlur}
             placeholder="ejemplo01@email.com"
             error={showEmailError}
-            helperText={showEmailError ? 'Ingresa un correo válido' : ''}
+            helperText={showEmailError ? "Ingresa un correo válido" : ""}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailIcon sx={{ color: showEmailError ? '#C0392B' : '#61470c' }} />
+                  <EmailIcon
+                    sx={{ color: showEmailError ? "#C0392B" : "#61470c" }}
+                  />
                 </InputAdornment>
               ),
             }}
@@ -152,17 +159,23 @@ function LoginPage() {
             fullWidth
             label="Contraseña"
             name="password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             value={formData.password}
             onChange={handleChange}
             onBlur={handleBlur}
             placeholder="12345"
             error={showPasswordError}
-            helperText={showPasswordError ? 'La contraseña debe tener al menos 4 caracteres' : ''}
+            helperText={
+              showPasswordError
+                ? "La contraseña debe tener al menos 4 caracteres"
+                : ""
+            }
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LockIcon sx={{ color: showPasswordError ? '#C0392B' : '#61470c' }} />
+                  <LockIcon
+                    sx={{ color: showPasswordError ? "#C0392B" : "#61470c" }}
+                  />
                 </InputAdornment>
               ),
               endAdornment: (
@@ -170,8 +183,10 @@ function LoginPage() {
                   <IconButton
                     onClick={handleTogglePassword}
                     edge="end"
-                    sx={{ color: '#61470c' }}
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    sx={{ color: "#61470c" }}
+                    aria-label={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -182,8 +197,12 @@ function LoginPage() {
             autoComplete="current-password"
           />
 
-          <button className="login-button" type="submit" disabled={!isFormValid}>
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+          <button
+            className="login-button"
+            type="submit"
+            disabled={!isFormValid}
+          >
+            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
           </button>
         </form>
 
@@ -201,8 +220,12 @@ function LoginPage() {
 
         <Box className="login-register-wrapper">
           <Typography variant="body1">
-            ¿No tienes cuenta?{' '}
-            <Link className="login-register-link" href="/crear-cuenta" underline="hover">
+            ¿No tienes cuenta?{" "}
+            <Link
+              className="login-register-link"
+              href="/crear-cuenta"
+              underline="hover"
+            >
               Regístrate
             </Link>
           </Typography>

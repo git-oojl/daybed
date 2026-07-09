@@ -7,95 +7,261 @@ import "../../assets/CSS/admin/settings-page.css";
 // ============================================
 function IconStore() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 9l9-6 9 6M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M9 20v-4h6v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="9" cy="13" r="1" fill="currentColor"/>
-      <circle cx="15" cy="13" r="1" fill="currentColor"/>
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 9l9-6 9 6M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 20v-4h6v4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="9" cy="13" r="1" fill="currentColor" />
+      <circle cx="15" cy="13" r="1" fill="currentColor" />
     </svg>
   );
 }
 
 function IconLocation() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 21s-7-4.5-7-10a7 7 0 1 1 14 0c0 5.5-7 10-7 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-      <circle cx="12" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 21s-7-4.5-7-10a7 7 0 1 1 14 0c0 5.5-7 10-7 10Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
 
 function IconTruck() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M16 3h4l2 4v6h-6V3ZM8 13h2M14 13h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="8" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-      <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M10.5 19h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M16 3h4l2 4v6h-6V3ZM8 13h2M14 13h2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M10.5 19h3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function IconCurrency() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M8 8h5a2 2 0 1 1 0 4H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M9 12h4a2 2 0 1 1 0 4H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M8 8h5a2 2 0 1 1 0 4H9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 12h4a2 2 0 1 1 0 4H8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function IconDistance() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 20L20 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M8 3L3 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M21 16L16 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M12 22l-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M22 12l-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 20L20 4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 3L3 8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M21 16L16 21"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 22l-3-3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M22 12l-3-3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function IconSave() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M17 21v-8H7v8M7 3v5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17 21v-8H7v8M7 3v5h8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function IconCancel() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 18L18 6M6 6l12 12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function IconEdit() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 20h9M16.5 3.5l4 4L7 21l-5 1 1-5L16.5 3.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 20h9M16.5 3.5l4 4L7 21l-5 1 1-5L16.5 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function IconCheck() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 12l5 5L20 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function IconSettings() {
   return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -117,10 +283,10 @@ export default function BasicSettingsPage() {
     city: "Ciudad de México",
     state: "CDMX",
     zipCode: "06700",
-    baseRate: 150.00,
-    pricePerKm: 15.00,
+    baseRate: 150.0,
+    pricePerKm: 15.0,
     currency: "MXN",
-    freeShippingThreshold: 5000.00,
+    freeShippingThreshold: 5000.0,
     useRealMapAPI: false,
     showCartEstimate: true,
   });
@@ -169,10 +335,10 @@ export default function BasicSettingsPage() {
       city: "Ciudad de México",
       state: "CDMX",
       zipCode: "06700",
-      baseRate: 150.00,
-      pricePerKm: 15.00,
+      baseRate: 150.0,
+      pricePerKm: 15.0,
       currency: "MXN",
-      freeShippingThreshold: 5000.00,
+      freeShippingThreshold: 5000.0,
       useRealMapAPI: false,
       showCartEstimate: true,
     });
@@ -189,14 +355,19 @@ export default function BasicSettingsPage() {
   return (
     <div className="admin-settings">
       {/* ===== HEADER HERO (estilo checkout-hero) ===== */}
-      <section className="admin-settings-hero" aria-label="Configuración básica">
+      <section
+        className="admin-settings-hero"
+        aria-label="Configuración básica"
+      >
         <div className="admin-settings-hero__overlay">
           <div className="admin-settings-hero__content">
             <div className="admin-settings-hero__icon">
               <IconSettings />
             </div>
             <div className="admin-settings-hero__text">
-              <h1 className="admin-settings-hero__title">Configuración básica</h1>
+              <h1 className="admin-settings-hero__title">
+                Configuración básica
+              </h1>
               <p className="admin-settings-hero__subtitle">
                 Gestiona los datos generales de tu tienda y tarifas de envío
               </p>
@@ -231,7 +402,9 @@ export default function BasicSettingsPage() {
                   <IconStore />
                 </div>
                 <div>
-                  <h2 className="admin-settings__card-title">Datos generales</h2>
+                  <h2 className="admin-settings__card-title">
+                    Datos generales
+                  </h2>
                   <p className="admin-settings__card-desc">
                     Información básica de tu tienda
                   </p>
@@ -241,7 +414,8 @@ export default function BasicSettingsPage() {
               <div className="admin-settings__card-body">
                 <div className="admin-settings__field">
                   <label htmlFor="storeName">
-                    Nombre de la tienda <span className="admin-settings__required">*</span>
+                    Nombre de la tienda{" "}
+                    <span className="admin-settings__required">*</span>
                   </label>
                   <input
                     type="text"
@@ -256,7 +430,8 @@ export default function BasicSettingsPage() {
                 <div className="admin-settings__row">
                   <div className="admin-settings__field">
                     <label htmlFor="phone">
-                      Teléfono de contacto <span className="admin-settings__required">*</span>
+                      Teléfono de contacto{" "}
+                      <span className="admin-settings__required">*</span>
                     </label>
                     <input
                       type="tel"
@@ -270,7 +445,8 @@ export default function BasicSettingsPage() {
 
                   <div className="admin-settings__field">
                     <label htmlFor="email">
-                      Email de atención <span className="admin-settings__required">*</span>
+                      Email de atención{" "}
+                      <span className="admin-settings__required">*</span>
                     </label>
                     <input
                       type="email"
@@ -302,7 +478,8 @@ export default function BasicSettingsPage() {
               <div className="admin-settings__card-body">
                 <div className="admin-settings__field">
                   <label htmlFor="street">
-                    Calle y número <span className="admin-settings__required">*</span>
+                    Calle y número{" "}
+                    <span className="admin-settings__required">*</span>
                   </label>
                   <input
                     type="text"
@@ -360,7 +537,8 @@ export default function BasicSettingsPage() {
 
                 <div className="admin-settings__field">
                   <label htmlFor="zipCode">
-                    Código postal <span className="admin-settings__required">*</span>
+                    Código postal{" "}
+                    <span className="admin-settings__required">*</span>
                   </label>
                   <input
                     type="text"
@@ -397,7 +575,9 @@ export default function BasicSettingsPage() {
                   <IconTruck />
                 </div>
                 <div>
-                  <h2 className="admin-settings__card-title">Tarifas de envío</h2>
+                  <h2 className="admin-settings__card-title">
+                    Tarifas de envío
+                  </h2>
                   <p className="admin-settings__card-desc">
                     Costos de entrega para tus clientes
                   </p>
@@ -413,21 +593,27 @@ export default function BasicSettingsPage() {
                     <button
                       type="button"
                       className={`admin-settings__currency-btn ${formData.currency === "MXN" ? "admin-settings__currency-btn--active" : ""}`}
-                      onClick={() => setFormData({ ...formData, currency: "MXN" })}
+                      onClick={() =>
+                        setFormData({ ...formData, currency: "MXN" })
+                      }
                     >
                       🇲🇽 MXN
                     </button>
                     <button
                       type="button"
                       className={`admin-settings__currency-btn ${formData.currency === "USD" ? "admin-settings__currency-btn--active" : ""}`}
-                      onClick={() => setFormData({ ...formData, currency: "USD" })}
+                      onClick={() =>
+                        setFormData({ ...formData, currency: "USD" })
+                      }
                     >
                       🇺🇸 USD
                     </button>
                     <button
                       type="button"
                       className={`admin-settings__currency-btn ${formData.currency === "EUR" ? "admin-settings__currency-btn--active" : ""}`}
-                      onClick={() => setFormData({ ...formData, currency: "EUR" })}
+                      onClick={() =>
+                        setFormData({ ...formData, currency: "EUR" })
+                      }
                     >
                       🇪🇺 EUR
                     </button>
@@ -437,7 +623,8 @@ export default function BasicSettingsPage() {
                 <div className="admin-settings__row">
                   <div className="admin-settings__field">
                     <label htmlFor="baseRate">
-                      Tarifa base de entrega <span className="admin-settings__required">*</span>
+                      Tarifa base de entrega{" "}
+                      <span className="admin-settings__required">*</span>
                     </label>
                     <div className="admin-settings__input-group">
                       <span className="admin-settings__input-currency">$</span>
@@ -459,7 +646,8 @@ export default function BasicSettingsPage() {
 
                   <div className="admin-settings__field">
                     <label htmlFor="pricePerKm">
-                      Precio por kilómetro <span className="admin-settings__required">*</span>
+                      Precio por kilómetro{" "}
+                      <span className="admin-settings__required">*</span>
                     </label>
                     <div className="admin-settings__input-group">
                       <span className="admin-settings__input-currency">$</span>
@@ -467,7 +655,9 @@ export default function BasicSettingsPage() {
                         type="number"
                         id="pricePerKm"
                         name="pricePerKm"
-                        value={formData.pricePerKm === 0 ? "" : formData.pricePerKm}
+                        value={
+                          formData.pricePerKm === 0 ? "" : formData.pricePerKm
+                        }
                         onChange={handleNumberChange}
                         step="0.01"
                         min="0"
@@ -500,7 +690,9 @@ export default function BasicSettingsPage() {
                     </div>
                     <div className="admin-settings__example-row admin-settings__example-total">
                       <span>Total estimado:</span>
-                      <span>${shippingExample.toFixed(2)} {formData.currency}</span>
+                      <span>
+                        ${shippingExample.toFixed(2)} {formData.currency}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -514,7 +706,9 @@ export default function BasicSettingsPage() {
                   <IconCurrency />
                 </div>
                 <div>
-                  <h2 className="admin-settings__card-title">Opciones avanzadas</h2>
+                  <h2 className="admin-settings__card-title">
+                    Opciones avanzadas
+                  </h2>
                   <p className="admin-settings__card-desc">
                     Configuraciones adicionales de envío
                   </p>
@@ -528,7 +722,8 @@ export default function BasicSettingsPage() {
                       Envío gratis a partir de:
                     </label>
                     <span className="admin-settings__toggle-hint">
-                      El envío será gratuito cuando el total del pedido supere este monto
+                      El envío será gratuito cuando el total del pedido supere
+                      este monto
                     </span>
                   </div>
                   <div className="admin-settings__input-group admin-settings__input-group--small">
@@ -537,7 +732,11 @@ export default function BasicSettingsPage() {
                       type="number"
                       id="freeShippingThreshold"
                       name="freeShippingThreshold"
-                      value={formData.freeShippingThreshold === 0 ? "" : formData.freeShippingThreshold}
+                      value={
+                        formData.freeShippingThreshold === 0
+                          ? ""
+                          : formData.freeShippingThreshold
+                      }
                       onChange={handleNumberChange}
                       step="0.01"
                       min="0"
@@ -573,7 +772,8 @@ export default function BasicSettingsPage() {
                       Mostrar costo estimado en el carrito
                     </label>
                     <span className="admin-settings__toggle-hint">
-                      Los clientes verán el costo de envío estimado al agregar productos
+                      Los clientes verán el costo de envío estimado al agregar
+                      productos
                     </span>
                   </div>
                   <label className="admin-settings__switch">
