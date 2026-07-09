@@ -1,0 +1,403 @@
+/* ============================================
+   LOGIN PAGE - ESTILOS (CORREGIDO)
+   ============================================ */
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.login-container {
+  min-height: 100vh !important;
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 32px !important;
+  box-sizing: border-box !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  position: fixed !important;
+  right: 0 !important;
+  left: 0 !important;
+  top: 0 !important;
+  z-index: 0 !important;
+}
+
+/* ===== PAPER / CARD ===== */
+.login-paper {
+  width: 100% !important;
+  max-width: 440px !important;
+  padding: 40px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 40px rgba(74, 53, 32, 0.2) !important;
+  background-color: #FFF3E3 !important;
+  border: 1px solid #E8DCCC !important;
+  position: relative !important;
+  z-index: 1 !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* ===== LOGO ===== */
+.login-logo-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  margin-bottom: 8px !important;
+}
+
+.login-logo-icon {
+  font-size: 40px !important;
+  color: #7B5D15 !important;
+}
+
+.login-logo-text {
+  font-size: 34px !important;
+  font-weight: 700 !important;
+  color: #8c6918 !important;
+  text-align: center !important;
+  letter-spacing: 1.5px !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ===== SUBTÍTULO ===== */
+.login-subtitle {
+  font-size: 16px !important;
+  color: #61470c !important;
+  text-align: center !important;
+  margin-bottom: 32px !important;
+  font-weight: 400 !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ===== CAMPOS DE TEXTO - SOBREESCRIBIR MUI ===== */
+.login-text-field {
+  margin-bottom: 20px !important;
+  width: 100% !important;
+}
+
+/* Input root */
+.login-text-field .MuiOutlinedInput-root {
+  border-radius: 12px !important;
+  background-color: #FEFCF8 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+/* Fieldset (borde) */
+.login-text-field .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: #D4C5B2 !important;
+  border-width: 1px !important;
+}
+
+.login-text-field .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #8B6B4C !important;
+  border-width: 1px !important;
+}
+
+.login-text-field .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #8B6B4C !important;
+  border-width: 2px !important;
+}
+
+.login-text-field .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline {
+  border-color: #C0392B !important;
+}
+
+/* Label */
+.login-text-field .MuiInputLabel-root {
+  color: #61470c !important;
+  font-weight: 500 !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+.login-text-field .MuiInputLabel-root.Mui-focused {
+  color: #8B6B4C !important;
+}
+
+.login-text-field .MuiInputLabel-root.Mui-error {
+  color: #C0392B !important;
+}
+
+.login-text-field .MuiInputLabel-shrink {
+  font-weight: 600 !important;
+}
+
+/* Helper text */
+.login-text-field .MuiFormHelperText-root {
+  margin-left: 0 !important;
+  font-weight: 400 !important;
+  color: #C0392B !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* Input text */
+.login-text-field .MuiInputBase-input {
+  font-family: "Poppins", montserrat, sans-serif !important;
+  padding: 16.5px 14px !important;
+  font-size: 16px !important;
+}
+
+/* Input adornment icons */
+.login-text-field .MuiInputAdornment-root {
+  color: #61470c !important;
+}
+
+.login-text-field .MuiInputAdornment-root .MuiSvgIcon-root {
+  color: #61470c !important;
+}
+
+/* ===== BOTÓN DE LOGIN ===== */
+.login-button {
+  background-color: #977422 !important;
+  color: #FFFFFF !important;
+  padding: 12.8px !important;
+  border-radius: 12px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  transition: background-color 0.3s ease, transform 0.2s ease !important;
+  box-shadow: 0 4px 12px #b88f2f84 !important;
+  width: 100% !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.login-button:hover {
+  background-color: #7a5d1a !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px #8b6b4c59 !important;
+}
+
+.login-button:active {
+  transform: translateY(0) !important;
+}
+
+.login-button:disabled {
+  background-color: #D4C5B2 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  color: #A09080 !important;
+  cursor: not-allowed !important;
+}
+
+/* ===== ENLACES ===== */
+.login-links-container {
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: 16px !important;
+  margin-bottom: 8px !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.login-forgot-link {
+  color: #8B6B4C !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  transition: color 0.2s ease !important;
+  padding: 4px !important;
+}
+
+.login-forgot-link:hover {
+  color: #6B4F3A !important;
+  text-decoration: underline !important;
+}
+
+.login-register-link {
+  color: #8B6B4C !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  padding: 4px !important;
+  transition: color 0.2s ease !important;
+}
+
+.login-register-link:hover {
+  color: #6B4F3A !important;
+  text-decoration: underline !important;
+}
+
+/* ===== DIVISOR ===== */
+.login-divider {
+  margin: 24px 0 !important;
+}
+
+.login-divider::before,
+.login-divider::after {
+  border-color: #D4C5B2 !important;
+}
+
+.login-divider .MuiDivider-wrapper {
+  color: #61470c !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ===== REGISTRO ===== */
+.login-register-wrapper {
+  text-align: center !important;
+}
+
+.login-register-wrapper .MuiTypography-root {
+  color: #61470c !important;
+  font-size: 15px !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ===== ALERTA DE ERROR ===== */
+.login-alert {
+  margin-bottom: 24px !important;
+  border-radius: 12px !important;
+  background-color: #FDF2F0 !important;
+  border: 1px solid #F5D0CC !important;
+}
+
+.login-alert .MuiAlert-icon {
+  color: #C0392B !important;
+}
+
+.login-alert .MuiAlert-message {
+  color: #4A3520 !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ============================================
+   MEDIA QUERIES
+   ============================================ */
+
+/* ===== TABLETS / MÓVILES GRANDES (md) ===== */
+@media (max-width: 1024px) {
+  .login-container {
+    padding: 24px !important;
+  }
+
+  .login-paper {
+    width: 85% !important;
+    max-width: 430px !important;
+  }
+}
+
+/* ===== MÓVILES (sm) ===== */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 24px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100dvh !important;
+  }
+
+  .login-paper {
+    padding: 32px !important;
+  }
+
+  .login-logo-wrapper {
+    gap: 8px !important;
+  }
+
+  .login-logo-icon {
+    font-size: 32px !important;
+  }
+
+  .login-logo-text {
+    font-size: 28px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .login-subtitle {
+    font-size: 14px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .login-text-field .MuiInputBase-input {
+    padding: 14px 14px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* ===== MÓVILES PEQUEÑOS (480px) ===== */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .login-paper {
+    width: 95% !important;
+    max-width: 360px !important;
+    padding: 20px !important;
+    border-radius: 16px !important;
+  }
+
+  .login-logo-wrapper {
+    gap: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .login-logo-icon {
+    font-size: 28px !important;
+  }
+
+  .login-logo-text {
+    font-size: 22px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .login-subtitle {
+    font-size: 13px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .login-text-field {
+    margin-bottom: 12px !important;
+  }
+
+  .login-text-field .MuiInputBase-input {
+    font-size: 15px !important;
+    padding: 13px 12px !important;
+  }
+
+  .login-text-field .MuiInputLabel-root {
+    font-size: 14px !important;
+  }
+
+  .login-text-field .MuiOutlinedInput-root {
+    border-radius: 10px !important;
+  }
+
+  .login-button {
+    padding: 9.6px !important;
+    font-size: 14px !important;
+  }
+
+  .login-links-container {
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin-top: 12px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .login-forgot-link {
+    font-size: 13px !important;
+  }
+
+  .login-divider {
+    margin: 16px 0 !important;
+  }
+
+  .login-divider .MuiDivider-wrapper {
+    font-size: 12px !important;
+  }
+
+  .login-register-wrapper .MuiTypography-root {
+    font-size: 13px !important;
+  }
+
+  .login-text-field .MuiInputAdornment-root .MuiSvgIcon-root {
+    font-size: 20px !important;
+  }
+}

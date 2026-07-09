@@ -1,5 +1,5 @@
-// RegisterPage.jsx - VERSIÓN CORREGIDA Y OPTIMIZADA
-import React, { useState } from 'react';
+// RegisterPage.jsx - VERSIÓN CON CSS EXTERNO (CORREGIDO)
+import { useState } from 'react';
 import {
   Box,
   Paper,
@@ -25,7 +25,7 @@ import {
   LocationCity as CityIcon,
   PinDrop as PinDropIcon,
 } from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+import '../../assets/CSS/account/register-page.css'; // ← Importamos el CSS
 import registerBackground from '../../assets/RegisterPage.jpg';
 
 // ============================================
@@ -46,466 +46,8 @@ const COLORS = {
 };
 
 // ============================================
-// ESTILOS PERSONALIZADOS - CORREGIDOS
-// ============================================
-
-const RegisterContainer = styled(Box)(({ theme }) => ({
-  // ===== ELIMINAR MARCO BLANCO =====
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  width: '100vw',
-  height: '100vh',
-  // ===== FIN ELIMINAR MARCO =====
-
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  padding: theme.spacing(3),
-  boxSizing: 'border-box',
-  backgroundImage: `url(${registerBackground})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-
-  // ===== MEDIA QUERIES =====
-  [theme.breakpoints.down('md')]: {
-    padding: theme.spacing(3),
-  },
-
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(2),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  '@media (max-width:480px)': {
-    padding: theme.spacing(1.5),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-}));
-
-const RegisterPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  width: '100%',
-  maxWidth: 480,
-  borderRadius: 20,
-  backgroundColor: COLORS.background,
-  border: '1px solid #E8DCCC',
-  boxShadow: '0 8px 40px rgba(74,53,32,0.2)',
-  position: 'relative',
-  zIndex: 1,
-  overflowY: 'auto',
-  maxHeight: '84vh',
-
-  // Scrollbar personalizada
-  '&::-webkit-scrollbar': {
-    width: 4,
-  },
-  '&::-webkit-scrollbar-thumb': {
-    background: COLORS.border,
-    borderRadius: 20,
-  },
-  '&::-webkit-scrollbar-track': {
-    background: 'transparent',
-  },
-
-  // ===== MEDIA QUERIES =====
-  [theme.breakpoints.down('md')]: {
-    width: '90%',
-    maxWidth: 450,
-    padding: theme.spacing(3.5),
-  },
-
-  [theme.breakpoints.down('sm')]: {
-    width: '95%',
-    maxWidth: 400,
-    padding: theme.spacing(3),
-    maxHeight: '60vh',
-  },
-
-  '@media (max-width:480px)': {
-    width: '96%',
-    maxWidth: 380,
-    padding: theme.spacing(2.5),
-    borderRadius: 16,
-    maxHeight: '60vh',
-  },
-
-  '@media (max-width:360px)': {
-    padding: theme.spacing(2),
-    borderRadius: 14,
-    maxHeight: '50vh',
-  },
-}));
-
-// ============================================
-// BRAND SECTION
-// ============================================
-
-const BrandSection = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: theme.spacing(1.5),
-  marginBottom: theme.spacing(0.5),
-  [theme.breakpoints.down('sm')]: {
-    gap: theme.spacing(1),
-  },
-  '@media (max-width:480px)': {
-    gap: theme.spacing(0.8),
-  },
-}));
-
-const BrandIcon = styled(StoreIcon)(({ theme }) => ({
-  fontSize: 36,
-  color: COLORS.primaryLight,
-  [theme.breakpoints.down('sm')]: {
-    fontSize: 30,
-  },
-  '@media (max-width:480px)': {
-    fontSize: 26,
-  },
-}));
-
-const BrandTitle = styled(Typography)(({ theme }) => ({
-  fontSize: 30,
-  fontWeight: 700,
-  color: COLORS.primaryLight,
-  textAlign: 'center',
-  letterSpacing: 1.5,
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down('sm')]: {
-    fontSize: 26,
-    letterSpacing: 1,
-  },
-  '@media (max-width:480px)': {
-    fontSize: 22,
-    letterSpacing: 0.5,
-  },
-}));
-
-// ============================================
-// DIVIDER
-// ============================================
-
-const DividerLine = styled(Box)(({ theme }) => ({
-  width: '80px',
-  height: '2px',
-  backgroundColor: COLORS.border,
-  margin: `${theme.spacing(1.5)} auto`,
-  borderRadius: '2px',
-  [theme.breakpoints.down('sm')]: {
-    width: '60px',
-    margin: `${theme.spacing(1)} auto`,
-  },
-  '@media (max-width:480px)': {
-    width: '50px',
-    margin: `${theme.spacing(0.8)} auto`,
-  },
-}));
-
-const RegisterTitle = styled(Typography)(({ theme }) => ({
-  fontSize: 20,
-  fontWeight: 600,
-  color: COLORS.secondary,
-  textAlign: 'center',
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down('sm')]: {
-    fontSize: 18,
-  },
-  '@media (max-width:480px)': {
-    fontSize: 16,
-  },
-}));
-
-const RegisterSubtitle = styled(Typography)(({ theme }) => ({
-  fontSize: 13,
-  color: COLORS.textSecondary,
-  textAlign: 'center',
-  marginBottom: theme.spacing(2.5),
-  fontWeight: 400,
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down('sm')]: {
-    fontSize: 12,
-    marginBottom: theme.spacing(2),
-  },
-  '@media (max-width:480px)': {
-    fontSize: 11,
-    marginBottom: theme.spacing(1.5),
-  },
-}));
-
-// ============================================
-// FORM GROUP
-// ============================================
-
-const FormGroup = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  '&:last-of-type': {
-    marginBottom: theme.spacing(1),
-  },
-  [theme.breakpoints.down('sm')]: {
-    marginBottom: theme.spacing(1.5),
-  },
-  '@media (max-width:480px)': {
-    marginBottom: theme.spacing(1.2),
-  },
-}));
-
-const FormLabel = styled(Typography)(({ theme }) => ({
-  fontSize: 13,
-  fontWeight: 500,
-  color: COLORS.label,
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  marginBottom: theme.spacing(0.5),
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(0.5),
-  [theme.breakpoints.down('sm')]: {
-    fontSize: 12,
-  },
-  '@media (max-width:480px)': {
-    fontSize: 11,
-    marginBottom: theme.spacing(0.3),
-  },
-}));
-
-// ============================================
-// STYLED TEXTFIELD
-// ============================================
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 10,
-    backgroundColor: COLORS.inputBg,
-    transition: 'border-color 0.2s ease',
-    '& fieldset': {
-      borderColor: COLORS.border,
-    },
-    '&:hover fieldset': {
-      borderColor: '#8B6B4C',
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: '#8B6B4C',
-      borderWidth: 2,
-    },
-    '&.Mui-error fieldset': {
-      borderColor: COLORS.error,
-    },
-  },
-  '& .MuiInputLabel-root': {
-    display: 'none',
-  },
-  '& .MuiFormHelperText-root': {
-    marginLeft: 0,
-    marginTop: 4,
-    fontWeight: 400,
-    fontSize: 11,
-    color: COLORS.error,
-    fontFamily: '"Poppins", montserrat, sans-serif',
-  },
-  '& .MuiInputBase-input': {
-    fontFamily: '"Poppins", montserrat, sans-serif',
-    fontSize: 14,
-    padding: '12px 14px',
-    '&::placeholder': {
-      color: '#B3A088',
-      opacity: 1,
-    },
-  },
-  '& .MuiSelect-select': {
-    padding: '12px 14px !important',
-  },
-  '& .MuiInputAdornment-root': {
-    marginRight: 0,
-  },
-  '& .MuiInputAdornment-positionStart': {
-    marginLeft: 4,
-  },
-
-  // ===== MEDIA QUERIES =====
-  [theme.breakpoints.down('sm')]: {
-    '& .MuiInputBase-input, & .MuiSelect-select': {
-      fontSize: 13,
-      padding: '10px 12px',
-    },
-  },
-
-  '@media (max-width:480px)': {
-    '& .MuiInputBase-input, & .MuiSelect-select': {
-      fontSize: 12,
-      padding: '9px 10px',
-    },
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 8,
-    },
-  },
-}));
-
-// ============================================
-// PASSWORD WRAPPER
-// ============================================
-
-const PasswordWrapper = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  width: '100%',
-  '& .MuiInputBase-root': {
-    paddingRight: '48px',
-  },
-  '& .MuiInputAdornment-positionEnd': {
-    position: 'absolute',
-    right: 4,
-    top: '50%',
-    transform: 'translateY(-50%)',
-  },
-}));
-
-// ============================================
-// REGISTER BUTTON
-// ============================================
-
-const RegisterButton = styled(Button)(({ theme }) => ({
-  backgroundColor: COLORS.primary,
-  color: COLORS.white,
-  padding: theme.spacing(1.4),
-  borderRadius: 10,
-  fontSize: 15,
-  fontWeight: 600,
-  textTransform: 'none',
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  transition: 'background-color 0.3s ease, transform 0.2s ease',
-  boxShadow: '0 4px 12px #b88f2f84',
-  width: '100%',
-  marginTop: theme.spacing(1.5),
-  '&:hover': {
-    backgroundColor: COLORS.primaryDark,
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 20px #8b6b4c59',
-  },
-  '&:active': {
-    transform: 'translateY(0)',
-  },
-  '&:disabled': {
-    backgroundColor: '#D4C5B2',
-    boxShadow: 'none',
-    transform: 'none',
-    color: '#A09080',
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1.2),
-    fontSize: 14,
-    marginTop: theme.spacing(1.2),
-  },
-  '@media (max-width:480px)': {
-    padding: theme.spacing(1),
-    fontSize: 13,
-    marginTop: theme.spacing(1),
-    borderRadius: 8,
-  },
-}));
-
-// ============================================
-// CHECKBOX
-// ============================================
-
-const StyledFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
-  marginTop: theme.spacing(1),
-  marginBottom: theme.spacing(0.5),
-  '& .MuiCheckbox-root': {
-    color: COLORS.border,
-    padding: '6px',
-    '&.Mui-checked': {
-      color: COLORS.primary,
-    },
-  },
-  '& .MuiFormControlLabel-label': {
-    fontFamily: '"Poppins", montserrat, sans-serif',
-    fontSize: 13,
-    color: COLORS.secondary,
-    [theme.breakpoints.down('xs')]: {
-      fontSize: 12,
-    },
-  },
-  '@media (max-width:480px)': {
-    marginTop: theme.spacing(0.5),
-    '& .MuiCheckbox-root': {
-      padding: '4px',
-    },
-    '& .MuiFormControlLabel-label': {
-      fontSize: 11,
-    },
-  },
-}));
-
-// ============================================
-// LINKS
-// ============================================
-
-const LoginLink = styled(Link)(({ theme }) => ({
-  color: COLORS.primary,
-  fontWeight: 600,
-  cursor: 'pointer',
-  textDecoration: 'none',
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  transition: 'color 0.2s ease',
-  '&:hover': {
-    color: COLORS.primaryDark,
-    textDecoration: 'underline',
-  },
-}));
-
-const FooterWrapper = styled(Box)(({ theme }) => ({
-  textAlign: 'center',
-  marginTop: theme.spacing(2),
-  '& .MuiTypography-root': {
-    color: COLORS.secondary,
-    fontSize: 14,
-    fontFamily: '"Poppins", montserrat, sans-serif',
-    [theme.breakpoints.down('xs')]: {
-      fontSize: 12,
-    },
-  },
-  '@media (max-width:480px)': {
-    marginTop: theme.spacing(1.5),
-    '& .MuiTypography-root': {
-      fontSize: 12,
-    },
-  },
-}));
-
-// ============================================
-// ERROR ALERT
-// ============================================
-
-const ErrorAlert = styled(Alert)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  borderRadius: 10,
-  backgroundColor: '#FDF2F0',
-  border: '1px solid #F5D0CC',
-  '& .MuiAlert-icon': {
-    color: COLORS.error,
-  },
-  '& .MuiAlert-message': {
-    color: '#4A3520',
-    fontFamily: '"Poppins", montserrat, sans-serif',
-    fontSize: 13,
-  },
-  '@media (max-width:480px)': {
-    marginBottom: theme.spacing(1.5),
-    '& .MuiAlert-message': {
-      fontSize: 12,
-    },
-  },
-}));
-
-// ============================================
 // DATOS - ESTADOS DE MÉXICO
 // ============================================
-
 const ESTADOS_MEXICO = [
   'Aguascalientes', 'Baja California', 'Baja California Sur',
   'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México',
@@ -520,7 +62,6 @@ const ESTADOS_MEXICO = [
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-
 function RegisterPage() {
   const [formData, setFormData] = useState({
     nombre: '',
@@ -622,34 +163,44 @@ function RegisterPage() {
   const showPhoneError = touched.telefono && !validatePhone(formData.telefono) && formData.telefono !== '';
 
   return (
-    <RegisterContainer>
-      <RegisterPaper elevation={0}>
+    <Box
+      className="register-container"
+      sx={{ backgroundImage: `url(${registerBackground})` }}
+    >
+      <Paper className="register-paper" elevation={0}>
         {/* BRAND SECTION */}
-        <BrandSection>
-          <BrandIcon />
-          <BrandTitle variant="h1">DayBed</BrandTitle>
-        </BrandSection>
+        <Box className="register-brand">
+          <StoreIcon className="register-brand-icon" />
+          <Typography className="register-brand-title" variant="h1">
+            DayBed
+          </Typography>
+        </Box>
 
         {/* DIVIDER */}
-        <DividerLine />
+        <Box className="register-divider" />
 
         {/* TÍTULOS */}
-        <RegisterTitle variant="h2">Crear cuenta</RegisterTitle>
-        <RegisterSubtitle variant="body2">
+        <Typography className="register-title" variant="h2">
+          Crear cuenta
+        </Typography>
+        <Typography className="register-subtitle" variant="body2">
           Completa tus datos para registrarte
-        </RegisterSubtitle>
+        </Typography>
 
         {error && (
-          <ErrorAlert severity="error">
+          <Alert className="register-alert" severity="error">
             {error}
-          </ErrorAlert>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} noValidate>
           {/* NOMBRE */}
-          <FormGroup>
-            <FormLabel variant="body2">Nombre completo:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Nombre completo:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="nombre"
               value={formData.nombre}
@@ -667,12 +218,15 @@ function RegisterPage() {
               }}
               required
             />
-          </FormGroup>
+          </Box>
 
           {/* CORREO ELECTRÓNICO */}
-          <FormGroup>
-            <FormLabel variant="body2">Correo electrónico:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Correo electrónico:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="email"
               type="email"
@@ -692,12 +246,15 @@ function RegisterPage() {
               required
               autoComplete="email"
             />
-          </FormGroup>
+          </Box>
 
           {/* TELÉFONO */}
-          <FormGroup>
-            <FormLabel variant="body2">Teléfono:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Teléfono:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="telefono"
               type="tel"
@@ -717,12 +274,15 @@ function RegisterPage() {
               required
               autoComplete="tel"
             />
-          </FormGroup>
+          </Box>
 
           {/* ESTADO */}
-          <FormGroup>
-            <FormLabel variant="body2">Estado:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Estado:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               select
               name="estado"
@@ -748,13 +308,16 @@ function RegisterPage() {
                   {estado}
                 </MenuItem>
               ))}
-            </StyledTextField>
-          </FormGroup>
+            </TextField>
+          </Box>
 
           {/* CIUDAD */}
-          <FormGroup>
-            <FormLabel variant="body2">Ciudad:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Ciudad:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="ciudad"
               value={formData.ciudad}
@@ -772,13 +335,16 @@ function RegisterPage() {
               }}
               required
             />
-          </FormGroup>
+          </Box>
 
           {/* CONTRASEÑA */}
-          <FormGroup>
-            <FormLabel variant="body2">Contraseña:</FormLabel>
-            <PasswordWrapper>
-              <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Contraseña:
+            </Typography>
+            <Box className="register-password-wrapper">
+              <TextField
+                className="register-text-field"
                 fullWidth
                 name="password"
                 type={showPassword ? 'text' : 'password'}
@@ -810,14 +376,17 @@ function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-            </PasswordWrapper>
-          </FormGroup>
+            </Box>
+          </Box>
 
           {/* CONFIRMAR CONTRASEÑA */}
-          <FormGroup>
-            <FormLabel variant="body2">Confirmar contraseña:</FormLabel>
-            <PasswordWrapper>
-              <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Confirmar contraseña:
+            </Typography>
+            <Box className="register-password-wrapper">
+              <TextField
+                className="register-text-field"
                 fullWidth
                 name="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -849,11 +418,12 @@ function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-            </PasswordWrapper>
-          </FormGroup>
+            </Box>
+          </Box>
 
           {/* TÉRMINOS Y CONDICIONES */}
-          <StyledFormControlLabel
+          <FormControlLabel
+            className="register-checkbox"
             control={
               <Checkbox
                 checked={aceptTerms}
@@ -865,25 +435,26 @@ function RegisterPage() {
           />
 
           {/* BOTÓN CREAR CUENTA */}
-          <RegisterButton
+          <Button
+            className="register-button"
             type="submit"
             disabled={!isFormValid() || loading}
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-          </RegisterButton>
+          </Button>
         </form>
 
         {/* FOOTER */}
-        <FooterWrapper>
+        <Box className="register-footer">
           <Typography variant="body1">
             ¿Ya tienes una cuenta?{' '}
-            <LoginLink href="/login" underline="hover">
+            <Link className="register-footer-link" href="/login" underline="hover">
               Inicia sesión
-            </LoginLink>
+            </Link>
           </Typography>
-        </FooterWrapper>
-      </RegisterPaper>
-    </RegisterContainer>
+        </Box>
+      </Paper>
+    </Box>
   );
 }
 

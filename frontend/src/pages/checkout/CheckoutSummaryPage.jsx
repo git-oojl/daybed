@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
-import "../../assets/CSS/checkout-summary.css";
+import "../../assets/CSS/checkout/checkout-summary.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
@@ -75,7 +75,6 @@ function formatPrice(amount) {
 // ============================================
 export default function CheckoutSummaryPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
 
   // Datos del formulario
   const [formData, setFormData] = useState({
@@ -119,10 +118,6 @@ export default function CheckoutSummaryPage() {
     if (name === "telefono" && !/^[0-9]{10}$/.test(value.replace(/\s/g, ""))) return false;
     if (name === "codigoPostal" && !/^[0-9]{5}$/.test(value)) return false;
     return true;
-  };
-
-  const isFieldValid = (name) => {
-    return touched[name] && validateField(name, formData[name]);
   };
 
   const isFieldError = (name) => {
@@ -588,7 +583,7 @@ export default function CheckoutSummaryPage() {
 
                 <div className="checkout-divider" />
 
-                {/* TÉRMINOS Y CONDICIONES - NUEVO */}
+                {/* TÉRMINOS Y CONDICIONES */}
                 <div className="checkout-terms">
                   <label className="checkout-terms__label">
                     <input

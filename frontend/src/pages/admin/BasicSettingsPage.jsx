@@ -1,6 +1,6 @@
 // BasicSettingsPage.jsx
-import React, { useState, useCallback, useMemo } from "react";
-import "../../assets/CSS/settings-page.css";
+import { useState, useCallback, useMemo } from "react";
+import "../../assets/CSS/admin/settings-page.css";
 
 // ============================================
 // ICONOS SVG
@@ -125,8 +125,6 @@ export default function BasicSettingsPage() {
     showCartEstimate: true,
   });
 
-  const [touched, setTouched] = useState({});
-
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     const val = type === "checkbox" ? checked : value;
@@ -145,11 +143,6 @@ export default function BasicSettingsPage() {
       setFormData((prev) => ({ ...prev, [name]: numValue }));
     }
     setError("");
-  }, []);
-
-  const handleBlur = useCallback((e) => {
-    const { name } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
   }, []);
 
   const handleSubmit = (e) => {
@@ -183,7 +176,6 @@ export default function BasicSettingsPage() {
       useRealMapAPI: false,
       showCartEstimate: true,
     });
-    setTouched({});
     setError("");
     setSuccess(false);
   };
@@ -257,7 +249,6 @@ export default function BasicSettingsPage() {
                     name="storeName"
                     value={formData.storeName}
                     onChange={handleChange}
-                    onBlur={handleBlur}
                     placeholder="Mueblería El Roble"
                   />
                 </div>
@@ -273,7 +264,6 @@ export default function BasicSettingsPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      onBlur={handleBlur}
                       placeholder="+52 55 1234 5678"
                     />
                   </div>
@@ -288,7 +278,6 @@ export default function BasicSettingsPage() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      onBlur={handleBlur}
                       placeholder="hola@elroble.mx"
                     />
                   </div>
@@ -321,7 +310,6 @@ export default function BasicSettingsPage() {
                     name="street"
                     value={formData.street}
                     onChange={handleChange}
-                    onBlur={handleBlur}
                     placeholder="Av. Insurgentes 123"
                   />
                 </div>
@@ -336,7 +324,6 @@ export default function BasicSettingsPage() {
                     name="colony"
                     value={formData.colony}
                     onChange={handleChange}
-                    onBlur={handleBlur}
                     placeholder="Roma Norte"
                   />
                 </div>
@@ -352,7 +339,6 @@ export default function BasicSettingsPage() {
                       name="city"
                       value={formData.city}
                       onChange={handleChange}
-                      onBlur={handleBlur}
                       placeholder="Ciudad de México"
                     />
                   </div>
@@ -367,7 +353,6 @@ export default function BasicSettingsPage() {
                       name="state"
                       value={formData.state}
                       onChange={handleChange}
-                      onBlur={handleBlur}
                       placeholder="CDMX"
                     />
                   </div>
@@ -383,7 +368,6 @@ export default function BasicSettingsPage() {
                     name="zipCode"
                     value={formData.zipCode}
                     onChange={handleChange}
-                    onBlur={handleBlur}
                     placeholder="06700"
                   />
                 </div>
@@ -463,7 +447,6 @@ export default function BasicSettingsPage() {
                         name="baseRate"
                         value={formData.baseRate === 0 ? "" : formData.baseRate}
                         onChange={handleNumberChange}
-                        onBlur={handleBlur}
                         step="0.01"
                         min="0"
                         placeholder="0.00"
@@ -486,7 +469,6 @@ export default function BasicSettingsPage() {
                         name="pricePerKm"
                         value={formData.pricePerKm === 0 ? "" : formData.pricePerKm}
                         onChange={handleNumberChange}
-                        onBlur={handleBlur}
                         step="0.01"
                         min="0"
                         placeholder="0.00"
@@ -557,7 +539,6 @@ export default function BasicSettingsPage() {
                       name="freeShippingThreshold"
                       value={formData.freeShippingThreshold === 0 ? "" : formData.freeShippingThreshold}
                       onChange={handleNumberChange}
-                      onBlur={handleBlur}
                       step="0.01"
                       min="0"
                       placeholder="0.00"
