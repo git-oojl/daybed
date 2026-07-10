@@ -11,16 +11,15 @@ import {
   FaEdit,
   FaTrash,
   FaChair,
-  FaSofa,
   FaTable,
+  FaBox,
   FaCouch,
   FaLightbulb,
-  FaBox,
 } from "react-icons/fa";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([
-    { id: 1, name: "Sofá Esquinero", price: 8999, stock: 5, category: "Sofás", status: "Activo", icon: <FaSofa size={24} color="#8B5E3C" /> },
+   { id: 1, name: "Sofá Esquinero", price: 8999, stock: 5, category: "Sofás", status: "Activo", icon: <FaCouch size={24} color="#8B5E3C" /> },
     { id: 2, name: "Mesa de Centro", price: 2499, stock: 8, category: "Mesas", status: "Activo", icon: <FaTable size={24} color="#8B5E3C" /> },
     { id: 3, name: "Silla Ejecutiva", price: 3499, stock: 3, category: "Sillas", status: "Activo", icon: <FaChair size={24} color="#8B5E3C" /> },
     { id: 4, name: "Estante Libros", price: 5999, stock: 0, category: "Almacenamiento", status: "Inactivo", icon: <FaBox size={24} color="#8B5E3C" /> },

@@ -1,0 +1,997 @@
+/* ============================================
+   ADMIN SETTINGS PAGE - ESTILOS
+   ============================================ */
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.admin-settings {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  font-family:
+    "Inter",
+    "Poppins",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  background: #f5f5f5;
+  box-sizing: border-box;
+}
+
+/* ===== HERO HEADER (estilo checkout-hero) ===== */
+.admin-settings-hero {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url("https://images.unsplash.com/photo-1618220179428-22790b461013?w=1920&q=80");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  margin-bottom: 2rem;
+}
+
+.admin-settings-hero__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(67, 42, 3, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.admin-settings-hero__content {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 1280px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-settings-hero__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: #fce5c7;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.admin-settings-hero__icon svg {
+  width: 32px;
+  height: 32px;
+  color: #816847;
+}
+
+.admin-settings-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-settings-hero__title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.5px;
+  font-family: "Inter", "Poppins", sans-serif;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-settings-hero__subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  font-weight: 400;
+  font-family: "Inter", "Poppins", sans-serif;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== ALERTAS ===== */
+.admin-settings__alert {
+  max-width: 1280px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__alert--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.admin-settings__alert--success svg {
+  color: #22c55e;
+}
+
+.admin-settings__alert--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* ===== FORM ===== */
+.admin-settings__form {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+/* ===== GRID ===== */
+.admin-settings__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.admin-settings__col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ===== CARDS ===== */
+.admin-settings__card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e8e8e8;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.admin-settings__card:hover {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.admin-settings__card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #fff3e3;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-settings__card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f4e2ca;
+  color: #1a1a2e;
+  flex-shrink: 0;
+}
+
+.admin-settings__card-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.admin-settings__card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 2px 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__card-desc {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__card-body {
+  padding: 1.5rem;
+}
+
+/* ===== FORMULARIOS ===== */
+.admin-settings__field {
+  margin-bottom: 1.25rem;
+}
+
+.admin-settings__field:last-child {
+  margin-bottom: 0;
+}
+
+.admin-settings__field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.4rem;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__field label .admin-settings__required {
+  color: #ef4444;
+}
+
+.admin-settings__field input,
+.admin-settings__field select {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: "Inter", "Poppins", sans-serif;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  color: #1a1a2e;
+  box-sizing: border-box;
+}
+
+.admin-settings__field input:focus,
+.admin-settings__field select:focus {
+  outline: none;
+  border-color: #1a1a2e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
+}
+
+.admin-settings__field input::placeholder {
+  color: #9ca3af;
+}
+
+.admin-settings__field-hint {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 0.3rem;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+/* ===== ROW ===== */
+.admin-settings__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.admin-settings__row .admin-settings__field {
+  margin-bottom: 0;
+}
+
+/* ===== INPUT GROUP ===== */
+.admin-settings__input-group {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.admin-settings__input-group:focus-within {
+  border-color: #1a1a2e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
+}
+
+.admin-settings__input-currency {
+  padding: 0 0 0 1rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__input-group input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0.65rem 1rem 0.65rem 0.5rem;
+  width: 100%;
+  font-size: 14px;
+  font-family: "Inter", "Poppins", sans-serif;
+  color: #1a1a2e;
+  outline: none;
+  box-shadow: none !important;
+}
+
+.admin-settings__input-group input::-webkit-outer-spin-button,
+.admin-settings__input-group input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.admin-settings__input-group--small {
+  max-width: 180px;
+}
+
+/* ===== CURRENCY SELECTOR ===== */
+.admin-settings__currency-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-settings__currency-btn {
+  padding: 0.5rem 1.25rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: "Inter", "Poppins", sans-serif;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-settings__currency-btn:hover {
+  border-color: #aa8226;
+  color: #000000;
+}
+
+.admin-settings__currency-btn--active {
+  border-color: #b88e2f;
+  background: #b88e2f;
+  color: #ffffff;
+}
+
+.admin-settings__currency-btn--active:hover {
+  background: #b88e2f;
+  color: #ffffff;
+}
+
+/* ===== EXAMPLE ===== */
+.admin-settings__example {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-settings__example-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__example-header svg {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+}
+
+.admin-settings__example-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-settings__example-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-family: "Inter", "Poppins", sans-serif;
+  color: #6b7280;
+}
+
+.admin-settings__example-row span:last-child {
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.admin-settings__example-total {
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e !important;
+}
+
+.admin-settings__example-total span:last-child {
+  color: #1a1a2e;
+  font-size: 16px;
+}
+
+/* ===== MAP PREVIEW ===== */
+.admin-settings__map-preview {
+  margin-top: 1rem;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-settings__map-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: #f5f5f5;
+  min-height: 120px;
+  color: #6b7280;
+  font-size: 13px;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.admin-settings__map-placeholder svg {
+  width: 32px;
+  height: 32px;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.admin-settings__map-coords {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+
+.admin-settings__map-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem;
+  background: #fafafa;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: "Inter", "Poppins", sans-serif;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.admin-settings__map-btn:hover {
+  background: #f0f0f0;
+}
+
+.admin-settings__map-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== TOGGLE SWITCH ===== */
+.admin-settings__toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 1rem;
+}
+
+.admin-settings__toggle:last-child {
+  border-bottom: none;
+}
+
+.admin-settings__toggle-info {
+  flex: 1;
+}
+
+.admin-settings__toggle-info label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  font-family: "Inter", "Poppins", sans-serif;
+  cursor: pointer;
+}
+
+.admin-settings__toggle-hint {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: "Inter", "Poppins", sans-serif;
+  margin-top: 2px;
+}
+
+.admin-settings__switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.admin-settings__switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.admin-settings__slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #d1d5db;
+  border-radius: 34px;
+  transition: background 0.3s ease;
+}
+
+.admin-settings__slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.admin-settings__switch input:checked + .admin-settings__slider {
+  background: #b88e2f;
+}
+
+.admin-settings__switch input:checked + .admin-settings__slider::before {
+  transform: translateX(22px);
+}
+
+/* ===== ACCIONES ===== */
+.admin-settings__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.admin-settings__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.8rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "Inter", "Poppins", sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.admin-settings__btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-settings__btn--primary {
+  background: #b88e2f;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.25);
+}
+
+.admin-settings__btn--primary:hover:not(:disabled) {
+  background: #b88e2f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(26, 26, 46, 0.35);
+}
+
+.admin-settings__btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.admin-settings__btn--secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.admin-settings__btn--secondary:hover {
+  background: #e5e7eb;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* ===== TABLETS (1024px) ===== */
+@media (max-width: 1024px) {
+  .admin-settings-hero {
+    min-height: 150px;
+  }
+
+  .admin-settings-hero__title {
+    font-size: 28px;
+  }
+
+  .admin-settings-hero__subtitle {
+    font-size: 15px;
+  }
+
+  .admin-settings__grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .admin-settings__form {
+    padding: 0 1rem 2rem;
+  }
+}
+
+/* ===== TABLETS PEQUEÑAS / MÓVILES GRANDES (768px) ===== */
+@media (max-width: 768px) {
+  .admin-settings-hero {
+    min-height: 120px;
+  }
+
+  .admin-settings-hero__overlay {
+    padding: 1.5rem 1rem;
+  }
+
+  .admin-settings-hero__content {
+    gap: 1rem;
+  }
+
+  .admin-settings-hero__icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .admin-settings-hero__icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .admin-settings-hero__title {
+    font-size: 22px;
+  }
+
+  .admin-settings-hero__subtitle {
+    font-size: 14px;
+  }
+
+  .admin-settings__form {
+    padding: 0 0.75rem 1.5rem;
+  }
+
+  .admin-settings__row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .admin-settings__row .admin-settings__field {
+    margin-bottom: 0.75rem;
+  }
+
+  .admin-settings__card-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .admin-settings__card-body {
+    padding: 1rem;
+  }
+
+  .admin-settings__card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .admin-settings__card-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .admin-settings__card-title {
+    font-size: 15px;
+  }
+
+  .admin-settings__card-desc {
+    font-size: 12px;
+  }
+
+  .admin-settings__map-placeholder {
+    min-height: 80px;
+    padding: 1.5rem 1rem;
+  }
+
+  .admin-settings__actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .admin-settings__btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.6rem 1.2rem;
+    font-size: 14px;
+  }
+
+  .admin-settings__toggle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .admin-settings__input-group--small {
+    max-width: 100%;
+  }
+
+  .admin-settings__currency-selector {
+    flex-wrap: wrap;
+  }
+
+  .admin-settings__currency-btn {
+    flex: 1;
+    min-width: 70px;
+    text-align: center;
+    padding: 0.4rem 0.8rem;
+    font-size: 12px;
+  }
+
+  .admin-settings__example {
+    padding: 0.75rem;
+  }
+
+  .admin-settings__example-row {
+    font-size: 12px;
+  }
+
+  .admin-settings__example-total {
+    font-size: 14px;
+  }
+
+  .admin-settings__example-total span:last-child {
+    font-size: 14px;
+  }
+}
+
+/* ===== MÓVILES PEQUEÑOS (480px) ===== */
+@media (max-width: 480px) {
+  .admin-settings-hero {
+    min-height: 100px;
+  }
+
+  .admin-settings-hero__overlay {
+    padding: 1rem 0.75rem;
+  }
+
+  .admin-settings-hero__content {
+    gap: 0.75rem;
+  }
+
+  .admin-settings-hero__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .admin-settings-hero__icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .admin-settings-hero__title {
+    font-size: 18px;
+  }
+
+  .admin-settings-hero__subtitle {
+    font-size: 12px;
+  }
+
+  .admin-settings__form {
+    padding: 0 0.5rem 1rem;
+  }
+
+  .admin-settings__card {
+    border-radius: 12px;
+  }
+
+  .admin-settings__card-header {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .admin-settings__card-body {
+    padding: 0.75rem;
+  }
+
+  .admin-settings__card-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .admin-settings__card-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .admin-settings__card-title {
+    font-size: 14px;
+  }
+
+  .admin-settings__field label {
+    font-size: 12px;
+  }
+
+  .admin-settings__field input,
+  .admin-settings__field select {
+    padding: 0.5rem 0.75rem;
+    font-size: 13px;
+  }
+
+  .admin-settings__input-currency {
+    font-size: 13px;
+    padding-left: 0.75rem;
+  }
+
+  .admin-settings__input-group input {
+    padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+    font-size: 13px;
+  }
+
+  .admin-settings__currency-btn {
+    font-size: 11px;
+    padding: 0.3rem 0.6rem;
+    min-width: 60px;
+  }
+
+  .admin-settings__switch {
+    width: 40px;
+    height: 22px;
+  }
+
+  .admin-settings__slider::before {
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+  }
+
+  .admin-settings__switch input:checked + .admin-settings__slider::before {
+    transform: translateX(18px);
+  }
+
+  .admin-settings__btn {
+    font-size: 13px;
+    padding: 0.5rem 1rem;
+  }
+
+  .admin-settings__btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .admin-settings__map-placeholder {
+    min-height: 60px;
+    padding: 1rem;
+    font-size: 12px;
+  }
+
+  .admin-settings__map-placeholder svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .admin-settings__map-coords {
+    font-size: 11px;
+  }
+
+  .admin-settings__example {
+    padding: 0.5rem;
+  }
+
+  .admin-settings__example-header {
+    font-size: 12px;
+  }
+
+  .admin-settings__example-row {
+    font-size: 11px;
+  }
+
+  .admin-settings__example-total {
+    font-size: 13px;
+  }
+
+  .admin-settings__example-total span:last-child {
+    font-size: 13px;
+  }
+
+  .admin-settings__alert {
+    font-size: 13px;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.5rem 1rem;
+  }
+
+  .admin-settings__toggle-info label {
+    font-size: 13px;
+  }
+
+  .admin-settings__toggle-hint {
+    font-size: 11px;
+  }
+}
+
+/* ===== MÓVILES MUY PEQUEÑOS (360px) ===== */
+@media (max-width: 360px) {
+  .admin-settings-hero__title {
+    font-size: 16px;
+  }
+
+  .admin-settings-hero__subtitle {
+    font-size: 11px;
+  }
+
+  .admin-settings-hero__icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .admin-settings-hero__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .admin-settings__card-header {
+    padding: 0.5rem;
+  }
+
+  .admin-settings__card-body {
+    padding: 0.5rem;
+  }
+
+  .admin-settings__field input,
+  .admin-settings__field select {
+    font-size: 12px;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .admin-settings__currency-btn {
+    font-size: 10px;
+    padding: 0.25rem 0.4rem;
+    min-width: 50px;
+  }
+
+  .admin-settings__btn {
+    font-size: 12px;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .admin-settings__form {
+    padding: 0 0.25rem 0.75rem;
+  }
+}

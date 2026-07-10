@@ -1,0 +1,558 @@
+/* ============================================
+   REGISTER PAGE - ESTILOS (CORREGIDO)
+   ============================================ */
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.register-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* ===== PAPER / CARD ===== */
+.register-paper {
+  padding: 32px !important;
+  width: 100% !important;
+  max-width: 480px !important;
+  border-radius: 20px !important;
+  background-color: #fff3e3 !important;
+  border: 1px solid #e8dccc !important;
+  box-shadow: 0 8px 40px rgba(74, 53, 32, 0.2) !important;
+  position: relative !important;
+  z-index: 1 !important;
+  overflow-y: auto !important;
+  max-height: 84vh !important;
+}
+
+/* Scrollbar personalizada */
+.register-paper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.register-paper::-webkit-scrollbar-thumb {
+  background: #d4c5b2;
+  border-radius: 20px;
+}
+
+.register-paper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===== BRAND SECTION ===== */
+.register-brand {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+.register-brand-icon {
+  font-size: 36px !important;
+  color: #8c6918 !important;
+}
+
+.register-brand-title {
+  font-size: 30px !important;
+  font-weight: 700 !important;
+  color: #8c6918 !important;
+  text-align: center !important;
+  letter-spacing: 1.5px !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ===== DIVIDER ===== */
+.register-divider {
+  width: 80px !important;
+  height: 2px !important;
+  background-color: #d4c5b2 !important;
+  margin: 12px auto !important;
+  border-radius: 2px !important;
+}
+
+/* ===== TÍTULOS ===== */
+.register-title {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #61470c !important;
+  text-align: center !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+.register-subtitle {
+  font-size: 13px !important;
+  color: #7a6b5a !important;
+  text-align: center !important;
+  margin-bottom: 20px !important;
+  font-weight: 400 !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+/* ===== FORM GROUP ===== */
+.register-form-group {
+  margin-bottom: 16px !important;
+}
+
+.register-form-group:last-of-type {
+  margin-bottom: 8px !important;
+}
+
+.register-form-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #5a4a3a !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  margin-bottom: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* ===== CAMPOS DE TEXTO - SOBREESCRIBIR MUI ===== */
+.register-text-field {
+  width: 100% !important;
+}
+
+.register-text-field .MuiOutlinedInput-root {
+  border-radius: 10px !important;
+  background-color: #fefcf8 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.register-text-field .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: #d4c5b2 !important;
+  border-width: 1px !important;
+}
+
+.register-text-field
+  .MuiOutlinedInput-root:hover
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #8b6b4c !important;
+  border-width: 1px !important;
+}
+
+.register-text-field
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #8b6b4c !important;
+  border-width: 2px !important;
+}
+
+.register-text-field
+  .MuiOutlinedInput-root.Mui-error
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #c0392b !important;
+}
+
+.register-text-field .MuiInputLabel-root {
+  display: none !important;
+}
+
+.register-text-field .MuiFormHelperText-root {
+  margin-left: 0 !important;
+  margin-top: 4px !important;
+  font-weight: 400 !important;
+  font-size: 11px !important;
+  color: #c0392b !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+.register-text-field .MuiInputBase-input {
+  font-family: "Poppins", montserrat, sans-serif !important;
+  font-size: 14px !important;
+  padding: 12px 14px !important;
+}
+
+.register-text-field .MuiInputBase-input::placeholder {
+  color: #b3a088 !important;
+  opacity: 1 !important;
+}
+
+.register-text-field .MuiSelect-select {
+  padding: 12px 14px !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  font-size: 14px !important;
+}
+
+.register-text-field .MuiInputAdornment-root {
+  margin-right: 0 !important;
+}
+
+.register-text-field .MuiInputAdornment-positionStart {
+  margin-left: 4px !important;
+}
+
+.register-text-field .MuiInputAdornment-root .MuiSvgIcon-root {
+  font-size: 20px !important;
+}
+
+.register-text-field .MuiMenuItem-root {
+  font-family: "Poppins", montserrat, sans-serif !important;
+  font-size: 14px !important;
+}
+
+/* ===== PASSWORD WRAPPER ===== */
+.register-password-wrapper {
+  position: relative !important;
+  width: 100% !important;
+}
+
+.register-password-wrapper .MuiInputBase-root {
+  padding-right: 48px !important;
+}
+
+.register-password-wrapper .MuiInputAdornment-positionEnd {
+  position: absolute !important;
+  right: 4px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.register-password-wrapper .MuiIconButton-root {
+  color: #7a6b5a !important;
+}
+
+/* ===== CHECKBOX ===== */
+.register-checkbox {
+  margin-top: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.register-checkbox .MuiCheckbox-root {
+  color: #d4c5b2 !important;
+  padding: 6px !important;
+}
+
+.register-checkbox .MuiCheckbox-root.Mui-checked {
+  color: #977422 !important;
+}
+
+.register-checkbox .MuiFormControlLabel-label {
+  font-family: "Poppins", montserrat, sans-serif !important;
+  font-size: 13px !important;
+  color: #61470c !important;
+}
+
+/* ===== BOTÓN REGISTRO ===== */
+.register-button {
+  background-color: #977422 !important;
+  color: #ffffff !important;
+  padding: 11.2px !important;
+  border-radius: 10px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease !important;
+  box-shadow: 0 4px 12px #b88f2f84 !important;
+  width: 100% !important;
+  margin-top: 12px !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.register-button:hover {
+  background-color: #7a5d1a !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px #8b6b4c59 !important;
+}
+
+.register-button:active {
+  transform: translateY(0) !important;
+}
+
+.register-button:disabled {
+  background-color: #d4c5b2 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  color: #a09080 !important;
+  cursor: not-allowed !important;
+}
+
+/* ===== FOOTER ===== */
+.register-footer {
+  text-align: center !important;
+  margin-top: 16px !important;
+}
+
+.register-footer .MuiTypography-root {
+  color: #61470c !important;
+  font-size: 14px !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+}
+
+.register-footer-link {
+  color: #977422 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  transition: color 0.2s ease !important;
+}
+
+.register-footer-link:hover {
+  color: #7a5d1a !important;
+  text-decoration: underline !important;
+}
+
+/* ===== ALERTA DE ERROR ===== */
+.register-alert {
+  margin-bottom: 16px !important;
+  border-radius: 10px !important;
+  background-color: #fdf2f0 !important;
+  border: 1px solid #f5d0cc !important;
+}
+
+.register-alert .MuiAlert-icon {
+  color: #c0392b !important;
+}
+
+.register-alert .MuiAlert-message {
+  color: #4a3520 !important;
+  font-family: "Poppins", montserrat, sans-serif !important;
+  font-size: 13px !important;
+}
+
+/* ============================================
+   MEDIA QUERIES
+   ============================================ */
+
+/* ===== TABLETS (md) ===== */
+@media (max-width: 1024px) {
+  .register-container {
+    padding: 24px !important;
+  }
+
+  .register-paper {
+    width: 90% !important;
+    max-width: 450px !important;
+    padding: 28px !important;
+  }
+}
+
+/* ===== MÓVILES (sm) ===== */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 16px !important;
+  }
+
+  .register-paper {
+    width: 95% !important;
+    max-width: 400px !important;
+    padding: 24px !important;
+    max-height: 60vh !important;
+  }
+
+  .register-brand {
+    gap: 8px !important;
+  }
+
+  .register-brand-icon {
+    font-size: 30px !important;
+  }
+
+  .register-brand-title {
+    font-size: 26px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .register-divider {
+    width: 60px !important;
+    margin: 8px auto !important;
+  }
+
+  .register-title {
+    font-size: 18px !important;
+  }
+
+  .register-subtitle {
+    font-size: 12px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .register-form-group {
+    margin-bottom: 12px !important;
+  }
+
+  .register-form-label {
+    font-size: 12px !important;
+  }
+
+  .register-text-field .MuiInputBase-input {
+    font-size: 13px !important;
+    padding: 10px 12px !important;
+  }
+
+  .register-text-field .MuiSelect-select {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+
+  .register-button {
+    padding: 9.6px !important;
+    font-size: 14px !important;
+    margin-top: 9.6px !important;
+  }
+
+  .register-checkbox .MuiFormControlLabel-label {
+    font-size: 12px !important;
+  }
+}
+
+/* ===== MÓVILES PEQUEÑOS (480px) ===== */
+@media (max-width: 480px) {
+  .register-container {
+    padding: 12px !important;
+  }
+
+  .register-paper {
+    width: 96% !important;
+    max-width: 380px !important;
+    padding: 20px !important;
+    border-radius: 16px !important;
+    max-height: 60vh !important;
+  }
+
+  .register-brand {
+    gap: 6px !important;
+  }
+
+  .register-brand-icon {
+    font-size: 26px !important;
+  }
+
+  .register-brand-title {
+    font-size: 22px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .register-divider {
+    width: 50px !important;
+    margin: 6px auto !important;
+  }
+
+  .register-title {
+    font-size: 16px !important;
+  }
+
+  .register-subtitle {
+    font-size: 11px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .register-form-group {
+    margin-bottom: 10px !important;
+  }
+
+  .register-form-label {
+    font-size: 11px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .register-text-field .MuiInputBase-input {
+    font-size: 12px !important;
+    padding: 9px 10px !important;
+  }
+
+  .register-text-field .MuiSelect-select {
+    padding: 9px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .register-text-field .MuiOutlinedInput-root {
+    border-radius: 8px !important;
+  }
+
+  .register-text-field .MuiInputAdornment-root .MuiSvgIcon-root {
+    font-size: 18px !important;
+  }
+
+  .register-password-wrapper .MuiInputBase-root {
+    padding-right: 40px !important;
+  }
+
+  .register-password-wrapper .MuiIconButton-root {
+    padding: 6px !important;
+  }
+
+  .register-button {
+    padding: 8px !important;
+    font-size: 13px !important;
+    margin-top: 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .register-checkbox {
+    margin-top: 4px !important;
+  }
+
+  .register-checkbox .MuiCheckbox-root {
+    padding: 4px !important;
+  }
+
+  .register-checkbox .MuiFormControlLabel-label {
+    font-size: 11px !important;
+  }
+
+  .register-footer {
+    margin-top: 12px !important;
+  }
+
+  .register-footer .MuiTypography-root {
+    font-size: 12px !important;
+  }
+
+  .register-alert {
+    margin-bottom: 12px !important;
+  }
+
+  .register-alert .MuiAlert-message {
+    font-size: 12px !important;
+  }
+}
+
+/* ===== MÓVILES MUY PEQUEÑOS (360px) ===== */
+@media (max-width: 360px) {
+  .register-paper {
+    padding: 16px !important;
+    border-radius: 14px !important;
+    max-height: 50vh !important;
+  }
+
+  .register-brand-title {
+    font-size: 20px !important;
+  }
+
+  .register-text-field .MuiInputBase-input {
+    font-size: 11px !important;
+    padding: 7px 8px !important;
+  }
+
+  .register-text-field .MuiSelect-select {
+    padding: 7px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .register-button {
+    font-size: 12px !important;
+    padding: 6px !important;
+  }
+
+  .register-footer .MuiTypography-root {
+    font-size: 11px !important;
+  }
+}

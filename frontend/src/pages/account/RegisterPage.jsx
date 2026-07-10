@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 // RegisterPage.jsx - VERSIÓN CORREGIDA Y OPTIMIZADA
 import React, { useState } from 'react';
+=======
+// RegisterPage.jsx - VERSIÓN CON CSS EXTERNO (CORREGIDO)
+import { useState } from "react";
+>>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
 import {
   Box,
   Paper,
@@ -13,7 +18,7 @@ import {
   InputAdornment,
   IconButton,
   MenuItem,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Email as EmailIcon,
   Lock as LockIcon,
@@ -24,28 +29,29 @@ import {
   Phone as PhoneIcon,
   LocationCity as CityIcon,
   PinDrop as PinDropIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
-import registerBackground from '../../assets/RegisterPage.jpg';
+} from "@mui/icons-material";
+import "../../assets/CSS/account/register-page.css"; // ← Importamos el CSS
+import registerBackground from "../../assets/RegisterPage.jpg";
 
 // ============================================
 // PALETA DE COLORES DAYBED (Terrosos/Beige)
 // ============================================
 const COLORS = {
-  primary: '#977422',
-  primaryDark: '#7a5d1a',
-  primaryLight: '#8c6918',
-  secondary: '#61470c',
-  textSecondary: '#7A6B5A',
-  background: '#FFF3E3',
-  inputBg: '#FEFCF8',
-  border: '#D4C5B2',
-  error: '#C0392B',
-  white: '#FFFFFF',
-  label: '#5A4A3A',
+  primary: "#977422",
+  primaryDark: "#7a5d1a",
+  primaryLight: "#8c6918",
+  secondary: "#61470c",
+  textSecondary: "#7A6B5A",
+  background: "#FFF3E3",
+  inputBg: "#FEFCF8",
+  border: "#D4C5B2",
+  error: "#C0392B",
+  white: "#FFFFFF",
+  label: "#5A4A3A",
 };
 
 // ============================================
+<<<<<<< HEAD
 // ESTILOS PERSONALIZADOS - CORREGIDOS
 // ============================================
 
@@ -503,40 +509,65 @@ const ErrorAlert = styled(Alert)(({ theme }) => ({
 }));
 
 // ============================================
+=======
+>>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
 // DATOS - ESTADOS DE MÉXICO
 // ============================================
 
 const ESTADOS_MEXICO = [
-  'Aguascalientes', 'Baja California', 'Baja California Sur',
-  'Campeche', 'Chiapas', 'Chihuahua', 'Ciudad de México',
-  'Coahuila', 'Colima', 'Durango', 'Estado de México',
-  'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco',
-  'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León',
-  'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo',
-  'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco',
-  'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas',
+  "Aguascalientes",
+  "Baja California",
+  "Baja California Sur",
+  "Campeche",
+  "Chiapas",
+  "Chihuahua",
+  "Ciudad de México",
+  "Coahuila",
+  "Colima",
+  "Durango",
+  "Estado de México",
+  "Guanajuato",
+  "Guerrero",
+  "Hidalgo",
+  "Jalisco",
+  "Michoacán",
+  "Morelos",
+  "Nayarit",
+  "Nuevo León",
+  "Oaxaca",
+  "Puebla",
+  "Querétaro",
+  "Quintana Roo",
+  "San Luis Potosí",
+  "Sinaloa",
+  "Sonora",
+  "Tabasco",
+  "Tamaulipas",
+  "Tlaxcala",
+  "Veracruz",
+  "Yucatán",
+  "Zacatecas",
 ];
 
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-
 function RegisterPage() {
   const [formData, setFormData] = useState({
-    nombre: '',
-    apellido: '',
-    email: '',
-    telefono: '',
-    estado: '',
-    ciudad: '',
-    password: '',
-    confirmPassword: '',
+    nombre: "",
+    apellido: "",
+    email: "",
+    telefono: "",
+    estado: "",
+    ciudad: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [aceptTerms, setAceptTerms] = useState(false);
   const [touched, setTouched] = useState({});
 
@@ -551,17 +582,17 @@ function RegisterPage() {
 
   const validatePhone = (phone) => {
     const re = /^[0-9]{10}$/;
-    return re.test(phone.replace(/\s/g, ''));
+    return re.test(phone.replace(/\s/g, ""));
   };
 
   const isFormValid = () => {
     return (
-      formData.nombre.trim() !== '' &&
-      formData.apellido.trim() !== '' &&
+      formData.nombre.trim() !== "" &&
+      formData.apellido.trim() !== "" &&
       validateEmail(formData.email) &&
       validatePhone(formData.telefono) &&
-      formData.estado !== '' &&
-      formData.ciudad.trim() !== '' &&
+      formData.estado !== "" &&
+      formData.ciudad.trim() !== "" &&
       validatePassword(formData.password) &&
       formData.password === formData.confirmPassword &&
       aceptTerms
@@ -574,7 +605,7 @@ function RegisterPage() {
       ...formData,
       [name]: value,
     });
-    setError('');
+    setError("");
   };
 
   const handleBlur = (e) => {
@@ -587,24 +618,24 @@ function RegisterPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!aceptTerms) {
-      setError('Debes aceptar los términos y condiciones');
+      setError("Debes aceptar los términos y condiciones");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError("Las contraseñas no coinciden");
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      console.log('Registro exitoso', formData);
+      console.log("Registro exitoso", formData);
       setLoading(false);
-      window.location.href = '/login';
+      window.location.href = "/login";
     }, 1500);
   };
 
@@ -616,63 +647,103 @@ function RegisterPage() {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  const showEmailError = touched.email && !validateEmail(formData.email) && formData.email !== '';
-  const showPasswordError = touched.password && !validatePassword(formData.password) && formData.password !== '';
-  const showConfirmError = touched.confirmPassword && formData.confirmPassword !== '' && formData.password !== formData.confirmPassword;
-  const showPhoneError = touched.telefono && !validatePhone(formData.telefono) && formData.telefono !== '';
+  const showEmailError =
+    touched.email && !validateEmail(formData.email) && formData.email !== "";
+  const showPasswordError =
+    touched.password &&
+    !validatePassword(formData.password) &&
+    formData.password !== "";
+  const showConfirmError =
+    touched.confirmPassword &&
+    formData.confirmPassword !== "" &&
+    formData.password !== formData.confirmPassword;
+  const showPhoneError =
+    touched.telefono &&
+    !validatePhone(formData.telefono) &&
+    formData.telefono !== "";
 
   return (
-    <RegisterContainer>
-      <RegisterPaper elevation={0}>
+    <Box
+      className="register-container"
+      sx={{ backgroundImage: `url(${registerBackground})` }}
+    >
+      <Paper className="register-paper" elevation={0}>
         {/* BRAND SECTION */}
-        <BrandSection>
-          <BrandIcon />
-          <BrandTitle variant="h1">DayBed</BrandTitle>
-        </BrandSection>
+        <Box className="register-brand">
+          <StoreIcon className="register-brand-icon" />
+          <Typography className="register-brand-title" variant="h1">
+            DayBed
+          </Typography>
+        </Box>
 
         {/* DIVIDER */}
-        <DividerLine />
+        <Box className="register-divider" />
 
         {/* TÍTULOS */}
+<<<<<<< HEAD
         <RegisterTitle variant="h2">Crear cuenta</RegisterTitle>
         <RegisterSubtitle variant="body2">
           Completa tus datos para registrarte
         </RegisterSubtitle>
+=======
+        <Typography className="register-title" variant="h2">
+          Crear cuenta
+        </Typography>
+        <Typography className="register-subtitle" variant="body2">
+          Completa tus datos para registrarte
+        </Typography>
+>>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
 
         {error && (
-          <ErrorAlert severity="error">
+          <Alert className="register-alert" severity="error">
             {error}
-          </ErrorAlert>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} noValidate>
           {/* NOMBRE */}
+<<<<<<< HEAD
           <FormGroup>
             <FormLabel variant="body2">Nombre completo:</FormLabel>
             <StyledTextField
+=======
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Nombre completo:
+            </Typography>
+            <TextField
+              className="register-text-field"
+>>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
               fullWidth
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
               onBlur={handleBlur}
               placeholder="Juan Pérez"
-              error={touched.nombre && formData.nombre === ''}
-              helperText={touched.nombre && formData.nombre === '' ? 'Requerido' : ''}
+              error={touched.nombre && formData.nombre === ""}
+              helperText={
+                touched.nombre && formData.nombre === "" ? "Requerido" : ""
+              }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonIcon sx={{ color: COLORS.secondary, fontSize: 20 }} />
+                    <PersonIcon
+                      sx={{ color: COLORS.secondary, fontSize: 20 }}
+                    />
                   </InputAdornment>
                 ),
               }}
               required
             />
-          </FormGroup>
+          </Box>
 
           {/* CORREO ELECTRÓNICO */}
-          <FormGroup>
-            <FormLabel variant="body2">Correo electrónico:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Correo electrónico:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="email"
               type="email"
@@ -681,23 +752,31 @@ function RegisterPage() {
               onBlur={handleBlur}
               placeholder="ejemplo@email.com"
               error={showEmailError}
-              helperText={showEmailError ? 'Correo inválido' : ''}
+              helperText={showEmailError ? "Correo inválido" : ""}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailIcon sx={{ color: showEmailError ? COLORS.error : COLORS.secondary, fontSize: 20 }} />
+                    <EmailIcon
+                      sx={{
+                        color: showEmailError ? COLORS.error : COLORS.secondary,
+                        fontSize: 20,
+                      }}
+                    />
                   </InputAdornment>
                 ),
               }}
               required
               autoComplete="email"
             />
-          </FormGroup>
+          </Box>
 
           {/* TELÉFONO */}
-          <FormGroup>
-            <FormLabel variant="body2">Teléfono:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Teléfono:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="telefono"
               type="tel"
@@ -706,35 +785,47 @@ function RegisterPage() {
               onBlur={handleBlur}
               placeholder="5512345678"
               error={showPhoneError}
-              helperText={showPhoneError ? '10 dígitos' : ''}
+              helperText={showPhoneError ? "10 dígitos" : ""}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PhoneIcon sx={{ color: showPhoneError ? COLORS.error : COLORS.secondary, fontSize: 20 }} />
+                    <PhoneIcon
+                      sx={{
+                        color: showPhoneError ? COLORS.error : COLORS.secondary,
+                        fontSize: 20,
+                      }}
+                    />
                   </InputAdornment>
                 ),
               }}
               required
               autoComplete="tel"
             />
-          </FormGroup>
+          </Box>
 
           {/* ESTADO */}
-          <FormGroup>
-            <FormLabel variant="body2">Estado:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Estado:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               select
               name="estado"
               value={formData.estado}
               onChange={handleChange}
               onBlur={handleBlur}
-              error={touched.estado && formData.estado === ''}
-              helperText={touched.estado && formData.estado === '' ? 'Selecciona' : ''}
+              error={touched.estado && formData.estado === ""}
+              helperText={
+                touched.estado && formData.estado === "" ? "Selecciona" : ""
+              }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PinDropIcon sx={{ color: COLORS.secondary, fontSize: 20 }} />
+                    <PinDropIcon
+                      sx={{ color: COLORS.secondary, fontSize: 20 }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -748,21 +839,26 @@ function RegisterPage() {
                   {estado}
                 </MenuItem>
               ))}
-            </StyledTextField>
-          </FormGroup>
+            </TextField>
+          </Box>
 
           {/* CIUDAD */}
-          <FormGroup>
-            <FormLabel variant="body2">Ciudad:</FormLabel>
-            <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Ciudad:
+            </Typography>
+            <TextField
+              className="register-text-field"
               fullWidth
               name="ciudad"
               value={formData.ciudad}
               onChange={handleChange}
               onBlur={handleBlur}
               placeholder="Tijuana"
-              error={touched.ciudad && formData.ciudad === ''}
-              helperText={touched.ciudad && formData.ciudad === '' ? 'Requerida' : ''}
+              error={touched.ciudad && formData.ciudad === ""}
+              helperText={
+                touched.ciudad && formData.ciudad === "" ? "Requerida" : ""
+              }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -772,26 +868,36 @@ function RegisterPage() {
               }}
               required
             />
-          </FormGroup>
+          </Box>
 
           {/* CONTRASEÑA */}
-          <FormGroup>
-            <FormLabel variant="body2">Contraseña:</FormLabel>
-            <PasswordWrapper>
-              <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Contraseña:
+            </Typography>
+            <Box className="register-password-wrapper">
+              <TextField
+                className="register-text-field"
                 fullWidth
                 name="password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 placeholder="Mínimo 6 caracteres"
                 error={showPasswordError}
-                helperText={showPasswordError ? 'Mínimo 6 caracteres' : ''}
+                helperText={showPasswordError ? "Mínimo 6 caracteres" : ""}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockIcon sx={{ color: showPasswordError ? COLORS.error : COLORS.secondary, fontSize: 20 }} />
+                      <LockIcon
+                        sx={{
+                          color: showPasswordError
+                            ? COLORS.error
+                            : COLORS.secondary,
+                          fontSize: 20,
+                        }}
+                      />
                     </InputAdornment>
                   ),
                   endAdornment: (
@@ -800,7 +906,11 @@ function RegisterPage() {
                         onClick={handleTogglePassword}
                         edge="end"
                         sx={{ color: COLORS.secondary }}
-                        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        aria-label={
+                          showPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -810,27 +920,37 @@ function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-            </PasswordWrapper>
-          </FormGroup>
+            </Box>
+          </Box>
 
           {/* CONFIRMAR CONTRASEÑA */}
-          <FormGroup>
-            <FormLabel variant="body2">Confirmar contraseña:</FormLabel>
-            <PasswordWrapper>
-              <StyledTextField
+          <Box className="register-form-group">
+            <Typography className="register-form-label" variant="body2">
+              Confirmar contraseña:
+            </Typography>
+            <Box className="register-password-wrapper">
+              <TextField
+                className="register-text-field"
                 fullWidth
                 name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 placeholder="Repite tu contraseña"
                 error={showConfirmError}
-                helperText={showConfirmError ? 'No coinciden' : ''}
+                helperText={showConfirmError ? "No coinciden" : ""}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockIcon sx={{ color: showConfirmError ? COLORS.error : COLORS.secondary, fontSize: 20 }} />
+                      <LockIcon
+                        sx={{
+                          color: showConfirmError
+                            ? COLORS.error
+                            : COLORS.secondary,
+                          fontSize: 20,
+                        }}
+                      />
                     </InputAdornment>
                   ),
                   endAdornment: (
@@ -839,9 +959,17 @@ function RegisterPage() {
                         onClick={handleToggleConfirmPassword}
                         edge="end"
                         sx={{ color: COLORS.secondary }}
-                        aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        aria-label={
+                          showConfirmPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
                       >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -849,11 +977,12 @@ function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-            </PasswordWrapper>
-          </FormGroup>
+            </Box>
+          </Box>
 
           {/* TÉRMINOS Y CONDICIONES */}
-          <StyledFormControlLabel
+          <FormControlLabel
+            className="register-checkbox"
             control={
               <Checkbox
                 checked={aceptTerms}
@@ -865,25 +994,30 @@ function RegisterPage() {
           />
 
           {/* BOTÓN CREAR CUENTA */}
-          <RegisterButton
+          <Button
+            className="register-button"
             type="submit"
             disabled={!isFormValid() || loading}
           >
-            {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-          </RegisterButton>
+            {loading ? "Creando cuenta..." : "Crear cuenta"}
+          </Button>
         </form>
 
         {/* FOOTER */}
-        <FooterWrapper>
+        <Box className="register-footer">
           <Typography variant="body1">
-            ¿Ya tienes una cuenta?{' '}
-            <LoginLink href="/login" underline="hover">
+            ¿Ya tienes una cuenta?{" "}
+            <Link
+              className="register-footer-link"
+              href="/login"
+              underline="hover"
+            >
               Inicia sesión
-            </LoginLink>
+            </Link>
           </Typography>
-        </FooterWrapper>
-      </RegisterPaper>
-    </RegisterContainer>
+        </Box>
+      </Paper>
+    </Box>
   );
 }
 
