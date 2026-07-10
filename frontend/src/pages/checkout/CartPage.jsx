@@ -4,6 +4,7 @@ import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
+import { useCart } from "../../context/CartContext.jsx";
 
 function IconTrash() {
   return (
@@ -26,28 +27,59 @@ function IconTrash() {
 }
 
 export default function CartPage() {
-  const products = [
-    {
-      id: 1,
-      name: "Sofa Esquinero",
-      price: 8999,
-      quantity: 1,
-      image:
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400",
-    },
-    {
-      id: 2,
-      name: "Mesa de Centro",
-      price: 2499,
-      quantity: 2,
-      image:
-        "https://images.unsplash.com/photo-1499933374294-4584851497cc?w=400",
-    },
-  ];
+  const { 
+    cartItems, 
+    removeFromCart, 
+    updateQuantity,
+    getTotalPrice 
+  } = useCart();
 
-  const subtotal = 13997;
-  const shipping = 500;
+  const formatPrice = (price) => {
+    return `$${price.toLocaleString("es-MX")} MX`;
+  };
+
+  const subtotal = getTotalPrice();
+  const shipping = subtotal > 0 ? 500 : 0;
   const total = subtotal + shipping;
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="home-page cart-page">
+        <HomeHeader />
+        <section className="checkout-hero" aria-label="Carrito de compras">
+          <div className="checkout-hero__overlay">
+            <h1 className="checkout-hero__title">Carrito de compras</h1>
+            <p className="checkout-hero__breadcrumb">
+              <Link to={routePaths.public.home}>Inicio</Link>
+              <span aria-hidden="true">&gt;</span>
+              Carrito
+            </p>
+          </div>
+        </section>
+        <main className="cart-container" style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <h2>🛒 Tu carrito está vacío</h2>
+          <p style={{ margin: "1rem 0 2rem", color: "#7b6f5d" }}>
+            ¡Explora nuestros productos y encuentra lo que necesitas!
+          </p>
+          <Link 
+            to={routePaths.public.home} 
+            style={{
+              display: "inline-block",
+              padding: "0.85rem 2rem",
+              background: "#2f2a25",
+              color: "white",
+              borderRadius: "0.8rem",
+              textDecoration: "none",
+              fontWeight: "700"
+            }}
+          >
+            Ir a la tienda
+          </Link>
+        </main>
+        <HomeFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="home-page cart-page">
@@ -74,7 +106,7 @@ export default function CartPage() {
             <span className="cart-header__action" aria-hidden="true" />
           </div>
 
-          {products.map((product) => (
+          {cartItems.map((product) => (
             <div className="cart-row" key={product.id}>
               <div className="product-info">
                 <img src={product.image} alt={product.name} />
@@ -82,28 +114,36 @@ export default function CartPage() {
               </div>
 
               <div className="cart-row__price">
-                ${product.price.toLocaleString("es-MX")} MX
+                {formatPrice(product.price)}
               </div>
 
               <div className="quantity-box">
-                <button type="button" aria-label="Disminuir cantidad">
+                <button 
+                  type="button" 
+                  aria-label="Disminuir cantidad"
+                  onClick={() => updateQuantity(product.id, product.quantity - 1)}
+                >
                   -
                 </button>
                 <span>{product.quantity}</span>
-                <button type="button" aria-label="Aumentar cantidad">
+                <button 
+                  type="button" 
+                  aria-label="Aumentar cantidad"
+                  onClick={() => updateQuantity(product.id, product.quantity + 1)}
+                >
                   +
                 </button>
               </div>
 
               <div className="cart-row__subtotal">
-                ${(product.price * product.quantity).toLocaleString("es-MX")}.00
-                MX
+                {formatPrice(product.price * product.quantity)}
               </div>
 
               <button
                 type="button"
                 className="cart-row__remove"
                 aria-label={`Eliminar ${product.name}`}
+                onClick={() => removeFromCart(product.id)}
               >
                 <IconTrash />
               </button>
@@ -116,15 +156,15 @@ export default function CartPage() {
 
           <div className="cart-summary-row">
             <span>Subtotal</span>
-            <span>${subtotal.toLocaleString("es-MX")} MX</span>
+            <span>{formatPrice(subtotal)}</span>
           </div>
           <div className="cart-summary-row">
             <span>Envío</span>
-            <span>${shipping.toLocaleString("es-MX")} MX</span>
+            <span>{shipping > 0 ? formatPrice(shipping) : "Gratis"}</span>
           </div>
           <div className="cart-summary-row cart-summary-total">
             <span>Total</span>
-            <span>${total.toLocaleString("es-MX")} MX</span>
+            <span>{formatPrice(total)}</span>
           </div>
 
           <Link to={routePaths.checkout.summary} className="cart-pay-button">

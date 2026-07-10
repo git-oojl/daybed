@@ -156,7 +156,7 @@ export const previewViews = [
     path: "/cuenta/pedidos",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
-    allowedViewers: accessGroups.customerAccount,
+    allowedViewers: accessGroups.publicStore, // ✅ CAMBIADO
     filePath: "frontend/src/pages/account/MyOrdersPage.jsx",
     Component: MyOrdersPage,
   },
@@ -167,7 +167,7 @@ export const previewViews = [
     path: "/cuenta/pedidos/demo-pedido",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
-    allowedViewers: accessGroups.customerAccount,
+    allowedViewers: accessGroups.publicStore, // ✅ CAMBIADO
     filePath: "frontend/src/pages/account/OrderDetailPage.jsx",
     Component: OrderDetailPage,
   },

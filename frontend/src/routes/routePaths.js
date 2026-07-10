@@ -4,6 +4,7 @@ export const routePaths = {
     catalog: "/catalogo",
     productDetail: "/productos/:productId",
     contactHelp: "/contacto-ayuda",
+    cart: "/carrito", // Añadido para el carrito de compras
   },
   account: {
     login: "/login",
