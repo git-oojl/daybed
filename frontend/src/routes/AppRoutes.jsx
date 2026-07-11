@@ -26,8 +26,8 @@ import OrderConfirmationPage from "../pages/checkout/OrderConfirmationPage.jsx";
 import CatalogPage from "../pages/public/CatalogPage.jsx";
 import ContactHelpPage from "../pages/public/ContactHelpPage.jsx";
 import HomePage from "../pages/public/HomePage.jsx";
-import MyOrdersPage from "../pages/public/MyOrdersPage.jsx"; // MOVIDO
-import OrderDetailPage from "../pages/public/OrderDetailPage.jsx"; // MOVIDO
+import MyOrdersPage from "../pages/account/MyOrdersPage.jsx"; // MOVIDO
+import OrderDetailPage from "../pages/account/OrderDetailPage.jsx"; // MOVIDO
 import ProductDetailPage from "../pages/public/ProductDetailPage.jsx";
 import EmptyStatesPage from "../pages/support/EmptyStatesPage.jsx";
 import FeedbackMessagesPage from "../pages/support/FeedbackMessagesPage.jsx";

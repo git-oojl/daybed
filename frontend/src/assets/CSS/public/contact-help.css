@@ -1,0 +1,650 @@
+/* ============================================
+   CONTACT & HELP PAGE - ESTILOS
+   ============================================ */
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.contact-page {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* ===== CONTENEDOR ===== */
+.contact-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* ============================================
+   SECCIONES
+   ============================================ */
+.contact-section {
+  margin-bottom: 3rem;
+}
+
+.contact-section:last-child {
+  margin-bottom: 0;
+}
+
+.contact-section__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.5rem 0;
+  font-family: "Inter", "Poppins", sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.contact-section__desc {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.contact-section--form {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e8e8e8;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   GRID DE CONTACTO
+   ============================================ */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.contact-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.contact-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+
+.contact-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 0.75rem;
+  border-radius: 14px;
+  background: #f4e2ca;
+  color: #816847;
+}
+
+.contact-card__icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.contact-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.3rem 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.contact-card__value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.contact-card__detail {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0.25rem 0 0 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+/* ============================================
+   CANALES DE AYUDA
+   ============================================ */
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.channel-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.channel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+
+.channel-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 0.75rem;
+  border-radius: 14px;
+  background: #f4e2ca;
+  color: #816847;
+}
+
+.channel-card__icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.channel-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 0.3rem 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.channel-card__desc {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 0.75rem 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.channel-card__link {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #B88E2F;
+  text-decoration: none;
+  font-family: "Inter", "Poppins", sans-serif;
+  transition: color 0.2s ease;
+}
+
+.channel-card__link:hover {
+  color: #9a7527;
+  text-decoration: underline;
+}
+
+/* ============================================
+   PREGUNTAS FRECUENTES
+   ============================================ */
+.faqs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.faq-item {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.faq-item:hover {
+  border-color: #d1d5db;
+}
+
+.faq-item__question {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a2e;
+  font-family: "Inter", "Poppins", sans-serif;
+  text-align: left;
+  transition: background-color 0.2s ease;
+  gap: 1rem;
+}
+
+.faq-item__question:hover {
+  background: #fafafa;
+}
+
+.faq-item__question--active {
+  background: #fafafa;
+  color: #B88E2F;
+}
+
+.faq-item__icon {
+  font-size: 20px;
+  font-weight: 300;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.faq-item__question--active .faq-item__icon {
+  color: #B88E2F;
+}
+
+.faq-item__answer {
+  padding: 0 1.25rem 1.25rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faq-item__answer p {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.6;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+/* ============================================
+   ALERTA
+   ============================================ */
+.contact__alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Inter", "Poppins", sans-serif;
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.3s ease;
+}
+
+.contact__alert--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.contact__alert--success svg {
+  color: #22c55e;
+}
+
+/* ============================================
+   FORMULARIO DE CONTACTO
+   ============================================ */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.contact-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.contact-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.contact-form__group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.contact-form__group input,
+.contact-form__group textarea {
+  padding: 0.65rem 0.875rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: "Inter", "Poppins", sans-serif;
+  transition: all 0.2s ease;
+  background: #fafafa;
+  color: #1a1a2e;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.contact-form__group input:focus,
+.contact-form__group textarea:focus {
+  outline: none;
+  border-color: #1a1a2e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
+}
+
+.contact-form__group input::placeholder,
+.contact-form__group textarea::placeholder {
+  color: #9ca3af;
+}
+
+.contact-form__input--error {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+
+.contact-form__error {
+  font-size: 12px;
+  color: #ef4444;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.contact-form__btn {
+  padding: 0.75rem 2rem;
+  background: #B88E2F;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: "Inter", "Poppins", sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+  box-shadow: 0 2px 8px rgba(184, 142, 47, 0.3);
+}
+
+.contact-form__btn:hover {
+  background: #9a7527;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(184, 142, 47, 0.4);
+}
+
+.contact-form__btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .contact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .channels-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contact-section__title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .contact-container {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .contact-section {
+    margin-bottom: 2rem;
+  }
+
+  .contact-section__title {
+    font-size: 20px;
+  }
+
+  .contact-section__desc {
+    font-size: 14px;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .contact-card {
+    padding: 1rem;
+  }
+
+  .contact-card__icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .contact-card__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .contact-card__value {
+    font-size: 14px;
+  }
+
+  .channels-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .channel-card {
+    padding: 1.25rem;
+  }
+
+  .contact-section--form {
+    padding: 1.5rem;
+  }
+
+  .contact-form__row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .contact-form__btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .faq-item__question {
+    font-size: 14px;
+    padding: 0.75rem 1rem;
+  }
+
+  .faq-item__answer {
+    padding: 0 1rem 1rem;
+  }
+
+  .faq-item__answer p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-container {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+
+  .contact-section__title {
+    font-size: 18px;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-align: left;
+    padding: 0.75rem 1rem;
+  }
+
+  .contact-card__icon {
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .contact-card__icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .contact-card__title {
+    font-size: 13px;
+  }
+
+  .contact-card__value {
+    font-size: 13px;
+  }
+
+  .contact-card__detail {
+    font-size: 12px;
+  }
+
+  .channel-card {
+    padding: 1rem;
+  }
+
+  .channel-card__icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .channel-card__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .contact-section--form {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .contact-form__group label {
+    font-size: 12px;
+  }
+
+  .contact-form__group input,
+  .contact-form__group textarea {
+    font-size: 13px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .contact-form__btn {
+    font-size: 14px;
+    padding: 0.6rem 1.5rem;
+  }
+
+  .faq-item__question {
+    font-size: 13px;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .faq-item__answer p {
+    font-size: 12px;
+  }
+
+  .contact__alert {
+    font-size: 13px;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* ===== HERO HEADER (Estilo checkout-hero) ===== */
+.profile-hero {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1920&q=80');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.profile-hero__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(67, 42, 3, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.profile-hero__content {
+  max-width: 1280px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-hero__title {
+  font-size: 38px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.5px;
+  font-family: "Inter", "Poppins", sans-serif;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.profile-hero__breadcrumb {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.profile-hero__breadcrumb a {
+  color: #fce5c7;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.profile-hero__breadcrumb a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.profile-hero__breadcrumb span {
+  margin: 0 0.5rem;
+  color: rgba(255, 255, 255, 0.4);
+}
