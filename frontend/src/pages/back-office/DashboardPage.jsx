@@ -1,274 +1,472 @@
-import React from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import "../../assets/home-page.css";
+import "../../assets/dashboard-page.css";
+import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import { routePaths } from "../../routes/routePaths.js";
 import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Button,
-  Paper,
-  Divider,
-} from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+  FaShoppingBag,
+  FaBoxes,
+  FaDollarSign,
+  FaExclamationTriangle,
+  FaClipboardList,
+  FaBoxOpen,
+  FaTags,
+  FaUserTie,
+  FaEye,
+} from "react-icons/fa";
 
-const OrderConfirmationPage = () => {
-  const orderData = {
-    id: "#DAY-001",
-    estimatedDate: "30 de junio, 2028",
-    items: [
-      { name: "Sofá Esquinero", price: 8999, quantity: 1 },
-      { name: "Mesa de Centro", price: 2499, quantity: 2 },
-    ],
-    subtotal: 13997,
-    shipping: 500,
-    total: 14497,
-    paymentMethod: "Tarjeta de crédito",
-    address: "Calle 123, Colonia Centro, CP 12345",
-    status: "Confirmado",
-  };
+export default function DashboardPage() {
+  const ventasPorMes = [
+    { mes: "Enero", monto: 5000 },
+    { mes: "Febrero", monto: 8000 },
+    { mes: "Marzo", monto: 12000 },
+    { mes: "Abril", monto: 15000 },
+    { mes: "Mayo", monto: 20000 },
+  ];
+
+  const productosBajoStock = [
+    { nombre: "Sofá Esquinero", stock: 2 },
+    { nombre: "Mesa de Centro", stock: 3 },
+    { nombre: "Silla Ergonómica", stock: 1 },
+    { nombre: "Lámpara de Pie", stock: 0 },
+  ];
+
+  const pedidos = [
+    {
+      id: "#DAY001",
+      cliente: "Ana García",
+      total: "$4,200",
+      estado: "Preparando",
+    },
+    {
+      id: "#DAY002",
+      cliente: "Luis Pérez",
+      total: "$8,999",
+      estado: "Confirmado",
+    },
+    {
+      id: "#DAY003",
+      cliente: "María López",
+      total: "$2,800",
+      estado: "Enviado",
+    },
+    {
+      id: "#DAY004",
+      cliente: "Carlos Ruiz",
+      total: "$6,500",
+      estado: "Entregado",
+    },
+  ];
+
+  const metrics = [
+    { icon: <FaShoppingBag size={28} />, label: "Pedidos", value: 18, color: "#8B5E3C" },
+    { icon: <FaDollarSign size={28} />, label: "Ventas", value: "$24,850", color: "#2E7D32" },
+    { icon: <FaBoxes size={28} />, label: "Productos", value: 128, color: "#1565C0" },
+    { icon: <FaExclamationTriangle size={28} />, label: "Bajo Stock", value: 6, color: "#D84315" },
+  ];
 
   return (
-    <Box sx={{ bgcolor: "#FDF5E6", minHeight: "100vh", py: 5 }}>
-      <Container maxWidth="lg">
-        <Typography variant="body2" sx={{ mb: 4, color: "#666" }}>
-          Inicio &gt; Dashboard &gt; Checkout &gt; Confirmación de pedido
-        </Typography>
+    <div className="home-page dashboard-page">
+      <HomeHeader />
 
-        <Typography
-          variant="h4"
-          sx={{
-            mb: 4,
-            fontWeight: "bold",
-            color: "#8B4513",
+      <section
+        className="dashboard-hero"
+        aria-label="Dashboard"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1600')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          width: "100%",
+          minHeight: "230px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(50,35,22,.72)",
           }}
-        >
-          Confirmación de Pedido
-        </Typography>
-
-        <Paper
-          sx={{
-            p: 4,
-            mb: 4,
-            bgcolor: "white",
+        />
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
             textAlign: "center",
-            borderRadius: 2,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            padding: "40px 20px",
           }}
         >
-          <CheckCircleIcon sx={{ fontSize: 64, color: "#4CAF50", mb: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: "bold", color: "#333" }}>
-            ¡PEDIDO CON ÉXITO!
-          </Typography>
-        </Paper>
+          <h1
+            style={{
+              color: "#fff",
+              fontSize: "3rem",
+              marginBottom: "10px",
+              fontWeight: "700",
+              fontFamily: '"Playfair Display", serif',
+            }}
+          >
+            Dashboard Interno
+          </h1>
+          <p style={{ color: "#F5EDE5", fontSize: "18px" }}>
+            <Link to={routePaths.public.home} style={{ color: "#FFD36A", textDecoration: "none" }}>
+              Inicio
+            </Link>
+            <span style={{ margin: "0 8px" }}>{">"}</span>
+            Dashboard
+          </p>
+        </div>
+      </section>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={7}>
-            <Paper
-              sx={{
-                p: 4,
-                mb: 3,
-                bgcolor: "white",
-                borderRadius: 2,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+      <main className="dashboard-container">
+        <div className="dashboard-header-actions">
+          <div>
+            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)" }}>Dashboard de Empleado</h2>
+            <p style={{ color: "#777", marginTop: "10px", fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)" }}>
+              Administra pedidos, productos, categorías e inventario.
+            </p>
+          </div>
+        </div>
+
+        {/* Tarjetas de métricas - Responsive */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "20px",
+            marginBottom: "40px",
+          }}
+        >
+          {metrics.map((metric, index) => (
+            <div
+              key={index}
+              className="stat-summary-card"
+              style={{
+                padding: "20px",
+                background: "#FDF8F0",
+                border: "1px solid #E8DCCC",
+                borderRadius: "16px",
+                textAlign: "center",
+                transition: "transform 0.2s",
+                cursor: "default",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-5px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
             >
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: "bold", color: "#8B4513", mb: 3 }}
-              >
-                Resumen de pedido
-              </Typography>
+              <div style={{ color: metric.color, marginBottom: "8px" }}>{metric.icon}</div>
+              <span className="stat-summary-label" style={{ display: "block", fontSize: "0.85rem", color: "#666" }}>
+                {metric.label}
+              </span>
+              <span className="stat-summary-value" style={{ display: "block", fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 700, color: metric.color }}>
+                {metric.value}
+              </span>
+            </div>
+          ))}
+        </div>
 
-              {orderData.items.map((item, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    py: 1.5,
-                    borderBottom:
-                      index < orderData.items.length - 1
-                        ? "1px solid #f0f0f0"
-                        : "none",
+        {/* Grid principal - Pedidos recientes + Inventario crítico */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+            gap: "30px",
+            marginBottom: "35px",
+          }}
+        >
+          {/* Pedidos recientes */}
+          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
+            <div className="dashboard-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+                <FaClipboardList /> Pedidos recientes
+              </h3>
+              <Link to={routePaths.backOffice.orders} className="btn-primary" style={{ background: "#8B5E3C", color: "#fff", padding: "8px 16px", borderRadius: "8px", textDecoration: "none", fontSize: "0.85rem" }}>
+                Ver todos
+              </Link>
+            </div>
+            <div className="table-responsive" style={{ overflowX: "auto" }}>
+              <table className="dashboard-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
+                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Pedido</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Cliente</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Total</th>
+                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pedidos.map((pedido) => (
+                    <tr key={pedido.id} style={{ borderBottom: "1px solid #F0EBE3" }}>
+                      <td style={{ padding: "10px 8px", fontWeight: 600, color: "#8B5E3C" }}>{pedido.id}</td>
+                      <td style={{ padding: "10px 8px" }}>{pedido.cliente}</td>
+                      <td style={{ padding: "10px 8px", fontWeight: 600 }}>{pedido.total}</td>
+                      <td style={{ padding: "10px 8px" }}>
+                        <span
+                          style={{
+                            background: "#F3E8D8",
+                            color: "#8B5E3C",
+                            padding: "4px 14px",
+                            borderRadius: "20px",
+                            fontWeight: 600,
+                            fontSize: ".8rem",
+                            display: "inline-block",
+                          }}
+                        >
+                          {pedido.estado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Inventario crítico */}
+          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
+            <div className="dashboard-card-header" style={{ marginBottom: "20px" }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+                <FaBoxes /> Inventario crítico
+              </h3>
+            </div>
+            {productosBajoStock.map((producto) => (
+              <div
+                key={producto.nombre}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "14px 0",
+                  borderBottom: "1px solid #F0EBE3",
+                }}
+              >
+                <div>
+                  <strong style={{ fontSize: "clamp(0.9rem, 1.2vw, 1rem)" }}>{producto.nombre}</strong>
+                  <div style={{ color: "#888", fontSize: "0.8rem", marginTop: "4px" }}>Requiere reposición</div>
+                </div>
+                <span
+                  style={{
+                    background: producto.stock === 0 ? "#FDECEA" : "#FFF3E0",
+                    color: producto.stock === 0 ? "#C62828" : "#EF6C00",
+                    padding: "6px 16px",
+                    borderRadius: "25px",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
                   }}
                 >
-                  <Typography variant="body2">
-                    {item.name} {item.quantity}
-                  </Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    ${(item.price * item.quantity).toLocaleString()} MX
-                  </Typography>
-                </Box>
+                  {producto.stock}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Segunda fila - Ventas por mes + Productos bajo stock */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+            gap: "30px",
+            marginBottom: "35px",
+          }}
+        >
+          {/* Ventas por mes */}
+          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C", marginBottom: "20px" }}>
+              <FaDollarSign /> Ventas por mes
+            </h3>
+            {ventasPorMes.map((venta) => (
+              <div
+                key={venta.mes}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "12px 0",
+                  borderBottom: "1px solid #F0EBE3",
+                }}
+              >
+                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>{venta.mes}</span>
+                <strong style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>${venta.monto.toLocaleString()}</strong>
+              </div>
+            ))}
+            <div
+              style={{
+                marginTop: "15px",
+                paddingTop: "15px",
+                borderTop: "2px solid #8B5E3C",
+                display: "flex",
+                justifyContent: "space-between",
+                fontWeight: "bold",
+                fontSize: "clamp(0.95rem, 1.2vw, 1.05rem)",
+              }}
+            >
+              <span>Total del año</span>
+              <strong>${ventasPorMes.reduce((acc, v) => acc + v.monto, 0).toLocaleString()} MX</strong>
+            </div>
+          </div>
+
+          {/* Productos con bajo stock */}
+          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C", marginBottom: "20px" }}>
+              <FaExclamationTriangle /> Productos con bajo stock
+            </h3>
+            {productosBajoStock.map((producto) => (
+              <div
+                key={producto.nombre}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "12px 0",
+                  borderBottom: "1px solid #F0EBE3",
+                }}
+              >
+                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>{producto.nombre}</span>
+                <strong
+                  style={{
+                    color: producto.stock === 0 ? "#D32F2F" : "#D28B00",
+                    fontSize: "clamp(0.9rem, 1.1vw, 1rem)",
+                  }}
+                >
+                  Stock {producto.stock}
+                </strong>
+              </div>
+            ))}
+            <div
+              style={{
+                marginTop: "15px",
+                paddingTop: "15px",
+                borderTop: "2px solid #D32F2F",
+                textAlign: "center",
+                color: "#D32F2F",
+                fontWeight: "bold",
+                fontSize: "clamp(0.85rem, 1.1vw, 1rem)",
+              }}
+            >
+              1 producto necesita reabastecimiento inmediato.
+            </div>
+          </div>
+        </div>
+
+        {/* Accesos rápidos + Información del empleado */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+            gap: "30px",
+            marginBottom: "50px",
+          }}
+        >
+          {/* Accesos rápidos */}
+          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
+            <div className="dashboard-card-header" style={{ marginBottom: "20px" }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+                <FaBoxOpen /> Accesos rápidos
+              </h3>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              {[
+                { to: routePaths.backOffice.products, icon: <FaBoxOpen size={32} color="#8B5E3C" />, label: "Productos" },
+                { to: routePaths.backOffice.categories, icon: <FaTags size={32} color="#8B5E3C" />, label: "Categorías" },
+                { to: routePaths.backOffice.inventory, icon: <FaBoxes size={32} color="#8B5E3C" />, label: "Inventario" },
+                { to: routePaths.backOffice.orders, icon: <FaShoppingBag size={32} color="#8B5E3C" />, label: "Pedidos" },
+              ].map((item, index) => (
+                <Link key={index} to={item.to} style={{ textDecoration: "none" }}>
+                  <div
+                    style={{
+                      background: "#F8F3ED",
+                      border: "1px solid #E8DCCC",
+                      borderRadius: "16px",
+                      padding: "20px",
+                      textAlign: "center",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                      e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <div style={{ marginBottom: "12px" }}>{item.icon}</div>
+                    <h4 style={{ margin: 0, color: "#5C2E0B", fontSize: "clamp(0.85rem, 1.1vw, 1rem)" }}>{item.label}</h4>
+                  </div>
+                </Link>
               ))}
+            </div>
+          </div>
 
-              <Divider sx={{ my: 2 }} />
-
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", py: 1 }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Subtotal
-                </Typography>
-                <Typography variant="body2" fontWeight="bold">
-                  ${orderData.subtotal.toLocaleString()} MX
-                </Typography>
-              </Box>
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", py: 1 }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Envío
-                </Typography>
-                <Typography variant="body2" fontWeight="bold">
-                  ${orderData.shipping.toLocaleString()} MX
-                </Typography>
-              </Box>
-              <Divider sx={{ my: 1 }} />
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", py: 1 }}
-              >
-                <Typography variant="body2" fontWeight="bold">
-                  Total
-                </Typography>
-                <Typography variant="body2" fontWeight="bold" color="#8B4513">
-                  ${orderData.total.toLocaleString()} MX
-                </Typography>
-              </Box>
-            </Paper>
-
-            <Paper
-              sx={{
-                p: 4,
-                mb: 3,
-                bgcolor: "white",
-                borderRadius: 2,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          {/* Información del empleado */}
+          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
+            <div className="dashboard-card-header" style={{ marginBottom: "20px" }}>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+                <FaUserTie /> Información del empleado
+              </h3>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "20px",
+                marginBottom: "25px",
+                flexWrap: "wrap",
               }}
             >
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: "bold", color: "#333", mb: 1 }}
-              >
-                Método de pago
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#666", mb: 2 }}>
-                {orderData.paymentMethod}
-              </Typography>
-
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: "bold", color: "#333", mb: 1 }}
-              >
-                Dirección de envío
-              </Typography>
-              <Typography variant="body2" sx={{ color: "#666" }}>
-                {orderData.address}
-              </Typography>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={5}>
-            <Paper
-              sx={{
-                p: 4,
-                mb: 3,
-                bgcolor: "white",
-                borderRadius: 2,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: "bold", color: "#8B4513", mb: 3 }}
-              >
-                Detalles del pedido
-              </Typography>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: "bold", color: "#666", mb: 1 }}
-                >
-                  Número de pedido
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: "bold", color: "#333" }}
-                >
-                  {orderData.id}
-                </Typography>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: "bold", color: "#666", mb: 1 }}
-                >
-                  Estado del pedido
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: "bold", color: "#4CAF50" }}
-                >
-                  {orderData.status}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: "bold", color: "#666", mb: 1 }}
-                >
-                  Fecha estimada de entrega
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: "bold", color: "#333" }}
-                >
-                  {orderData.estimatedDate}
-                </Typography>
-              </Box>
-            </Paper>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                component={Link}
-                to="/cuenta/pedidos"
-                sx={{
-                  bgcolor: "#8B4513",
-                  "&:hover": { bgcolor: "#5C2E0B" },
-                  py: 1.5,
-                  fontSize: "1rem",
-                  fontWeight: "bold",
+              <div
+                style={{
+                  width: "75px",
+                  height: "75px",
+                  borderRadius: "50%",
+                  background: "#E8DCCC",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  flexShrink: 0,
                 }}
               >
-                Ver mis pedidos
-              </Button>
+                <FaUserTie size={34} color="#8B5E3C" />
+              </div>
+              <div>
+                <h3 style={{ marginBottom: "6px", color: "#5C2E0B", fontSize: "clamp(1rem, 1.3vw, 1.2rem)" }}>Empleado DayBed</h3>
+                <p style={{ color: "#777", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Área de ventas</p>
+              </div>
+            </div>
+            <div style={{ display: "grid", gap: "14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #F0EBE3", paddingBottom: "10px" }}>
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Pedidos procesados hoy</span>
+                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>18</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #F0EBE3", paddingBottom: "10px" }}>
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Productos registrados</span>
+                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>128</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #F0EBE3", paddingBottom: "10px" }}>
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Categorías activas</span>
+                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>12</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Estado del sistema</span>
+                <strong style={{ color: "#2E7D32", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Operativo</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
 
-              <Button
-                fullWidth
-                variant="outlined"
-                component={Link}
-                to="/catalogo"
-                sx={{
-                  borderColor: "#8B4513",
-                  color: "#8B4513",
-                  "&:hover": { bgcolor: "#8B4513", color: "white" },
-                  py: 1.5,
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                }}
-              >
-                Seguir comprando
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+      <HomeFooter />
+    </div>
   );
-};
-
-export default OrderConfirmationPage;
+}

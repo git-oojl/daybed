@@ -1,16 +1,10 @@
-<<<<<<< HEAD
-// LoginPage.jsx - VERSIÓN FUSIONADA Y CORREGIDA
-import React, { useState } from 'react';
-=======
-// LoginPage.jsx
+/* eslint-disable no-unused-vars */
 import { useState } from "react";
->>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
 import {
   Box,
   Paper,
   Typography,
   TextField,
-  // eslint-disable-next-line no-unused-vars
   Button,
   Link,
   Divider,
@@ -24,76 +18,74 @@ import {
   Visibility,
   VisibilityOff,
   Storefront as StoreIcon,
-<<<<<<< HEAD
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
-import loginBackground from '../../assets/LoginPage.jpg';
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
+import "../../assets/CSS/account/login-page.css";
+import loginBackground from "../../assets/LoginPage.jpg";
 
 // ============================================
 // ESTILOS - FUSIÓN DE AMBOS CÓDIGOS
 // ============================================
 
 const LoginContainer = styled(Box)(({ theme }) => ({
-  minHeight: '100vh',
-  width: '100%',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
+  minHeight: "100vh",
+  width: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
   padding: theme.spacing(4),
-  boxSizing: 'border-box',
+  boxSizing: "border-box",
   backgroundImage: `url(${loginBackground})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  position: 'fixed',
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  position: "fixed",
   right: 0,
   left: 0,
   top: 0,
 
-  // ===== MEDIA QUERIES (de tu compañero) =====
-  [theme.breakpoints.down('md')]: {
+  [theme.breakpoints.down("md")]: {
     padding: theme.spacing(3),
   },
 
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down("sm")]: {
     padding: theme.spacing(3),
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100dvh',
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100dvh",
   },
 
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     padding: theme.spacing(2),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 }));
 
 const LoginPaper = styled(Paper)(({ theme }) => ({
-  width: '100%',
+  width: "100%",
   maxWidth: 440,
   padding: theme.spacing(5),
   borderRadius: 20,
-  boxShadow: '0 8px 40px rgba(74,53,32,0.2)',
-  backgroundColor: '#FFF3E3',
-  border: '1px solid #E8DCCC',
-  position: 'relative',
+  boxShadow: "0 8px 40px rgba(74,53,32,0.2)",
+  backgroundColor: "#FFF3E3",
+  border: "1px solid #E8DCCC",
+  position: "relative",
   zIndex: 1,
-  backdropFilter: 'blur(2px)',
+  backdropFilter: "blur(2px)",
 
-  // ===== MEDIA QUERIES (de tu compañero) =====
-  [theme.breakpoints.down('md')]: {
-    width: '85%',
+  [theme.breakpoints.down("md")]: {
+    width: "85%",
     maxWidth: 430,
   },
 
-  [theme.breakpoints.down('sm')]: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  [theme.breakpoints.down("sm")]: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  '@media (max-width:480px)': {
-    width: '95%',
+  "@media (max-width:480px)": {
+    width: "95%",
     maxWidth: 360,
     padding: theme.spacing(2.5),
     borderRadius: 16,
@@ -101,15 +93,15 @@ const LoginPaper = styled(Paper)(({ theme }) => ({
 }));
 
 const LogoWrapper = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   gap: theme.spacing(1.5),
   marginBottom: theme.spacing(1),
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down("sm")]: {
     gap: theme.spacing(1),
   },
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     gap: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
   },
@@ -117,11 +109,11 @@ const LogoWrapper = styled(Box)(({ theme }) => ({
 
 const LogoIcon = styled(StoreIcon)(({ theme }) => ({
   fontSize: 40,
-  color: '#7B5D15',
-  [theme.breakpoints.down('sm')]: {
+  color: "#7B5D15",
+  [theme.breakpoints.down("sm")]: {
     fontSize: 32,
   },
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     fontSize: 28,
   },
 }));
@@ -129,15 +121,15 @@ const LogoIcon = styled(StoreIcon)(({ theme }) => ({
 const LogoText = styled(Typography)(({ theme }) => ({
   fontSize: 34,
   fontWeight: 700,
-  color: '#8c6918',
-  textAlign: 'center',
+  color: "#8c6918",
+  textAlign: "center",
   letterSpacing: 1.5,
   fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down("sm")]: {
     fontSize: 28,
     letterSpacing: 1,
   },
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     fontSize: 22,
     letterSpacing: 0.5,
   },
@@ -145,16 +137,16 @@ const LogoText = styled(Typography)(({ theme }) => ({
 
 const SubtitleText = styled(Typography)(({ theme }) => ({
   fontSize: 16,
-  color: '#61470c',
-  textAlign: 'center',
+  color: "#61470c",
+  textAlign: "center",
   marginBottom: theme.spacing(4),
   fontWeight: 400,
   fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down("sm")]: {
     fontSize: 14,
     marginBottom: theme.spacing(3),
   },
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     fontSize: 13,
     marginBottom: theme.spacing(2),
   },
@@ -163,123 +155,122 @@ const SubtitleText = styled(Typography)(({ theme }) => ({
 const StyledTextField = styled(TextField)(({ theme }) => ({
   marginBottom: theme.spacing(2.5),
 
-  '& .MuiOutlinedInput-root': {
+  "& .MuiOutlinedInput-root": {
     borderRadius: 12,
-    backgroundColor: '#FEFCF8',
-    transition: 'border-color 0.2s ease',
-    '& fieldset': {
-      borderColor: '#D4C5B2',
+    backgroundColor: "#FEFCF8",
+    transition: "border-color 0.2s ease",
+    "& fieldset": {
+      borderColor: "#D4C5B2",
     },
-    '&:hover fieldset': {
-      borderColor: '#8B6B4C',
+    "&:hover fieldset": {
+      borderColor: "#8B6B4C",
     },
-    '&.Mui-focused fieldset': {
-      borderColor: '#8B6B4C',
+    "&.Mui-focused fieldset": {
+      borderColor: "#8B6B4C",
       borderWidth: 2,
     },
-    '&.Mui-error fieldset': {
-      borderColor: '#C0392B',
+    "&.Mui-error fieldset": {
+      borderColor: "#C0392B",
     },
   },
 
-  '& .MuiInputLabel-root': {
-    color: '#61470c',
+  "& .MuiInputLabel-root": {
+    color: "#61470c",
     fontWeight: 500,
     fontFamily: '"Poppins", montserrat, sans-serif',
-    '&.Mui-focused': {
-      color: '#8B6B4C',
+    "&.Mui-focused": {
+      color: "#8B6B4C",
     },
-    '&.Mui-error': {
-      color: '#C0392B',
+    "&.Mui-error": {
+      color: "#C0392B",
     },
   },
 
-  '& .MuiInputLabel-shrink': {
+  "& .MuiInputLabel-shrink": {
     fontWeight: 600,
   },
 
-  '& .MuiFormHelperText-root': {
+  "& .MuiFormHelperText-root": {
     marginLeft: 0,
     fontWeight: 400,
-    color: '#C0392B',
+    color: "#C0392B",
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
 
-  '& .MuiInputBase-input': {
+  "& .MuiInputBase-input": {
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
 
-  // ===== MEDIA QUERIES (de tu compañero) =====
-  [theme.breakpoints.down('sm')]: {
-    flexDirection: 'column',
-    alignItems: 'center',
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "center",
     gap: theme.spacing(1),
   },
 
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     marginBottom: theme.spacing(1.5),
 
-    '& .MuiInputBase-input': {
+    "& .MuiInputBase-input": {
       fontSize: 15,
-      padding: '13px',
+      padding: "13px",
     },
 
-    '& .MuiInputLabel-root': {
+    "& .MuiInputLabel-root": {
       fontSize: 14,
     },
 
-    '& .MuiOutlinedInput-root': {
+    "& .MuiOutlinedInput-root": {
       borderRadius: 10,
     },
   },
 }));
 
 const LoginButton = styled(Button)(({ theme }) => ({
-  backgroundColor: '#977422',
-  color: '#FFFFFF',
+  backgroundColor: "#977422",
+  color: "#FFFFFF",
   padding: theme.spacing(1.6),
   borderRadius: 12,
   fontSize: 16,
   fontWeight: 600,
-  textTransform: 'none',
+  textTransform: "none",
   fontFamily: '"Poppins", montserrat, sans-serif',
-  transition: 'background-color 0.3s ease, transform 0.2s ease',
-  boxShadow: '0 4px 12px #b88f2f84',
-  width: '100%',
+  transition: "background-color 0.3s ease, transform 0.2s ease",
+  boxShadow: "0 4px 12px #b88f2f84",
+  width: "100%",
 
-  '&:hover': {
-    backgroundColor: '#7a5d1a',
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 20px #8b6b4c59',
+  "&:hover": {
+    backgroundColor: "#7a5d1a",
+    transform: "translateY(-2px)",
+    boxShadow: "0 6px 20px #8b6b4c59",
   },
 
-  '&:active': {
-    transform: 'translateY(0)',
+  "&:active": {
+    transform: "translateY(0)",
   },
 
-  '&:disabled': {
-    backgroundColor: '#D4C5B2',
-    boxShadow: 'none',
-    transform: 'none',
-    color: '#A09080',
+  "&:disabled": {
+    backgroundColor: "#D4C5B2",
+    boxShadow: "none",
+    transform: "none",
+    color: "#A09080",
   },
 
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     padding: theme.spacing(1.2),
     fontSize: 14,
   },
 }));
 
 const LinksContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'center',
+  display: "flex",
+  justifyContent: "center",
   marginTop: theme.spacing(2),
   marginBottom: theme.spacing(1),
-  flexWrap: 'wrap',
+  flexWrap: "wrap",
   gap: theme.spacing(1),
 
-  '@media (max-width:480px)': {
-    flexDirection: 'column',
+  "@media (max-width:480px)": {
+    flexDirection: "column",
     gap: theme.spacing(0.5),
     marginTop: theme.spacing(1.5),
     marginBottom: theme.spacing(0.5),
@@ -287,71 +278,71 @@ const LinksContainer = styled(Box)(({ theme }) => ({
 }));
 
 const ForgotLink = styled(Link)(({ theme }) => ({
-  color: '#8B6B4C',
+  color: "#8B6B4C",
   fontSize: 14,
   fontWeight: 500,
-  cursor: 'pointer',
-  textDecoration: 'none',
+  cursor: "pointer",
+  textDecoration: "none",
   fontFamily: '"Poppins", montserrat, sans-serif !important',
-  transition: 'color 0.2s ease',
+  transition: "color 0.2s ease",
   padding: theme.spacing(0.5),
 
-  '&:hover': {
-    color: '#6B4F3A',
-    textDecoration: 'underline',
+  "&:hover": {
+    color: "#6B4F3A",
+    textDecoration: "underline",
   },
 
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     fontSize: 13,
   },
 }));
 
 const RegisterLink = styled(Link)(({ theme }) => ({
-  color: '#8B6B4C',
+  color: "#8B6B4C",
   fontWeight: 600,
-  cursor: 'pointer',
-  textDecoration: 'none',
+  cursor: "pointer",
+  textDecoration: "none",
   fontFamily: '"Poppins", montserrat, sans-serif',
   padding: theme.spacing(0.5),
-  transition: 'color 0.2s ease',
+  transition: "color 0.2s ease",
 
-  '&:hover': {
-    color: '#6B4F3A',
-    textDecoration: 'underline',
+  "&:hover": {
+    color: "#6B4F3A",
+    textDecoration: "underline",
   },
 }));
 
 const DividerStyled = styled(Divider)(({ theme }) => ({
   margin: theme.spacing(3, 0),
 
-  '&::before, &::after': {
-    borderColor: '#D4C5B2',
+  "&::before, &::after": {
+    borderColor: "#D4C5B2",
   },
 
-  '& .MuiDivider-wrapper': {
-    color: '#61470c',
+  "& .MuiDivider-wrapper": {
+    color: "#61470c",
     fontSize: 14,
     fontWeight: 400,
     fontFamily: '"Poppins", montserrat, sans-serif',
   },
 
-  '@media (max-width:480px)': {
+  "@media (max-width:480px)": {
     margin: theme.spacing(2, 0),
-    '& .MuiDivider-wrapper': {
+    "& .MuiDivider-wrapper": {
       fontSize: 12,
     },
   },
 }));
 
 const RegisterWrapper = styled(Box)(({ theme }) => ({
-  textAlign: 'center',
+  textAlign: "center",
 
-  '& .MuiTypography-root': {
-    color: '#61470c',
+  "& .MuiTypography-root": {
+    color: "#61470c",
     fontSize: 15,
     fontFamily: '"Poppins", montserrat, sans-serif',
 
-    '@media (max-width:480px)': {
+    "@media (max-width:480px)": {
       fontSize: 13,
     },
   },
@@ -360,11 +351,6 @@ const RegisterWrapper = styled(Box)(({ theme }) => ({
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-=======
-} from "@mui/icons-material";
-import "../../assets/CSS/account/login-page.css"; // ← Importar CSS
-import loginBackground from "../../assets/LoginPage.jpg";
->>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
 
 function LoginPage() {
   const [formData, setFormData] = useState({
@@ -466,24 +452,20 @@ function LoginPage() {
         </Typography>
 
         {error && (
-<<<<<<< HEAD
           <Alert
             severity="error"
             sx={{
               mb: 3,
               borderRadius: 12,
-              backgroundColor: '#FDF2F0',
-              border: '1px solid #F5D0CC',
-              '& .MuiAlert-icon': { color: '#C0392B' },
-              '& .MuiAlert-message': {
-                color: '#4A3520',
+              backgroundColor: "#FDF2F0",
+              border: "1px solid #F5D0CC",
+              "& .MuiAlert-icon": { color: "#C0392B" },
+              "& .MuiAlert-message": {
+                color: "#4A3520",
                 fontFamily: '"Poppins", montserrat, sans-serif',
               },
             }}
           >
-=======
-          <Alert className="login-alert" severity="error">
->>>>>>> 04708a919b7cd20ddb6e3eaec817552c8451094d
             {error}
           </Alert>
         )}
@@ -557,39 +539,31 @@ function LoginPage() {
             autoComplete="current-password"
           />
 
-          <button
-            className="login-button"
-            type="submit"
-            disabled={!isFormValid}
-          >
+          <LoginButton type="submit" disabled={!isFormValid}>
             {loading ? "Iniciando sesión..." : "Iniciar sesión"}
-          </button>
+          </LoginButton>
         </form>
 
-        <Box className="login-links-container">
-          <Link className="login-forgot-link" href="#" underline="hover">
+        <LinksContainer>
+          <ForgotLink href="#" underline="hover">
             ¿Olvidaste tu contraseña?
-          </Link>
-        </Box>
+          </ForgotLink>
+        </LinksContainer>
 
-        <Divider className="login-divider">
+        <DividerStyled>
           <Typography variant="body2" color="#7A6B5A">
             o
           </Typography>
-        </Divider>
+        </DividerStyled>
 
-        <Box className="login-register-wrapper">
+        <RegisterWrapper>
           <Typography variant="body1">
             ¿No tienes cuenta?{" "}
-            <Link
-              className="login-register-link"
-              href="/crear-cuenta"
-              underline="hover"
-            >
+            <RegisterLink href="/crear-cuenta" underline="hover">
               Regístrate
-            </Link>
+            </RegisterLink>
           </Typography>
-        </Box>
+        </RegisterWrapper>
       </Paper>
     </Box>
   );

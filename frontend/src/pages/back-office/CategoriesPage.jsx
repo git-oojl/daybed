@@ -14,7 +14,9 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
-  FaArrowRight,
+  FaSearch,
+  FaFilter,
+  FaEye,
 } from "react-icons/fa";
 
 export default function CategoriesPage() {
@@ -31,6 +33,22 @@ export default function CategoriesPage() {
   const [formData, setFormData] = useState({
     name: "",
     status: "Activo",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("Todos");
+
+  const statusOptions = ["Todos", "Activo", "Inactivo"];
+
+  const normalizeString = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
+
+  const filteredCategories = categories.filter((category) => {
+    const normalizedSearch = normalizeString(searchTerm);
+    const normalizedName = normalizeString(category.name);
+    const matchesSearch = normalizedName.includes(normalizedSearch);
+    const matchesStatus = filterStatus === "Todos" || category.status === filterStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const handleOpenModal = (category = null) => {
@@ -149,7 +167,7 @@ export default function CategoriesPage() {
             className="dashboard-hero__title"
             style={{
               color: '#FFFFFF',
-              fontSize: '2.5rem',
+              fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
               fontWeight: 700,
               textShadow: '0 2px 8px rgba(0,0,0,0.6)',
               margin: 0,
@@ -162,7 +180,7 @@ export default function CategoriesPage() {
             className="dashboard-hero__breadcrumb"
             style={{
               color: '#F5EDE5',
-              fontSize: '1.1rem',
+              fontSize: 'clamp(0.9rem, 1.2vw, 1.1rem)',
               textShadow: '0 1px 4px rgba(0,0,0,0.5)',
               marginTop: '8px',
             }}
@@ -181,23 +199,32 @@ export default function CategoriesPage() {
       </section>
 
       <main className="dashboard-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ color: '#6B4A2B', margin: 0 }}>Lista de categorías</h2>
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '16px', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '24px',
+          marginTop: '16px',
+        }}>
+          <h2 style={{ fontSize: 'clamp(1.2rem, 2vw, 1.8rem)', color: '#6B4A2B', margin: 0 }}>Lista de categorías</h2>
           <button
             onClick={() => handleOpenModal()}
             style={{
               backgroundColor: '#8B5E3C',
               color: '#FFFFFF',
               border: 'none',
-              padding: '12px 24px',
+              padding: '12px 28px',
               borderRadius: '8px',
-              fontSize: '16px',
+              fontSize: 'clamp(0.8rem, 1vw, 0.9rem)',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               transition: 'background-color 0.2s ease',
+              boxShadow: '0 2px 8px rgba(139,94,60,0.3)',
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = '#6B4A2B'}
             onMouseLeave={(e) => e.target.style.backgroundColor = '#8B5E3C'}
@@ -206,96 +233,180 @@ export default function CategoriesPage() {
           </button>
         </div>
 
-        <div className="dashboard-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="dashboard-card"
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '24px',
+          padding: '16px 20px',
+          background: '#FDF8F0',
+          border: '1px solid #E8DCCC',
+          borderRadius: '12px',
+          alignItems: 'center',
+        }}>
+          <div style={{ position: 'relative', flex: '1', minWidth: '200px' }}>
+            <FaSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+            <input
+              type="text"
+              placeholder="Buscar categorías..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                padding: '32px 24px',
-                transition: 'transform 0.2s ease',
+                width: '100%',
+                padding: '10px 12px 10px 38px',
+                borderRadius: '8px',
+                border: '1px solid #E8DCCC',
+                fontSize: 'clamp(0.8rem, 1vw, 0.9rem)',
+                background: '#FFFFFF',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <FaFilter style={{ color: '#8B5E3C' }} />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid #E8DCCC',
+                fontSize: 'clamp(0.8rem, 1vw, 0.9rem)',
+                background: '#FFFFFF',
+                minWidth: '120px',
+              }}
             >
-              <div style={{ marginBottom: '16px' }}>
-                {category.icon}
-              </div>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-              <h3 style={{ margin: '0 0 8px 0', color: '#6B4A2B', fontSize: '18px' }}>
-                {category.name}
-              </h3>
-
-              <span style={{ color: '#7A6B5A', fontSize: '14px', marginBottom: '16px' }}>
-                {category.productCount} productos
-              </span>
-
-              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                <button
-                  onClick={() => handleOpenModal(category)}
-                  style={{
-                    backgroundColor: '#8B5E3C',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <FaEdit size={14} /> Editar
-                </button>
-                <button
-                  onClick={() => handleDelete(category.id)}
-                  style={{
-                    backgroundColor: '#D32F2F',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <FaTrash size={14} /> Eliminar
-                </button>
-              </div>
-
-              <button
-                onClick={() => handleToggleStatus(category.id)}
+        <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+          {filteredCategories.length > 0 ? (
+            filteredCategories.map((category) => (
+              <div
+                key={category.id}
                 style={{
-                  marginTop: '12px',
-                  backgroundColor: category.status === 'Activo' ? '#E8F5E9' : '#FDECEA',
-                  color: category.status === 'Activo' ? '#2E7D32' : '#D32F2F',
-                  border: 'none',
-                  padding: '4px 16px',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  padding: 'clamp(24px, 3vw, 32px)',
+                  background: '#FFFFFF',
+                  border: '1px solid #E8DCCC',
+                  borderRadius: '16px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
               >
-                {category.status}
-              </button>
+                <div style={{ marginBottom: '12px', background: '#F8F3ED', padding: '14px', borderRadius: '50%', width: '68px', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {category.icon}
+                </div>
+
+                <h3 style={{ margin: '0 0 4px 0', color: '#6B4A2B', fontSize: 'clamp(1rem, 1.3vw, 1.2rem)', fontWeight: 700 }}>
+                  {category.name}
+                </h3>
+
+                <span style={{ color: '#7A6B5A', fontSize: 'clamp(0.8rem, 1vw, 0.9rem)', marginBottom: '16px' }}>
+                  {category.productCount} productos
+                </span>
+
+                <div style={{ display: 'flex', gap: '10px', width: '100%', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => handleOpenModal(category)}
+                    style={{
+                      backgroundColor: '#F8F3ED',
+                      color: '#8B5E3C',
+                      border: '1px solid #E8DCCC',
+                      padding: '8px 18px',
+                      borderRadius: '25px',
+                      fontSize: 'clamp(0.7rem, 0.85vw, 0.8rem)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease',
+                      flex: 1,
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <FaEdit size={14} /> Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(category.id)}
+                    style={{
+                      backgroundColor: '#FDECEA',
+                      color: '#D32F2F',
+                      border: '1px solid #F5D0CC',
+                      padding: '8px 18px',
+                      borderRadius: '25px',
+                      fontSize: 'clamp(0.7rem, 0.85vw, 0.8rem)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease',
+                      flex: 1,
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <FaTrash size={14} /> Eliminar
+                  </button>
+                </div>
+
+                <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', width: '100%' }}>
+                  <span
+                    style={{
+                      backgroundColor: category.status === 'Activo' ? '#E8F5E9' : '#FDECEA',
+                      color: category.status === 'Activo' ? '#2E7D32' : '#D32F2F',
+                      padding: '4px 16px',
+                      borderRadius: '20px',
+                      fontSize: 'clamp(0.7rem, 0.85vw, 0.8rem)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {category.status}
+                  </span>
+                  <Link
+                    to={`${routePaths.backOffice.products}?categoria=${category.id}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      color: '#8B5E3C',
+                      textDecoration: 'none',
+                      fontSize: 'clamp(0.7rem, 0.85vw, 0.8rem)',
+                      fontWeight: 500,
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      backgroundColor: '#F8F3ED',
+                      border: '1px solid #E8DCCC',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#8B5E3C';
+                      e.currentTarget.style.color = '#FFFFFF';
+                      e.currentTarget.style.borderColor = '#8B5E3C';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F8F3ED';
+                      e.currentTarget.style.color = '#8B5E3C';
+                      e.currentTarget.style.borderColor = '#E8DCCC';
+                    }}
+                  >
+                    <FaEye size={14} /> Ver productos
+                  </Link>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: '#999', fontSize: 'clamp(0.95rem, 1.2vw, 1.1rem)' }}>
+              No se encontraron categorías que coincidan con los filtros
             </div>
-          ))}
+          )}
         </div>
       </main>
 
@@ -319,21 +430,22 @@ export default function CategoriesPage() {
             style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '500px',
-              width: '90%',
+              padding: 'clamp(20px, 4vw, 32px)',
+              maxWidth: '480px',
+              width: '92%',
               maxHeight: '90vh',
               overflowY: 'auto',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ color: '#6B4A2B', marginTop: 0 }}>
+            <h2 style={{ color: '#6B4A2B', marginTop: 0, fontSize: 'clamp(1.2rem, 1.8vw, 1.5rem)', fontWeight: 700 }}>
               {editingCategory ? 'Editar categoría' : 'Nueva categoría'}
             </h2>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontWeight: 500, marginBottom: '4px', color: '#333' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#333', fontSize: 'clamp(0.85rem, 1vw, 0.95rem)' }}>
                   Nombre de la categoría
                 </label>
                 <input
@@ -344,16 +456,17 @@ export default function CategoriesPage() {
                   required
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
-                    border: '1px solid #E8DCCC',
-                    borderRadius: '8px',
-                    fontSize: '14px',
+                    padding: '12px 16px',
+                    border: '2px solid #E8DCCC',
+                    borderRadius: '10px',
+                    fontSize: 'clamp(0.9rem, 1vw, 1rem)',
+                    outline: 'none',
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontWeight: 500, marginBottom: '4px', color: '#333' }}>
+              <div style={{ marginBottom: '28px' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '6px', color: '#333', fontSize: 'clamp(0.85rem, 1vw, 0.95rem)' }}>
                   Estado
                 </label>
                 <select
@@ -362,11 +475,12 @@ export default function CategoriesPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
-                    border: '1px solid #E8DCCC',
-                    borderRadius: '8px',
-                    fontSize: '14px',
+                    padding: '12px 16px',
+                    border: '2px solid #E8DCCC',
+                    borderRadius: '10px',
+                    fontSize: 'clamp(0.9rem, 1vw, 1rem)',
                     backgroundColor: '#FFFFFF',
+                    outline: 'none',
                   }}
                 >
                   <option value="Activo">Activo</option>
@@ -379,13 +493,14 @@ export default function CategoriesPage() {
                   type="button"
                   onClick={handleCloseModal}
                   style={{
-                    padding: '10px 24px',
-                    border: '1px solid #E8DCCC',
-                    borderRadius: '8px',
+                    padding: '12px 28px',
+                    border: '2px solid #E8DCCC',
+                    borderRadius: '10px',
                     backgroundColor: '#FFFFFF',
                     color: '#666',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: 'clamp(0.85rem, 1vw, 0.95rem)',
+                    fontWeight: 600,
                   }}
                 >
                   Cancelar
@@ -393,14 +508,15 @@ export default function CategoriesPage() {
                 <button
                   type="submit"
                   style={{
-                    padding: '10px 24px',
+                    padding: '12px 32px',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     backgroundColor: '#8B5E3C',
                     color: '#FFFFFF',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: 'clamp(0.85rem, 1vw, 0.95rem)',
                     fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(139,94,60,0.3)',
                   }}
                 >
                   {editingCategory ? 'Actualizar' : 'Crear'}

@@ -1,4 +1,3 @@
-// InternalOrdersPage.jsx - Lista de pedidos con botón "Ver" que redirige al detalle
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
@@ -7,107 +6,55 @@ import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import {
-  FaSearch,
-  FaEye,
-  FaFilter,
-  FaCheckCircle,
+  FaUser,
+  FaBox,
   FaTruck,
-  FaBoxOpen,
-  FaClock,
-  FaTimesCircle,
-  FaExclamationTriangle,
+  FaMapMarkerAlt,
+  FaMoneyBillWave,
+  FaClipboardList,
+  FaEdit,
+  FaSave,
+  FaTimes,
+  FaPlus,
+  FaMinus,
 } from "react-icons/fa";
 
-export default function InternalOrdersPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Todos");
-  const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 5;
+export default function InternalOrderDetailPage() {
+  const [orderStatus, setOrderStatus] = useState("Pendiente");
+  const [note, setNote] = useState("");
+  const [showNoteInput, setShowNoteInput] = useState(false);
 
-  const [orders] = useState([
-    {
-      id: "#DayBed-001",
-      customer: "Juan López",
-      email: "juan@email.com",
-      date: "10/06/2026",
-      total: 4500,
-      status: "Pendiente",
-      items: 2,
-      payment: "Tarjeta",
-      delivery: "Calle 123, Tijuana",
-    },
-    {
-      id: "#DayBed-002",
-      customer: "María del Mar",
-      email: "maria@email.com",
-      date: "12/06/2026",
-      total: 8999,
-      status: "Completado",
-      items: 3,
-      payment: "Efectivo",
-      delivery: "Av. Reforma 456, Mexicali",
-    },
-    {
-      id: "#DayBed-003",
-      customer: "Carlos Martínez",
-      email: "carlos@email.com",
-      date: "20/06/2026",
-      total: 2499,
-      status: "Cancelado",
-      items: 1,
-      payment: "Transferencia",
-      delivery: "Blvd. Cucapah 789, Tijuana",
-    },
-    {
-      id: "#DayBed-004",
-      customer: "Guadalupe Sánchez",
-      email: "guadalupe@email.com",
-      date: "05/06/2026",
-      total: 12499,
-      status: "Completado",
-      items: 4,
-      payment: "Tarjeta",
-      delivery: "Calle 456, Ensenada",
-    },
-    {
-      id: "#DayBed-005",
-      customer: "Marisol Flores",
-      email: "marisol@email.com",
-      date: "25/06/2026",
-      total: 5999,
-      status: "Pendiente",
-      items: 2,
-      payment: "Efectivo",
-      delivery: "Av. López Mateos 789, Tijuana",
-    },
-  ]);
-
-  const statusOptions = [
-    "Todos",
-    "Pendiente",
-    "Completado",
-    "Cancelado",
-  ];
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Pendiente":
-        return <FaClock size={14} />;
-      case "Completado":
-        return <FaCheckCircle size={14} />;
-      case "Cancelado":
-        return <FaTimesCircle size={14} />;
-      default:
-        return null;
-    }
+  const orderData = {
+    id: "#DayBed-001",
+    customer: "Juan López",
+    email: "juanlopez@gmail.com",
+    phone: "(664) 7837-455-45",
+    address: "Blvd. Cucapah 20100-Sur, Col. El Lago, CP 22210, Tijuana, B.C.",
+    deliveryType: "Standard",
+    distance: "17 km",
+    estimatedCost: 350,
+    total: 10000,
+    status: "Pendiente",
+    items: [
+      { name: "Sofá Esquinero", sku: "DD73844", quantity: 1, price: 6000 },
+      { name: "Mesa de Centro", sku: "DD83482", quantity: 1, price: 4000 },
+    ],
   };
+
+  const statusOptions = ["Pendiente", "Confirmado", "Preparando", "Enviado", "Entregado", "Cancelado"];
 
   const getStatusColor = (status) => {
     switch (status) {
       case "Pendiente":
         return "#ED6C02";
-      case "Completado":
+      case "Confirmado":
         return "#2E7D32";
+      case "Preparando":
+        return "#0288D1";
+      case "Enviado":
+        return "#6A5ACD";
+      case "Entregado":
+        return "#4CAF50";
       case "Cancelado":
         return "#D32F2F";
       default:
@@ -119,7 +66,13 @@ export default function InternalOrdersPage() {
     switch (status) {
       case "Pendiente":
         return "#FFF8E1";
-      case "Completado":
+      case "Confirmado":
+        return "#E8F5E9";
+      case "Preparando":
+        return "#E3F2FD";
+      case "Enviado":
+        return "#EDE7F6";
+      case "Entregado":
         return "#E8F5E9";
       case "Cancelado":
         return "#FDECEA";
@@ -128,32 +81,13 @@ export default function InternalOrdersPage() {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === "Todos" || order.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-
-  const handleStatusFilter = (status) => {
-    setFilterStatus(status);
-    setCurrentPage(1);
-  };
-
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
 
       <section
         className="dashboard-hero"
-        aria-label="Pedidos Internos"
+        aria-label="Detalle de Pedido"
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
           backgroundSize: "cover",
@@ -196,7 +130,7 @@ export default function InternalOrdersPage() {
               fontFamily: '"Playfair Display", serif',
             }}
           >
-            Pedidos Internos
+            Detalle de Pedido
           </h1>
           <p
             className="dashboard-hero__breadcrumb"
@@ -216,7 +150,16 @@ export default function InternalOrdersPage() {
             <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
               &gt;
             </span>
-            <span style={{ color: "#FFFFFF" }}>Pedidos Internos</span>
+            <Link
+              to={routePaths.backOffice.orders}
+              style={{ color: "#FFD700", textDecoration: "none" }}
+            >
+              Pedidos Internos
+            </Link>
+            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
+              &gt;
+            </span>
+            <span style={{ color: "#FFFFFF" }}>Detalle</span>
           </p>
         </div>
       </section>
@@ -240,7 +183,7 @@ export default function InternalOrdersPage() {
               margin: 0,
             }}
           >
-            Lista de pedidos
+            {orderData.id} - {orderData.customer}
           </h2>
           <div
             className="header-actions"
@@ -251,129 +194,294 @@ export default function InternalOrdersPage() {
               alignItems: "center",
             }}
           >
-            <div
-              className="search-box"
+            <Link
+              to={routePaths.backOffice.orders}
+              className="btn-primary"
               style={{
-                position: "relative",
                 display: "flex",
                 alignItems: "center",
-                background: "#FFFFFF",
-                border: "1px solid #E8DCCC",
+                gap: "8px",
+                padding: "10px 20px",
+                background: "#6A5ACD",
+                color: "#fff",
+                border: "none",
                 borderRadius: "8px",
-                padding: "0 12px",
-                minWidth: "clamp(200px, 25vw, 300px)",
+                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                cursor: "pointer",
+                textDecoration: "none",
+                fontWeight: 600,
+                transition: "background-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#5A4ABD")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "#6A5ACD")}
+            >
+              <FaTimes /> Volver a pedidos
+            </Link>
+          </div>
+        </div>
+
+        <div
+          className="dashboard-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+            gap: "24px",
+            marginBottom: "24px",
+          }}
+        >
+          {/* Información del cliente */}
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+                color: "#8B5E3C",
+                margin: "0 0 16px 0",
               }}
             >
-              <FaSearch
-                className="search-icon"
-                style={{ color: "#999", fontSize: "16px", marginRight: "8px" }}
-              />
-              <input
-                type="text"
-                placeholder="Buscar por cliente o número de pedido..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  border: "none",
-                  padding: "10px 0",
-                  fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                  background: "transparent",
-                  width: "100%",
-                  outline: "none",
-                  color: "#333",
-                }}
-              />
+              <FaUser /> Información del cliente
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Nombre</span>
+                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                  {orderData.customer}
+                </p>
+              </div>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Email</span>
+                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                  {orderData.email}
+                </p>
+              </div>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Teléfono</span>
+                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                  {orderData.phone}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Datos de entrega */}
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+                color: "#8B5E3C",
+                margin: "0 0 16px 0",
+              }}
+            >
+              <FaTruck /> Datos de entrega
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Tipo de entrega</span>
+                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                  {orderData.deliveryType}
+                </p>
+              </div>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Dirección</span>
+                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                  {orderData.address}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         <div
-          className="filter-section"
+          className="dashboard-grid"
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "12px",
-            alignItems: "center",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+            gap: "24px",
             marginBottom: "24px",
-            padding: "12px 16px",
-            background: "#FDF8F0",
-            border: "1px solid #E8DCCC",
-            borderRadius: "12px",
           }}
         >
+          {/* Estimación de distancia y costo */}
           <div
-            className="filter-label"
+            className="dashboard-card"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              color: "#6B4A2B",
-              fontWeight: 600,
-              fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
             }}
           >
-            <FaFilter /> Filtrar por estado:
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+                color: "#8B5E3C",
+                margin: "0 0 16px 0",
+              }}
+            >
+              <FaMapMarkerAlt /> Estimación de distancia y costo
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Distancia Estimada</span>
+                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                  {orderData.distance}
+                </p>
+              </div>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Costo Estimado</span>
+                <p style={{ margin: "4px 0 0 0", fontWeight: 700, color: "#8B5E3C", fontSize: "clamp(1rem, 1.2vw, 1.1rem)" }}>
+                  ${orderData.estimatedCost.toFixed(2)} MXN
+                </p>
+              </div>
+            </div>
           </div>
+
+          {/* Cambio de estado del pedido */}
           <div
-            className="filter-options"
+            className="dashboard-card"
             style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
             }}
           >
-            {statusOptions.map((status) => (
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+                color: "#8B5E3C",
+                margin: "0 0 16px 0",
+              }}
+            >
+              <FaClipboardList /> Cambio de estado del pedido
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Estado actual</span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    display: "inline-block",
+                    padding: "4px 16px",
+                    borderRadius: "20px",
+                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontWeight: 600,
+                    background: getStatusBg(orderStatus),
+                    color: getStatusColor(orderStatus),
+                  }}
+                >
+                  {orderStatus}
+                </p>
+              </div>
+              <div>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Cambiar estado</span>
+                <select
+                  value={orderStatus}
+                  onChange={(e) => setOrderStatus(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    marginTop: "4px",
+                    border: "2px solid #E8DCCC",
+                    borderRadius: "10px",
+                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
+                    background: "#FFFFFF",
+                    outline: "none",
+                    cursor: "pointer",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
+                  onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
-                key={status}
-                className={`filter-btn ${filterStatus === status ? "active" : ""}`}
-                onClick={() => handleStatusFilter(status)}
+                onClick={() => alert(`Estado actualizado a: ${orderStatus}`)}
                 style={{
-                  padding: "6px 16px",
-                  border: `1px solid ${filterStatus === status ? "#8B5E3C" : "#E8DCCC"}`,
-                  borderRadius: "20px",
-                  background: filterStatus === status ? "#8B5E3C" : "#FFFFFF",
-                  color: filterStatus === status ? "#FFFFFF" : "#7A6B5A",
-                  fontSize: "clamp(0.75rem, 0.85vw, 0.85rem)",
-                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  padding: "12px",
+                  border: "none",
+                  borderRadius: "10px",
+                  background: "#8B5E3C",
+                  color: "#FFFFFF",
+                  fontSize: "clamp(0.9rem, 1vw, 1rem)",
+                  fontWeight: 600,
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
+                  transition: "background-color 0.2s ease",
+                  marginTop: "4px",
                 }}
-                onMouseEnter={(e) => {
-                  if (filterStatus !== status) {
-                    e.currentTarget.style.background = "#F5F0E8";
-                    e.currentTarget.style.borderColor = "#8B5E3C";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (filterStatus !== status) {
-                    e.currentTarget.style.background = "#FFFFFF";
-                    e.currentTarget.style.borderColor = "#E8DCCC";
-                  }
-                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#6B4A2B")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#8B5E3C")}
               >
-                {status}
+                <FaSave /> Actualizar estado
               </button>
-            ))}
+            </div>
           </div>
         </div>
 
+        {/* Productos del pedido */}
         <div
           className="dashboard-card"
           style={{
-            padding: "20px",
+            padding: "24px",
             background: "#FDF8F0",
             border: "1px solid #E8DCCC",
             borderRadius: "16px",
+            marginBottom: "24px",
             overflowX: "auto",
           }}
         >
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+              color: "#8B5E3C",
+              margin: "0 0 16px 0",
+            }}
+          >
+            <FaBox /> Productos del pedido
+          </h3>
           <div className="table-responsive">
             <table
-              className="dashboard-table orders-table"
               style={{
                 width: "100%",
                 borderCollapse: "collapse",
-                minWidth: "700px",
+                minWidth: "500px",
               }}
             >
               <thead>
@@ -387,7 +495,7 @@ export default function InternalOrdersPage() {
                       fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
                     }}
                   >
-                    Pedido
+                    Producto
                   </th>
                   <th
                     style={{
@@ -398,40 +506,7 @@ export default function InternalOrdersPage() {
                       fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
                     }}
                   >
-                    Estado
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    Número de pedido
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    Fecha
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    Cliente
+                    SKU
                   </th>
                   <th
                     style={{
@@ -442,382 +517,215 @@ export default function InternalOrdersPage() {
                       fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
                     }}
                   >
-                    Total
+                    Cantidad
                   </th>
                   <th
                     style={{
-                      textAlign: "center",
+                      textAlign: "right",
                       padding: "12px 10px",
                       color: "#6B4A2B",
                       fontWeight: 700,
                       fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
                     }}
                   >
-                    Acción
+                    Subtotal
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {currentOrders.length > 0 ? (
-                  currentOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      style={{ borderBottom: "1px solid #F0EBE3" }}
-                    >
-                      <td
-                        className="order-id"
-                        style={{
-                          padding: "12px 10px",
-                          fontWeight: 600,
-                          color: "#8B5E3C",
-                          fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                        }}
-                      >
-                        {order.id}
-                      </td>
-                      <td style={{ padding: "12px 10px" }}>
-                        <span
-                          className="order-status"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "4px 14px",
-                            borderRadius: "20px",
-                            fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                            fontWeight: 600,
-                            background: getStatusBg(order.status),
-                            color: getStatusColor(order.status),
-                          }}
-                        >
-                          {getStatusIcon(order.status)}
-                          {order.status}
-                        </span>
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 10px",
-                          fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                        }}
-                      >
-                        {order.id.replace("#DayBed-", "")}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 10px",
-                          fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                        }}
-                      >
-                        {order.date}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 10px",
-                          fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                        }}
-                      >
-                        {order.customer}
-                      </td>
-                      <td
-                        className="order-total"
-                        style={{
-                          padding: "12px 10px",
-                          textAlign: "center",
-                          fontWeight: 600,
-                          color: "#5C2E0B",
-                          fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                        }}
-                      >
-                        ${order.total.toLocaleString("es-MX")}
-                      </td>
-                      <td style={{ textAlign: "center", padding: "12px 10px" }}>
-                        <Link
-                          to={`/interno/pedidos/${order.id.replace("#DayBed-", "")}`}
-                          className="btn-view"
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "6px 16px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#8B5E3C",
-                            color: "#fff",
-                            fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                            cursor: "pointer",
-                            textDecoration: "none",
-                            fontWeight: 500,
-                            transition: "background-color 0.2s ease",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = "#6B4A2B")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background = "#8B5E3C")
-                          }
-                        >
-                          <FaEye size={14} /> Ver detalle
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
+                {orderData.items.map((item, index) => (
+                  <tr
+                    key={index}
+                    style={{ borderBottom: "1px solid #F0EBE3" }}
+                  >
                     <td
-                      colSpan="7"
-                      className="empty-state"
-                      style={{ textAlign: "center", padding: "40px 20px" }}
+                      style={{
+                        padding: "12px 10px",
+                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                        fontWeight: 500,
+                      }}
                     >
-                      <div style={{ color: "#D28B00", fontSize: "32px" }}>
-                        <FaExclamationTriangle />
-                      </div>
-                      <p style={{ color: "#7A6B5A", marginTop: "12px", fontSize: "clamp(0.95rem, 1.2vw, 1.1rem)" }}>
-                        No se encontraron pedidos
-                      </p>
+                      {item.name}
+                    </td>
+                    <td
+                      style={{
+                        padding: "12px 10px",
+                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                      }}
+                    >
+                      {item.sku}
+                    </td>
+                    <td
+                      style={{
+                        textAlign: "center",
+                        padding: "12px 10px",
+                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                      }}
+                    >
+                      {item.quantity}
+                    </td>
+                    <td
+                      style={{
+                        textAlign: "right",
+                        padding: "12px 10px",
+                        fontWeight: 600,
+                        color: "#5C2E0B",
+                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                      }}
+                    >
+                      ${(item.price * item.quantity).toFixed(2)} MXN
                     </td>
                   </tr>
-                )}
+                ))}
+                <tr>
+                  <td
+                    colSpan="3"
+                    style={{
+                      textAlign: "right",
+                      padding: "16px 10px",
+                      fontWeight: 700,
+                      fontSize: "clamp(0.95rem, 1.1vw, 1.05rem)",
+                      color: "#6B4A2B",
+                    }}
+                  >
+                    Total
+                  </td>
+                  <td
+                    style={{
+                      textAlign: "right",
+                      padding: "16px 10px",
+                      fontWeight: 700,
+                      color: "#8B5E3C",
+                      fontSize: "clamp(1rem, 1.2vw, 1.1rem)",
+                    }}
+                  >
+                    ${orderData.total.toFixed(2)} MXN
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
-
-          {filteredOrders.length > ordersPerPage && (
-            <div
-              className="pagination"
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "16px",
-                paddingTop: "20px",
-                borderTop: "1px solid #E8DCCC",
-                marginTop: "16px",
-              }}
-            >
-              <button
-                className="pagination-btn"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                style={{
-                  padding: "8px 20px",
-                  border: "1px solid #E8DCCC",
-                  borderRadius: "6px",
-                  background: "#FFFFFF",
-                  color: "#6B4A2B",
-                  fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                  fontWeight: 500,
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  opacity: currentPage === 1 ? 0.5 : 1,
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.currentTarget.style.background = "#8B5E3C";
-                    e.currentTarget.style.color = "#FFFFFF";
-                    e.currentTarget.style.borderColor = "#8B5E3C";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.currentTarget.style.background = "#FFFFFF";
-                    e.currentTarget.style.color = "#6B4A2B";
-                    e.currentTarget.style.borderColor = "#E8DCCC";
-                  }
-                }}
-              >
-                Anterior
-              </button>
-              <span
-                className="pagination-info"
-                style={{
-                  color: "#7A6B5A",
-                  fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                }}
-              >
-                Página {currentPage} de {totalPages}
-              </span>
-              <button
-                className="pagination-btn"
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                style={{
-                  padding: "8px 20px",
-                  border: "1px solid #E8DCCC",
-                  borderRadius: "6px",
-                  background: "#FFFFFF",
-                  color: "#6B4A2B",
-                  fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                  fontWeight: 500,
-                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                  opacity: currentPage === totalPages ? 0.5 : 1,
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.currentTarget.style.background = "#8B5E3C";
-                    e.currentTarget.style.color = "#FFFFFF";
-                    e.currentTarget.style.borderColor = "#8B5E3C";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.currentTarget.style.background = "#FFFFFF";
-                    e.currentTarget.style.color = "#6B4A2B";
-                    e.currentTarget.style.borderColor = "#E8DCCC";
-                  }
-                }}
-              >
-                Siguiente
-              </button>
-            </div>
-          )}
         </div>
 
+        {/* Notas internas opcionales */}
         <div
-          className="dashboard-stats-summary"
+          className="dashboard-card"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-            gap: "12px",
-            marginTop: "24px",
+            padding: "24px",
+            background: "#FDF8F0",
+            border: "1px solid #E8DCCC",
+            borderRadius: "16px",
           }}
         >
-          <div
-            className="stat-summary-card"
+          <h3
             style={{
-              background: "#FFFFFF",
-              border: "1px solid #E8DCCC",
-              borderRadius: "12px",
-              padding: "14px 16px",
-              textAlign: "center",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+              color: "#8B5E3C",
+              margin: "0 0 16px 0",
             }}
           >
-            <span
-              className="stat-summary-label"
-              style={{
-                display: "block",
-                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                color: "#7A6B5A",
-                fontWeight: 500,
-              }}
-            >
-              Total
-            </span>
-            <span
-              className="stat-summary-value"
-              style={{
-                display: "block",
-                fontSize: "clamp(1.3rem, 1.8vw, 1.8rem)",
-                fontWeight: 700,
-                color: "#6B4A2B",
-                marginTop: "4px",
-              }}
-            >
-              {orders.length}
-            </span>
-          </div>
-          <div
-            className="stat-summary-card"
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E8DCCC",
-              borderRadius: "12px",
-              padding: "14px 16px",
-              textAlign: "center",
-            }}
-          >
-            <span
-              className="stat-summary-label"
-              style={{
-                display: "block",
-                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                color: "#7A6B5A",
-                fontWeight: 500,
-              }}
-            >
-              Pendientes
-            </span>
-            <span
-              className="stat-summary-value"
-              style={{
-                display: "block",
-                fontSize: "clamp(1.3rem, 1.8vw, 1.8rem)",
-                fontWeight: 700,
-                color: "#ED6C02",
-                marginTop: "4px",
-              }}
-            >
-              {orders.filter((o) => o.status === "Pendiente").length}
-            </span>
-          </div>
-          <div
-            className="stat-summary-card"
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E8DCCC",
-              borderRadius: "12px",
-              padding: "14px 16px",
-              textAlign: "center",
-            }}
-          >
-            <span
-              className="stat-summary-label"
-              style={{
-                display: "block",
-                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                color: "#7A6B5A",
-                fontWeight: 500,
-              }}
-            >
-              Completados
-            </span>
-            <span
-              className="stat-summary-value"
-              style={{
-                display: "block",
-                fontSize: "clamp(1.3rem, 1.8vw, 1.8rem)",
-                fontWeight: 700,
-                color: "#2E7D32",
-                marginTop: "4px",
-              }}
-            >
-              {orders.filter((o) => o.status === "Completado").length}
-            </span>
-          </div>
-          <div
-            className="stat-summary-card"
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #E8DCCC",
-              borderRadius: "12px",
-              padding: "14px 16px",
-              textAlign: "center",
-            }}
-          >
-            <span
-              className="stat-summary-label"
-              style={{
-                display: "block",
-                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                color: "#7A6B5A",
-                fontWeight: 500,
-              }}
-            >
-              Cancelados
-            </span>
-            <span
-              className="stat-summary-value"
-              style={{
-                display: "block",
-                fontSize: "clamp(1.3rem, 1.8vw, 1.8rem)",
-                fontWeight: 700,
-                color: "#D32F2F",
-                marginTop: "4px",
-              }}
-            >
-              {orders.filter((o) => o.status === "Cancelado").length}
-            </span>
-          </div>
+            <FaEdit /> Notas internas opcionales
+          </h3>
+          {!showNoteInput ? (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={{ color: "#7A6B5A", margin: 0 }}>
+                {note || "No hay notas para este pedido"}
+              </p>
+              <button
+                onClick={() => setShowNoteInput(true)}
+                style={{
+                  padding: "8px 16px",
+                  border: "1px solid #8B5E3C",
+                  borderRadius: "8px",
+                  background: "transparent",
+                  color: "#8B5E3C",
+                  cursor: "pointer",
+                  fontSize: "clamp(0.8rem, 0.9vw, 0.85rem)",
+                  fontWeight: 500,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#8B5E3C";
+                  e.currentTarget.style.color = "#FFFFFF";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "#8B5E3C";
+                }}
+              >
+                Agregar nota
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Escribe una nota sobre el producto o el pedido..."
+                rows="3"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  border: "2px solid #E8DCCC",
+                  borderRadius: "10px",
+                  fontSize: "clamp(0.9rem, 1vw, 1rem)",
+                  fontFamily: "inherit",
+                  resize: "vertical",
+                  outline: "none",
+                  background: "#FFFFFF",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
+                onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
+              />
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => {
+                    setShowNoteInput(false);
+                    if (!note) setNote("No hay notas para este pedido");
+                  }}
+                  style={{
+                    padding: "8px 20px",
+                    border: "1px solid #E8DCCC",
+                    borderRadius: "8px",
+                    background: "#FFFFFF",
+                    color: "#666",
+                    cursor: "pointer",
+                    fontSize: "clamp(0.8rem, 0.9vw, 0.85rem)",
+                    fontWeight: 500,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#F5F5F5")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#FFFFFF")}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowNoteInput(false);
+                    alert("Nota guardada correctamente");
+                  }}
+                  style={{
+                    padding: "8px 20px",
+                    border: "none",
+                    borderRadius: "8px",
+                    background: "#8B5E3C",
+                    color: "#FFFFFF",
+                    cursor: "pointer",
+                    fontSize: "clamp(0.8rem, 0.9vw, 0.85rem)",
+                    fontWeight: 600,
+                    transition: "background-color 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#6B4A2B")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#8B5E3C")}
+                >
+                  Guardar nota
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
