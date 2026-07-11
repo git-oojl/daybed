@@ -78,6 +78,34 @@ function IconCheck() {
   );
 }
 
+function IconUsers() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M17 12a3 3 0 1 0 0-6M7 12a3 3 0 1 1 0-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconFileText() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14 3v4a1 1 0 0 0 1 1h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9 9h1M9 13h6M9 17h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function IconShield() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3s6 1 6 6v4.5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V9c0-5 6-6 6-6Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -184,14 +212,55 @@ export default function ContactHelpPage() {
     <div className="home-page contact-page">
       <HomeHeader />
 
-      {/* ===== HERO - ESTILO CHECKOUT ===== */}
-      <section className="checkout-hero" aria-label="Contacto y ayuda">
+     {/* HERO */}
+      <section className="checkout-hero" aria-label="Resumen de pedido">
         <div className="checkout-hero__overlay">
-          <h1 className="checkout-hero__title">Contacto y ayuda</h1>
+          <h1 className="checkout-hero__title">Contacto y ayuda</h1>            
         </div>
       </section>
 
       <main className="contact-container">
+        {/* ===== SOBRE NOSOTROS ===== */}
+        <section className="contact-section" aria-labelledby="about-us">
+          <div className="about-us">
+            <div className="about-us__content">
+              <h2 id="about-us" className="contact-section__title">
+                Sobre nosotros
+              </h2>
+              <p className="about-us__text">
+                En <strong>DayBed</strong> creemos que cada hogar merece ser un espacio de confort y estilo. 
+                Desde nuestra fundación, nos hemos dedicado a ofrecer muebles de alta calidad que 
+                transforman los espacios en hogares.
+              </p>
+              <p className="about-us__text">
+                Nuestra misión es brindar a nuestros clientes una experiencia de compra excepcional, 
+                con productos que combinan diseño, funcionalidad y durabilidad. Trabajamos con los 
+                mejores materiales y artesanos para garantizar la satisfacción de cada cliente.
+              </p>
+              <div className="about-us__values">
+                <div className="about-us__value">
+                  <span className="about-us__value-icon">✦</span>
+                  <span>Calidad garantizada</span>
+                </div>
+                <div className="about-us__value">
+                  <span className="about-us__value-icon">✦</span>
+                  <span>Diseño único</span>
+                </div>
+                <div className="about-us__value">
+                  <span className="about-us__value-icon">✦</span>
+                  <span>Compromiso con el cliente</span>
+                </div>
+              </div>
+            </div>
+            <div className="about-us__image">
+              <div className="about-us__image-placeholder">
+                <IconUsers />
+                <span>+10 años de experiencia</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ===== INFORMACIÓN DE CONTACTO ===== */}
         <section className="contact-section" aria-labelledby="contact-info">
           <h2 id="contact-info" className="contact-section__title">
@@ -328,6 +397,104 @@ export default function ContactHelpPage() {
           </div>
         </section>
 
+        {/* ===== TÉRMINOS Y CONDICIONES ===== */}
+        <section className="contact-section" aria-labelledby="terms">
+          <h2 id="terms" className="contact-section__title">
+            <IconFileText />
+            Términos y condiciones
+          </h2>
+          <p className="contact-section__desc">
+            Lee nuestros términos y condiciones para conocer más sobre nuestras políticas.
+          </p>
+
+          <div className="legal-content">
+            <div className="legal-content__item">
+              <h4>1. Aceptación de los términos</h4>
+              <p>
+                Al utilizar nuestro sitio web y realizar compras, aceptas cumplir con estos 
+                términos y condiciones. Si no estás de acuerdo, por favor no utilices nuestros servicios.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>2. Productos y precios</h4>
+              <p>
+                Todos los precios están expresados en pesos mexicanos (MXN) e incluyen impuestos. 
+                Nos reservamos el derecho de modificar precios sin previo aviso.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>3. Pedidos y pagos</h4>
+              <p>
+                Los pedidos se confirman una vez que se ha procesado el pago. Aceptamos tarjetas 
+                de crédito, transferencias bancarias y pago contra entrega.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>4. Envíos y entregas</h4>
+              <p>
+                Realizamos entregas en toda la República Mexicana. Los tiempos de entrega pueden 
+                variar según la ubicación y la disponibilidad del producto.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>5. Devoluciones y garantías</h4>
+              <p>
+                Ofrecemos garantía de 1 año en todos nuestros productos. Las devoluciones son 
+                aceptadas dentro de los 30 días posteriores a la compra.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== POLÍTICA DE PRIVACIDAD ===== */}
+        <section className="contact-section" aria-labelledby="privacy">
+          <h2 id="privacy" className="contact-section__title">
+            <IconShield />
+            Política de privacidad
+          </h2>
+          <p className="contact-section__desc">
+            Conoce cómo protegemos y manejamos tus datos personales.
+          </p>
+
+          <div className="legal-content">
+            <div className="legal-content__item">
+              <h4>1. Recopilación de información</h4>
+              <p>
+                Recopilamos información personal como nombre, dirección de correo electrónico, 
+                teléfono y dirección de envío para procesar tus pedidos y mejorar tu experiencia.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>2. Uso de la información</h4>
+              <p>
+                Utilizamos tu información para procesar pedidos, enviar actualizaciones, 
+                mejorar nuestro servicio y personalizar tu experiencia de compra.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>3. Protección de datos</h4>
+              <p>
+                Implementamos medidas de seguridad para proteger tu información personal. 
+                No compartimos tus datos con terceros sin tu consentimiento.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>4. Cookies</h4>
+              <p>
+                Utilizamos cookies para mejorar la experiencia del usuario y analizar el 
+                tráfico del sitio web. Puedes deshabilitar las cookies en tu navegador.
+              </p>
+            </div>
+            <div className="legal-content__item">
+              <h4>5. Derechos del usuario</h4>
+              <p>
+                Tienes derecho a acceder, rectificar y eliminar tus datos personales en 
+                cualquier momento. Contáctanos para ejercer estos derechos.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ===== FORMULARIO DE AYUDA ===== */}
         <section
           className="contact-section contact-section--form"
@@ -335,6 +502,7 @@ export default function ContactHelpPage() {
           id="contact-form"
         >
           <h2 id="contact-form" className="contact-section__title">
+            <IconMessage />
             Formulario de ayuda
           </h2>
           <p className="contact-section__desc">
