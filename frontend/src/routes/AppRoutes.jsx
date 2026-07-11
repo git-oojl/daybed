@@ -12,6 +12,8 @@ import BusinessMetricsPage from "../pages/admin/BusinessMetricsPage.jsx";
 import InternalUsersPage from "../pages/admin/InternalUsersPage.jsx";
 import RolesPermissionsPage from "../pages/admin/RolesPermissionsPage.jsx";
 import LoginPage from "../pages/account/LoginPage.jsx";
+import MyOrdersPage from "../pages/account/MyOrdersPage.jsx";
+import OrderDetailPage from "../pages/account/OrderDetailPage.jsx";
 import ProfilePage from "../pages/account/ProfilePage.jsx";
 import RegisterPage from "../pages/account/RegisterPage.jsx";
 import DashboardPage from "../pages/back-office/DashboardPage.jsx";
@@ -26,8 +28,6 @@ import OrderConfirmationPage from "../pages/checkout/OrderConfirmationPage.jsx";
 import CatalogPage from "../pages/public/CatalogPage.jsx";
 import ContactHelpPage from "../pages/public/ContactHelpPage.jsx";
 import HomePage from "../pages/public/HomePage.jsx";
-import MyOrdersPage from "../pages/account/MyOrdersPage.jsx"; // MOVIDO
-import OrderDetailPage from "../pages/account/OrderDetailPage.jsx"; // MOVIDO
 import ProductDetailPage from "../pages/public/ProductDetailPage.jsx";
 import EmptyStatesPage from "../pages/support/EmptyStatesPage.jsx";
 import FeedbackMessagesPage from "../pages/support/FeedbackMessagesPage.jsx";
@@ -59,10 +59,6 @@ function AppRoutes() {
           <Route path={routePaths.public.catalog} element={<CatalogPage />} />
           <Route path={routePaths.public.productDetail} element={<ProductDetailPage />} />
           <Route path={routePaths.public.contactHelp} element={<ContactHelpPage />} />
-          
-          {/* MyOrdersPage ahora en PublicLayout */}
-          <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
-          <Route path={routePaths.account.orderDetail} element={<OrderDetailPage />} />
         </Route>
 
         {/* ============================================ */}
@@ -88,6 +84,8 @@ function AppRoutes() {
             }
           >
             <Route path={routePaths.account.profile} element={<ProfilePage />} />
+            <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
+            <Route path={routePaths.account.orderDetail} element={<OrderDetailPage />} />
           </Route>
         </Route>
 
