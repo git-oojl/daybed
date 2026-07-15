@@ -27,12 +27,8 @@ function IconTrash() {
 }
 
 export default function CartPage() {
-  const { 
-    cartItems, 
-    removeFromCart, 
-    updateQuantity,
-    getTotalPrice 
-  } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, getTotalPrice } =
+    useCart();
 
   const formatPrice = (price) => {
     return `$${price.toLocaleString("es-MX")} MX`;
@@ -56,13 +52,16 @@ export default function CartPage() {
             </p>
           </div>
         </section>
-        <main className="cart-container" style={{ textAlign: "center", padding: "4rem 2rem" }}>
+        <main
+          className="cart-container"
+          style={{ textAlign: "center", padding: "4rem 2rem" }}
+        >
           <h2>🛒 Tu carrito está vacío</h2>
           <p style={{ margin: "1rem 0 2rem", color: "#7b6f5d" }}>
             ¡Explora nuestros productos y encuentra lo que necesitas!
           </p>
-          <Link 
-            to={routePaths.public.home} 
+          <Link
+            to={routePaths.public.home}
             style={{
               display: "inline-block",
               padding: "0.85rem 2rem",
@@ -70,7 +69,7 @@ export default function CartPage() {
               color: "white",
               borderRadius: "0.8rem",
               textDecoration: "none",
-              fontWeight: "700"
+              fontWeight: "700",
             }}
           >
             Ir a la tienda
@@ -118,18 +117,22 @@ export default function CartPage() {
               </div>
 
               <div className="quantity-box">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   aria-label="Disminuir cantidad"
-                  onClick={() => updateQuantity(product.id, product.quantity - 1)}
+                  onClick={() =>
+                    updateQuantity(product.id, product.quantity - 1)
+                  }
                 >
                   -
                 </button>
                 <span>{product.quantity}</span>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   aria-label="Aumentar cantidad"
-                  onClick={() => updateQuantity(product.id, product.quantity + 1)}
+                  onClick={() =>
+                    updateQuantity(product.id, product.quantity + 1)
+                  }
                 >
                   +
                 </button>

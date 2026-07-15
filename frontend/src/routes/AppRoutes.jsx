@@ -57,8 +57,14 @@ function AppRoutes() {
         <Route element={<PublicLayout />}>
           <Route path={routePaths.public.home} element={<HomePage />} />
           <Route path={routePaths.public.catalog} element={<CatalogPage />} />
-          <Route path={routePaths.public.productDetail} element={<ProductDetailPage />} />
-          <Route path={routePaths.public.contactHelp} element={<ContactHelpPage />} />
+          <Route
+            path={routePaths.public.productDetail}
+            element={<ProductDetailPage />}
+          />
+          <Route
+            path={routePaths.public.contactHelp}
+            element={<ContactHelpPage />}
+          />
         </Route>
 
         {/* ============================================ */}
@@ -73,9 +79,12 @@ function AppRoutes() {
             }
           >
             <Route path={routePaths.account.login} element={<LoginPage />} />
-            <Route path={routePaths.account.register} element={<RegisterPage />} />
+            <Route
+              path={routePaths.account.register}
+              element={<RegisterPage />}
+            />
           </Route>
-          
+
           <Route
             element={
               <ProtectedRoute allowedViewers={accessGroups.customerAccount}>
@@ -83,9 +92,18 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           >
-            <Route path={routePaths.account.profile} element={<ProfilePage />} />
-            <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
-            <Route path={routePaths.account.orderDetail} element={<OrderDetailPage />} />
+            <Route
+              path={routePaths.account.profile}
+              element={<ProfilePage />}
+            />
+            <Route
+              path={routePaths.account.orders}
+              element={<MyOrdersPage />}
+            />
+            <Route
+              path={routePaths.account.orderDetail}
+              element={<OrderDetailPage />}
+            />
           </Route>
         </Route>
 
@@ -100,9 +118,18 @@ function AppRoutes() {
           }
         >
           <Route path={routePaths.checkout.cart} element={<CartPage />} />
-          <Route path={routePaths.checkout.summary} element={<CheckoutSummaryPage />} />
-          <Route path={routePaths.checkout.confirmation} element={<OrderConfirmationPage />} />
-          <Route path={routePaths.checkout.confirmationDetail} element={<OrderConfirmationPage />} />
+          <Route
+            path={routePaths.checkout.summary}
+            element={<CheckoutSummaryPage />}
+          />
+          <Route
+            path={routePaths.checkout.confirmation}
+            element={<OrderConfirmationPage />}
+          />
+          <Route
+            path={routePaths.checkout.confirmationDetail}
+            element={<OrderConfirmationPage />}
+          />
         </Route>
 
         {/* ============================================ */}
@@ -115,12 +142,30 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          <Route path={routePaths.backOffice.dashboard} element={<DashboardPage />} />
-          <Route path={routePaths.backOffice.products} element={<ProductsPage />} />
-          <Route path={routePaths.backOffice.categories} element={<CategoriesPage />} />
-          <Route path={routePaths.backOffice.inventory} element={<InventoryPage />} />
-          <Route path={routePaths.backOffice.orders} element={<InternalOrdersPage />} />
-          <Route path={routePaths.backOffice.orderDetail} element={<InternalOrderDetailPage />} />
+          <Route
+            path={routePaths.backOffice.dashboard}
+            element={<DashboardPage />}
+          />
+          <Route
+            path={routePaths.backOffice.products}
+            element={<ProductsPage />}
+          />
+          <Route
+            path={routePaths.backOffice.categories}
+            element={<CategoriesPage />}
+          />
+          <Route
+            path={routePaths.backOffice.inventory}
+            element={<InventoryPage />}
+          />
+          <Route
+            path={routePaths.backOffice.orders}
+            element={<InternalOrdersPage />}
+          />
+          <Route
+            path={routePaths.backOffice.orderDetail}
+            element={<InternalOrderDetailPage />}
+          />
         </Route>
 
         {/* ============================================ */}
@@ -133,10 +178,22 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          <Route path={routePaths.admin.internalUsers} element={<InternalUsersPage />} />
-          <Route path={routePaths.admin.rolesPermissions} element={<RolesPermissionsPage />} />
-          <Route path={routePaths.admin.businessMetrics} element={<BusinessMetricsPage />} />
-          <Route path={routePaths.admin.basicSettings} element={<BasicSettingsPage />} />
+          <Route
+            path={routePaths.admin.internalUsers}
+            element={<InternalUsersPage />}
+          />
+          <Route
+            path={routePaths.admin.rolesPermissions}
+            element={<RolesPermissionsPage />}
+          />
+          <Route
+            path={routePaths.admin.businessMetrics}
+            element={<BusinessMetricsPage />}
+          />
+          <Route
+            path={routePaths.admin.basicSettings}
+            element={<BasicSettingsPage />}
+          />
         </Route>
 
         {/* ============================================ */}
@@ -157,14 +214,26 @@ function AppRoutes() {
         {/* RUTAS DE SOPORTE */}
         {/* ============================================ */}
         <Route element={<SupportLayout />}>
-          <Route path={routePaths.support.unauthorized} element={<UnauthorizedPage />} />
-          <Route path={routePaths.support.loadingStates} element={<LoadingStatesPage />} />
-          <Route path={routePaths.support.emptyStates} element={<EmptyStatesPage />} />
-          <Route path={routePaths.support.feedbackMessages} element={<FeedbackMessagesPage />} />
+          <Route
+            path={routePaths.support.unauthorized}
+            element={<UnauthorizedPage />}
+          />
+          <Route
+            path={routePaths.support.loadingStates}
+            element={<LoadingStatesPage />}
+          />
+          <Route
+            path={routePaths.support.emptyStates}
+            element={<EmptyStatesPage />}
+          />
+          <Route
+            path={routePaths.support.feedbackMessages}
+            element={<FeedbackMessagesPage />}
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
-      
+
       {showDevTools && DevViewSwitcher ? (
         <Suspense fallback={null}>
           <DevViewSwitcher />

@@ -616,9 +616,7 @@ function RegisterPage() {
           Completa tus datos para registrarte
         </RegisterSubtitle>
 
-        {error && (
-          <ErrorAlert severity="error">{error}</ErrorAlert>
-        )}
+        {error && <ErrorAlert severity="error">{error}</ErrorAlert>}
 
         <form onSubmit={handleSubmit} noValidate>
           <FormGroup>
@@ -637,7 +635,9 @@ function RegisterPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonIcon sx={{ color: COLORS.secondary, fontSize: 20 }} />
+                    <PersonIcon
+                      sx={{ color: COLORS.secondary, fontSize: 20 }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -719,7 +719,9 @@ function RegisterPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PinDropIcon sx={{ color: COLORS.secondary, fontSize: 20 }} />
+                    <PinDropIcon
+                      sx={{ color: COLORS.secondary, fontSize: 20 }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -778,7 +780,9 @@ function RegisterPage() {
                     <InputAdornment position="start">
                       <LockIcon
                         sx={{
-                          color: showPasswordError ? COLORS.error : COLORS.secondary,
+                          color: showPasswordError
+                            ? COLORS.error
+                            : COLORS.secondary,
                           fontSize: 20,
                         }}
                       />
@@ -825,7 +829,9 @@ function RegisterPage() {
                     <InputAdornment position="start">
                       <LockIcon
                         sx={{
-                          color: showConfirmError ? COLORS.error : COLORS.secondary,
+                          color: showConfirmError
+                            ? COLORS.error
+                            : COLORS.secondary,
                           fontSize: 20,
                         }}
                       />
@@ -843,7 +849,11 @@ function RegisterPage() {
                             : "Mostrar contraseña"
                         }
                       >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        {showConfirmPassword ? (
+                          <VisibilityOff />
+                        ) : (
+                          <Visibility />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
