@@ -92,7 +92,7 @@ export default function InventoryPage() {
     e.preventDefault();
     const productId = Number(selectedProduct);
     const product = products.find((p) => p.id === productId);
-    
+
     if (product) {
       const newStock = Number(stockValue);
       const updatedProducts = products.map((p) =>
@@ -102,14 +102,14 @@ export default function InventoryPage() {
               stock: newStock,
               status: newStock >= p.minStock ? "active" : "low",
             }
-          : p
+          : p,
       );
-      
+
       setProducts(updatedProducts);
-      
+
       setModalTitle("Stock Actualizado");
       setModalMessage(
-        `El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`
+        `El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`,
       );
       setShowModal(true);
       setEditingStock(null);
@@ -134,7 +134,9 @@ export default function InventoryPage() {
     setStockValue(product.stock);
     setEditingStock(product.id);
     // Scroll al formulario
-    document.querySelector(".stock-form-container")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .querySelector(".stock-form-container")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -203,7 +205,10 @@ export default function InventoryPage() {
             >
               Inicio
             </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
+            <span
+              aria-hidden="true"
+              style={{ margin: "0 8px", color: "#F5EDE5" }}
+            >
               &gt;
             </span>
             <span style={{ color: "#FFFFFF" }}>Inventario</span>
@@ -463,7 +468,9 @@ export default function InventoryPage() {
                                 : "#D32F2F",
                           }}
                         >
-                          {product.status === "active" ? "Activo" : "Bajo Stock"}
+                          {product.status === "active"
+                            ? "Activo"
+                            : "Bajo Stock"}
                         </span>
                       </td>
                       <td style={{ textAlign: "center", padding: "12px 10px" }}>
@@ -484,8 +491,12 @@ export default function InventoryPage() {
                             fontWeight: 500,
                             transition: "background-color 0.2s ease",
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = "#6B4A2B")}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "#8B5E3C")}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#6B4A2B")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "#8B5E3C")
+                          }
                         >
                           <FaEdit size={14} /> Editar Stock
                         </button>
@@ -734,7 +745,9 @@ export default function InventoryPage() {
                 >
                   Cambiar Stock
                 </label>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                >
                   <button
                     type="button"
                     aria-label="Disminuir stock"
@@ -766,7 +779,9 @@ export default function InventoryPage() {
                   <input
                     type="number"
                     value={stockValue}
-                    onChange={(e) => setStockValue(Math.max(0, Number(e.target.value)))}
+                    onChange={(e) =>
+                      setStockValue(Math.max(0, Number(e.target.value)))
+                    }
                     style={{
                       width: "100px",
                       padding: "10px 12px",
@@ -830,11 +845,13 @@ export default function InventoryPage() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(139,94,60,0.4)";
+                  e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(139,94,60,0.4)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(139,94,60,0.3)";
+                  e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(139,94,60,0.3)";
                 }}
               >
                 {editingStock ? "Actualizar Stock" : "Actualizar Stock"}
@@ -942,8 +959,12 @@ export default function InventoryPage() {
                 cursor: "pointer",
                 transition: "background-color 0.2s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#6B4A2B")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#8B5E3C")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#6B4A2B")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#8B5E3C")
+              }
             >
               Aceptar
             </button>

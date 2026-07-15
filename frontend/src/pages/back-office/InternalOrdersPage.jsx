@@ -82,12 +82,7 @@ export default function InternalOrdersPage() {
     },
   ]);
 
-  const statusOptions = [
-    "Todos",
-    "Pendiente",
-    "Completado",
-    "Cancelado",
-  ];
+  const statusOptions = ["Todos", "Pendiente", "Completado", "Cancelado"];
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -133,13 +128,17 @@ export default function InternalOrdersPage() {
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === "Todos" || order.status === filterStatus;
+    const matchesFilter =
+      filterStatus === "Todos" || order.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder,
+  );
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   const handleStatusFilter = (status) => {
@@ -213,7 +212,10 @@ export default function InternalOrdersPage() {
             >
               Inicio
             </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
+            <span
+              aria-hidden="true"
+              style={{ margin: "0 8px", color: "#F5EDE5" }}
+            >
               &gt;
             </span>
             <span style={{ color: "#FFFFFF" }}>Pedidos Internos</span>
@@ -571,7 +573,13 @@ export default function InternalOrdersPage() {
                       <div style={{ color: "#D28B00", fontSize: "32px" }}>
                         <FaExclamationTriangle />
                       </div>
-                      <p style={{ color: "#7A6B5A", marginTop: "12px", fontSize: "clamp(0.95rem, 1.2vw, 1.1rem)" }}>
+                      <p
+                        style={{
+                          color: "#7A6B5A",
+                          marginTop: "12px",
+                          fontSize: "clamp(0.95rem, 1.2vw, 1.1rem)",
+                        }}
+                      >
                         No se encontraron pedidos
                       </p>
                     </td>
@@ -638,7 +646,9 @@ export default function InternalOrdersPage() {
               </span>
               <button
                 className="pagination-btn"
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 style={{
                   padding: "8px 20px",
@@ -648,7 +658,8 @@ export default function InternalOrdersPage() {
                   color: "#6B4A2B",
                   fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
                   fontWeight: 500,
-                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                  cursor:
+                    currentPage === totalPages ? "not-allowed" : "pointer",
                   opacity: currentPage === totalPages ? 0.5 : 1,
                   transition: "all 0.2s ease",
                 }}

@@ -61,10 +61,30 @@ export default function DashboardPage() {
   ];
 
   const metrics = [
-    { icon: <FaShoppingBag size={28} />, label: "Pedidos", value: 18, color: "#8B5E3C" },
-    { icon: <FaDollarSign size={28} />, label: "Ventas", value: "$24,850", color: "#2E7D32" },
-    { icon: <FaBoxes size={28} />, label: "Productos", value: 128, color: "#1565C0" },
-    { icon: <FaExclamationTriangle size={28} />, label: "Bajo Stock", value: 6, color: "#D84315" },
+    {
+      icon: <FaShoppingBag size={28} />,
+      label: "Pedidos",
+      value: 18,
+      color: "#8B5E3C",
+    },
+    {
+      icon: <FaDollarSign size={28} />,
+      label: "Ventas",
+      value: "$24,850",
+      color: "#2E7D32",
+    },
+    {
+      icon: <FaBoxes size={28} />,
+      label: "Productos",
+      value: 128,
+      color: "#1565C0",
+    },
+    {
+      icon: <FaExclamationTriangle size={28} />,
+      label: "Bajo Stock",
+      value: 6,
+      color: "#D84315",
+    },
   ];
 
   return (
@@ -115,7 +135,10 @@ export default function DashboardPage() {
             Dashboard Interno
           </h1>
           <p style={{ color: "#F5EDE5", fontSize: "18px" }}>
-            <Link to={routePaths.public.home} style={{ color: "#FFD36A", textDecoration: "none" }}>
+            <Link
+              to={routePaths.public.home}
+              style={{ color: "#FFD36A", textDecoration: "none" }}
+            >
               Inicio
             </Link>
             <span style={{ margin: "0 8px" }}>{">"}</span>
@@ -127,8 +150,16 @@ export default function DashboardPage() {
       <main className="dashboard-container">
         <div className="dashboard-header-actions">
           <div>
-            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)" }}>Dashboard de Empleado</h2>
-            <p style={{ color: "#777", marginTop: "10px", fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)" }}>
+            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)" }}>
+              Dashboard de Empleado
+            </h2>
+            <p
+              style={{
+                color: "#777",
+                marginTop: "10px",
+                fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)",
+              }}
+            >
               Administra pedidos, productos, categorías e inventario.
             </p>
           </div>
@@ -156,14 +187,31 @@ export default function DashboardPage() {
                 transition: "transform 0.2s",
                 cursor: "default",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-5px)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "translateY(-5px)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "translateY(0)")
+              }
             >
-              <div style={{ color: metric.color, marginBottom: "8px" }}>{metric.icon}</div>
-              <span className="stat-summary-label" style={{ display: "block", fontSize: "0.85rem", color: "#666" }}>
+              <div style={{ color: metric.color, marginBottom: "8px" }}>
+                {metric.icon}
+              </div>
+              <span
+                className="stat-summary-label"
+                style={{ display: "block", fontSize: "0.85rem", color: "#666" }}
+              >
                 {metric.label}
               </span>
-              <span className="stat-summary-value" style={{ display: "block", fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 700, color: metric.color }}>
+              <span
+                className="stat-summary-value"
+                style={{
+                  display: "block",
+                  fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
+                  fontWeight: 700,
+                  color: metric.color,
+                }}
+              >
                 {metric.value}
               </span>
             </div>
@@ -180,31 +228,114 @@ export default function DashboardPage() {
           }}
         >
           {/* Pedidos recientes */}
-          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
-            <div className="dashboard-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              className="dashboard-card-header"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <h3
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
+                  color: "#8B5E3C",
+                }}
+              >
                 <FaClipboardList /> Pedidos recientes
               </h3>
-              <Link to={routePaths.backOffice.orders} className="btn-primary" style={{ background: "#8B5E3C", color: "#fff", padding: "8px 16px", borderRadius: "8px", textDecoration: "none", fontSize: "0.85rem" }}>
+              <Link
+                to={routePaths.backOffice.orders}
+                className="btn-primary"
+                style={{
+                  background: "#8B5E3C",
+                  color: "#fff",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontSize: "0.85rem",
+                }}
+              >
                 Ver todos
               </Link>
             </div>
             <div className="table-responsive" style={{ overflowX: "auto" }}>
-              <table className="dashboard-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table
+                className="dashboard-table"
+                style={{ width: "100%", borderCollapse: "collapse" }}
+              >
                 <thead>
                   <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
-                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Pedido</th>
-                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Cliente</th>
-                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Total</th>
-                    <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B" }}>Estado</th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        color: "#6B4A2B",
+                      }}
+                    >
+                      Pedido
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        color: "#6B4A2B",
+                      }}
+                    >
+                      Cliente
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        color: "#6B4A2B",
+                      }}
+                    >
+                      Total
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px 8px",
+                        color: "#6B4A2B",
+                      }}
+                    >
+                      Estado
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {pedidos.map((pedido) => (
-                    <tr key={pedido.id} style={{ borderBottom: "1px solid #F0EBE3" }}>
-                      <td style={{ padding: "10px 8px", fontWeight: 600, color: "#8B5E3C" }}>{pedido.id}</td>
+                    <tr
+                      key={pedido.id}
+                      style={{ borderBottom: "1px solid #F0EBE3" }}
+                    >
+                      <td
+                        style={{
+                          padding: "10px 8px",
+                          fontWeight: 600,
+                          color: "#8B5E3C",
+                        }}
+                      >
+                        {pedido.id}
+                      </td>
                       <td style={{ padding: "10px 8px" }}>{pedido.cliente}</td>
-                      <td style={{ padding: "10px 8px", fontWeight: 600 }}>{pedido.total}</td>
+                      <td style={{ padding: "10px 8px", fontWeight: 600 }}>
+                        {pedido.total}
+                      </td>
                       <td style={{ padding: "10px 8px" }}>
                         <span
                           style={{
@@ -228,9 +359,28 @@ export default function DashboardPage() {
           </div>
 
           {/* Inventario crítico */}
-          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
-            <div className="dashboard-card-header" style={{ marginBottom: "20px" }}>
-              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              className="dashboard-card-header"
+              style={{ marginBottom: "20px" }}
+            >
+              <h3
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
+                  color: "#8B5E3C",
+                }}
+              >
                 <FaBoxes /> Inventario crítico
               </h3>
             </div>
@@ -246,8 +396,18 @@ export default function DashboardPage() {
                 }}
               >
                 <div>
-                  <strong style={{ fontSize: "clamp(0.9rem, 1.2vw, 1rem)" }}>{producto.nombre}</strong>
-                  <div style={{ color: "#888", fontSize: "0.8rem", marginTop: "4px" }}>Requiere reposición</div>
+                  <strong style={{ fontSize: "clamp(0.9rem, 1.2vw, 1rem)" }}>
+                    {producto.nombre}
+                  </strong>
+                  <div
+                    style={{
+                      color: "#888",
+                      fontSize: "0.8rem",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Requiere reposición
+                  </div>
                 </div>
                 <span
                   style={{
@@ -276,8 +436,25 @@ export default function DashboardPage() {
           }}
         >
           {/* Ventas por mes */}
-          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
-            <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C", marginBottom: "20px" }}>
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
+                color: "#8B5E3C",
+                marginBottom: "20px",
+              }}
+            >
               <FaDollarSign /> Ventas por mes
             </h3>
             {ventasPorMes.map((venta) => (
@@ -290,8 +467,12 @@ export default function DashboardPage() {
                   borderBottom: "1px solid #F0EBE3",
                 }}
               >
-                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>{venta.mes}</span>
-                <strong style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>${venta.monto.toLocaleString()}</strong>
+                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
+                  {venta.mes}
+                </span>
+                <strong style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
+                  ${venta.monto.toLocaleString()}
+                </strong>
               </div>
             ))}
             <div
@@ -306,13 +487,36 @@ export default function DashboardPage() {
               }}
             >
               <span>Total del año</span>
-              <strong>${ventasPorMes.reduce((acc, v) => acc + v.monto, 0).toLocaleString()} MX</strong>
+              <strong>
+                $
+                {ventasPorMes
+                  .reduce((acc, v) => acc + v.monto, 0)
+                  .toLocaleString()}{" "}
+                MX
+              </strong>
             </div>
           </div>
 
           {/* Productos con bajo stock */}
-          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
-            <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C", marginBottom: "20px" }}>
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
+                color: "#8B5E3C",
+                marginBottom: "20px",
+              }}
+            >
               <FaExclamationTriangle /> Productos con bajo stock
             </h3>
             {productosBajoStock.map((producto) => (
@@ -325,7 +529,9 @@ export default function DashboardPage() {
                   borderBottom: "1px solid #F0EBE3",
                 }}
               >
-                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>{producto.nombre}</span>
+                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
+                  {producto.nombre}
+                </span>
                 <strong
                   style={{
                     color: producto.stock === 0 ? "#D32F2F" : "#D28B00",
@@ -362,9 +568,28 @@ export default function DashboardPage() {
           }}
         >
           {/* Accesos rápidos */}
-          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
-            <div className="dashboard-card-header" style={{ marginBottom: "20px" }}>
-              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              className="dashboard-card-header"
+              style={{ marginBottom: "20px" }}
+            >
+              <h3
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
+                  color: "#8B5E3C",
+                }}
+              >
                 <FaBoxOpen /> Accesos rápidos
               </h3>
             </div>
@@ -376,12 +601,32 @@ export default function DashboardPage() {
               }}
             >
               {[
-                { to: routePaths.backOffice.products, icon: <FaBoxOpen size={32} color="#8B5E3C" />, label: "Productos" },
-                { to: routePaths.backOffice.categories, icon: <FaTags size={32} color="#8B5E3C" />, label: "Categorías" },
-                { to: routePaths.backOffice.inventory, icon: <FaBoxes size={32} color="#8B5E3C" />, label: "Inventario" },
-                { to: routePaths.backOffice.orders, icon: <FaShoppingBag size={32} color="#8B5E3C" />, label: "Pedidos" },
+                {
+                  to: routePaths.backOffice.products,
+                  icon: <FaBoxOpen size={32} color="#8B5E3C" />,
+                  label: "Productos",
+                },
+                {
+                  to: routePaths.backOffice.categories,
+                  icon: <FaTags size={32} color="#8B5E3C" />,
+                  label: "Categorías",
+                },
+                {
+                  to: routePaths.backOffice.inventory,
+                  icon: <FaBoxes size={32} color="#8B5E3C" />,
+                  label: "Inventario",
+                },
+                {
+                  to: routePaths.backOffice.orders,
+                  icon: <FaShoppingBag size={32} color="#8B5E3C" />,
+                  label: "Pedidos",
+                },
               ].map((item, index) => (
-                <Link key={index} to={item.to} style={{ textDecoration: "none" }}>
+                <Link
+                  key={index}
+                  to={item.to}
+                  style={{ textDecoration: "none" }}
+                >
                   <div
                     style={{
                       background: "#F8F3ED",
@@ -394,7 +639,8 @@ export default function DashboardPage() {
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = "translateY(-4px)";
-                      e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(0,0,0,0.08)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = "translateY(0)";
@@ -402,7 +648,15 @@ export default function DashboardPage() {
                     }}
                   >
                     <div style={{ marginBottom: "12px" }}>{item.icon}</div>
-                    <h4 style={{ margin: 0, color: "#5C2E0B", fontSize: "clamp(0.85rem, 1.1vw, 1rem)" }}>{item.label}</h4>
+                    <h4
+                      style={{
+                        margin: 0,
+                        color: "#5C2E0B",
+                        fontSize: "clamp(0.85rem, 1.1vw, 1rem)",
+                      }}
+                    >
+                      {item.label}
+                    </h4>
                   </div>
                 </Link>
               ))}
@@ -410,9 +664,28 @@ export default function DashboardPage() {
           </div>
 
           {/* Información del empleado */}
-          <div className="dashboard-card" style={{ padding: "24px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "16px" }}>
-            <div className="dashboard-card-header" style={{ marginBottom: "20px" }}>
-              <h3 style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)", color: "#8B5E3C" }}>
+          <div
+            className="dashboard-card"
+            style={{
+              padding: "24px",
+              background: "#FDF8F0",
+              border: "1px solid #E8DCCC",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              className="dashboard-card-header"
+              style={{ marginBottom: "20px" }}
+            >
+              <h3
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
+                  color: "#8B5E3C",
+                }}
+              >
                 <FaUserTie /> Información del empleado
               </h3>
             </div>
@@ -440,26 +713,83 @@ export default function DashboardPage() {
                 <FaUserTie size={34} color="#8B5E3C" />
               </div>
               <div>
-                <h3 style={{ marginBottom: "6px", color: "#5C2E0B", fontSize: "clamp(1rem, 1.3vw, 1.2rem)" }}>Empleado DayBed</h3>
-                <p style={{ color: "#777", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Área de ventas</p>
+                <h3
+                  style={{
+                    marginBottom: "6px",
+                    color: "#5C2E0B",
+                    fontSize: "clamp(1rem, 1.3vw, 1.2rem)",
+                  }}
+                >
+                  Empleado DayBed
+                </h3>
+                <p
+                  style={{
+                    color: "#777",
+                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                  }}
+                >
+                  Área de ventas
+                </p>
               </div>
             </div>
             <div style={{ display: "grid", gap: "14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #F0EBE3", paddingBottom: "10px" }}>
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Pedidos procesados hoy</span>
-                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>18</strong>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid #F0EBE3",
+                  paddingBottom: "10px",
+                }}
+              >
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  Pedidos procesados hoy
+                </span>
+                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  18
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #F0EBE3", paddingBottom: "10px" }}>
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Productos registrados</span>
-                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>128</strong>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid #F0EBE3",
+                  paddingBottom: "10px",
+                }}
+              >
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  Productos registrados
+                </span>
+                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  128
+                </strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #F0EBE3", paddingBottom: "10px" }}>
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Categorías activas</span>
-                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>12</strong>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1px solid #F0EBE3",
+                  paddingBottom: "10px",
+                }}
+              >
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  Categorías activas
+                </span>
+                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  12
+                </strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Estado del sistema</span>
-                <strong style={{ color: "#2E7D32", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>Operativo</strong>
+                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                  Estado del sistema
+                </span>
+                <strong
+                  style={{
+                    color: "#2E7D32",
+                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                  }}
+                >
+                  Operativo
+                </strong>
               </div>
             </div>
           </div>

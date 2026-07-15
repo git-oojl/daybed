@@ -41,7 +41,14 @@ export default function InternalOrderDetailPage() {
     ],
   };
 
-  const statusOptions = ["Pendiente", "Confirmado", "Preparando", "Enviado", "Entregado", "Cancelado"];
+  const statusOptions = [
+    "Pendiente",
+    "Confirmado",
+    "Preparando",
+    "Enviado",
+    "Entregado",
+    "Cancelado",
+  ];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -147,7 +154,10 @@ export default function InternalOrderDetailPage() {
             >
               Inicio
             </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
+            <span
+              aria-hidden="true"
+              style={{ margin: "0 8px", color: "#F5EDE5" }}
+            >
               &gt;
             </span>
             <Link
@@ -156,7 +166,10 @@ export default function InternalOrderDetailPage() {
             >
               Pedidos Internos
             </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
+            <span
+              aria-hidden="true"
+              style={{ margin: "0 8px", color: "#F5EDE5" }}
+            >
               &gt;
             </span>
             <span style={{ color: "#FFFFFF" }}>Detalle</span>
@@ -212,8 +225,12 @@ export default function InternalOrderDetailPage() {
                 fontWeight: 600,
                 transition: "background-color 0.2s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#5A4ABD")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#6A5ACD")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#5A4ABD")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "#6A5ACD")
+              }
             >
               <FaTimes /> Volver a pedidos
             </Link>
@@ -251,22 +268,46 @@ export default function InternalOrderDetailPage() {
             >
               <FaUser /> Información del cliente
             </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Nombre</span>
-                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Nombre
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontWeight: 500,
+                    fontSize: "clamp(0.95rem, 1.1vw, 1rem)",
+                  }}
+                >
                   {orderData.customer}
                 </p>
               </div>
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Email</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Email
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
+                  }}
+                >
                   {orderData.email}
                 </p>
               </div>
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Teléfono</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Teléfono
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
+                  }}
+                >
                   {orderData.phone}
                 </p>
               </div>
@@ -295,16 +336,33 @@ export default function InternalOrderDetailPage() {
             >
               <FaTruck /> Datos de entrega
             </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Tipo de entrega</span>
-                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Tipo de entrega
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontWeight: 500,
+                    fontSize: "clamp(0.95rem, 1.1vw, 1rem)",
+                  }}
+                >
                   {orderData.deliveryType}
                 </p>
               </div>
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Dirección</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Dirección
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
+                  }}
+                >
                   {orderData.address}
                 </p>
               </div>
@@ -343,16 +401,35 @@ export default function InternalOrderDetailPage() {
             >
               <FaMapMarkerAlt /> Estimación de distancia y costo
             </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Distancia Estimada</span>
-                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Distancia Estimada
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontWeight: 500,
+                    fontSize: "clamp(0.95rem, 1.1vw, 1rem)",
+                  }}
+                >
                   {orderData.distance}
                 </p>
               </div>
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Costo Estimado</span>
-                <p style={{ margin: "4px 0 0 0", fontWeight: 700, color: "#8B5E3C", fontSize: "clamp(1rem, 1.2vw, 1.1rem)" }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Costo Estimado
+                </span>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontWeight: 700,
+                    color: "#8B5E3C",
+                    fontSize: "clamp(1rem, 1.2vw, 1.1rem)",
+                  }}
+                >
                   ${orderData.estimatedCost.toFixed(2)} MXN
                 </p>
               </div>
@@ -381,9 +458,13 @@ export default function InternalOrderDetailPage() {
             >
               <FaClipboardList /> Cambio de estado del pedido
             </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Estado actual</span>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Estado actual
+                </span>
                 <p
                   style={{
                     margin: "4px 0 0 0",
@@ -400,7 +481,9 @@ export default function InternalOrderDetailPage() {
                 </p>
               </div>
               <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Cambiar estado</span>
+                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
+                  Cambiar estado
+                </span>
                 <select
                   value={orderStatus}
                   onChange={(e) => setOrderStatus(e.target.value)}
@@ -443,8 +526,12 @@ export default function InternalOrderDetailPage() {
                   transition: "background-color 0.2s ease",
                   marginTop: "4px",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#6B4A2B")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#8B5E3C")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#6B4A2B")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "#8B5E3C")
+                }
               >
                 <FaSave /> Actualizar estado
               </button>
@@ -534,10 +621,7 @@ export default function InternalOrderDetailPage() {
               </thead>
               <tbody>
                 {orderData.items.map((item, index) => (
-                  <tr
-                    key={index}
-                    style={{ borderBottom: "1px solid #F0EBE3" }}
-                  >
+                  <tr key={index} style={{ borderBottom: "1px solid #F0EBE3" }}>
                     <td
                       style={{
                         padding: "12px 10px",
@@ -630,7 +714,13 @@ export default function InternalOrderDetailPage() {
             <FaEdit /> Notas internas opcionales
           </h3>
           {!showNoteInput ? (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <p style={{ color: "#7A6B5A", margin: 0 }}>
                 {note || "No hay notas para este pedido"}
               </p>
@@ -660,7 +750,9 @@ export default function InternalOrderDetailPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -680,7 +772,13 @@ export default function InternalOrderDetailPage() {
                 onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
                 onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
               />
-              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <button
                   onClick={() => {
                     setShowNoteInput(false);
@@ -697,8 +795,12 @@ export default function InternalOrderDetailPage() {
                     fontWeight: 500,
                     transition: "all 0.2s ease",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#F5F5F5")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#FFFFFF")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#F5F5F5")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "#FFFFFF")
+                  }
                 >
                   Cancelar
                 </button>
@@ -718,8 +820,12 @@ export default function InternalOrderDetailPage() {
                     fontWeight: 600,
                     transition: "background-color 0.2s ease",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#6B4A2B")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#8B5E3C")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#6B4A2B")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "#8B5E3C")
+                  }
                 >
                   Guardar nota
                 </button>

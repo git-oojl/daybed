@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1920&q=80');
+  background-image: url("https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1920&q=80");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -105,7 +105,7 @@
 .contact-section__title svg {
   width: 28px;
   height: 28px;
-  color: #B88E2F;
+  color: #b88e2f;
 }
 
 .contact-section__desc {
@@ -163,7 +163,7 @@
 }
 
 .about-us__value-icon {
-  color: #B88E2F;
+  color: #b88e2f;
   font-size: 14px;
 }
 
@@ -189,7 +189,7 @@
 .about-us__image-placeholder svg {
   width: 48px;
   height: 48px;
-  color: #B88E2F;
+  color: #b88e2f;
 }
 
 /* ===== CONTACT GRID ===== */
@@ -310,7 +310,7 @@
 
 .channel-card__link {
   display: inline-block;
-  color: #B88E2F;
+  color: #b88e2f;
   font-weight: 500;
   text-decoration: none;
   font-family: "Inter", "Poppins", sans-serif;
@@ -368,7 +368,7 @@
 
 .faq-item__icon {
   font-size: 20px;
-  color: #B88E2F;
+  color: #b88e2f;
   flex-shrink: 0;
   margin-left: 1rem;
 }
@@ -529,7 +529,7 @@
 
 .contact-form__btn {
   padding: 0.7rem 2rem;
-  background: #B88E2F;
+  background: #b88e2f;
   color: #ffffff;
   border: none;
   border-radius: 10px;

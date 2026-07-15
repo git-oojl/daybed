@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1920&q=80');
+  background-image: url("https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1920&q=80");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -223,7 +223,7 @@
   padding: 0.4rem 1rem;
   border: none;
   border-radius: 8px;
-  background: #B88E2F;
+  background: #b88e2f;
   color: #ffffff;
   font-size: 13px;
   font-weight: 500;
@@ -340,7 +340,7 @@
 .profile-form__checkbox input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #B88E2F;
+  accent-color: #b88e2f;
   cursor: pointer;
 }
 
@@ -363,7 +363,7 @@
 }
 
 .profile-form__btn--primary {
-  background: #B88E2F;
+  background: #b88e2f;
   color: #ffffff;
 }
 
@@ -456,7 +456,7 @@
 }
 
 .profile-address--default {
-  border-color: #B88E2F;
+  border-color: #b88e2f;
   background: #fefce8;
 }
 
@@ -479,7 +479,7 @@
 .profile-address__badge {
   display: inline-block;
   padding: 0.15rem 0.6rem;
-  background: #B88E2F;
+  background: #b88e2f;
   color: #ffffff;
   border-radius: 12px;
   font-size: 11px;
