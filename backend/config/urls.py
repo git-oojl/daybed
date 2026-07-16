@@ -20,8 +20,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
+from apps.accounts.views import LoginTokenView, LogoutView
 from config.views import health_check
 
 urlpatterns = [
@@ -34,12 +35,13 @@ urlpatterns = [
     path("api/delivery/", include("apps.delivery.urls")),
     path("api/inventory/", include("apps.inventory.urls")),
     path("api/", include("apps.orders.urls")),
-    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/token/", LoginTokenView.as_view(), name="token_obtain_pair"),
     path(
         "api/auth/token/refresh/",
         TokenRefreshView.as_view(),
         name="token_refresh",
     ),
+    path("api/auth/logout/", LogoutView.as_view(), name="token_logout"),
     path(
         "api/schema/",
         SpectacularAPIView.as_view(permission_classes=[]),

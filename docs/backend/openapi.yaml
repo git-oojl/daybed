@@ -238,6 +238,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/InternalUser'
           description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Logout'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Logout'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Logout'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logout'
+          description: ''
   /api/auth/token/:
     post:
       operationId: auth_token_create
@@ -250,20 +277,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/LoginToken'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/LoginToken'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
+              $ref: '#/components/schemas/LoginToken'
         required: true
+      security:
+      - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenObtainPair'
+                $ref: '#/components/schemas/LoginToken'
           description: ''
   /api/auth/token/refresh/:
     post:
@@ -1672,6 +1701,9 @@ components:
         password:
           type: string
           writeOnly: true
+        confirmPassword:
+          type: string
+          writeOnly: true
         first_name:
           type: string
           title: Nombre
@@ -1683,6 +1715,27 @@ components:
         phone:
           type: string
           maxLength: 32
+        state:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 120
+        nombre:
+          type: string
+          writeOnly: true
+        apellido:
+          type: string
+          writeOnly: true
+        telefono:
+          type: string
+          writeOnly: true
+        estado:
+          type: string
+          writeOnly: true
+        ciudad:
+          type: string
+          writeOnly: true
         role:
           type: string
           readOnly: true
@@ -1691,7 +1744,6 @@ components:
       - id
       - password
       - role
-      - username
     DashboardMetrics:
       type: object
       properties:
@@ -1857,6 +1909,12 @@ components:
         phone:
           type: string
           maxLength: 32
+        state:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 120
         role:
           $ref: '#/components/schemas/RoleEnum'
         is_active:
@@ -1992,6 +2050,29 @@ components:
       - name
       - stock
       - updated_at
+    LoginToken:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          writeOnly: true
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+    Logout:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - refresh
     MovementTypeEnum:
       enum:
       - manual_adjustment
@@ -2367,6 +2448,12 @@ components:
         phone:
           type: string
           maxLength: 32
+        state:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 120
         role:
           $ref: '#/components/schemas/RoleEnum'
         is_active:
@@ -2509,6 +2596,12 @@ components:
         phone:
           type: string
           maxLength: 32
+        state:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 120
         role:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'
@@ -2677,26 +2770,6 @@ components:
           type: string
           writeOnly: true
           maxLength: 255
-    TokenObtainPair:
-      type: object
-      properties:
-        username:
-          type: string
-          writeOnly: true
-        password:
-          type: string
-          writeOnly: true
-        access:
-          type: string
-          readOnly: true
-        refresh:
-          type: string
-          readOnly: true
-      required:
-      - access
-      - password
-      - refresh
-      - username
     TokenRefresh:
       type: object
       properties:
@@ -2705,7 +2778,6 @@ components:
           readOnly: true
         refresh:
           type: string
-          writeOnly: true
       required:
       - access
       - refresh
@@ -2736,6 +2808,12 @@ components:
         phone:
           type: string
           maxLength: 32
+        state:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 120
         role:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'

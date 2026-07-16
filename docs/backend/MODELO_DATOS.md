@@ -15,6 +15,8 @@ Campos relevantes:
 - `first_name`
 - `last_name`
 - `phone`
+- `state`
+- `city`
 - `role`
 
 Roles:
@@ -22,6 +24,13 @@ Roles:
 - `cliente`
 - `empleado`
 - `administrador`
+
+Reglas:
+
+- `email` es único y se normaliza a minúsculas en registro y gestión interna.
+- El login público usa `email` + `password`.
+- `username` se conserva por compatibilidad con Django/Admin y se genera desde el correo cuando el registro de cliente no lo envía.
+- `state` y `city` guardan los campos de ubicación básica que ya capturan las vistas actuales de registro.
 
 ## Catalog
 
@@ -67,7 +76,10 @@ Propiedad:
 low_stock = stock <= minimum_stock
 ```
 
-Regla: no borrar físicamente productos; usar `active=false`.
+Reglas:
+
+- No borrar físicamente productos; usar `active=false`.
+- `price` no puede ser negativo.
 
 ### ProductImage
 
@@ -113,7 +125,10 @@ Restricciones:
 - Un producto no se repite dentro del mismo carrito.
 - `quantity >= 1`.
 
-Regla: agregar o actualizar carrito no descuenta inventario.
+Reglas:
+
+- Agregar o actualizar carrito no descuenta inventario.
+- Checkout rechaza items cuyo producto o categoría haya sido desactivado después de agregarse al carrito.
 
 ## Orders
 
@@ -164,7 +179,10 @@ delivered -> sin transición
 cancelled -> sin transición
 ```
 
-Regla: el stock se descuenta una sola vez al pasar a `confirmed`.
+Reglas:
+
+- El stock se descuenta una sola vez al pasar a `confirmed`.
+- Los datos de entrega guardados desde checkout no aceptan coordenadas, distancia, duración o tarifa fuera de rango válido.
 
 ### OrderItem
 

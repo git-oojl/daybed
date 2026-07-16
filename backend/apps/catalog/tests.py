@@ -149,6 +149,25 @@ def test_employee_can_create_product():
     assert Product.objects.filter(name="Staff sofa", active=True).exists()
 
 
+def test_staff_product_management_rejects_negative_price():
+    employee = create_user("empleado_negative_price", User.Roles.EMPLOYEE)
+    category = create_category()
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Invalid price sofa",
+            "description": "Invalid",
+            "price": "-1.00",
+            "category": category.id,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "precio" in str(response.data).lower()
+
+
 def test_staff_delete_deactivates_product_instead_of_hard_delete():
     employee = create_user("empleado_delete", User.Roles.EMPLOYEE)
     product = create_product()

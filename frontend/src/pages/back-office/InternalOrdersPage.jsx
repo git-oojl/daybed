@@ -11,8 +11,6 @@ import {
   FaEye,
   FaFilter,
   FaCheckCircle,
-  FaTruck,
-  FaBoxOpen,
   FaClock,
   FaTimesCircle,
   FaExclamationTriangle,

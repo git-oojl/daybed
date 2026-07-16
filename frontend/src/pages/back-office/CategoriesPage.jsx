@@ -143,16 +143,6 @@ export default function CategoriesPage() {
     handleCloseModal();
   };
 
-  const handleToggleStatus = (id) => {
-    setCategories(
-      categories.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === "Activo" ? "Inactivo" : "Activo" }
-          : c,
-      ),
-    );
-  };
-
   const handleDelete = (id) => {
     if (window.confirm("¿Eliminar esta categoría?")) {
       setCategories(categories.filter((c) => c.id !== id));

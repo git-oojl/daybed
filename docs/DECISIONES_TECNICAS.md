@@ -20,6 +20,8 @@ Esto facilita que backend, frontend y documentación evolucionen juntos.
 - Django y Django REST Framework para construir API REST.
 - Usuario personalizado desde el inicio para soportar roles.
 - JWT con SimpleJWT para autenticación entre frontend y backend.
+- Login público con `email` y `password`; `username` se conserva para compatibilidad con Django Admin y scripts.
+- Refresh tokens con rotación y blacklist para permitir logout real.
 - SQLite como base oficial del MVP local por baja fricción de instalación.
 - `uv` para entorno y dependencias Python.
 - `django-environ` para configuración por variables de entorno.
@@ -46,6 +48,8 @@ Roles:
 
 Reglas principales:
 
+- El registro de cliente acepta los nombres de campos usados por las vistas actuales: `nombre`, `apellido`, `telefono`, `estado`, `ciudad`, `password` y `confirmPassword`.
+- El backend genera `username` si el cliente no lo envía.
 - Público: catálogo activo.
 - Cliente: perfil propio, carrito, checkout y pedidos propios.
 - Empleado: operación interna de productos, inventario y pedidos.

@@ -10,13 +10,10 @@ import {
   FaBox,
   FaTruck,
   FaMapMarkerAlt,
-  FaMoneyBillWave,
   FaClipboardList,
   FaEdit,
   FaSave,
   FaTimes,
-  FaPlus,
-  FaMinus,
 } from "react-icons/fa";
 
 export default function InternalOrderDetailPage() {

@@ -49,19 +49,92 @@ def test_customer_registration_creates_cliente_even_if_role_is_submitted():
     assert user.check_password("StrongPass123!")
 
 
-def test_jwt_login_returns_access_and_refresh_tokens():
+def test_customer_registration_accepts_frontend_spanish_payload():
+    client = api_client()
+
+    response = client.post(
+        reverse("customer-register"),
+        {
+            "nombre": "Cliente",
+            "apellido": "Frontend",
+            "email": "CLIENTE.FRONTEND@example.com",
+            "telefono": "5512345678",
+            "estado": "Baja California",
+            "ciudad": "Tijuana",
+            "password": "Daybed123!",
+            "confirmPassword": "Daybed123!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["email"] == "cliente.frontend@example.com"
+    assert response.data["first_name"] == "Cliente"
+    assert response.data["last_name"] == "Frontend"
+    assert response.data["phone"] == "5512345678"
+    assert response.data["state"] == "Baja California"
+    assert response.data["city"] == "Tijuana"
+    assert response.data["role"] == User.Roles.CUSTOMER
+    assert response.data["username"]
+
+    user = User.objects.get(email="cliente.frontend@example.com")
+    assert user.check_password("Daybed123!")
+
+
+def test_jwt_login_with_email_returns_tokens_and_user_payload():
     create_user("cliente2")
     client = api_client()
 
     response = client.post(
         reverse("token_obtain_pair"),
-        {"username": "cliente2", "password": "StrongPass123!"},
+        {"email": "cliente2@example.com", "password": "StrongPass123!"},
         format="json",
     )
 
     assert response.status_code == 200
     assert response.data["access"]
     assert response.data["refresh"]
+    assert response.data["user"]["email"] == "cliente2@example.com"
+    assert response.data["user"]["role"] == User.Roles.CUSTOMER
+
+
+def test_jwt_login_still_accepts_username_for_manual_scripts():
+    create_user("cliente_username")
+    client = api_client()
+
+    response = client.post(
+        reverse("token_obtain_pair"),
+        {"username": "cliente_username", "password": "StrongPass123!"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["access"]
+
+
+def test_jwt_logout_blacklists_refresh_token():
+    create_user("cliente_logout")
+    client = api_client()
+    login_response = client.post(
+        reverse("token_obtain_pair"),
+        {"email": "cliente_logout@example.com", "password": "StrongPass123!"},
+        format="json",
+    )
+
+    response = client.post(
+        reverse("token_logout"),
+        {"refresh": login_response.data["refresh"]},
+        format="json",
+    )
+
+    assert response.status_code == 204
+
+    refresh_response = client.post(
+        reverse("token_refresh"),
+        {"refresh": login_response.data["refresh"]},
+        format="json",
+    )
+    assert refresh_response.status_code == 401
 
 
 def test_current_user_profile_requires_authentication():
@@ -79,7 +152,12 @@ def test_current_user_profile_update_cannot_change_role():
 
     response = client.patch(
         reverse("current-user"),
-        {"first_name": "Actualizado", "role": User.Roles.ADMIN},
+        {
+            "first_name": "Actualizado",
+            "state": "Baja California",
+            "city": "Tijuana",
+            "role": User.Roles.ADMIN,
+        },
         format="json",
     )
 
@@ -87,7 +165,35 @@ def test_current_user_profile_update_cannot_change_role():
 
     user.refresh_from_db()
     assert user.first_name == "Actualizado"
+    assert user.state == "Baja California"
+    assert user.city == "Tijuana"
     assert user.role == User.Roles.CUSTOMER
+
+
+def test_current_user_profile_update_normalizes_email_and_rejects_duplicate():
+    user = create_user("cliente_email_update")
+    other = create_user("cliente_email_existing")
+    client = api_client()
+    client.force_authenticate(user=user)
+
+    update_response = client.patch(
+        reverse("current-user"),
+        {"email": "CLIENTE.UPDATED@example.com"},
+        format="json",
+    )
+    duplicate_response = client.patch(
+        reverse("current-user"),
+        {"email": other.email.upper()},
+        format="json",
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.data["email"] == "cliente.updated@example.com"
+    assert duplicate_response.status_code == 400
+    assert "Ya existe" in str(duplicate_response.data)
+
+    user.refresh_from_db()
+    assert user.email == "cliente.updated@example.com"
 
 
 def test_admin_can_create_internal_employee_user():
