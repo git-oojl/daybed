@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from apps.catalog.models import Category, Product, ProductImage
@@ -60,3 +62,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = ("id", "low_stock", "created_at", "updated_at")
+
+    def validate_price(self, value):
+        if value < Decimal("0.00"):
+            raise serializers.ValidationError("El precio no puede ser negativo.")
+        return value

@@ -11,7 +11,6 @@ from apps.orders.serializers import (
     OrderStatusSerializer,
 )
 
-
 ORDER_ID_PARAMETER = OpenApiParameter(
     name="id",
     type=int,

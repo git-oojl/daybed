@@ -116,6 +116,30 @@ def test_checkout_creates_pending_order_and_clears_cart_without_stock_decrement(
     assert CartItem.objects.filter(cart__user=customer).count() == 0
 
 
+def test_checkout_rejects_invalid_delivery_numbers():
+    customer = create_user("cliente_bad_delivery_numbers")
+    product = create_product()
+    add_cart_item(customer, product, quantity=1)
+
+    response = checkout(customer, delivery_payload(delivery_fee="-1.00"))
+
+    assert response.status_code == 400
+    assert "delivery_fee" in response.data
+
+
+def test_checkout_rejects_inactive_cart_products():
+    customer = create_user("cliente_inactive_checkout")
+    product = create_product()
+    add_cart_item(customer, product, quantity=1)
+    product.active = False
+    product.save(update_fields=("active", "updated_at"))
+
+    response = checkout(customer)
+
+    assert response.status_code == 400
+    assert "inactive products" in str(response.data)
+
+
 def test_customer_can_only_see_own_orders():
     owner = create_user("cliente_owner_order")
     other = create_user("cliente_other_order")

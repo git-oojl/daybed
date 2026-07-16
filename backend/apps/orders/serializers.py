@@ -53,13 +53,33 @@ class OrderSerializer(serializers.ModelSerializer):
 class CheckoutSerializer(serializers.Serializer):
     original_address = serializers.CharField(max_length=500)
     formatted_address = serializers.CharField(max_length=500)
-    latitude = serializers.DecimalField(max_digits=12, decimal_places=8)
-    longitude = serializers.DecimalField(max_digits=12, decimal_places=8)
-    distance_km = serializers.DecimalField(max_digits=10, decimal_places=3)
-    estimated_duration_minutes = serializers.DecimalField(
-        max_digits=10, decimal_places=1
+    latitude = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=8,
+        min_value=Decimal("-90.00000000"),
+        max_value=Decimal("90.00000000"),
     )
-    delivery_fee = serializers.DecimalField(max_digits=10, decimal_places=2)
+    longitude = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=8,
+        min_value=Decimal("-180.00000000"),
+        max_value=Decimal("180.00000000"),
+    )
+    distance_km = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        min_value=Decimal("0.000"),
+    )
+    estimated_duration_minutes = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=1,
+        min_value=Decimal("0.0"),
+    )
+    delivery_fee = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=Decimal("0.00"),
+    )
     delivery_zone = serializers.CharField(max_length=80, default="standard")
     geocoding_provider = serializers.CharField(
         max_length=80,
@@ -77,6 +97,20 @@ class CheckoutSerializer(serializers.Serializer):
         cart = Cart.objects.filter(user=user).prefetch_related("items__product").first()
         if not cart or not cart.items.exists():
             raise serializers.ValidationError("Cart is empty.")
+        inactive_items = [
+            item.product.name
+            for item in cart.items.select_related("product", "product__category")
+            if not item.product.active or not item.product.category.active
+        ]
+        if inactive_items:
+            raise serializers.ValidationError(
+                {
+                    "cart": (
+                        "Cart contains inactive products: "
+                        + ", ".join(sorted(inactive_items))
+                    )
+                }
+            )
         attrs["cart"] = cart
         return attrs
 

@@ -6,9 +6,11 @@ from apps.accounts.models import User
 
 @admin.register(User)
 class DaybedUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (("Daybed", {"fields": ("role", "phone")}),)
+    fieldsets = UserAdmin.fieldsets + (
+        ("Daybed", {"fields": ("role", "phone", "state", "city")}),
+    )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ("Daybed", {"fields": ("email", "role", "phone")}),
+        ("Daybed", {"fields": ("email", "role", "phone", "state", "city")}),
     )
     list_display = (
         "username",
@@ -16,6 +18,8 @@ class DaybedUserAdmin(UserAdmin):
         "first_name",
         "last_name",
         "role",
+        "state",
+        "city",
         "is_active",
         "is_staff",
     )

@@ -17,10 +17,65 @@ Authorization: Bearer <ACCESS_TOKEN>
 | Método | Endpoint | Acceso | Descripción |
 | --- | --- | --- | --- |
 | GET | `/api/health/` | Público | Health check. |
-| POST | `/api/auth/token/` | Público | Login JWT. |
-| POST | `/api/auth/token/refresh/` | Público | Refresh JWT. |
+| POST | `/api/auth/token/` | Público | Login JWT con `email` y `password`. También acepta `username` para scripts/manual testing. |
+| POST | `/api/auth/token/refresh/` | Público | Refresh JWT. Rota el refresh token y bloquea el anterior. |
+| POST | `/api/auth/logout/` | Público | Cierra sesión bloqueando el refresh token enviado. |
 | GET | `/api/schema/` | Público | OpenAPI schema. |
 | GET | `/api/docs/` | Público | Swagger UI. |
+
+Login:
+
+```json
+{
+  "email": "cliente@example.com",
+  "password": "DemoPassword123!"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "access": "<ACCESS_TOKEN>",
+  "refresh": "<REFRESH_TOKEN>",
+  "user": {
+    "id": 1,
+    "username": "cliente",
+    "email": "cliente@example.com",
+    "first_name": "Cliente",
+    "last_name": "Demo",
+    "phone": "5550101",
+    "state": "Baja California",
+    "city": "Tijuana",
+    "role": "cliente"
+  }
+}
+```
+
+Refresh:
+
+```json
+{
+  "refresh": "<REFRESH_TOKEN>"
+}
+```
+
+Respuesta cuando la rotación está activa:
+
+```json
+{
+  "access": "<NEW_ACCESS_TOKEN>",
+  "refresh": "<NEW_REFRESH_TOKEN>"
+}
+```
+
+Logout:
+
+```json
+{
+  "refresh": "<REFRESH_TOKEN>"
+}
+```
 
 ## Accounts
 
@@ -34,6 +89,41 @@ Authorization: Bearer <ACCESS_TOKEN>
 
 La gestión interna no expone DELETE.
 
+Registro de cliente compatible con las vistas actuales del frontend:
+
+```json
+{
+  "nombre": "Cliente",
+  "apellido": "Demo",
+  "email": "cliente@example.com",
+  "telefono": "5550101",
+  "estado": "Baja California",
+  "ciudad": "Tijuana",
+  "password": "DemoPassword123!",
+  "confirmPassword": "DemoPassword123!"
+}
+```
+
+El backend genera `username` cuando no se envía. También acepta los nombres internos `first_name`, `last_name`, `phone`, `state` y `city`.
+
+El correo se normaliza a minúsculas y se valida de forma única sin distinguir mayúsculas/minúsculas.
+
+Perfil propio:
+
+```json
+{
+  "id": 1,
+  "username": "cliente",
+  "email": "cliente@example.com",
+  "first_name": "Cliente",
+  "last_name": "Demo",
+  "phone": "5550101",
+  "state": "Baja California",
+  "city": "Tijuana",
+  "role": "cliente"
+}
+```
+
 ## Catalog
 
 | Método | Endpoint | Acceso | Descripción |
@@ -46,6 +136,8 @@ La gestión interna no expone DELETE.
 | CRUD | `/api/catalog/manage/products/` | Empleado/Admin | Gestión de productos. |
 
 En productos, `DELETE` realiza desactivación lógica (`active=false`).
+
+La gestión de productos rechaza precios negativos.
 
 Filtros disponibles en productos públicos:
 
@@ -151,6 +243,13 @@ Checkout espera datos de entrega ya calculados/validados:
   "distance_provider": "openrouteservice"
 }
 ```
+
+Validaciones de checkout:
+
+- `latitude` debe estar entre `-90` y `90`.
+- `longitude` debe estar entre `-180` y `180`.
+- `distance_km`, `estimated_duration_minutes` y `delivery_fee` no pueden ser negativos.
+- El carrito no puede contener productos inactivos ni productos de categorías inactivas.
 
 Actualizar estado:
 
