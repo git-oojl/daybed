@@ -14,10 +14,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "product",
+            "product_sku",
             "product_name",
             "unit_price",
             "quantity",
             "line_total",
+            "product_snapshot",
         )
         read_only_fields = fields
 

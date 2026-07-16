@@ -16,7 +16,7 @@ class InventoryProductListView(generics.ListAPIView):
     serializer_class = InventoryProductSerializer
     permission_classes = (IsEmployeeOrAdmin,)
     filterset_fields = ("active", "category", "category__slug")
-    search_fields = ("name", "description", "material", "color", "style")
+    search_fields = ("sku", "name", "description", "material", "color", "style")
     ordering_fields = ("name", "stock", "minimum_stock", "updated_at")
 
     def get_queryset(self):

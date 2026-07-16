@@ -15,16 +15,16 @@ import {
   MenuItem,
 } from "@mui/material";
 import {
-  Email as EmailIcon,
-  Lock as LockIcon,
-  Visibility,
-  VisibilityOff,
-  Storefront as StoreIcon,
-  Person as PersonIcon,
-  Phone as PhoneIcon,
-  LocationCity as CityIcon,
-  PinDrop as PinDropIcon,
-} from "@mui/icons-material";
+  FaCity as CityIcon,
+  FaEnvelope as EmailIcon,
+  FaEye as Visibility,
+  FaEyeSlash as VisibilityOff,
+  FaLock as LockIcon,
+  FaMapMarkerAlt as PinDropIcon,
+  FaPhone as PhoneIcon,
+  FaStore as StoreIcon,
+  FaUser as PersonIcon,
+} from "react-icons/fa";
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/register-page.css";
 import registerBackground from "../../assets/RegisterPage.jpg";
@@ -636,7 +636,7 @@ function RegisterPage() {
                 startAdornment: (
                   <InputAdornment position="start">
                     <PersonIcon
-                      sx={{ color: COLORS.secondary, fontSize: 20 }}
+                      style={{ color: COLORS.secondary, fontSize: 20 }}
                     />
                   </InputAdornment>
                 ),
@@ -661,7 +661,7 @@ function RegisterPage() {
                 startAdornment: (
                   <InputAdornment position="start">
                     <EmailIcon
-                      sx={{
+                      style={{
                         color: showEmailError ? COLORS.error : COLORS.secondary,
                         fontSize: 20,
                       }}
@@ -690,7 +690,7 @@ function RegisterPage() {
                 startAdornment: (
                   <InputAdornment position="start">
                     <PhoneIcon
-                      sx={{
+                      style={{
                         color: showPhoneError ? COLORS.error : COLORS.secondary,
                         fontSize: 20,
                       }}
@@ -720,7 +720,7 @@ function RegisterPage() {
                 startAdornment: (
                   <InputAdornment position="start">
                     <PinDropIcon
-                      sx={{ color: COLORS.secondary, fontSize: 20 }}
+                      style={{ color: COLORS.secondary, fontSize: 20 }}
                     />
                   </InputAdornment>
                 ),
@@ -754,7 +754,9 @@ function RegisterPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <CityIcon sx={{ color: COLORS.secondary, fontSize: 20 }} />
+                    <CityIcon
+                      style={{ color: COLORS.secondary, fontSize: 20 }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -779,7 +781,7 @@ function RegisterPage() {
                   startAdornment: (
                     <InputAdornment position="start">
                       <LockIcon
-                        sx={{
+                        style={{
                           color: showPasswordError
                             ? COLORS.error
                             : COLORS.secondary,
@@ -828,7 +830,7 @@ function RegisterPage() {
                   startAdornment: (
                     <InputAdornment position="start">
                       <LockIcon
-                        sx={{
+                        style={{
                           color: showConfirmError
                             ? COLORS.error
                             : COLORS.secondary,

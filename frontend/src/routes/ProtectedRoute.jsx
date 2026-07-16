@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../auth/authStore.js";
 import { viewerRoles } from "../auth/roleMapping.js";
 import { accessGroups } from "../auth/viewerAccess.js";
+import { usePreviewSession } from "../dev-preview/usePreviewSession.js";
 import { routePaths } from "./routePaths.js";
 
 function ProtectedRoute({
@@ -11,8 +12,15 @@ function ProtectedRoute({
   redirectTo = "/no-autorizado",
 }) {
   const location = useLocation();
-  const viewerId = useAuthStore((state) => state.viewerId);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const previewSession = usePreviewSession();
+  const storedViewerId = useAuthStore((state) => state.viewerId);
+  const storedIsAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const viewerId = previewSession.isPreview
+    ? previewSession.viewerId
+    : storedViewerId;
+  const isAuthenticated = previewSession.isPreview
+    ? previewSession.isAuthenticated
+    : storedIsAuthenticated;
   const guestAllowed = allowedViewers.includes(viewerRoles.guest);
 
   if (!isAuthenticated && !guestAllowed) {

@@ -6,7 +6,7 @@ from apps.orders.models import Order, OrderItem
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ("line_total",)
+    readonly_fields = ("line_total", "product_snapshot")
 
 
 @admin.register(Order)
@@ -27,5 +27,13 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ("order", "product_name", "quantity", "unit_price", "line_total")
-    search_fields = ("order__user__username", "product_name")
+    list_display = (
+        "order",
+        "product_sku",
+        "product_name",
+        "quantity",
+        "unit_price",
+        "line_total",
+    )
+    search_fields = ("order__user__username", "product_sku", "product_name")
+    readonly_fields = ("product_snapshot",)

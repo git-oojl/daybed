@@ -138,6 +138,7 @@ Regla práctica: la vista maneja formulario, loading, errores y navegación; `sr
 ## Integración con backend
 
 - La API base local es `http://localhost:8000/api`.
+- Antes de integrar vistas contra datos reales, el backend local debe tener migraciones y semillas cargadas: `uv run python manage.py migrate` y `uv run python manage.py seed_demo` desde `/backend`.
 - El login usa JWT en `/api/auth/token/`.
 - El login usa `email` y `password`.
 - La respuesta de login incluye `access`, `refresh` y `user`.
@@ -155,6 +156,9 @@ Authorization: Bearer <ACCESS_TOKEN>
   - `/api/delivery/geocode/`
   - `/api/delivery/estimate/`
   - `/api/checkout/`
+- Productos siguen usando `id` como identificador para carrito (`product_id`). El backend también devuelve `sku`, dimensiones estructuradas (`width_cm`, `height_cm`, `depth_cm`, `length_cm`, `diameter_cm`, `weight_kg`) y `specifications` para mostrar fichas técnicas y filtros sin romper vistas existentes.
+- No usar un campo libre `dimensions`; la API activa usa campos numéricos y `structured_dimensions`.
+- Los items de pedido devuelven `product_sku` y `product_snapshot` para mostrar el producto comprado aunque el catálogo cambie después.
 
 Ejemplo de login desde una vista:
 
@@ -214,3 +218,25 @@ docs/FRONTEND_VIEWS.md
 ```
 
 El helper de preview es solo para desarrollo y está protegido por `import.meta.env.DEV`, por lo que no debe aparecer en builds de producción.
+
+### Dev preview y backend activo
+
+`/dev/preview` sigue funcionando aunque el backend esté apagado. El Dev Switcher revisa automáticamente `/api/health/` y muestra si el backend está activo o no.
+
+Reglas de seguridad del preview:
+
+- El toggle `Normal` / `Preview` cambia entre rutas reales y `/dev/preview`.
+- `Modo normal` usa la sesión real guardada, envía el bearer token real y navega por las rutas reales.
+- `Modo preview` usa una sesión simulada local para revisar vista/layout/acceso.
+- La opción "Simular como" solo se usa en preview.
+- Al cambiar a una vista restringida en preview, el switcher elige automáticamente un perfil simulado con acceso.
+- El texto `Backend activo` / `Backend no disponible` muestra si `/api/health/` responde; al pasar el cursor o enfocar se ven los checks del health check y del modo que aplica para ese estado.
+- La sesión simulada no se guarda en `localStorage`.
+- El preview no envía el bearer token real al backend.
+- Desde `/dev/preview`, el cliente API bloquea requests de escritura (`POST`, `PATCH`, `PUT`, `DELETE`) para evitar crear sesiones, pedidos o cambios reales por accidente.
+- Para probar login real, checkout real o acciones contra backend, usar las rutas reales, no `/dev/preview`.
+
+Uso recomendado:
+
+- Usar `/dev/preview` para revisar visualmente estados de acceso, layouts y vistas.
+- Usar rutas reales con usuarios semilla para probar integración backend completa.

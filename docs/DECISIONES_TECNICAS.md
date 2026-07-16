@@ -63,6 +63,18 @@ Reglas principales:
 - Los movimientos de inventario son append-only.
 - Los productos deben desactivarse en lugar de borrarse físicamente.
 
+## Modelo de catálogo de muebles
+
+- `Product` es el item comprable/SKU del MVP. Precio, stock, mínimo de stock, color, material, estilo, dimensiones e imágenes siguen viviendo en producto.
+- Se agrega `sku` a producto para identificar claramente el item comprado e inventariado.
+- Se usan dimensiones estructuradas opcionales (`width_cm`, `height_cm`, `depth_cm`, `length_cm`, `diameter_cm`, `weight_kg`) como única fuente activa de dimensiones.
+- Se elimina el campo textual libre `dimensions` para evitar datos duplicados o contradictorios. La migración preserva valores antiguos no vacíos en `Product.specifications._legacy_dimensions_text` solo como respaldo local.
+- Se usa `Product.specifications` como JSON simple para especificaciones de categoría que no justifican columnas permanentes.
+- Se usa `Category.specification_schema` como JSON ligero para documentar specs esperadas y marcar cuáles pueden filtrarse.
+- Se evita EAV porque aumenta complejidad de modelos, serializers, consultas, admin y pruebas sin necesidad concreta para el catálogo pequeño del MVP.
+- Se difiere `ProductVariant`. Si una configuración tiene precio, stock, dimensiones, imágenes o inventario distinto, se registra como otro `Product` por ahora.
+- `OrderItem` guarda `product_sku` y `product_snapshot` para conservar historial aunque el producto cambie después.
+
 ## APIs externas
 
 - El frontend no llama APIs externas de geocodificación o rutas.

@@ -383,6 +383,18 @@ export function getPreviewLayout(layoutId) {
   );
 }
 
+export function getAllowedPreviewViewer(view, preferredViewerId) {
+  if (canPreviewViewer(view, preferredViewerId)) {
+    return getPreviewViewer(preferredViewerId);
+  }
+
+  const firstAllowedViewer = previewViewers.find((viewer) =>
+    canPreviewViewer(view, viewer.id),
+  );
+
+  return firstAllowedViewer ?? previewViewers[0];
+}
+
 export function canPreviewLayout(view, layoutId) {
   return view.allowedLayouts.includes(layoutId);
 }

@@ -61,6 +61,7 @@ def test_employee_can_list_inventory_products():
 
     assert response.status_code == 200
     assert response.data["results"][0]["id"] == product.id
+    assert response.data["results"][0]["sku"] == product.sku
     assert response.data["results"][0]["stock"] == 7
     assert response.data["results"][0]["low_stock"] is False
 
@@ -165,6 +166,7 @@ def test_employee_can_list_inventory_movements():
 
     assert response.status_code == 200
     assert response.data["results"][0]["product"] == product.id
+    assert response.data["results"][0]["product_sku"] == product.sku
     assert response.data["results"][0]["product_name"] == product.name
     assert response.data["results"][0]["quantity_delta"] == 4
     assert response.data["results"][0]["reason"] == "cycle count"

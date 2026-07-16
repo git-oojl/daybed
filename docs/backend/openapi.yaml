@@ -751,9 +751,53 @@ paths:
         schema:
           type: string
       - in: query
+        name: in_stock
+        schema:
+          type: boolean
+      - in: query
         name: material
         schema:
           type: string
+      - in: query
+        name: max_depth_cm
+        schema:
+          type: number
+      - in: query
+        name: max_height_cm
+        schema:
+          type: number
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: max_weight_kg
+        schema:
+          type: number
+      - in: query
+        name: max_width_cm
+        schema:
+          type: number
+      - in: query
+        name: min_depth_cm
+        schema:
+          type: number
+      - in: query
+        name: min_height_cm
+        schema:
+          type: number
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: min_weight_kg
+        schema:
+          type: number
+      - in: query
+        name: min_width_cm
+        schema:
+          type: number
       - name: ordering
         required: false
         in: query
@@ -929,9 +973,53 @@ paths:
         schema:
           type: string
       - in: query
+        name: in_stock
+        schema:
+          type: boolean
+      - in: query
         name: material
         schema:
           type: string
+      - in: query
+        name: max_depth_cm
+        schema:
+          type: number
+      - in: query
+        name: max_height_cm
+        schema:
+          type: number
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: max_weight_kg
+        schema:
+          type: number
+      - in: query
+        name: max_width_cm
+        schema:
+          type: number
+      - in: query
+        name: min_depth_cm
+        schema:
+          type: number
+      - in: query
+        name: min_height_cm
+        schema:
+          type: number
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - in: query
+        name: min_weight_kg
+        schema:
+          type: number
+      - in: query
+        name: min_width_cm
+        schema:
+          type: number
       - name: ordering
         required: false
         in: query
@@ -1619,6 +1707,7 @@ components:
           pattern: ^[-a-zA-Z0-9_]+$
         description:
           type: string
+        specification_schema: {}
         active:
           type: boolean
         created_at:
@@ -1961,6 +2050,9 @@ components:
         product:
           type: integer
           readOnly: true
+        product_sku:
+          type: string
+          readOnly: true
         product_name:
           type: string
           readOnly: true
@@ -2006,6 +2098,7 @@ components:
       - previous_stock
       - product
       - product_name
+      - product_sku
       - quantity_delta
       - reason
     InventoryProduct:
@@ -2014,6 +2107,10 @@ components:
         id:
           type: integer
           readOnly: true
+        sku:
+          type: string
+          readOnly: true
+          nullable: true
         name:
           type: string
           readOnly: true
@@ -2048,6 +2145,7 @@ components:
       - low_stock
       - minimum_stock
       - name
+      - sku
       - stock
       - updated_at
     LoginToken:
@@ -2187,6 +2285,9 @@ components:
         product:
           type: integer
           readOnly: true
+        product_sku:
+          type: string
+          readOnly: true
         product_name:
           type: string
           readOnly: true
@@ -2203,11 +2304,15 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           readOnly: true
+        product_snapshot:
+          readOnly: true
       required:
       - id
       - line_total
       - product
       - product_name
+      - product_sku
+      - product_snapshot
       - quantity
       - unit_price
     OrderStatus:
@@ -2407,6 +2512,7 @@ components:
           pattern: ^[-a-zA-Z0-9_]+$
         description:
           type: string
+        specification_schema: {}
         active:
           type: boolean
         created_at:
@@ -2494,6 +2600,10 @@ components:
         id:
           type: integer
           readOnly: true
+        sku:
+          type: string
+          nullable: true
+          maxLength: 64
         name:
           type: string
           maxLength: 180
@@ -2518,9 +2628,41 @@ components:
         style:
           type: string
           maxLength: 80
-        dimensions:
+        width_cm:
           type: string
-          maxLength: 160
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        height_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        depth_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        length_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        diameter_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        weight_kg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        structured_dimensions:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        specifications: {}
         main_image:
           type: string
           format: uri
@@ -2612,6 +2754,10 @@ components:
         id:
           type: integer
           readOnly: true
+        sku:
+          type: string
+          nullable: true
+          maxLength: 64
         name:
           type: string
           maxLength: 180
@@ -2636,9 +2782,41 @@ components:
         style:
           type: string
           maxLength: 80
-        dimensions:
+        width_cm:
           type: string
-          maxLength: 160
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        height_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        depth_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        length_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        diameter_cm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        weight_kg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          nullable: true
+        structured_dimensions:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        specifications: {}
         main_image:
           type: string
           format: uri
@@ -2680,6 +2858,7 @@ components:
       - low_stock
       - name
       - price
+      - structured_dimensions
       - updated_at
     ProductImage:
       type: object

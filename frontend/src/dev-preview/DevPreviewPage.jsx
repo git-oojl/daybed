@@ -3,9 +3,9 @@ import PreviewSessionProvider from "./PreviewSessionProvider.jsx";
 import {
   canPreviewLayout,
   canPreviewViewer,
+  getAllowedPreviewViewer,
   getPreviewLayout,
   getPreviewView,
-  getPreviewViewer,
   previewLayouts,
   previewViewers,
 } from "./viewPreviewRegistry.jsx";
@@ -17,9 +17,9 @@ function DevPreviewPage() {
   const viewerId = searchParams.get("viewer");
   const view = getPreviewView(viewId);
   const layout = getPreviewLayout(layoutId ?? view.defaultLayout);
-  const viewer = getPreviewViewer(viewerId);
+  const viewer = getAllowedPreviewViewer(view, viewerId);
 
-  if (!viewId || !layoutId || !viewerId) {
+  if (!viewId || !layoutId || viewerId !== viewer.id) {
     return (
       <Navigate
         replace
