@@ -171,13 +171,13 @@ El producto ahora también puede traer dimensiones estructuradas y `specificatio
 
 ## 18. Qué pasa con `/dev/preview` cuando el backend está activo?
 
-Sigue existiendo y es seguro usarlo. El preview detecta `/api/health/` y muestra si el backend está activo, pero la sesión del selector "Simular como" es local y no se guarda.
+Sigue existiendo y es seguro usarlo. El Dev Switcher detecta `/api/health/` y muestra si el backend está activo. Si el backend responde, el flujo normal es usar `Modo normal`; si no responde, se puede usar `Modo preview` para revisar vistas con estado simulado.
 
-El panel muestra `Backend activo` o `Backend no disponible`; al pasar el cursor o enfocar esa zona se ven los checks del health check y del modo seguro. El botón `Modo normal` sale del preview y vuelve a la ruta real usando la sesión real del sitio.
+El panel muestra `Backend activo` o `Backend no disponible`; al pasar el cursor o enfocar esa zona se ven los checks del health check y del modo que aplica para ese estado. El toggle `Normal` / `Preview` cambia entre rutas reales y `/dev/preview`.
 
 Regla práctica:
 
-- `/dev/preview`: revisar vistas, layouts y permisos simulados.
-- Rutas reales: probar login, carrito, checkout y cambios contra backend.
+- `Modo normal`: usa rutas reales, sesión real guardada, token real y backend real.
+- `Modo preview`: usa `/dev/preview`, sesión simulada local, layout/perfil simulados y no guarda login real. Si la vista elegida requiere acceso, el switcher cambia automáticamente a un perfil simulado permitido.
 
 Desde `/dev/preview` no se envía el token real y se bloquean requests de escritura para evitar cambios accidentales en la base local.

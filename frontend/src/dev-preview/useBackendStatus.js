@@ -13,6 +13,11 @@ const initialStatus = {
       status: "pending",
       detail: "Esperando respuesta del backend.",
     },
+    {
+      label: "Modo",
+      status: "pending",
+      detail: "El switcher espera el health check para marcar el default.",
+    },
   ],
 };
 
@@ -46,9 +51,9 @@ export function useBackendStatus() {
               detail: `${healthUrl} respondió correctamente.`,
             },
             {
-              label: "Modo preview",
+              label: "Modo normal",
               status: "safe",
-              detail: "No envía tokens reales ni permite escrituras.",
+              detail: "Backend activo: las rutas reales usan sesión y tokens reales.",
             },
           ],
         });
@@ -70,7 +75,7 @@ export function useBackendStatus() {
             {
               label: "Modo preview",
               status: "safe",
-              detail: "Puedes revisar vistas sin backend.",
+              detail: "Backend no disponible: el preview usa sesión simulada.",
             },
           ],
         });

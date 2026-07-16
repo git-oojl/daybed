@@ -13,12 +13,12 @@ import {
   IconButton,
 } from "@mui/material";
 import {
-  Email as EmailIcon,
-  Lock as LockIcon,
-  Visibility,
-  VisibilityOff,
-  Storefront as StoreIcon,
-} from "@mui/icons-material";
+  FaEnvelope as EmailIcon,
+  FaEye as Visibility,
+  FaEyeSlash as VisibilityOff,
+  FaLock as LockIcon,
+  FaStore as StoreIcon,
+} from "react-icons/fa";
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/login-page.css";
 import loginBackground from "../../assets/LoginPage.jpg";
@@ -487,7 +487,7 @@ function LoginPage() {
               startAdornment: (
                 <InputAdornment position="start">
                   <EmailIcon
-                    sx={{ color: showEmailError ? "#C0392B" : "#61470c" }}
+                    style={{ color: showEmailError ? "#C0392B" : "#61470c" }}
                   />
                 </InputAdornment>
               ),
@@ -516,7 +516,9 @@ function LoginPage() {
               startAdornment: (
                 <InputAdornment position="start">
                   <LockIcon
-                    sx={{ color: showPasswordError ? "#C0392B" : "#61470c" }}
+                    style={{
+                      color: showPasswordError ? "#C0392B" : "#61470c",
+                    }}
                   />
                 </InputAdornment>
               ),

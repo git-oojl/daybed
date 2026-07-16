@@ -5,6 +5,7 @@ import { useBackendStatus } from "./useBackendStatus.js";
 import {
   canPreviewLayout,
   canPreviewViewer,
+  getAllowedPreviewViewer,
   getPreviewLayout,
   getPreviewView,
   getPreviewViewer,
@@ -28,6 +29,7 @@ function DevViewSwitcher() {
   );
   const activeViewer = getPreviewViewer(searchParams.get("viewer"));
   const isPreviewRoute = location.pathname === "/dev/preview";
+  const currentMode = isPreviewRoute ? "preview" : "normal";
   const isLayoutAllowed = canPreviewLayout(activeView, activeLayout.id);
   const isViewerAllowed = canPreviewViewer(activeView, activeViewer.id);
   const isAllowed = isLayoutAllowed && isViewerAllowed;
@@ -55,13 +57,44 @@ function DevViewSwitcher() {
     );
   }
 
-  function goToRealRoute() {
-    navigate(activeView.path, { replace: true });
+  function goToAllowedPreview(
+    nextView = activeView,
+    nextLayoutId = activeLayout.id,
+    nextViewerId = activeViewer.id,
+  ) {
+    goToPreview(
+      nextView.id,
+      nextLayoutId,
+      getAllowedPreviewViewer(nextView, nextViewerId).id,
+    );
+  }
+
+  function goToRealRoute(view = activeView) {
+    navigate(view.path, { replace: true });
+  }
+
+  function handleModeChange(nextMode) {
+    if (nextMode === currentMode) {
+      return;
+    }
+
+    if (nextMode === "preview") {
+      goToAllowedPreview();
+      return;
+    }
+
+    goToRealRoute();
   }
 
   function handleViewChange(event) {
     const nextView = getPreviewView(event.target.value);
-    goToPreview(nextView.id, nextView.defaultLayout, activeViewer.id);
+
+    if (isPreviewRoute) {
+      goToAllowedPreview(nextView, nextView.defaultLayout, activeViewer.id);
+      return;
+    }
+
+    goToRealRoute(nextView);
   }
 
   function handleLayoutChange(event) {
@@ -93,7 +126,7 @@ function DevViewSwitcher() {
       <div className="dev-view-switcher__header">
         <div>
           <strong>Dev preview</strong>
-          <span>Vistas + layouts + acceso</span>
+          <span>Modo + vistas + acceso</span>
         </div>
         <button
           aria-label="Cerrar navegador de vistas"
@@ -103,6 +136,48 @@ function DevViewSwitcher() {
           ×
         </button>
       </div>
+
+      <section className="dev-view-switcher__mode" aria-label="Modo de trabajo">
+        <div className="dev-view-switcher__mode-heading">
+          <span>Modo actual</span>
+          <strong>
+            {currentMode === "normal" ? "Modo normal" : "Modo preview"}
+          </strong>
+        </div>
+
+        <div className="dev-view-switcher__mode-toggle" role="group">
+          <button
+            aria-pressed={currentMode === "normal"}
+            className={
+              currentMode === "normal"
+                ? "dev-view-switcher__mode-option dev-view-switcher__mode-option--active"
+                : "dev-view-switcher__mode-option"
+            }
+            type="button"
+            onClick={() => handleModeChange("normal")}
+          >
+            <strong>Normal</strong>
+            <small>Sesión real</small>
+          </button>
+          <button
+            aria-pressed={currentMode === "preview"}
+            className={
+              currentMode === "preview"
+                ? "dev-view-switcher__mode-option dev-view-switcher__mode-option--active"
+                : "dev-view-switcher__mode-option"
+            }
+            type="button"
+            onClick={() => handleModeChange("preview")}
+          >
+            <strong>Preview</strong>
+            <small>Sesión simulada</small>
+          </button>
+        </div>
+
+        <p className="dev-view-switcher__mode-copy">
+          {getModeMessage(currentMode)}
+        </p>
+      </section>
 
       <label className="dev-view-switcher__field">
         <span>Vista</span>
@@ -120,8 +195,12 @@ function DevViewSwitcher() {
       </label>
 
       <label className="dev-view-switcher__field">
-        <span>Layout</span>
-        <select value={activeLayout.id} onChange={handleLayoutChange}>
+        <span>Layout de preview</span>
+        <select
+          value={activeLayout.id}
+          onChange={handleLayoutChange}
+          disabled={!isPreviewRoute}
+        >
           {previewLayouts.map((layout) => {
             const layoutIsAllowed = canPreviewLayout(activeView, layout.id);
 
@@ -136,7 +215,11 @@ function DevViewSwitcher() {
 
       <label className="dev-view-switcher__field">
         <span>Simular como</span>
-        <select value={activeViewer.id} onChange={handleViewerChange}>
+        <select
+          value={activeViewer.id}
+          onChange={handleViewerChange}
+          disabled={!isPreviewRoute}
+        >
           {previewViewers.map((viewer) => {
             const viewerIsAllowed = canPreviewViewer(activeView, viewer.id);
 
@@ -194,27 +277,20 @@ function DevViewSwitcher() {
         </span>
       </div>
 
-      <div className="dev-view-switcher__actions">
-        <button type="button" onClick={() => goToPreview()}>
-          Ver preview
-        </button>
-        <button type="button" onClick={goToRealRoute}>
-          Modo normal
-        </button>
-      </div>
-
-      <p className="dev-view-switcher__hint">
-        {isPreviewRoute
-          ? "Modo normal sale de /dev/preview y vuelve a respetar la sesión real del sitio."
-          : "Cambia una opción para abrir /dev/preview sin tocar las rutas reales."}
-      </p>
-
       <div className="dev-view-switcher__file">
         <span>Archivo de la vista</span>
         <code>{activeView.filePath}</code>
       </div>
     </aside>
   );
+}
+
+function getModeMessage(currentMode) {
+  if (currentMode === "normal") {
+    return "Usa la sesión real guardada, envía el token real y navega por las rutas reales.";
+  }
+
+  return "Usa una sesión simulada local, no guarda login real, no envía token real y bloquea escrituras.";
 }
 
 function getStatusMessage({ isAllowed, isLayoutAllowed, isViewerAllowed }) {

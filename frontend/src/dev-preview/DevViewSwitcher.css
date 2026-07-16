@@ -44,8 +44,7 @@
 
 .dev-view-switcher__header strong,
 .dev-view-switcher__header span,
-.dev-view-switcher__field span,
-.dev-view-switcher__hint {
+.dev-view-switcher__field span {
   display: block;
 }
 
@@ -55,8 +54,7 @@
 }
 
 .dev-view-switcher__header span,
-.dev-view-switcher__field span,
-.dev-view-switcher__hint {
+.dev-view-switcher__field span {
   color: #cbd5e1;
   font-size: 0.78rem;
 }
@@ -69,6 +67,86 @@
   background: rgb(255 255 255 / 8%);
   border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 999px;
+}
+
+.dev-view-switcher__mode {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+  background: rgb(15 23 42 / 72%);
+  border: 1px solid rgb(125 211 252 / 35%);
+  border-radius: 10px;
+}
+
+.dev-view-switcher__mode-heading {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.dev-view-switcher__mode-heading span {
+  color: #bae6fd;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dev-view-switcher__mode-heading strong {
+  font-size: 0.78rem;
+}
+
+.dev-view-switcher__mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.dev-view-switcher__mode-option {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  color: #cbd5e1;
+  cursor: pointer;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 8px;
+}
+
+.dev-view-switcher__mode-option strong,
+.dev-view-switcher__mode-option small {
+  display: block;
+}
+
+.dev-view-switcher__mode-option strong {
+  font-size: 0.8rem;
+}
+
+.dev-view-switcher__mode-option small {
+  font-size: 0.68rem;
+  opacity: 0.82;
+}
+
+.dev-view-switcher__mode-option--active {
+  color: #082f49;
+  background: #bae6fd;
+  border-color: #7dd3fc;
+}
+
+.dev-view-switcher__mode-option:hover {
+  background: rgb(56 189 248 / 30%);
+}
+
+.dev-view-switcher__mode-option--active:hover {
+  background: #e0f2fe;
+}
+
+.dev-view-switcher__mode-copy {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 0.74rem;
+  line-height: 1.35;
 }
 
 .dev-view-switcher__field {
@@ -84,6 +162,12 @@
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 9px;
+}
+
+.dev-view-switcher__field select:disabled {
+  color: #64748b;
+  cursor: not-allowed;
+  background: #cbd5e1;
 }
 
 .dev-view-switcher__status {
@@ -121,11 +205,6 @@
 .dev-view-switcher__toggle:hover,
 .dev-view-switcher__header button:hover {
   background: rgb(56 189 248 / 30%);
-}
-
-.dev-view-switcher__hint {
-  margin: 10px 0 0;
-  line-height: 1.35;
 }
 
 .dev-view-switcher__meta {
