@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -14,7 +13,6 @@ import {
   FaBoxOpen,
   FaTags,
   FaUserTie,
-  FaEye,
 } from "react-icons/fa";
 
 export default function DashboardPage() {

@@ -1,43 +1,64 @@
+import { backendRoles, viewerRoles } from "./roleMapping.js";
+
 export const previewViewers = [
   {
-    id: "guest",
+    id: viewerRoles.guest,
     label: "Invitado",
     description: "Sin sesión iniciada",
+    backendRole: null,
     isAuthenticated: false,
     roles: [],
   },
   {
-    id: "customer",
+    id: viewerRoles.customer,
     label: "Cliente",
     description: "Cliente con sesión iniciada",
+    backendRole: backendRoles.customer,
     isAuthenticated: true,
-    roles: ["customer"],
+    roles: [viewerRoles.customer],
   },
   {
-    id: "employee",
+    id: viewerRoles.employee,
     label: "Empleado interno",
     description: "Usuario interno sin permisos administrativos completos",
+    backendRole: backendRoles.employee,
     isAuthenticated: true,
-    roles: ["employee"],
+    roles: [viewerRoles.employee],
   },
   {
-    id: "admin",
+    id: viewerRoles.admin,
     label: "Administrador",
     description: "Usuario interno con permisos administrativos",
+    backendRole: backendRoles.admin,
     isAuthenticated: true,
-    roles: ["admin"],
+    roles: [viewerRoles.admin],
   },
 ];
 
 export const accessGroups = {
-  all: ["guest", "customer", "employee", "admin"],
-  guestOnly: ["guest"],
-  publicStore: ["guest", "customer", "employee", "admin"],
-  customerAccount: ["customer", "admin"],
-  checkout: ["guest", "customer", "admin"],
-  backOffice: ["employee", "admin"],
-  adminOnly: ["admin"],
-  support: ["guest", "customer", "employee", "admin"],
+  all: [
+    viewerRoles.guest,
+    viewerRoles.customer,
+    viewerRoles.employee,
+    viewerRoles.admin,
+  ],
+  guestOnly: [viewerRoles.guest],
+  publicStore: [
+    viewerRoles.guest,
+    viewerRoles.customer,
+    viewerRoles.employee,
+    viewerRoles.admin,
+  ],
+  customerAccount: [viewerRoles.customer],
+  checkout: [viewerRoles.customer],
+  backOffice: [viewerRoles.employee, viewerRoles.admin],
+  adminOnly: [viewerRoles.admin],
+  support: [
+    viewerRoles.guest,
+    viewerRoles.customer,
+    viewerRoles.employee,
+    viewerRoles.admin,
+  ],
 };
 
 export function getPreviewViewer(viewerId) {

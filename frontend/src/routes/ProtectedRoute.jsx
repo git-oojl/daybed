@@ -1,16 +1,33 @@
+import { Navigate, useLocation } from "react-router-dom";
+
+import { useAuthStore } from "../auth/authStore.js";
+import { viewerRoles } from "../auth/roleMapping.js";
+import { accessGroups } from "../auth/viewerAccess.js";
+import { routePaths } from "./routePaths.js";
+
 function ProtectedRoute({
   children,
-  allowedViewers = [],
+  allowedViewers = accessGroups.all,
   redirectTo = "/no-autorizado",
 }) {
-  const guardConfig = {
-    allowedViewers,
-    redirectTo,
-  };
+  const location = useLocation();
+  const viewerId = useAuthStore((state) => state.viewerId);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const guestAllowed = allowedViewers.includes(viewerRoles.guest);
 
-  // TODO: Connect this placeholder to real auth/session state when backend auth exists.
-  // The guard config is intentionally declared now so route-level access expectations stay visible.
-  void guardConfig;
+  if (!isAuthenticated && !guestAllowed) {
+    return (
+      <Navigate
+        to={routePaths.account.login}
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
+  if (!allowedViewers.includes(viewerId)) {
+    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+  }
 
   return children;
 }
