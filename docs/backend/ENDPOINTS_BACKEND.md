@@ -137,7 +137,46 @@ Perfil propio:
 
 En productos, `DELETE` realiza desactivación lógica (`active=false`).
 
-La gestión de productos rechaza precios negativos.
+La gestión de productos rechaza precios y dimensiones negativas.
+
+Producto incluye campos clásicos y dimensiones estructuradas. No existe un campo libre `dimensions`; usar los campos numéricos y `structured_dimensions`:
+
+```json
+{
+  "id": 1,
+  "sku": "DAY-SOFA-ROB-001",
+  "name": "Daybed Roble Nórdico",
+  "description": "Sofá cama de roble con cojines claros.",
+  "price": "12499.00",
+  "category": 1,
+  "material": "Roble",
+  "color": "Natural",
+  "style": "Nórdico",
+  "width_cm": "200.00",
+  "height_cm": "80.00",
+  "depth_cm": "90.00",
+  "length_cm": null,
+  "diameter_cm": null,
+  "weight_kg": "48.50",
+  "structured_dimensions": {
+    "width_cm": "200.00",
+    "height_cm": "80.00",
+    "depth_cm": "90.00",
+    "length_cm": null,
+    "diameter_cm": null,
+    "weight_kg": "48.50"
+  },
+  "specifications": {
+    "upholstery_material": "algodón",
+    "assembly_required": false,
+    "features": ["convertible", "cojines incluidos"]
+  },
+  "stock": 8,
+  "minimum_stock": 2,
+  "low_stock": false,
+  "active": true
+}
+```
 
 Filtros disponibles en productos públicos:
 
@@ -146,13 +185,26 @@ Filtros disponibles en productos públicos:
 - `material`
 - `color`
 - `style`
+- `min_price`
+- `max_price`
+- `in_stock`
+- `min_width_cm`
+- `max_width_cm`
+- `min_height_cm`
+- `max_height_cm`
+- `min_depth_cm`
+- `max_depth_cm`
+- `min_weight_kg`
+- `max_weight_kg`
+- `spec.<key>` solo si también se envía `category` o `category__slug`
+- `spec.<key>` solo para keys con `filterable=true` y tipo `text`, `number` o `boolean` en `Category.specification_schema`
 - `search`
 - `ordering`
 
 Ejemplo:
 
 ```text
-/api/catalog/products/?search=sillon&ordering=price
+/api/catalog/products/?category__slug=sofas-cama&min_price=5000&max_price=15000&in_stock=true&spec.assembly_required=false&ordering=price
 ```
 
 ## Cart
@@ -250,6 +302,39 @@ Validaciones de checkout:
 - `longitude` debe estar entre `-180` y `180`.
 - `distance_km`, `estimated_duration_minutes` y `delivery_fee` no pueden ser negativos.
 - El carrito no puede contener productos inactivos ni productos de categorías inactivas.
+
+Los items del pedido incluyen snapshot del producto para conservar historial aunque el catálogo cambie:
+
+```json
+{
+  "id": 1,
+  "product": 1,
+  "product_sku": "DAY-SOFA-ROB-001",
+  "product_name": "Daybed Roble Nórdico",
+  "unit_price": "12499.00",
+  "quantity": 1,
+  "line_total": "12499.00",
+  "product_snapshot": {
+    "sku": "DAY-SOFA-ROB-001",
+    "name": "Daybed Roble Nórdico",
+    "material": "Roble",
+    "color": "Natural",
+    "style": "Nórdico",
+    "structured_dimensions": {
+      "width_cm": "200.00",
+      "height_cm": "80.00",
+      "depth_cm": "90.00",
+      "length_cm": null,
+      "diameter_cm": null,
+      "weight_kg": "48.50"
+    },
+    "specifications": {
+      "upholstery_material": "algodón",
+      "assembly_required": false
+    }
+  }
+}
+```
 
 Actualizar estado:
 

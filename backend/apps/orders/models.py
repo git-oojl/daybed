@@ -141,10 +141,12 @@ class OrderItem(models.Model):
         on_delete=models.PROTECT,
         related_name="order_items",
     )
+    product_sku = models.CharField(max_length=64, blank=True)
     product_name = models.CharField(max_length=180)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
     line_total = models.DecimalField(max_digits=10, decimal_places=2)
+    product_snapshot = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ("id",)
@@ -156,11 +158,28 @@ class OrderItem(models.Model):
         return cls(
             order=order,
             product=cart_item.product,
+            product_sku=cart_item.product.sku or "",
             product_name=cart_item.product.name,
             unit_price=unit_price,
             quantity=quantity,
             line_total=unit_price * Decimal(quantity),
+            product_snapshot=cls.snapshot_from_product(cart_item.product),
         )
+
+    @staticmethod
+    def snapshot_from_product(product):
+        return {
+            "sku": product.sku,
+            "name": product.name,
+            "material": product.material,
+            "color": product.color,
+            "style": product.style,
+            "structured_dimensions": {
+                key: str(value) if value is not None else None
+                for key, value in product.structured_dimensions.items()
+            },
+            "specifications": product.specifications,
+        }
 
     def __str__(self):
         return f"{self.quantity} x {self.product_name}"

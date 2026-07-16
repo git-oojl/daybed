@@ -40,7 +40,6 @@ def create_product(name="Daybed Sofa", category=None, active=True, **overrides):
         "material": "wood",
         "color": "green",
         "style": "modern",
-        "dimensions": "200 x 90 x 80 cm",
         "stock": 5,
         "minimum_stock": 2,
         "active": active,
@@ -72,15 +71,46 @@ def test_public_product_detail_hides_inactive_products():
 
 
 def test_public_products_support_search_and_filters():
-    category = create_category("Chairs")
+    category = Category.objects.create(
+        name="Chairs",
+        description="Living room",
+        active=True,
+        specification_schema=[
+            {
+                "key": "shape",
+                "label": "Shape",
+                "type": "text",
+                "filterable": True,
+            },
+            {
+                "key": "assembly_required",
+                "label": "Assembly required",
+                "type": "boolean",
+                "filterable": True,
+            },
+        ],
+    )
     expected = create_product(
         "Oak chair",
         category=category,
         material="oak",
         color="blue",
         style="classic",
+        price=Decimal("900.00"),
+        stock=3,
+        width_cm=Decimal("80.00"),
+        specifications={"shape": "rectangular", "assembly_required": False},
     )
-    create_product("Pine table", material="pine", color="brown", style="rustic")
+    create_product(
+        "Pine table",
+        material="pine",
+        color="brown",
+        style="rustic",
+        price=Decimal("1500.00"),
+        stock=0,
+        width_cm=Decimal("120.00"),
+        specifications={"shape": "round", "assembly_required": True},
+    )
 
     response = api_client().get(
         reverse("catalog-product-list"),
@@ -90,6 +120,13 @@ def test_public_products_support_search_and_filters():
             "material": "oak",
             "color": "blue",
             "style": "classic",
+            "min_price": "800.00",
+            "max_price": "1000.00",
+            "in_stock": "true",
+            "min_width_cm": "70",
+            "max_width_cm": "90",
+            "spec.shape": "rectangular",
+            "spec.assembly_required": "false",
         },
     )
 
@@ -98,12 +135,64 @@ def test_public_products_support_search_and_filters():
 
 
 def test_product_serializer_exposes_low_stock_flag():
-    product = create_product(stock=2, minimum_stock=2)
+    product = create_product(
+        stock=2,
+        minimum_stock=2,
+        width_cm=Decimal("200.00"),
+        height_cm=Decimal("80.00"),
+        specifications={"assembly_required": False},
+    )
 
     response = api_client().get(reverse("catalog-product-detail", args=[product.id]))
 
     assert response.status_code == 200
+    assert response.data["sku"] == product.sku
     assert response.data["low_stock"] is True
+    assert response.data["width_cm"] == "200.00"
+    assert response.data["structured_dimensions"]["height_cm"] == "80.00"
+    assert response.data["specifications"] == {"assembly_required": False}
+
+
+def test_product_auto_generates_sku_when_missing():
+    product = create_product()
+
+    assert product.sku == f"DAY-{product.id:05d}"
+
+
+def test_staff_product_management_accepts_structured_product_data():
+    employee = create_user("empleado_structured_product", User.Roles.EMPLOYEE)
+    category = create_category()
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Structured sofa",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "sku": "TEST-SOFA-001",
+            "material": "linen",
+            "color": "gray",
+            "style": "minimal",
+            "width_cm": "180.00",
+            "height_cm": "75.00",
+            "depth_cm": "80.00",
+            "weight_kg": "35.50",
+            "specifications": {
+                "upholstery_material": "linen",
+                "assembly_required": True,
+            },
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["sku"] == "TEST-SOFA-001"
+    assert response.data["depth_cm"] == "80.00"
+    assert Product.objects.filter(sku="TEST-SOFA-001", active=True).exists()
 
 
 def test_customer_cannot_use_staff_product_management():
@@ -137,7 +226,6 @@ def test_employee_can_create_product():
             "material": "linen",
             "color": "gray",
             "style": "minimal",
-            "dimensions": "180 x 80 x 75 cm",
             "stock": 10,
             "minimum_stock": 3,
             "active": True,
@@ -166,6 +254,123 @@ def test_staff_product_management_rejects_negative_price():
 
     assert response.status_code == 400
     assert "precio" in str(response.data).lower()
+
+
+def test_staff_product_management_rejects_negative_dimensions():
+    employee = create_user("empleado_negative_dimensions", User.Roles.EMPLOYEE)
+    category = create_category()
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Invalid dimension sofa",
+            "description": "Invalid",
+            "price": "100.00",
+            "category": category.id,
+            "width_cm": "-1.00",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "width_cm" in response.data
+
+
+def test_category_schema_rejects_invalid_payload():
+    employee = create_user("empleado_invalid_schema", User.Roles.EMPLOYEE)
+
+    response = api_client(employee).post(
+        reverse("staff-category-list"),
+        {
+            "name": "Invalid schema",
+            "description": "Invalid",
+            "specification_schema": [{"key": "shape", "type": "invalid"}],
+            "active": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "specification_schema" in response.data
+
+
+def test_spec_filter_rejects_non_filterable_keys():
+    category = Category.objects.create(
+        name="Tables",
+        active=True,
+        specification_schema=[
+            {"key": "shape", "label": "Shape", "type": "text", "filterable": True},
+            {
+                "key": "features",
+                "label": "Features",
+                "type": "list",
+                "filterable": False,
+            },
+        ],
+    )
+    create_product(
+        "Filter table",
+        category=category,
+        specifications={"shape": "round", "features": ["storage"]},
+    )
+
+    response = api_client().get(
+        reverse("catalog-product-list"),
+        {"category__slug": category.slug, "spec.features": "storage"},
+    )
+
+    assert response.status_code == 400
+    assert "features" in str(response.data)
+
+
+def test_spec_filter_requires_category_context():
+    category = Category.objects.create(
+        name="Beds",
+        active=True,
+        specification_schema=[
+            {"key": "shape", "label": "Shape", "type": "text", "filterable": True},
+        ],
+    )
+    create_product("Filter bed", category=category, specifications={"shape": "square"})
+
+    response = api_client().get(
+        reverse("catalog-product-list"),
+        {"spec.shape": "square"},
+    )
+
+    assert response.status_code == 400
+    assert "category" in str(response.data)
+
+
+def test_spec_filter_rejects_invalid_boolean_values():
+    category = Category.objects.create(
+        name="Configurable sofas",
+        active=True,
+        specification_schema=[
+            {
+                "key": "assembly_required",
+                "label": "Assembly required",
+                "type": "boolean",
+                "filterable": True,
+            },
+        ],
+    )
+    create_product(
+        "Boolean sofa",
+        category=category,
+        specifications={"assembly_required": True},
+    )
+
+    response = api_client().get(
+        reverse("catalog-product-list"),
+        {
+            "category__slug": category.slug,
+            "spec.assembly_required": "maybe",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "booleano" in str(response.data)
 
 
 def test_staff_delete_deactivates_product_instead_of_hard_delete():

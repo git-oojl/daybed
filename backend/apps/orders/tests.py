@@ -38,6 +38,13 @@ def create_product(name="Order sofa", stock=10, price=Decimal("100.00")):
         description="Furniture",
         price=price,
         category=category,
+        material="wood",
+        color="green",
+        style="modern",
+        width_cm=Decimal("200.00"),
+        height_cm=Decimal("80.00"),
+        depth_cm=Decimal("90.00"),
+        specifications={"assembly_required": False},
         stock=stock,
         minimum_stock=2,
         active=True,
@@ -106,10 +113,21 @@ def test_checkout_creates_pending_order_and_clears_cart_without_stock_decrement(
     assert response.data["distance_km"] == "12.500"
     assert response.data["estimated_duration_minutes"] == "30.0"
     assert len(response.data["items"]) == 1
+    assert response.data["items"][0]["product_sku"] == product.sku
     assert response.data["items"][0]["product_name"] == product.name
     assert response.data["items"][0]["unit_price"] == "150.00"
     assert response.data["items"][0]["quantity"] == 2
     assert response.data["items"][0]["line_total"] == "300.00"
+    assert response.data["items"][0]["product_snapshot"]["sku"] == product.sku
+    assert (
+        response.data["items"][0]["product_snapshot"]["structured_dimensions"][
+            "width_cm"
+        ]
+        == "200.00"
+    )
+    assert response.data["items"][0]["product_snapshot"]["specifications"] == {
+        "assembly_required": False
+    }
 
     product.refresh_from_db()
     assert product.stock == 9

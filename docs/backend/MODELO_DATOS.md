@@ -43,11 +43,16 @@ Campos:
 - `name`
 - `slug`
 - `description`
+- `specification_schema`
 - `active`
 - `created_at`
 - `updated_at`
 
-Regla: el catálogo público solo muestra categorías activas.
+Reglas:
+
+- El catálogo público solo muestra categorías activas.
+- `specification_schema` documenta especificaciones esperadas por categoría. Es una lista JSON ligera, no un sistema EAV. Cada item puede declarar `key`, `label`, `type` y `filterable`.
+- Los filtros `spec.<key>` requieren filtrar por categoría y solo aceptan specs escalares (`text`, `number`, `boolean`) marcadas con `filterable=true`.
 
 ### Product
 
@@ -55,6 +60,7 @@ Representa un producto vendible.
 
 Campos:
 
+- `sku`
 - `name`
 - `description`
 - `price`
@@ -62,7 +68,13 @@ Campos:
 - `material`
 - `color`
 - `style`
-- `dimensions`
+- `width_cm`
+- `height_cm`
+- `depth_cm`
+- `length_cm`
+- `diameter_cm`
+- `weight_kg`
+- `specifications`
 - `main_image`
 - `stock`
 - `minimum_stock`
@@ -78,8 +90,14 @@ low_stock = stock <= minimum_stock
 
 Reglas:
 
+- `Product` sigue siendo el item comprable/SKU del MVP. Si una configuración tiene precio, stock, imágenes o dimensiones distintas, se registra como otro producto.
+- `sku` se genera automáticamente si no se envía.
 - No borrar físicamente productos; usar `active=false`.
 - `price` no puede ser negativo.
+- Las dimensiones estructuradas son numéricas, opcionales y no negativas. Las dimensiones que no aplican quedan en `null`.
+- No hay campo textual libre `dimensions` en el modelo activo. Las migraciones preservan valores antiguos no vacíos en `specifications._legacy_dimensions_text` solo para evitar pérdida silenciosa de datos locales.
+- `specifications` guarda datos flexibles de display por producto como JSON simple: textos, números, booleanos, `null` o listas simples.
+- No se usa un modelo de variantes ni un sistema EAV en el MVP.
 
 ### ProductImage
 
@@ -192,12 +210,14 @@ Campos:
 
 - `order`
 - `product`
+- `product_sku`
 - `product_name`
 - `unit_price`
 - `quantity`
 - `line_total`
+- `product_snapshot`
 
-El nombre y precio se guardan para conservar el historial aunque el producto cambie después.
+El SKU, nombre, precio y snapshot de producto se guardan para conservar el historial aunque el producto cambie después. `product_snapshot` captura datos de catálogo relevantes al momento de compra: SKU, material, color, estilo, dimensiones estructuradas y especificaciones flexibles.
 
 ## Inventory
 
@@ -241,3 +261,37 @@ Los datos finales de entrega se guardan en `Order`.
 ## Dashboard
 
 No hay modelos propios en `dashboard` para el MVP. Las métricas se calculan desde `Order` y `Product`.
+
+## Datos demo locales
+
+El comando `seed_demo` crea un dataset repetible para desarrollo local con SQLite:
+
+```bash
+cd backend
+uv run python manage.py migrate
+uv run python manage.py seed_demo
+```
+
+Para recrear solo los datos demo conocidos:
+
+```bash
+uv run python manage.py seed_demo --reset
+```
+
+Usuarios:
+
+| Rol | Email | Password |
+| --- | --- | --- |
+| `cliente` | `cliente@example.com` | `DemoPassword123!` |
+| `empleado` | `empleado@example.com` | `DemoPassword123!` |
+| `administrador` | `admin@example.com` | `DemoPassword123!` |
+
+Contenido incluido:
+
+- Categorías activas para catálogo y una categoría inactiva para validar filtros internos.
+- Productos activos, un producto inactivo, SKUs, dimensiones estructuradas, especificaciones flexibles, stock bajo y stock agotado.
+- Carrito prellenado para `cliente@example.com`.
+- Pedidos del cliente en `pending`, `confirmed`, `preparing`, `shipped`, `delivered` y `cancelled`.
+- Movimientos de inventario por pedidos confirmados y un ajuste manual demo.
+
+Regla de equipo: no compartir ni versionar `db.sqlite3`. El estado inicial compartido debe vivir en migraciones, fixtures/semillas y documentación.

@@ -138,6 +138,7 @@ Regla práctica: la vista maneja formulario, loading, errores y navegación; `sr
 ## Integración con backend
 
 - La API base local es `http://localhost:8000/api`.
+- Antes de integrar vistas contra datos reales, el backend local debe tener migraciones y semillas cargadas: `uv run python manage.py migrate` y `uv run python manage.py seed_demo` desde `/backend`.
 - El login usa JWT en `/api/auth/token/`.
 - El login usa `email` y `password`.
 - La respuesta de login incluye `access`, `refresh` y `user`.
@@ -155,6 +156,9 @@ Authorization: Bearer <ACCESS_TOKEN>
   - `/api/delivery/geocode/`
   - `/api/delivery/estimate/`
   - `/api/checkout/`
+- Productos siguen usando `id` como identificador para carrito (`product_id`). El backend también devuelve `sku`, dimensiones estructuradas (`width_cm`, `height_cm`, `depth_cm`, `length_cm`, `diameter_cm`, `weight_kg`) y `specifications` para mostrar fichas técnicas y filtros sin romper vistas existentes.
+- No usar un campo libre `dimensions`; la API activa usa campos numéricos y `structured_dimensions`.
+- Los items de pedido devuelven `product_sku` y `product_snapshot` para mostrar el producto comprado aunque el catálogo cambie después.
 
 Ejemplo de login desde una vista:
 

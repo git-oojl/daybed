@@ -124,6 +124,32 @@ Si vas a trabajar con la estimación de entregas, agrega tu API key de OpenRoute
 uv run python manage.py migrate
 ```
 
+### Cargar datos semilla
+
+Este paso es parte del setup normal del backend. Cada integrante debe trabajar con su propia base SQLite local y poblarla con las semillas del proyecto:
+
+```powershell
+uv run python manage.py seed_demo
+```
+
+Esto crea usuarios demo, catálogo, productos con SKUs y dimensiones estructuradas, carrito, pedidos en distintos estados e inventario. No compartas ni subas `db.sqlite3`; comparte cambios mediante migraciones, semillas y documentación.
+
+Usuarios demo para probar API y frontend:
+
+| Rol | Email | Password |
+| --- | --- | --- |
+| Cliente | `cliente@example.com` | `DemoPassword123!` |
+| Empleado | `empleado@example.com` | `DemoPassword123!` |
+| Administrador de la app | `admin@example.com` | `DemoPassword123!` |
+
+Estos usuarios sirven para la API y el frontend. Si necesitas entrar al panel Django Admin en `/admin/` para editar datos manualmente, crea un superusuario local:
+
+```powershell
+uv run python manage.py createsuperuser
+```
+
+El superusuario es opcional para integración frontend/API, pero útil para revisar o crear datos manuales desde el admin de Django.
+
 ### Verificar configuración de Django
 
 ```powershell
@@ -153,6 +179,7 @@ El backend expone una API REST para las funciones principales del MVP:
 * inventario;
 * estimación de entrega;
 * métricas básicas del dashboard.
+* datos semilla locales para probar integración y flujos completos.
 
 Los módulos principales del backend están organizados en `/backend/apps`:
 
@@ -238,8 +265,8 @@ Archivos principales:
 * `docs/README.md`: índice general de documentación.
 * `docs/ALCANCE.md`: alcance del MVP y límites del proyecto.
 * `docs/API_EXTERNAS.md`: integración con Nominatim/OpenStreetMap y OpenRouteService.
-* `docs/ENDPOINTS_BACKEND.md`: resumen de endpoints del backend.
-* `docs/MODELO_DATOS.md`: resumen del modelo de datos.
+* `docs/backend/ENDPOINTS_BACKEND.md`: resumen de endpoints del backend.
+* `docs/backend/MODELO_DATOS.md`: resumen del modelo de datos.
 * `docs/DECISIONES_TECNICAS.md`: decisiones técnicas relevantes.
 
 También hay documentación específica en:

@@ -13,6 +13,7 @@ class InventoryProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             "id",
+            "sku",
             "name",
             "category",
             "category_detail",
@@ -53,6 +54,7 @@ class StockUpdateSerializer(serializers.ModelSerializer):
 
 class InventoryMovementSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
+    product_sku = serializers.CharField(source="product.sku", read_only=True)
     created_by_username = serializers.CharField(
         source="created_by.username",
         read_only=True,
@@ -63,6 +65,7 @@ class InventoryMovementSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "product",
+            "product_sku",
             "product_name",
             "movement_type",
             "quantity_delta",

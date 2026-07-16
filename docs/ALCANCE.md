@@ -6,6 +6,7 @@ Daybed es una aplicación web full-stack para una tienda de muebles. El MVP busc
 
 - Catálogo público de productos activos.
 - Categorías de productos.
+- SKUs, dimensiones estructuradas y especificaciones flexibles simples para productos.
 - Registro de clientes.
 - Login con JWT.
 - Roles básicos: `cliente`, `empleado`, `administrador`.
@@ -42,4 +43,6 @@ No se implementa en esta versión:
 - Gestión contable avanzada.
 - Sistema completo de auditoría.
 - Multi-sucursal o multi-almacén.
+- Variantes configurables de producto con precio/stock independiente.
+- Sistema EAV completo para atributos de catálogo.
 - Exportaciones avanzadas PDF/Excel.

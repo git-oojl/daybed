@@ -3,6 +3,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.accounts.permissions import IsEmployeeOrAdmin
+from apps.catalog.filters import (
+    ProductFilter,
+    SpecificationFilterMixin,
+    StaffProductFilter,
+)
 from apps.catalog.models import Category, Product
 from apps.catalog.serializers import CategorySerializer, ProductSerializer
 
@@ -16,17 +21,12 @@ class PublicCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ("name",)
 
 
-class PublicProductViewSet(viewsets.ReadOnlyModelViewSet):
+class PublicProductViewSet(SpecificationFilterMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = (AllowAny,)
-    filterset_fields = (
-        "category",
-        "category__slug",
-        "material",
-        "color",
-        "style",
-    )
+    filterset_class = ProductFilter
     search_fields = (
+        "sku",
         "name",
         "description",
         "material",
@@ -52,7 +52,7 @@ class StaffCategoryViewSet(viewsets.ModelViewSet):
     ordering_fields = ("name", "active", "created_at")
 
 
-class StaffProductViewSet(viewsets.ModelViewSet):
+class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
     queryset = (
         Product.objects.select_related("category")
         .prefetch_related("images")
@@ -60,15 +60,9 @@ class StaffProductViewSet(viewsets.ModelViewSet):
     )
     serializer_class = ProductSerializer
     permission_classes = (IsEmployeeOrAdmin,)
-    filterset_fields = (
-        "active",
-        "category",
-        "category__slug",
-        "material",
-        "color",
-        "style",
-    )
+    filterset_class = StaffProductFilter
     search_fields = (
+        "sku",
         "name",
         "description",
         "material",
