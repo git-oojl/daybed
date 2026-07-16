@@ -29,6 +29,10 @@ export const useAuthStore = create((set, get) => ({
   error: null,
 
   setSession(session) {
+    if (isDevPreviewRoute()) {
+      return;
+    }
+
     setStoredSession(session);
     set({
       accessToken: session.access,
@@ -41,6 +45,10 @@ export const useAuthStore = create((set, get) => ({
   },
 
   clearSession() {
+    if (isDevPreviewRoute()) {
+      return;
+    }
+
     clearStoredSession();
     set({
       accessToken: null,
@@ -53,6 +61,12 @@ export const useAuthStore = create((set, get) => ({
   },
 
   async login(credentials) {
+    if (isDevPreviewRoute()) {
+      throw new Error(
+        "Dev preview does not persist real sessions. Use /login to test backend auth.",
+      );
+    }
+
     set({ isLoading: true, error: null });
     try {
       const session = await loginWithEmail(credentials);
@@ -67,6 +81,10 @@ export const useAuthStore = create((set, get) => ({
   },
 
   async loadCurrentUser() {
+    if (isDevPreviewRoute()) {
+      return null;
+    }
+
     if (!get().accessToken) {
       return null;
     }
@@ -90,6 +108,10 @@ export const useAuthStore = create((set, get) => ({
   },
 
   async refreshSession() {
+    if (isDevPreviewRoute()) {
+      return null;
+    }
+
     const refreshToken = get().refreshToken;
     if (!refreshToken) {
       get().clearSession();
@@ -116,8 +138,20 @@ export const useAuthStore = create((set, get) => ({
   },
 
   async logout() {
+    if (isDevPreviewRoute()) {
+      return;
+    }
+
     const refreshToken = get().refreshToken;
     get().clearSession();
     await logoutRefreshToken(refreshToken);
   },
 }));
+
+function isDevPreviewRoute() {
+  return (
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    window.location.pathname === "/dev/preview"
+  );
+}

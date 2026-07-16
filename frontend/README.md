@@ -218,3 +218,22 @@ docs/FRONTEND_VIEWS.md
 ```
 
 El helper de preview es solo para desarrollo y está protegido por `import.meta.env.DEV`, por lo que no debe aparecer en builds de producción.
+
+### Dev preview y backend activo
+
+`/dev/preview` sigue funcionando aunque el backend esté apagado. El panel revisa automáticamente `/api/health/` y muestra si el backend está activo o no.
+
+Reglas de seguridad del preview:
+
+- La opción "Simular como" solo afecta el preview local de vista/layout/acceso.
+- El texto `Backend activo` / `Backend no disponible` muestra si `/api/health/` responde; al pasar el cursor o enfocar se ven los checks.
+- La sesión simulada no se guarda en `localStorage`.
+- El preview no envía el bearer token real al backend.
+- Desde `/dev/preview`, el cliente API bloquea requests de escritura (`POST`, `PATCH`, `PUT`, `DELETE`) para evitar crear sesiones, pedidos o cambios reales por accidente.
+- El botón `Modo normal` sale de `/dev/preview` y vuelve a la ruta real respetando la sesión real del sitio.
+- Para probar login real, checkout real o acciones contra backend, usar las rutas reales, no `/dev/preview`.
+
+Uso recomendado:
+
+- Usar `/dev/preview` para revisar visualmente estados de acceso, layouts y vistas.
+- Usar rutas reales con usuarios semilla para probar integración backend completa.

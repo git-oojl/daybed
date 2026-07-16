@@ -15,6 +15,18 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  if (isDevPreviewRoute()) {
+    delete config.headers.Authorization;
+    if (!isReadOnlyRequest(config.method)) {
+      return Promise.reject(
+        new Error(
+          "Dev preview blocks write requests. Use real routes to test backend mutations.",
+        ),
+      );
+    }
+    return config;
+  }
+
   const accessToken = getAccessToken();
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -31,4 +43,16 @@ apiClient.interceptors.response.use(
 export async function apiRequest(config) {
   const response = await apiClient.request(config);
   return response.data;
+}
+
+function isDevPreviewRoute() {
+  return (
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    window.location.pathname === "/dev/preview"
+  );
+}
+
+function isReadOnlyRequest(method = "get") {
+  return ["get", "head", "options"].includes(method.toLowerCase());
 }

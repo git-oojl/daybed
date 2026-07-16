@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./DevViewSwitcher.css";
+import { useBackendStatus } from "./useBackendStatus.js";
 import {
   canPreviewLayout,
   canPreviewViewer,
@@ -17,6 +18,7 @@ function DevViewSwitcher() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const backendStatus = useBackendStatus();
 
   const activeView = getPreviewView(
     searchParams.get("view") ?? getViewIdFromPath(location.pathname),
@@ -54,7 +56,7 @@ function DevViewSwitcher() {
   }
 
   function goToRealRoute() {
-    navigate(activeView.path);
+    navigate(activeView.path, { replace: true });
   }
 
   function handleViewChange(event) {
@@ -157,6 +159,31 @@ function DevViewSwitcher() {
         {getStatusMessage({ isAllowed, isLayoutAllowed, isViewerAllowed })}
       </div>
 
+      <div
+        className={`dev-view-switcher__backend dev-view-switcher__backend--${backendStatus.state}`}
+        tabIndex={0}
+        title="Pasa el cursor o enfoca para ver detalles del estado del backend."
+      >
+        <div className="dev-view-switcher__backend-summary">
+          <strong>{getBackendStatusIcon(backendStatus.state)}</strong>
+          <span>
+            <b>{backendStatus.label}</b>
+            <small>{backendStatus.detail}</small>
+          </span>
+        </div>
+        <div className="dev-view-switcher__backend-popover" role="status">
+          {backendStatus.checks.map((check) => (
+            <div key={check.label} className="dev-view-switcher__backend-check">
+              <span>{getCheckIcon(check.status)}</span>
+              <div>
+                <strong>{check.label}</strong>
+                <small>{check.detail}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="dev-view-switcher__meta">
         <span>{activeViewer.description}</span>
         <span>
@@ -172,13 +199,13 @@ function DevViewSwitcher() {
           Ver preview
         </button>
         <button type="button" onClick={goToRealRoute}>
-          Ir a ruta real
+          Modo normal
         </button>
       </div>
 
       <p className="dev-view-switcher__hint">
         {isPreviewRoute
-          ? "Estás en /dev/preview. Layouts o perfiles sin acceso se bloquean intencionalmente."
+          ? "Modo normal sale de /dev/preview y vuelve a respetar la sesión real del sitio."
           : "Cambia una opción para abrir /dev/preview sin tocar las rutas reales."}
       </p>
 
@@ -204,6 +231,30 @@ function getStatusMessage({ isAllowed, isLayoutAllowed, isViewerAllowed }) {
   }
 
   return "Preview bloqueado por perfil sin acceso";
+}
+
+function getBackendStatusIcon(state) {
+  if (state === "online") {
+    return "✓";
+  }
+
+  if (state === "offline") {
+    return "!";
+  }
+
+  return "...";
+}
+
+function getCheckIcon(status) {
+  if (status === "ok" || status === "safe") {
+    return "✓";
+  }
+
+  if (status === "error") {
+    return "×";
+  }
+
+  return "…";
 }
 
 function getViewIdFromPath(pathname) {

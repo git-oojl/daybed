@@ -168,3 +168,16 @@ Y dile: "usa los servicios existentes, no crees otro cliente HTTP".
 Para acciones del backend se sigue usando `product_id`, que corresponde al `id` numérico del producto. `sku` es para mostrar, buscar o identificar el item en catálogo/inventario.
 
 El producto ahora también puede traer dimensiones estructuradas y `specifications`; son campos extra para fichas técnicas y filtros, no rompen las vistas que solo usan `name`, `price`, `main_image` o `id`.
+
+## 18. Qué pasa con `/dev/preview` cuando el backend está activo?
+
+Sigue existiendo y es seguro usarlo. El preview detecta `/api/health/` y muestra si el backend está activo, pero la sesión del selector "Simular como" es local y no se guarda.
+
+El panel muestra `Backend activo` o `Backend no disponible`; al pasar el cursor o enfocar esa zona se ven los checks del health check y del modo seguro. El botón `Modo normal` sale del preview y vuelve a la ruta real usando la sesión real del sitio.
+
+Regla práctica:
+
+- `/dev/preview`: revisar vistas, layouts y permisos simulados.
+- Rutas reales: probar login, carrito, checkout y cambios contra backend.
+
+Desde `/dev/preview` no se envía el token real y se bloquean requests de escritura para evitar cambios accidentales en la base local.
