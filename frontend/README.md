@@ -89,6 +89,52 @@ Archivos principales:
 
 Las vistas todavía no están conectadas a estas funciones. La intención es que el equipo frontend pueda importar servicios y store cuando empiece a cablear cada pantalla.
 
+## Guía simple para conectar una vista
+
+No es obligatorio llamar Axios directamente. La forma recomendada en este proyecto es usar los helpers ya preparados.
+
+Paso 1: si la vista necesita iniciar sesión, usar el store:
+
+```js
+import { useAuthStore } from "../../auth/authStore.js";
+
+const login = useAuthStore((state) => state.login);
+
+await login({
+  email: formData.email,
+  password: formData.password,
+});
+```
+
+Paso 2: si la vista necesita crear cuenta, usar el servicio de auth:
+
+```js
+import { registerCustomer } from "../../auth/authService.js";
+
+await registerCustomer({
+  nombre: formData.nombre,
+  apellido: formData.apellido,
+  email: formData.email,
+  telefono: formData.telefono,
+  estado: formData.estado,
+  ciudad: formData.ciudad,
+  password: formData.password,
+  confirmPassword: formData.confirmPassword,
+});
+```
+
+Paso 3: si la vista necesita datos protegidos, usar un servicio del dominio:
+
+```js
+import { cartService } from "../../services/backendServices.js";
+
+const cart = await cartService.get();
+```
+
+El token se agrega solo desde `apiClient.js`. La vista no necesita armar el header `Authorization` manualmente.
+
+Regla práctica: la vista maneja formulario, loading, errores y navegación; `src/auth/` y `src/services/` manejan backend, tokens y endpoints.
+
 ## Integración con backend
 
 - La API base local es `http://localhost:8000/api`.
@@ -141,6 +187,23 @@ const cart = await cartService.get();
 - Rutas de carrito, checkout y cuenta de cliente requieren rol `cliente`.
 - Rutas internas aceptan `empleado` y `administrador`.
 - Rutas de admin aceptan solo `administrador`.
+
+## Contexto útil para trabajar con IA
+
+Si una IA no puede abrir todo el proyecto, no necesita recibir el zip completo para ayudar con integración. Darle primero estos archivos suele ser suficiente:
+
+- `frontend/README.md`: reglas simples de integración, variables de entorno, rutas protegidas y ejemplos.
+- `frontend/src/auth/authStore.js`: estado de sesión, login, refresh, logout y usuario actual.
+- `frontend/src/auth/authService.js`: funciones directas de login, registro, refresh, logout y `/accounts/me/`.
+- `frontend/src/auth/roleMapping.js`: traducción de roles backend `cliente`, `empleado`, `administrador` a roles frontend.
+- `frontend/src/services/apiClient.js`: configuración de Axios, base URL, bearer token y errores.
+- `frontend/src/services/backendServices.js`: funciones listas para llamar endpoints por dominio.
+- `frontend/src/services/apiEndpoints.js`: mapa completo de rutas del backend.
+- `frontend/src/routes/ProtectedRoute.jsx`: lógica de redirección por sesión y rol.
+- `docs/backend/ENDPOINTS_BACKEND.md`: payloads reales, permisos y endpoints del backend.
+- `docs/backend/openapi.yaml`: contrato OpenAPI completo si la IA puede leer archivos largos.
+
+Para pedir ayuda a una IA con una vista específica, pasar también el archivo de esa página, por ejemplo `frontend/src/pages/account/LoginPage.jsx`, y pedir que use los servicios existentes en lugar de crear otro cliente HTTP.
 
 ## Vistas y preview de desarrollo
 
