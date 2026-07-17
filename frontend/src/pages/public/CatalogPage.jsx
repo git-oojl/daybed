@@ -1,7 +1,7 @@
 // Importación de CSS
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
 import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
 import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
@@ -11,62 +11,164 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
 import { useCart } from "../../context/CartContext.jsx";
+import { catalogService } from "../../services/backendServices.js";
 
-const products = [
-  {
-    id: 1,
+// ============================================================
+// MAPEO POR SKU - TODOS los SKU del backend
+// ============================================================
+const productMap = {
+  "DAY-SOFA-ROB-001": {
     name: "Syltherine",
     description: "Mesa de estilo café",
-    price: 2500000,
-    image: SyltherineDaybed,
-    badge: "-30%",
     category: "Mesas",
+    badge: "-30%",
+    badgeType: null,
+    image: SyltherineDaybed,
   },
-  {
-    id: 2,
+  "DAY-SOFA-LIN-002": {
     name: "Leviosa",
     description: "Silla de estilo café",
-    price: 2500000,
-    image: LeviosaDaybed,
     category: "Sillas",
+    badge: null,
+    badgeType: null,
+    image: LeviosaDaybed,
   },
-  {
-    id: 3,
+  "DAY-MESA-FRE-001": {
     name: "Lolito",
     description: "Sofá grande",
-    price: 7000000,
-    image: LolitoDaybed,
-    badge: "-50%",
     category: "Sofás",
+    badge: "-50%",
+    badgeType: null,
+    image: LolitoDaybed,
   },
-  {
-    id: 4,
+  "DAY-MESA-TER-002": {
     name: "Respira",
     description: "Set bar exterior",
-    price: 5000000,
-    image: RespiraDaybed,
+    category: "Exterior",
     badge: "New",
     badgeType: "new",
-    category: "Exterior",
+    image: RespiraDaybed,
   },
-];
+  "DAY-SILLA-OLI-001": {
+    name: "Leviosa",
+    description: "Silla de estilo café",
+    category: "Sillas",
+    badge: null,
+    badgeType: null,
+    image: LeviosaDaybed,
+  },
+  "DAY-BANCO-NOG-001": {
+    name: "Respira",
+    description: "Set bar exterior",
+    category: "Exterior",
+    badge: null,
+    badgeType: null,
+    image: RespiraDaybed,
+  },
+};
 
 function CatalogPage() {
   const [sortBy, setSortBy] = useState("default");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 13000 });
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [notification, setNotification] = useState(null);
+  const [backendProducts, setBackendProducts] = useState([]);
+  const [maxPrice, setMaxPrice] = useState(13000);
+  const [loading, setLoading] = useState(true);
 
   const { addToCart } = useCart();
 
-  const allProducts = Array.from({ length: 32 }, (_, index) => ({
-    ...products[index % products.length],
-    id: index + 1,
-  }));
+  // Cargar productos del backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await catalogService.products();
+        const data = response.results ?? response;
+        setBackendProducts(data);
+        
+        if (data.length > 0) {
+          const prices = data.map(p => parseFloat(p.price) || 0);
+          const max = Math.max(...prices);
+          const maxRounded = Math.ceil(max / 1000) * 1000;
+          setMaxPrice(maxRounded);
+          setPriceRange({ min: 0, max: maxRounded });
+        }
+      } catch (error) {
+        console.error("Error al cargar productos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
+  // Crear lista de productos mapeados usando el SKU
+  const baseProducts = backendProducts.map((backendProduct) => {
+    const sku = backendProduct.sku;
+    const mapped = productMap[sku];
+    
+    // Si el SKU existe en el mapa, usar los datos mapeados
+    if (mapped) {
+      return {
+        id: backendProduct.id,
+        sku: sku,
+        name: mapped.name,
+        description: mapped.description,
+        category: mapped.category,
+        badge: mapped.badge,
+        badgeType: mapped.badgeType,
+        price: parseFloat(backendProduct.price) || 0,
+        image: mapped.image,
+        _backendName: backendProduct.name,
+      };
+    }
+    
+    // Si el SKU no está en el mapa, usar los datos del backend
+    return {
+      id: backendProduct.id,
+      sku: sku,
+      name: backendProduct.name,
+      description: backendProduct.description || "Sin descripción",
+      category: backendProduct.category_detail?.name || "Sin categoría",
+      badge: null,
+      badgeType: null,
+      price: parseFloat(backendProduct.price) || 0,
+      image: RespiraDaybed,
+      _backendName: backendProduct.name,
+    };
+  });
+
+  // Generar 32 productos
+  const allProducts = [];
+  for (let i = 0; i < 32; i++) {
+    if (baseProducts.length > 0) {
+      const baseProduct = baseProducts[i % baseProducts.length];
+      allProducts.push({
+        ...baseProduct,
+        id: i + 1,
+      });
+    }
+  }
+
+  // Si no hay productos del backend, usar los estáticos
+  if (allProducts.length === 0) {
+    const staticProducts = [
+      { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 2500000, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
+      { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 2500000, image: LeviosaDaybed, category: "Sillas" },
+      { id: 3, name: "Lolito", description: "Sofá grande", price: 7000000, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
+      { id: 4, name: "Respira", description: "Set bar exterior", price: 5000000, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Exterior" },
+    ];
+    for (let i = 0; i < 32; i++) {
+      const base = staticProducts[i % staticProducts.length];
+      allProducts.push({ ...base, id: i + 1 });
+    }
+  }
+
+  // Filtrar productos por precio y categoría
   const filteredProducts = allProducts.filter((product) => {
-    const price = product.price;
+    const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
     const inPriceRange = price >= priceRange.min && price <= priceRange.max;
 
     if (selectedCategories.length === 0) {
@@ -77,20 +179,24 @@ function CatalogPage() {
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const priceA = typeof a.price === 'number' ? a.price : parseFloat(a.price) || 0;
+    const priceB = typeof b.price === 'number' ? b.price : parseFloat(b.price) || 0;
+    
     switch (sortBy) {
       case "price-asc":
-        return a.price - b.price;
+        return priceA - priceB;
       case "price-desc":
-        return b.price - a.price;
+        return priceB - priceA;
       case "name":
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       default:
         return 0;
     }
   });
 
   const formatPrice = (price) => {
-    return `$${price.toLocaleString("es-MX")} mxn`;
+    const numPrice = typeof price === 'number' ? price : parseFloat(price) || 0;
+    return `$${numPrice.toLocaleString("es-MX")} mxn`;
   };
 
   const handleSortChange = (e) => {
@@ -102,7 +208,7 @@ function CatalogPage() {
   };
 
   const handleClearFilters = () => {
-    setPriceRange({ min: 0, max: 10000000 });
+    setPriceRange({ min: 0, max: maxPrice });
     setSelectedCategories([]);
     setSortBy("default");
     setFilterOpen(false);
@@ -123,8 +229,21 @@ function CatalogPage() {
   };
 
   const categories = [
-    ...new Set(allProducts.map((product) => product.category)),
+    ...new Set(allProducts.map((product) => product.category).filter(Boolean)),
   ];
+
+  // Estado de carga
+  if (loading) {
+    return (
+      <div className="home-page catalog-page">
+        <HomeHeader />
+        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <p>Cargando productos...</p>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="home-page catalog-page">
@@ -226,29 +345,29 @@ function CatalogPage() {
                     <input
                       type="range"
                       min="0"
-                      max="10000000"
-                      step="100000"
+                      max={maxPrice}
+                      step="100"
                       value={priceRange.min}
-                      onChange={(e) =>
-                        setPriceRange({
-                          ...priceRange,
-                          min: parseInt(e.target.value),
-                        })
-                      }
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (val <= priceRange.max) {
+                          setPriceRange({ ...priceRange, min: val });
+                        }
+                      }}
                       className="catalog-filters__range-input catalog-filters__range-input--min"
                     />
                     <input
                       type="range"
                       min="0"
-                      max="10000000"
-                      step="100000"
+                      max={maxPrice}
+                      step="100"
                       value={priceRange.max}
-                      onChange={(e) =>
-                        setPriceRange({
-                          ...priceRange,
-                          max: parseInt(e.target.value),
-                        })
-                      }
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (val >= priceRange.min) {
+                          setPriceRange({ ...priceRange, max: val });
+                        }
+                      }}
                       className="catalog-filters__range-input catalog-filters__range-input--max"
                     />
                   </div>
@@ -279,37 +398,57 @@ function CatalogPage() {
 
         {/* Grid de productos */}
         <section className="catalog-grid">
-          {sortedProducts.map((product) => (
-            <article className="product-card" key={product.id}>
-              <div
-                className="product-card__image"
-                style={{ backgroundImage: `url(${product.image})` }}
+          {sortedProducts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "4rem 2rem", width: "100%" }}>
+              <p>No hay productos que coincidan con los filtros seleccionados</p>
+              <button
+                onClick={handleClearFilters}
+                style={{
+                  marginTop: "1rem",
+                  padding: "0.5rem 2rem",
+                  background: "#2f2a25",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.3rem",
+                  cursor: "pointer",
+                }}
               >
-                {product.badge ? (
-                  <span
-                    className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
-                  >
-                    {product.badge}
-                  </span>
-                ) : null}
-                <div className="product-card__overlay">
-                  <button
-                    type="button"
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    Agregar a carrito
-                  </button>
+                Limpiar filtros
+              </button>
+            </div>
+          ) : (
+            sortedProducts.map((product) => (
+              <article className="product-card" key={product.id}>
+                <div
+                  className="product-card__image"
+                  style={{ backgroundImage: `url(${product.image})` }}
+                >
+                  {product.badge ? (
+                    <span
+                      className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
+                    >
+                      {product.badge}
+                    </span>
+                  ) : null}
+                  <div className="product-card__overlay">
+                    <button
+                      type="button"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      Agregar a carrito
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="product-card__body">
-                <h3>{product.name}</h3>
-                <p>{product.description}</p>
-                <span className="product-card__price">
-                  {formatPrice(product.price)}
-                </span>
-              </div>
-            </article>
-          ))}
+                <div className="product-card__body">
+                  <h3>{product.name}</h3>
+                  <p>{product.description}</p>
+                  <span className="product-card__price">
+                    {formatPrice(product.price)}
+                  </span>
+                </div>
+              </article>
+            ))
+          )}
         </section>
       </main>
 
