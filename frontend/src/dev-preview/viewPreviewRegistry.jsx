@@ -402,3 +402,42 @@ export function canPreviewLayout(view, layoutId) {
 export function canPreviewViewer(view, viewerId) {
   return canViewerAccess(view.allowedViewers, viewerId);
 }
+
+export function getViewIdFromPath(pathname) {
+  const exactMatch = previewViews.find((view) => view.path === pathname);
+
+  if (exactMatch) {
+    return exactMatch.id;
+  }
+
+  const dynamicMatches = previewViews
+    .map((view) => {
+      const routeRoot = view.path
+        .replace("/demo-producto", "")
+        .replace("/demo-pedido", "");
+
+      return {
+        routeRoot,
+        score: routeRoot.length + (view.path.includes("/demo-") ? 1 : 0),
+        view,
+      };
+    })
+    .filter(
+      ({ routeRoot }) =>
+        routeRoot !== "/" &&
+        pathname.startsWith(`${routeRoot}/`),
+    )
+    .sort((left, right) => right.score - left.score);
+
+  return dynamicMatches[0]?.view.id;
+}
+
+export function getPreviewPath(viewId, layoutId, viewerId) {
+  const params = new URLSearchParams({
+    layout: layoutId,
+    view: viewId,
+    viewer: viewerId,
+  });
+
+  return `/dev/preview?${params.toString()}`;
+}

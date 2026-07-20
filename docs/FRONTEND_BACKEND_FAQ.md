@@ -173,11 +173,11 @@ El producto ahora también puede traer dimensiones estructuradas y `specificatio
 
 Sigue existiendo y es seguro usarlo. El Dev Switcher detecta `/api/health/` y muestra si el backend está activo. Si el backend responde, el flujo normal es usar `Modo normal`; si no responde, se puede usar `Modo preview` para revisar vistas con estado simulado.
 
-El panel muestra `Backend activo` o `Backend no disponible`; al pasar el cursor o enfocar esa zona se ven los checks del health check y del modo que aplica para ese estado. El toggle `Normal` / `Preview` cambia entre rutas reales y `/dev/preview`.
+El panel muestra `Backend activo` o `Backend no disponible`; al pasar el cursor o enfocar esa zona se ven los checks del health check y del modo que aplica para ese estado. El toggle `Normal` / `Preview` cambia entre rutas reales y `/dev/preview`. Sin selección explícita previa en la sesión del navegador, el switcher inicia en `Modo normal` si el backend responde y en `Modo preview` si no responde; después respeta la selección del dev durante esa sesión.
 
 Regla práctica:
 
 - `Modo normal`: usa rutas reales, sesión real guardada, token real y backend real.
-- `Modo preview`: usa `/dev/preview`, sesión simulada local, layout/perfil simulados y no guarda login real. Si la vista elegida requiere acceso, el switcher cambia automáticamente a un perfil simulado permitido.
+- `Modo preview`: usa `/dev/preview`, sesión simulada local, layout/perfil simulados y no guarda login real. Si la vista elegida requiere acceso, el switcher cambia automáticamente a un perfil simulado permitido. Si una ruta interna apunta a una vista registrada, el switcher la traduce de vuelta a `/dev/preview` manteniendo el perfil/layout cuando son compatibles. Esa preferencia no se guarda fuera de la sesión del navegador.
 
 Desde `/dev/preview` no se envía el token real y se bloquean requests de escritura para evitar cambios accidentales en la base local.

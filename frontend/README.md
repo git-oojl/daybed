@@ -226,6 +226,8 @@ El helper de preview es solo para desarrollo y está protegido por `import.meta.
 Reglas de seguridad del preview:
 
 - El toggle `Normal` / `Preview` cambia entre rutas reales y `/dev/preview`.
+- Sin selección explícita previa en la sesión del navegador, el switcher inicia en `Modo normal` si el backend responde y en `Modo preview` si no responde.
+- La selección de modo, layout y perfil simulado se guarda solo para la sesión del navegador; si estás en `Modo preview` y una navegación interna apunta a una ruta real registrada, el switcher vuelve a abrirla como `/dev/preview`.
 - `Modo normal` usa la sesión real guardada, envía el bearer token real y navega por las rutas reales.
 - `Modo preview` usa una sesión simulada local para revisar vista/layout/acceso.
 - La opción "Simular como" solo se usa en preview.

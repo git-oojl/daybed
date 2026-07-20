@@ -45,195 +45,195 @@ const DevViewSwitcher = import.meta.env.DEV
   ? lazy(() => import("../dev-preview/DevViewSwitcher.jsx"))
   : null;
 
+const DevPreviewRouteBridge = import.meta.env.DEV
+  ? lazy(() => import("../dev-preview/DevPreviewRouteBridge.jsx"))
+  : null;
+
 function AppRoutes() {
   const showDevTools = import.meta.env.DEV;
+  const routeTree = (
+    <Routes>
+      {/* ============================================ */}
+      {/* RUTAS PÚBLICAS - Acceso para TODOS */}
+      {/* ============================================ */}
+      <Route element={<PublicLayout />}>
+        <Route path={routePaths.public.home} element={<HomePage />} />
+        <Route path={routePaths.public.catalog} element={<CatalogPage />} />
+        <Route
+          path={routePaths.public.productDetail}
+          element={<ProductDetailPage />}
+        />
+        <Route
+          path={routePaths.public.contactHelp}
+          element={<ContactHelpPage />}
+        />
+      </Route>
+
+      {/* ============================================ */}
+      {/* RUTAS DE CLIENTE / CUENTA */}
+      {/* ============================================ */}
+      <Route element={<CustomerLayout />}>
+        <Route
+          element={
+            <ProtectedRoute allowedViewers={accessGroups.guestOnly}>
+              <Outlet />
+            </ProtectedRoute>
+          }
+        >
+          <Route path={routePaths.account.login} element={<LoginPage />} />
+          <Route path={routePaths.account.register} element={<RegisterPage />} />
+        </Route>
+
+        <Route
+          element={
+            <ProtectedRoute allowedViewers={accessGroups.customerAccount}>
+              <Outlet />
+            </ProtectedRoute>
+          }
+        >
+          <Route path={routePaths.account.profile} element={<ProfilePage />} />
+          <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
+          <Route
+            path={routePaths.account.orderDetail}
+            element={<OrderDetailPage />}
+          />
+        </Route>
+      </Route>
+
+      {/* ============================================ */}
+      {/* RUTAS DE CHECKOUT */}
+      {/* ============================================ */}
+      <Route
+        element={
+          <ProtectedRoute allowedViewers={accessGroups.checkout}>
+            <CheckoutLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path={routePaths.checkout.cart} element={<CartPage />} />
+        <Route
+          path={routePaths.checkout.summary}
+          element={<CheckoutSummaryPage />}
+        />
+        <Route
+          path={routePaths.checkout.confirmation}
+          element={<OrderConfirmationPage />}
+        />
+        <Route
+          path={routePaths.checkout.confirmationDetail}
+          element={<OrderConfirmationPage />}
+        />
+      </Route>
+
+      {/* ============================================ */}
+      {/* RUTAS DE BACKOFFICE - Solo empleados y admins */}
+      {/* ============================================ */}
+      <Route
+        element={
+          <ProtectedRoute allowedViewers={accessGroups.backOffice}>
+            <BackOfficeLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route
+          path={routePaths.backOffice.dashboard}
+          element={<DashboardPage />}
+        />
+        <Route path={routePaths.backOffice.products} element={<ProductsPage />} />
+        <Route
+          path={routePaths.backOffice.categories}
+          element={<CategoriesPage />}
+        />
+        <Route
+          path={routePaths.backOffice.inventory}
+          element={<InventoryPage />}
+        />
+        <Route
+          path={routePaths.backOffice.orders}
+          element={<InternalOrdersPage />}
+        />
+        <Route
+          path={routePaths.backOffice.orderDetail}
+          element={<InternalOrderDetailPage />}
+        />
+      </Route>
+
+      {/* ============================================ */}
+      {/* RUTAS DE ADMIN - Solo administradores */}
+      {/* ============================================ */}
+      <Route
+        element={
+          <ProtectedRoute allowedViewers={accessGroups.adminOnly}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route
+          path={routePaths.admin.internalUsers}
+          element={<InternalUsersPage />}
+        />
+        <Route
+          path={routePaths.admin.rolesPermissions}
+          element={<RolesPermissionsPage />}
+        />
+        <Route
+          path={routePaths.admin.businessMetrics}
+          element={<BusinessMetricsPage />}
+        />
+        <Route
+          path={routePaths.admin.basicSettings}
+          element={<BasicSettingsPage />}
+        />
+      </Route>
+
+      {/* ============================================ */}
+      {/* DEV TOOLS */}
+      {/* ============================================ */}
+      {showDevTools && DevPreviewPage ? (
+        <Route
+          path="/dev/preview"
+          element={
+            <Suspense fallback={null}>
+              <DevPreviewPage />
+            </Suspense>
+          }
+        />
+      ) : null}
+
+      {/* ============================================ */}
+      {/* RUTAS DE SOPORTE */}
+      {/* ============================================ */}
+      <Route element={<SupportLayout />}>
+        <Route
+          path={routePaths.support.unauthorized}
+          element={<UnauthorizedPage />}
+        />
+        <Route
+          path={routePaths.support.loadingStates}
+          element={<LoadingStatesPage />}
+        />
+        <Route
+          path={routePaths.support.emptyStates}
+          element={<EmptyStatesPage />}
+        />
+        <Route
+          path={routePaths.support.feedbackMessages}
+          element={<FeedbackMessagesPage />}
+        />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  );
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* ============================================ */}
-        {/* RUTAS PÚBLICAS - Acceso para TODOS */}
-        {/* ============================================ */}
-        <Route element={<PublicLayout />}>
-          <Route path={routePaths.public.home} element={<HomePage />} />
-          <Route path={routePaths.public.catalog} element={<CatalogPage />} />
-          <Route
-            path={routePaths.public.productDetail}
-            element={<ProductDetailPage />}
-          />
-          <Route
-            path={routePaths.public.contactHelp}
-            element={<ContactHelpPage />}
-          />
-        </Route>
-
-        {/* ============================================ */}
-        {/* RUTAS DE CLIENTE / CUENTA */}
-        {/* ============================================ */}
-        <Route element={<CustomerLayout />}>
-          <Route
-            element={
-              <ProtectedRoute allowedViewers={accessGroups.guestOnly}>
-                <Outlet />
-              </ProtectedRoute>
-            }
-          >
-            <Route path={routePaths.account.login} element={<LoginPage />} />
-            <Route
-              path={routePaths.account.register}
-              element={<RegisterPage />}
-            />
-          </Route>
-
-          <Route
-            element={
-              <ProtectedRoute allowedViewers={accessGroups.customerAccount}>
-                <Outlet />
-              </ProtectedRoute>
-            }
-          >
-            <Route
-              path={routePaths.account.profile}
-              element={<ProfilePage />}
-            />
-            <Route
-              path={routePaths.account.orders}
-              element={<MyOrdersPage />}
-            />
-            <Route
-              path={routePaths.account.orderDetail}
-              element={<OrderDetailPage />}
-            />
-          </Route>
-        </Route>
-
-        {/* ============================================ */}
-        {/* RUTAS DE CHECKOUT */}
-        {/* ============================================ */}
-        <Route
-          element={
-            <ProtectedRoute allowedViewers={accessGroups.checkout}>
-              <CheckoutLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path={routePaths.checkout.cart} element={<CartPage />} />
-          <Route
-            path={routePaths.checkout.summary}
-            element={<CheckoutSummaryPage />}
-          />
-          <Route
-            path={routePaths.checkout.confirmation}
-            element={<OrderConfirmationPage />}
-          />
-          <Route
-            path={routePaths.checkout.confirmationDetail}
-            element={<OrderConfirmationPage />}
-          />
-        </Route>
-
-        {/* ============================================ */}
-        {/* RUTAS DE BACKOFFICE - Solo empleados y admins */}
-        {/* ============================================ */}
-        <Route
-          element={
-            <ProtectedRoute allowedViewers={accessGroups.backOffice}>
-              <BackOfficeLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route
-            path={routePaths.backOffice.dashboard}
-            element={<DashboardPage />}
-          />
-          <Route
-            path={routePaths.backOffice.products}
-            element={<ProductsPage />}
-          />
-          <Route
-            path={routePaths.backOffice.categories}
-            element={<CategoriesPage />}
-          />
-          <Route
-            path={routePaths.backOffice.inventory}
-            element={<InventoryPage />}
-          />
-          <Route
-            path={routePaths.backOffice.orders}
-            element={<InternalOrdersPage />}
-          />
-          <Route
-            path={routePaths.backOffice.orderDetail}
-            element={<InternalOrderDetailPage />}
-          />
-        </Route>
-
-        {/* ============================================ */}
-        {/* RUTAS DE ADMIN - Solo administradores */}
-        {/* ============================================ */}
-        <Route
-          element={
-            <ProtectedRoute allowedViewers={accessGroups.adminOnly}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route
-            path={routePaths.admin.internalUsers}
-            element={<InternalUsersPage />}
-          />
-          <Route
-            path={routePaths.admin.rolesPermissions}
-            element={<RolesPermissionsPage />}
-          />
-          <Route
-            path={routePaths.admin.businessMetrics}
-            element={<BusinessMetricsPage />}
-          />
-          <Route
-            path={routePaths.admin.basicSettings}
-            element={<BasicSettingsPage />}
-          />
-        </Route>
-
-        {/* ============================================ */}
-        {/* DEV TOOLS */}
-        {/* ============================================ */}
-        {showDevTools && DevPreviewPage ? (
-          <Route
-            path="/dev/preview"
-            element={
-              <Suspense fallback={null}>
-                <DevPreviewPage />
-              </Suspense>
-            }
-          />
-        ) : null}
-
-        {/* ============================================ */}
-        {/* RUTAS DE SOPORTE */}
-        {/* ============================================ */}
-        <Route element={<SupportLayout />}>
-          <Route
-            path={routePaths.support.unauthorized}
-            element={<UnauthorizedPage />}
-          />
-          <Route
-            path={routePaths.support.loadingStates}
-            element={<LoadingStatesPage />}
-          />
-          <Route
-            path={routePaths.support.emptyStates}
-            element={<EmptyStatesPage />}
-          />
-          <Route
-            path={routePaths.support.feedbackMessages}
-            element={<FeedbackMessagesPage />}
-          />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
-
+      {showDevTools && DevPreviewRouteBridge ? (
+        <Suspense fallback={null}>
+          <DevPreviewRouteBridge>{routeTree}</DevPreviewRouteBridge>
+        </Suspense>
+      ) : (
+        routeTree
+      )}
       {showDevTools && DevViewSwitcher ? (
         <Suspense fallback={null}>
           <DevViewSwitcher />
