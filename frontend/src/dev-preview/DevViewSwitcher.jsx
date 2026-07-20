@@ -1,14 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./DevViewSwitcher.css";
+import {
+  getDefaultModeFromBackendStatus,
+  readDevViewSwitcherSelection,
+  saveDevViewSwitcherSelection,
+} from "./devViewSwitcherSelection.js";
 import { useBackendStatus } from "./useBackendStatus.js";
 import {
   canPreviewLayout,
   canPreviewViewer,
   getAllowedPreviewViewer,
   getPreviewLayout,
+  getPreviewPath,
   getPreviewView,
   getPreviewViewer,
+  getViewIdFromPath,
   previewLayouts,
   previewViewers,
   previewViews,
@@ -16,6 +23,10 @@ import {
 
 function DevViewSwitcher() {
   const [isOpen, setIsOpen] = useState(true);
+  const [selectedMode, setSelectedMode] = useState(getInitialSelectedMode);
+  const [previewControls, setPreviewControls] = useState(
+    getInitialPreviewControls,
+  );
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,11 +36,16 @@ function DevViewSwitcher() {
     searchParams.get("view") ?? getViewIdFromPath(location.pathname),
   );
   const activeLayout = getPreviewLayout(
-    searchParams.get("layout") ?? activeView.defaultLayout,
+    searchParams.get("layout") ??
+      previewControls.layoutId ??
+      activeView.defaultLayout,
   );
-  const activeViewer = getPreviewViewer(searchParams.get("viewer"));
+  const activeViewer = getPreviewViewer(
+    searchParams.get("viewer") ?? previewControls.viewerId,
+  );
   const isPreviewRoute = location.pathname === "/dev/preview";
-  const currentMode = isPreviewRoute ? "preview" : "normal";
+  const currentMode =
+    selectedMode ?? getDefaultModeFromBackendStatus(backendStatus.state);
   const isLayoutAllowed = canPreviewLayout(activeView, activeLayout.id);
   const isViewerAllowed = canPreviewViewer(activeView, activeViewer.id);
   const isAllowed = isLayoutAllowed && isViewerAllowed;
@@ -47,14 +63,45 @@ function DevViewSwitcher() {
     [],
   );
 
+  useEffect(() => {
+    if (currentMode !== "preview" || isPreviewRoute) {
+      return;
+    }
+
+    const nextView = getPreviewView(getViewIdFromPath(location.pathname));
+    const nextLayoutId = canPreviewLayout(nextView, activeLayout.id)
+      ? activeLayout.id
+      : nextView.defaultLayout;
+    const nextViewerId = getAllowedPreviewViewer(nextView, activeViewer.id).id;
+
+    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId), {
+      replace: true,
+    });
+  }, [
+    activeLayout.id,
+    activeViewer.id,
+    isPreviewRoute,
+    location.pathname,
+    navigate,
+    currentMode,
+  ]);
+
   function goToPreview(
     nextViewId = activeView.id,
     nextLayoutId = activeLayout.id,
     nextViewerId = activeViewer.id,
   ) {
-    navigate(
-      `/dev/preview?view=${nextViewId}&layout=${nextLayoutId}&viewer=${nextViewerId}`,
-    );
+    saveDevViewSwitcherSelection({
+      layoutId: nextLayoutId,
+      mode: "preview",
+      viewerId: nextViewerId,
+    });
+    setSelectedMode("preview");
+    setPreviewControls({
+      layoutId: nextLayoutId,
+      viewerId: nextViewerId,
+    });
+    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId));
   }
 
   function goToAllowedPreview(
@@ -70,11 +117,23 @@ function DevViewSwitcher() {
   }
 
   function goToRealRoute(view = activeView) {
+    saveDevViewSwitcherSelection({
+      layoutId: activeLayout.id,
+      mode: "normal",
+      viewerId: activeViewer.id,
+    });
+    setSelectedMode("normal");
     navigate(view.path, { replace: true });
   }
 
   function handleModeChange(nextMode) {
     if (nextMode === currentMode) {
+      saveDevViewSwitcherSelection({
+        layoutId: activeLayout.id,
+        mode: nextMode,
+        viewerId: activeViewer.id,
+      });
+      setSelectedMode(nextMode);
       return;
     }
 
@@ -333,22 +392,27 @@ function getCheckIcon(status) {
   return "…";
 }
 
-function getViewIdFromPath(pathname) {
-  const exactMatch = previewViews.find((view) => view.path === pathname);
-
-  if (exactMatch) {
-    return exactMatch.id;
+function getInitialSelectedMode() {
+  if (typeof window === "undefined") {
+    return undefined;
   }
 
-  const dynamicMatch = previewViews.find((view) => {
-    const routeRoot = view.path
-      .replace("/demo-producto", "")
-      .replace("/demo-pedido", "");
+  if (window.location.pathname === "/dev/preview") {
+    return "preview";
+  }
 
-    return routeRoot !== "/" && pathname.startsWith(routeRoot);
-  });
+  const storedSelection = readDevViewSwitcherSelection();
 
-  return dynamicMatch?.id;
+  return storedSelection.mode;
+}
+
+function getInitialPreviewControls() {
+  const storedSelection = readDevViewSwitcherSelection();
+
+  return {
+    layoutId: storedSelection.layoutId,
+    viewerId: storedSelection.viewerId,
+  };
 }
 
 export default DevViewSwitcher;
