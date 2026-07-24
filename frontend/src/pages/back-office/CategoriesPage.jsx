@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -20,6 +20,9 @@ import {
   FaFilter,
   FaEye,
 } from "react-icons/fa";
+import { catalogService } from "../../services/backendServices.js";
+import LoadingState from "../../components/support/LoadingState.jsx";
+import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
 export default function CategoriesPage() {
   const user = useAuthStore((state) => state.user);
@@ -30,54 +33,37 @@ export default function CategoriesPage() {
   const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
   const canDeactivate =
     isAdmin || effectivePermissionCodes.includes("products.deactivate");
-  const [categories, setCategories] = useState([
-    {
-      id: 1,
-      name: "Sofás y Sillones",
-      productCount: 12,
-      status: "Activo",
-      icon: <FaCouch size={32} color="#8B5E3C" />,
-    },
-    {
-      id: 2,
-      name: "Mesas y Centros",
-      productCount: 10,
-      status: "Activo",
-      icon: <FaTable size={32} color="#8B5E3C" />,
-    },
-    {
-      id: 3,
-      name: "Oficinas y Escritorios",
-      productCount: 9,
-      status: "Activo",
-      icon: <FaChair size={32} color="#8B5E3C" />,
-    },
-    {
-      id: 4,
-      name: "Iluminación",
-      productCount: 6,
-      status: "Activo",
-      icon: <FaLightbulb size={32} color="#8B5E3C" />,
-    },
-    {
-      id: 5,
-      name: "Almacenamiento",
-      productCount: 4,
-      status: "Inactivo",
-      icon: <FaBoxOpen size={32} color="#8B5E3C" />,
-    },
-  ]);
-
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
-    status: "Activo",
+    status: "active",
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("Todos");
 
   const statusOptions = ["Todos", "Activo", "Inactivo"];
+
+  // ✅ Cargar categorías desde el backend
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  async function fetchCategories() {
+    try {
+      setLoading(true);
+      const response = await catalogService.manageCategories();
+      setCategories(response.results || response || []);
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Error al cargar categorías");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const normalizeString = (str) => {
     return str
@@ -86,12 +72,38 @@ export default function CategoriesPage() {
       .toLowerCase();
   };
 
+  const getStatusLabel = (status) => {
+    if (typeof status === "boolean") {
+      return status ? "Activo" : "Inactivo";
+    }
+    return status === "active" || status === "Activo" ? "Activo" : "Inactivo";
+  };
+
+  const getStatusValue = (status) => {
+    if (typeof status === "boolean") {
+      return status;
+    }
+    return status === "active" || status === "Activo";
+  };
+
+  const getCategoryIcon = (name) => {
+    const icons = {
+      "Sofás": <FaCouch size={32} color="#8B5E3C" />,
+      "Mesas": <FaTable size={32} color="#8B5E3C" />,
+      "Sillas": <FaChair size={32} color="#8B5E3C" />,
+      "Iluminación": <FaLightbulb size={32} color="#8B5E3C" />,
+      "Almacenamiento": <FaBoxOpen size={32} color="#8B5E3C" />,
+    };
+    return icons[name] || <FaBoxOpen size={32} color="#8B5E3C" />;
+  };
+
   const filteredCategories = categories.filter((category) => {
     const normalizedSearch = normalizeString(searchTerm);
     const normalizedName = normalizeString(category.name);
     const matchesSearch = normalizedName.includes(normalizedSearch);
+    const categoryStatus = getStatusLabel(category.status);
     const matchesStatus =
-      filterStatus === "Todos" || category.status === filterStatus;
+      filterStatus === "Todos" || categoryStatus === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -100,13 +112,13 @@ export default function CategoriesPage() {
       setEditingCategory(category);
       setFormData({
         name: category.name,
-        status: category.status,
+        status: getStatusValue(category.status) ? "active" : "inactive",
       });
     } else {
       setEditingCategory(null);
       setFormData({
         name: "",
-        status: "Activo",
+        status: "active",
       });
     }
     setShowModal(true);
@@ -124,42 +136,41 @@ export default function CategoriesPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  // ✅ Crear/Actualizar categoría con catalogService
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingCategory) {
-      setCategories(
-        categories.map((c) =>
-          c.id === editingCategory.id
-            ? {
-                ...c,
-                name: formData.name,
-                status: formData.status,
-              }
-            : c,
-        ),
-      );
-    } else {
-      setCategories([
-        ...categories,
-        {
-          id: categories.length + 1,
-          name: formData.name,
-          productCount: 0,
-          status: formData.status,
-          icon: <FaBoxOpen size={32} color="#8B5E3C" />,
-        },
-      ]);
+    try {
+      const payload = {
+        name: formData.name,
+        active: formData.status === "active",
+      };
+
+      if (editingCategory) {
+        await catalogService.updateCategory(editingCategory.slug || editingCategory.id, payload);
+      } else {
+        await catalogService.createCategory(payload);
+      }
+      handleCloseModal();
+      fetchCategories();
+    } catch (err) {
+      setError(err.message || "Error al guardar categoría");
     }
-    handleCloseModal();
   };
 
-  const handleDelete = (id) => {
+  // ✅ Desactivar categoría con catalogService
+  const handleDelete = async (id) => {
     if (window.confirm("¿Desactivar esta categoría?")) {
-      setCategories(
-        categories.map((c) => (c.id === id ? { ...c, status: "Inactivo" } : c)),
-      );
+      try {
+        await catalogService.deactivateCategory(id);
+        fetchCategories();
+      } catch (err) {
+        setError(err.message || "Error al desactivar categoría");
+      }
     }
   };
+
+  if (loading) return <LoadingState message="Cargando categorías..." />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="home-page dashboard-page">
@@ -402,7 +413,7 @@ export default function CategoriesPage() {
                     justifyContent: "center",
                   }}
                 >
-                  {category.icon}
+                  {getCategoryIcon(category.name)}
                 </div>
 
                 <h3
@@ -423,7 +434,7 @@ export default function CategoriesPage() {
                     marginBottom: "16px",
                   }}
                 >
-                  {category.productCount} productos
+                  {category.product_count || category.products_count || 0} productos
                 </span>
 
                 <div
@@ -460,7 +471,7 @@ export default function CategoriesPage() {
                   )}
                   {canDeactivate && (
                     <button
-                      onClick={() => handleDelete(category.id)}
+                      onClick={() => handleDelete(category.slug)}
                       style={{
                         backgroundColor: "#FDECEA",
                         color: "#D32F2F",
@@ -481,6 +492,9 @@ export default function CategoriesPage() {
                       <FaTrash size={14} /> Desactivar
                     </button>
                   )}
+                  {!canUpdate && !canDeactivate && (
+                    <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Solo lectura</span>
+                  )}
                 </div>
 
                 <div
@@ -496,16 +510,16 @@ export default function CategoriesPage() {
                   <span
                     style={{
                       backgroundColor:
-                        category.status === "Activo" ? "#E8F5E9" : "#FDECEA",
+                        getStatusValue(category.status) ? "#E8F5E9" : "#FDECEA",
                       color:
-                        category.status === "Activo" ? "#2E7D32" : "#D32F2F",
+                        getStatusValue(category.status) ? "#2E7D32" : "#D32F2F",
                       padding: "4px 16px",
                       borderRadius: "20px",
                       fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
                       fontWeight: 600,
                     }}
                   >
-                    {category.status}
+                    {getStatusLabel(category.status)}
                   </span>
                   <Link
                     to={`${routePaths.backOffice.products}?categoria=${category.id}`}
@@ -651,8 +665,8 @@ export default function CategoriesPage() {
                     outline: "none",
                   }}
                 >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
                 </select>
               </div>
 

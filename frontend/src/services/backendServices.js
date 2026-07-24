@@ -47,6 +47,8 @@ export const catalogService = {
   createCategory: (data) => post(apiEndpoints.catalog.manageCategories, data),
   updateCategory: (slug, data) =>
     patch(apiEndpoints.catalog.manageCategoryDetail(slug), data),
+  deactivateCategory: (slug) =>
+    remove(apiEndpoints.catalog.manageCategoryDetail(slug)),
   manageProducts: (params) => get(apiEndpoints.catalog.manageProducts, params),
   createProduct: (data) => post(apiEndpoints.catalog.manageProducts, data),
   updateProduct: (id, data) =>

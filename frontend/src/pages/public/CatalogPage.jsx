@@ -1,7 +1,7 @@
 // Importación de CSS
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
 import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
 import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
@@ -10,45 +10,110 @@ import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
-import { useCart } from "../../context/CartContext.jsx";
+import { cartService } from "../../services/backendServices.js";
+
+// ============================================================
+// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
+// ============================================================
+const productImages = {
+  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
+  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
+  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
+  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400&h=400&fit=crop",
+  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
+  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
+  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&h=400&fit=crop",
+  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&h=400&fit=crop",
+  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop",
+  "Sillón": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop",
+  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&h=400&fit=crop",
+  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
+  "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
+  "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
+  "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
+};
+
+// ✅ Función para obtener imagen según el producto
+const getProductImage = (product) => {
+  // Si el producto ya tiene imagen, usarla
+  if (product.image) return product.image;
+  if (product.images?.length > 0) return product.images[0];
+  
+  const name = product.name || "";
+  // Buscar coincidencia exacta o parcial
+  for (const [key, value] of Object.entries(productImages)) {
+    if (name.includes(key) || key.includes(name)) {
+      return value;
+    }
+  }
+  
+  // Si no coincide, usar imagen por defecto según categoría
+  const category = product.category?.name || product.category || "";
+  if (category.includes("Sofá") || category.includes("Sillón")) {
+    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
+  }
+  if (category.includes("Mesa")) {
+    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop";
+  }
+  if (category.includes("Silla")) {
+    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop";
+  }
+  
+  return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
+};
+
+// ============================================================
+// PRODUCTOS MOCK (FALLBACK)
+// ============================================================
+const allProductsMock = [
+  { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
+  { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
+  { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
+  { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
+];
+
+const generateMockProducts = () => {
+  const products = [];
+  for (let i = 0; i < 32; i++) {
+    const base = allProductsMock[i % allProductsMock.length];
+    products.push({ ...base, id: i + 1 });
+  }
+  return products;
+};
 
 function CatalogPage() {
   const [sortBy, setSortBy] = useState("default");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [loading] = useState(false);
-
-  const { addToCart } = useCart();
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
 
   // ============================================================
-  // PRODUCTOS - TODOS LOS PRECIOS EN MILES
+  // ✅ CARGAR PRODUCTOS DEL BACKEND
   // ============================================================
-  const allProducts = [
-    { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
-    { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
-    { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
-    { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
-    { id: 5, name: "Respira", description: "Set bar exterior", price: 2899, image: RespiraDaybed, category: "Decoración" },
-    { id: 6, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, category: "Decoración" },
-    { id: 7, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas" },
-    { id: 8, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
-    { id: 9, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
-    { id: 10, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
-    { id: 11, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
-    { id: 12, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas" },
-  ];
-
-  // Generar 32 productos
-  const generateProducts = () => {
-    const products = [];
-    for (let i = 0; i < 32; i++) {
-      const base = allProducts[i % allProducts.length];
-      products.push({ ...base, id: i + 1 });
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/catalog/products/');
+      const data = await response.json();
+      console.log('📦 Productos del backend:', data.results || data);
+      setProducts(data.results || data || []);
+    } catch (error) {
+      console.error('❌ Error al cargar productos:', error);
+      // Si falla, usar productos mock
+      setProducts(generateMockProducts());
+    } finally {
+      setLoading(false);
     }
-    return products;
-  };
+  }, []);
 
-  const finalProducts = generateProducts();
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // ✅ Usar productos del backend si existen, si no usar mock
+  const finalProducts = products.length > 0 ? products : generateMockProducts();
 
   // ============================================================
   // CALCULAR EL PRECIO MÁXIMO DINÁMICAMENTE
@@ -57,8 +122,7 @@ function CatalogPage() {
     typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
   ));
   
-  // Redondear hacia arriba al millar más cercano para mejor UX
-  const maxPriceRounded = Math.ceil(maxProductPrice / 1000) * 1000;
+  const maxPriceRounded = Math.ceil(Math.max(maxProductPrice, 1000) / 1000) * 1000;
 
   const [priceRange, setPriceRange] = useState({ 
     min: 0, 
@@ -70,11 +134,14 @@ function CatalogPage() {
     const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
     const inPriceRange = price >= priceRange.min && price <= priceRange.max;
 
+    // Obtener nombre de categoría (puede ser objeto o string)
+    const categoryName = typeof product.category === 'object' ? product.category?.name : product.category;
+    
     if (selectedCategories.length === 0) {
       return inPriceRange;
     }
 
-    return inPriceRange && selectedCategories.includes(product.category);
+    return inPriceRange && selectedCategories.includes(categoryName);
   });
 
   // Ordenar productos
@@ -117,14 +184,41 @@ function CatalogPage() {
     }
   };
 
-  const handleAddToCart = (product) => {
-    addToCart(product);
-    setNotification(`✅ ${product.name} agregado al carrito`);
-    setTimeout(() => setNotification(null), 3000);
+  // ✅ handleAddToCart usando cartService
+  const handleAddToCart = async (product) => {
+    try {
+      // Verificar que el producto tiene ID válido
+      if (!product.id || product.id < 1) {
+        setNotification('❌ Producto no válido');
+        setTimeout(() => setNotification(null), 3000);
+        return;
+      }
+
+      await cartService.addItem({
+        product_id: product.id,
+        quantity: 1
+      });
+      setNotification(`✅ ${product.name} agregado al carrito`);
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('❌ Error al agregar al carrito:', error);
+      if (error.message?.includes('no existe')) {
+        setNotification(`❌ El producto "${product.name}" no existe en la base de datos`);
+      } else if (error.message?.includes('autenticación') || error.status === 401) {
+        setNotification('❌ Por favor, inicia sesión para agregar productos');
+      } else {
+        setNotification(`❌ Error: ${error.message || 'No se pudo agregar al carrito'}`);
+      }
+      setTimeout(() => setNotification(null), 4000);
+    }
   };
 
+  // Obtener categorías únicas de los productos
   const categories = [
-    ...new Set(finalProducts.map((product) => product.category).filter(Boolean)),
+    ...new Set(finalProducts.map((product) => {
+      if (typeof product.category === 'object') return product.category?.name;
+      return product.category;
+    }).filter(Boolean))
   ];
 
   if (loading) {
@@ -148,7 +242,7 @@ function CatalogPage() {
           position: "fixed",
           top: "1rem",
           right: "1rem",
-          background: "#2f2a25",
+          background: notification.includes('❌') ? '#D32F2F' : '#2f2a25',
           color: "white",
           padding: "1rem 1.5rem",
           borderRadius: "0.8rem",
@@ -295,34 +389,41 @@ function CatalogPage() {
                   </button>
                 </div>
               ) : (
-                sortedProducts.map((product) => (
-                  <article className="product-card" key={product.id}>
-                    <div
-                      className="product-card__image"
-                      style={{ backgroundImage: `url(${product.image})` }}
-                    >
-                      {product.badge ? (
-                        <span
-                          className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
-                        >
-                          {product.badge}
-                        </span>
-                      ) : null}
-                      <div className="product-card__overlay">
-                        <button type="button" onClick={() => handleAddToCart(product)}>
-                          Agregar a carrito
-                        </button>
+                sortedProducts.map((product) => {
+                  // Obtener imagen del producto
+                  const productImage = getProductImage(product);
+                  // Obtener categoría como string
+                  const categoryName = typeof product.category === 'object' ? product.category?.name : product.category;
+                  
+                  return (
+                    <article className="product-card" key={product.id}>
+                      <div
+                        className="product-card__image"
+                        style={{ backgroundImage: `url(${productImage})` }}
+                      >
+                        {product.badge ? (
+                          <span
+                            className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
+                          >
+                            {product.badge}
+                          </span>
+                        ) : null}
+                        <div className="product-card__overlay">
+                          <button type="button" onClick={() => handleAddToCart(product)}>
+                            Agregar a carrito
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="product-card__body">
-                      <h3>{product.name}</h3>
-                      <p>{product.description}</p>
-                      <span className="product-card__price">
-                        {formatPrice(product.price)}
-                      </span>
-                    </div>
-                  </article>
-                ))
+                      <div className="product-card__body">
+                        <h3>{product.name}</h3>
+                        <p>{product.description || categoryName || "Mueble de calidad"}</p>
+                        <span className="product-card__price">
+                          {formatPrice(product.price)}
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })
               )}
             </section>
           </div>
