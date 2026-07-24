@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from apps.accounts.permissions import IsEmployeeOrAdmin
+from apps.access_control.permissions import operational_permission
 from apps.catalog.filters import (
     ProductFilter,
     SpecificationFilterMixin,
@@ -46,10 +46,27 @@ class PublicProductViewSet(SpecificationFilterMixin, viewsets.ReadOnlyModelViewS
 class StaffCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.order_by("name")
     serializer_class = CategorySerializer
-    permission_classes = (IsEmployeeOrAdmin,)
     lookup_field = "slug"
     search_fields = ("name", "description")
     ordering_fields = ("name", "active", "created_at")
+
+    def get_permissions(self):
+        permission_by_action = {
+            "list": "products.view",
+            "retrieve": "products.view",
+            "create": "products.create",
+            "update": "products.update",
+            "partial_update": "products.update",
+            "destroy": "products.deactivate",
+        }
+        permission_code = permission_by_action.get(self.action, "products.view")
+        return [operational_permission(permission_code)()]
+
+    def destroy(self, request, *args, **kwargs):
+        category = self.get_object()
+        category.active = False
+        category.save(update_fields=("active", "updated_at"))
+        return Response(self.get_serializer(category).data)
 
 
 class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
@@ -59,7 +76,6 @@ class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
         .order_by("name")
     )
     serializer_class = ProductSerializer
-    permission_classes = (IsEmployeeOrAdmin,)
     filterset_class = StaffProductFilter
     search_fields = (
         "sku",
@@ -77,6 +93,18 @@ class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
         "active",
         "created_at",
     )
+
+    def get_permissions(self):
+        permission_by_action = {
+            "list": "products.view",
+            "retrieve": "products.view",
+            "create": "products.create",
+            "update": "products.update",
+            "partial_update": "products.update",
+            "destroy": "products.deactivate",
+        }
+        permission_code = permission_by_action.get(self.action, "products.view")
+        return [operational_permission(permission_code)()]
 
     def destroy(self, request, *args, **kwargs):
         product = self.get_object()

@@ -4,6 +4,8 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import {
   FaSearch,
@@ -70,6 +72,12 @@ const INITIAL_PRODUCTS = [
 ];
 
 export default function InventoryPage() {
+  const user = useAuthStore((state) => state.user);
+  const viewerId = getViewerIdForUser(user);
+  const isAdmin = viewerId === "admin";
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  const canAdjustInventory =
+    isAdmin || effectivePermissionCodes.includes("inventory.adjust");
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("1");
@@ -474,32 +482,36 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td style={{ textAlign: "center", padding: "12px 10px" }}>
-                        <button
-                          type="button"
-                          onClick={() => handleEditStock(product)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "6px 16px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#8B5E3C",
-                            color: "#fff",
-                            fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                            cursor: "pointer",
-                            fontWeight: 500,
-                            transition: "background-color 0.2s ease",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = "#6B4A2B")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background = "#8B5E3C")
-                          }
-                        >
-                          <FaEdit size={14} /> Editar Stock
-                        </button>
+                        {canAdjustInventory ? (
+                          <button
+                            type="button"
+                            onClick={() => handleEditStock(product)}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "6px 16px",
+                              borderRadius: "6px",
+                              border: "none",
+                              background: "#8B5E3C",
+                              color: "#fff",
+                              fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                              cursor: "pointer",
+                              fontWeight: 500,
+                              transition: "background-color 0.2s ease",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "#6B4A2B")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "#8B5E3C")
+                            }
+                          >
+                            <FaEdit size={14} /> Editar Stock
+                          </button>
+                        ) : (
+                          <span style={{ color: "#7A6B5A" }}>Solo lectura</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -656,16 +668,16 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* Actualización de cantidades */}
-          <div
-            className="dashboard-card stock-form-container"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
+          {canAdjustInventory && (
+            <div
+              className="dashboard-card stock-form-container"
+              style={{
+                padding: "24px",
+                background: "#FDF8F0",
+                border: "1px solid #E8DCCC",
+                borderRadius: "16px",
+              }}
+            >
             <div
               className="dashboard-card-header"
               style={{ marginBottom: "16px" }}
@@ -858,6 +870,7 @@ export default function InventoryPage() {
               </button>
             </form>
           </div>
+          )}
         </div>
       </main>
 

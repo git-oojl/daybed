@@ -4,6 +4,8 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import {
   FaPlus,
@@ -19,6 +21,14 @@ import {
 } from "react-icons/fa";
 
 export default function ProductsPage() {
+  const user = useAuthStore((state) => state.user);
+  const viewerId = getViewerIdForUser(user);
+  const isAdmin = viewerId === "admin";
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
+  const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
+  const canDeactivate =
+    isAdmin || effectivePermissionCodes.includes("products.deactivate");
   const [products, setProducts] = useState([
     {
       id: 1,
@@ -218,8 +228,10 @@ export default function ProductsPage() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm("¿Eliminar este producto?")) {
-      setProducts(products.filter((p) => p.id !== id));
+    if (window.confirm("¿Desactivar este producto?")) {
+      setProducts(
+        products.map((p) => (p.id === id ? { ...p, status: "Inactivo" } : p)),
+      );
     }
   };
 
@@ -317,24 +329,26 @@ export default function ProductsPage() {
           >
             Lista de productos
           </h2>
-          <button
-            onClick={() => handleOpenModal()}
-            className="btn-primary"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 20px",
-              background: "#8B5E3C",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-              cursor: "pointer",
-            }}
-          >
-            <FaPlus /> Nuevo producto
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => handleOpenModal()}
+              className="btn-primary"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 20px",
+                background: "#8B5E3C",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                cursor: "pointer",
+              }}
+            >
+              <FaPlus /> Nuevo producto
+            </button>
+          )}
         </div>
 
         <div
@@ -594,6 +608,7 @@ export default function ProductsPage() {
                         >
                           <button
                             onClick={() => handleToggleStatus(product.id)}
+                            disabled={!canDeactivate}
                             className={`status-toggle ${product.status === "Activo" ? "status-active" : "status-inactive"}`}
                             style={{
                               padding: "4px 14px",
@@ -601,7 +616,7 @@ export default function ProductsPage() {
                               border: "none",
                               fontWeight: 600,
                               fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                              cursor: "pointer",
+                              cursor: canDeactivate ? "pointer" : "default",
                               background:
                                 product.status === "Activo"
                                   ? "#E8F5E9"
@@ -627,44 +642,48 @@ export default function ProductsPage() {
                               flexWrap: "wrap",
                             }}
                           >
-                            <button
-                              onClick={() => handleOpenModal(product)}
-                              className="btn-edit"
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                padding: "6px 14px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#8B5E3C",
-                                color: "#fff",
-                                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                                cursor: "pointer",
-                                fontWeight: 500,
-                              }}
-                            >
-                              <FaEdit size={12} /> Editar
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="btn-delete"
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                padding: "6px 14px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#D32F2F",
-                                color: "#fff",
-                                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                                cursor: "pointer",
-                                fontWeight: 500,
-                              }}
-                            >
-                              <FaTrash size={12} /> Eliminar
-                            </button>
+                            {canUpdate && (
+                              <button
+                                onClick={() => handleOpenModal(product)}
+                                className="btn-edit"
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "6px 14px",
+                                  borderRadius: "6px",
+                                  border: "none",
+                                  background: "#8B5E3C",
+                                  color: "#fff",
+                                  fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                <FaEdit size={12} /> Editar
+                              </button>
+                            )}
+                            {canDeactivate && (
+                              <button
+                                onClick={() => handleDelete(product.id)}
+                                className="btn-delete"
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "6px 14px",
+                                  borderRadius: "6px",
+                                  border: "none",
+                                  background: "#D32F2F",
+                                  color: "#fff",
+                                  fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                <FaTrash size={12} /> Desactivar
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -1,27 +1,17 @@
-// ProfilePage.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/CSS/account/profile-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { accountService } from "../../services/backendServices.js";
 import { routePaths } from "../../routes/routePaths.js";
-import { getViewerIdForUser } from "../../auth/roleMapping.js";
 
-// ============================================
-// ICONOS SVG
-// ============================================
 function IconUser() {
   return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0"
         stroke="currentColor"
@@ -34,13 +24,7 @@ function IconUser() {
 
 function IconMail() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
         stroke="currentColor"
@@ -60,13 +44,7 @@ function IconMail() {
 
 function IconPhone() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z"
         stroke="currentColor"
@@ -80,13 +58,7 @@ function IconPhone() {
 
 function IconEdit() {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M12 20h9M16.5 3.5l4 4L7 21l-5 1 1-5L16.5 3.5Z"
         stroke="currentColor"
@@ -100,13 +72,7 @@ function IconEdit() {
 
 function IconCheck() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M5 12l5 5L20 7"
         stroke="currentColor"
@@ -120,13 +86,7 @@ function IconCheck() {
 
 function IconLogout() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
         stroke="currentColor"
@@ -166,112 +126,200 @@ function IconLoading() {
   );
 }
 
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
+const EMPTY_FORM = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  state: "",
+  city: "",
+};
+
+const ROLE_LABELS = {
+  cliente: "Cliente",
+  empleado: "Empleado",
+  administrador: "Administrador",
+};
+
+const ROLE_BADGE_CLASSES = {
+  cliente: "profile-role-badge--customer",
+  empleado: "profile-role-badge--employee",
+  administrador: "profile-role-badge--admin",
+};
+
+const EMPLOYEE_SHORTCUTS = [
+  {
+    permission: "dashboard.view",
+    title: "Dashboard operativo",
+    description: "Métricas y actividad interna",
+    path: routePaths.backOffice.dashboard,
+  },
+  {
+    permission: "products.view",
+    title: "Productos",
+    description: "Catálogo y categorías internas",
+    path: routePaths.backOffice.products,
+  },
+  {
+    permission: "inventory.view",
+    title: "Inventario",
+    description: "Stock y alertas de bajo inventario",
+    path: routePaths.backOffice.inventory,
+  },
+  {
+    permission: "orders.view",
+    title: "Pedidos",
+    description: "Seguimiento operativo de pedidos",
+    path: routePaths.backOffice.orders,
+  },
+];
+
+const ADMIN_SHORTCUTS = [
+  {
+    title: "Métricas del negocio",
+    description: "Panel administrativo",
+    path: routePaths.admin.businessMetrics,
+  },
+  {
+    title: "Usuarios internos",
+    description: "Gestión de cuentas y roles",
+    path: routePaths.admin.internalUsers,
+  },
+  {
+    title: "Roles y permisos",
+    description: "Paquete operativo de empleados",
+    path: routePaths.admin.rolesPermissions,
+  },
+  {
+    title: "Configuración básica",
+    description: "Datos públicos de tienda",
+    path: routePaths.admin.basicSettings,
+  },
+];
+
+function formFromProfile(profile) {
+  return {
+    first_name: profile?.first_name ?? "",
+    last_name: profile?.last_name ?? "",
+    email: profile?.email ?? "",
+    phone: profile?.phone ?? "",
+    state: profile?.state ?? "",
+    city: profile?.city ?? "",
+  };
+}
+
+function getDisplayName(profile) {
+  const fullName = [profile?.first_name, profile?.last_name]
+    .filter(Boolean)
+    .join(" ");
+  return fullName || profile?.username || profile?.email || "Usuario";
+}
+
+function getErrorMessage(error) {
+  return error?.message || "No se pudo completar la operación.";
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    isLoading: authLoading,
+    logout,
+    clearSession,
+    setUser,
+  } = useAuthStore();
 
-  // Estados del perfil
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+  const [formError, setFormError] = useState(null);
   const [editing, setEditing] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // Formulario de edición
-  const [editForm, setEditForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
   });
 
-  // ============================================
-  // ✅ OBTENER DATOS DEL PERFIL - CON useCallback
-  // ============================================
   const fetchProfile = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
 
     try {
       const data = await accountService.me();
-      
       setProfile(data);
-      setEditForm({
-        name: data.name || "",
-        email: data.email || "",
-        phone: data.phone || "",
-      });
+      setEditForm(formFromProfile(data));
+      setUser(data);
     } catch (err) {
-      console.error("Error al cargar perfil:", err);
-      setError(err.message || "Error al cargar los datos del perfil");
+      setLoadError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setUser]);
 
-  // ============================================
-  // ✅ VERIFICAR ROL Y CARGAR PERFIL
-  // ============================================
   useEffect(() => {
-    // Si aún está cargando la autenticación, esperar
     if (authLoading) {
       return;
     }
 
-    // Si no está autenticado, redirigir al login
     if (!isAuthenticated) {
       navigate(routePaths.account.login);
       return;
     }
 
-    // Verificar rol del usuario
-    const viewerId = getViewerIdForUser(user);
-    
-    // Solo clientes pueden ver esta página
-    if (viewerId !== "customer") {
-      navigate(routePaths.support.unauthorized || "/no-autorizado");
-      return;
-    }
-    
-    // Cargar datos del perfil
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchProfile();
-  }, [isAuthenticated, authLoading, user, navigate, fetchProfile]);
+  }, [isAuthenticated, authLoading, navigate, fetchProfile]);
 
-  // ============================================
-  // ✅ ACTUALIZAR PERFIL
-  // ============================================
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
+  const viewerId = getViewerIdForUser(profile ?? user);
+  const roleLabel = ROLE_LABELS[profile?.role] ?? profile?.role ?? "Usuario";
+  const roleBadgeClass =
+    ROLE_BADGE_CLASSES[profile?.role] ?? "profile-role-badge--customer";
+
+  const employeeShortcuts = useMemo(() => {
+    const effectivePermissionCodes = profile?.effective_permission_codes ?? [];
+    if (viewerId === "admin") {
+      return EMPLOYEE_SHORTCUTS;
+    }
+    return EMPLOYEE_SHORTCUTS.filter((shortcut) =>
+      effectivePermissionCodes.includes(shortcut.permission),
+    );
+  }, [profile?.effective_permission_codes, viewerId]);
+
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
     setSaving(true);
-    setError(null);
+    setFormError(null);
+    setSuccessMessage("");
 
     try {
-      const updated = await accountService.updateMe(editForm);
-      
+      const payload = {
+        first_name: editForm.first_name,
+        last_name: editForm.last_name,
+        email: editForm.email,
+        phone: editForm.phone,
+        state: editForm.state,
+        city: editForm.city,
+      };
+      const updated = await accountService.updateMe(payload);
+
       setProfile(updated);
-      setEditForm({
-        name: updated.name || "",
-        email: updated.email || "",
-        phone: updated.phone || "",
-      });
+      setEditForm(formFromProfile(updated));
+      setUser(updated);
       setEditing(false);
       setSuccessMessage("Perfil actualizado exitosamente");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      console.error("Error al actualizar perfil:", err);
-      setError(err.message || "Error al actualizar el perfil");
+      setFormError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
   };
 
-  // ============================================
-  // ✅ CERRAR SESIÓN
-  // ============================================
   const handleLogout = async () => {
     if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
       await logout();
@@ -279,17 +327,46 @@ export default function ProfilePage() {
     }
   };
 
-  // ============================================
-  // ✅ HANDLERS DE FORMULARIOS
-  // ============================================
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
+    setPasswordForm((current) => ({ ...current, [name]: value }));
+    setFormError(null);
   };
 
-  // ============================================
-  // ✅ ESTADOS DE CARGA Y ERROR
-  // ============================================
+  const handleSavePassword = async (event) => {
+    event.preventDefault();
+    setPasswordSaving(true);
+    setFormError(null);
+    setSuccessMessage("");
+
+    try {
+      await accountService.changePassword(passwordForm);
+      setSuccessMessage("Contraseña actualizada. Vuelve a iniciar sesión.");
+      setPasswordForm({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+      clearSession();
+      navigate(routePaths.account.login);
+    } catch (err) {
+      setFormError(getErrorMessage(err));
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const handleProfileChange = (event) => {
+    const { name, value } = event.target;
+    setEditForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleCancel = () => {
+    setEditForm(formFromProfile(profile));
+    setEditing(false);
+    setFormError(null);
+  };
+
   if (loading || authLoading) {
     return (
       <div className="home-page profile-page">
@@ -303,13 +380,15 @@ export default function ProfilePage() {
     );
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
         <div className="profile-error">
-          <p>❌ {error}</p>
-          <button onClick={fetchProfile}>Reintentar</button>
+          <p>{loadError}</p>
+          <button onClick={fetchProfile} type="button">
+            Reintentar
+          </button>
         </div>
         <HomeFooter />
       </div>
@@ -328,14 +407,10 @@ export default function ProfilePage() {
     );
   }
 
-  // ============================================
-  // ✅ RENDER PRINCIPAL
-  // ============================================
   return (
     <div className="home-page profile-page">
       <HomeHeader />
 
-      {/* HERO */}
       <section className="profile-hero" aria-label="Perfil de usuario">
         <div className="profile-hero__overlay">
           <div className="profile-hero__content">
@@ -350,7 +425,6 @@ export default function ProfilePage() {
       </section>
 
       <main className="profile-container">
-        {/* MENSAJE DE ÉXITO */}
         {successMessage && (
           <div className="profile__alert profile__alert--success">
             <IconCheck />
@@ -358,14 +432,13 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {error && (
+        {formError && (
           <div className="profile__alert profile__alert--error">
-            <span>⚠️ {error}</span>
+            <span>{formError}</span>
           </div>
         )}
 
         <div className="profile-grid">
-          {/* ===== INFORMACIÓN PERSONAL ===== */}
           <section className="profile-card" aria-labelledby="profile-personal">
             <div className="profile-card__header">
               <div className="profile-card__header-left">
@@ -377,7 +450,7 @@ export default function ProfilePage() {
                     Información personal
                   </h2>
                   <p className="profile-card__desc">
-                    Tus datos personales y de contacto
+                    Datos compartidos para todos los usuarios autenticados
                   </p>
                 </div>
               </div>
@@ -386,6 +459,7 @@ export default function ProfilePage() {
                   className="profile-card__edit-btn"
                   onClick={() => setEditing(true)}
                   disabled={saving}
+                  type="button"
                 >
                   <IconEdit />
                   Editar
@@ -396,18 +470,29 @@ export default function ProfilePage() {
             <div className="profile-card__body">
               {editing ? (
                 <form onSubmit={handleSaveProfile} className="profile-form">
-                  <div className="profile-form__group">
-                    <label htmlFor="name">Nombre completo</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={editForm.name}
-                      onChange={handleProfileChange}
-                      placeholder="Tu nombre"
-                      required
-                      disabled={saving}
-                    />
+                  <div className="profile-form__row">
+                    <div className="profile-form__group">
+                      <label htmlFor="first_name">Nombre</label>
+                      <input
+                        type="text"
+                        id="first_name"
+                        name="first_name"
+                        value={editForm.first_name}
+                        onChange={handleProfileChange}
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="profile-form__group">
+                      <label htmlFor="last_name">Apellido</label>
+                      <input
+                        type="text"
+                        id="last_name"
+                        name="last_name"
+                        value={editForm.last_name}
+                        onChange={handleProfileChange}
+                        disabled={saving}
+                      />
+                    </div>
                   </div>
 
                   <div className="profile-form__group">
@@ -418,7 +503,6 @@ export default function ProfilePage() {
                       name="email"
                       value={editForm.email}
                       onChange={handleProfileChange}
-                      placeholder="tu@email.com"
                       required
                       disabled={saving}
                     />
@@ -432,17 +516,40 @@ export default function ProfilePage() {
                       name="phone"
                       value={editForm.phone}
                       onChange={handleProfileChange}
-                      placeholder="5512345678"
-                      required
                       disabled={saving}
                     />
+                  </div>
+
+                  <div className="profile-form__row">
+                    <div className="profile-form__group">
+                      <label htmlFor="state">Estado</label>
+                      <input
+                        type="text"
+                        id="state"
+                        name="state"
+                        value={editForm.state}
+                        onChange={handleProfileChange}
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="profile-form__group">
+                      <label htmlFor="city">Ciudad</label>
+                      <input
+                        type="text"
+                        id="city"
+                        name="city"
+                        value={editForm.city}
+                        onChange={handleProfileChange}
+                        disabled={saving}
+                      />
+                    </div>
                   </div>
 
                   <div className="profile-form__actions">
                     <button
                       type="button"
                       className="profile-form__btn profile-form__btn--secondary"
-                      onClick={() => setEditing(false)}
+                      onClick={handleCancel}
                       disabled={saving}
                     >
                       Cancelar
@@ -460,24 +567,39 @@ export default function ProfilePage() {
                 <div className="profile-info">
                   <div className="profile-info__item">
                     <span className="profile-info__label">Nombre</span>
-                    <span className="profile-info__value">{profile.name}</span>
-                  </div>
-                  <div className="profile-info__item">
-                    <span className="profile-info__label">
-                      Correo electrónico
+                    <span className="profile-info__value">
+                      {getDisplayName(profile)}
                     </span>
-                    <span className="profile-info__value">{profile.email}</span>
                   </div>
                   <div className="profile-info__item">
-                    <span className="profile-info__label">Teléfono</span>
-                    <span className="profile-info__value">{profile.phone}</span>
+                    <span className="profile-info__label">Usuario</span>
+                    <span className="profile-info__value">{profile.username}</span>
+                  </div>
+                  <div className="profile-info__item">
+                    <span className="profile-info__label">Rol</span>
+                    <span
+                      className={`profile-role-badge ${roleBadgeClass}`}
+                    >
+                      {roleLabel}
+                    </span>
+                  </div>
+                  <div className="profile-info__item">
+                    <span className="profile-info__label">Estado</span>
+                    <span className="profile-info__value">
+                      {profile.state || "No definido"}
+                    </span>
+                  </div>
+                  <div className="profile-info__item">
+                    <span className="profile-info__label">Ciudad</span>
+                    <span className="profile-info__value">
+                      {profile.city || "No definida"}
+                    </span>
                   </div>
                 </div>
               )}
             </div>
           </section>
 
-          {/* ===== DATOS DE CONTACTO ===== */}
           <section className="profile-card" aria-labelledby="profile-contact">
             <div className="profile-card__header">
               <div className="profile-card__header-left">
@@ -489,7 +611,7 @@ export default function ProfilePage() {
                     Datos de contacto
                   </h2>
                   <p className="profile-card__desc">
-                    Información de contacto adicional
+                    Información personal de contacto
                   </p>
                 </div>
               </div>
@@ -505,9 +627,7 @@ export default function ProfilePage() {
                     <p className="profile-contact-info__label">
                       Correo electrónico
                     </p>
-                    <p className="profile-contact-info__value">
-                      {profile.email}
-                    </p>
+                    <p className="profile-contact-info__value">{profile.email}</p>
                   </div>
                 </div>
                 <div className="profile-contact-info__item">
@@ -517,7 +637,7 @@ export default function ProfilePage() {
                   <div>
                     <p className="profile-contact-info__label">Teléfono</p>
                     <p className="profile-contact-info__value">
-                      {profile.phone}
+                      {profile.phone || "No definido"}
                     </p>
                   </div>
                 </div>
@@ -525,7 +645,137 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* ===== ACCIONES DE CUENTA ===== */}
+          <section className="profile-card" aria-labelledby="profile-shortcuts">
+            <div className="profile-card__header">
+              <div className="profile-card__header-left">
+                <div className="profile-card__icon">
+                  <IconUser />
+                </div>
+                <div>
+                  <h2 id="profile-shortcuts" className="profile-card__title">
+                    Accesos
+                  </h2>
+                  <p className="profile-card__desc">
+                    Enlaces útiles según tu rol y permisos efectivos
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-card__body">
+              {viewerId === "customer" && (
+                <div className="profile-employee-options">
+                  <button
+                    className="profile-employee-option"
+                    onClick={() => navigate(routePaths.account.orders)}
+                    type="button"
+                  >
+                    <IconUser />
+                    <span>
+                      <span className="profile-employee-option__title">
+                        Mis pedidos
+                      </span>
+                      <span className="profile-employee-option__desc">
+                        Historial y seguimiento de compras
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {viewerId === "employee" && (
+                <ShortcutList shortcuts={employeeShortcuts} navigate={navigate} />
+              )}
+
+              {viewerId === "admin" && (
+                <ShortcutList
+                  shortcuts={ADMIN_SHORTCUTS}
+                  navigate={navigate}
+                  admin
+                />
+              )}
+            </div>
+          </section>
+
+          <section
+            className="profile-card"
+            aria-labelledby="profile-password"
+          >
+            <div className="profile-card__header">
+              <div className="profile-card__header-left">
+                <div className="profile-card__icon">
+                  <IconLogout />
+                </div>
+                <div>
+                  <h2 id="profile-password" className="profile-card__title">
+                    Contraseña
+                  </h2>
+                  <p className="profile-card__desc">
+                    Cambia tu contraseña verificando la actual
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-card__body">
+              <form onSubmit={handleSavePassword} className="profile-form">
+                <div className="profile-form__group">
+                  <label htmlFor="current_password">Contraseña actual</label>
+                  <input
+                    type="password"
+                    id="current_password"
+                    name="current_password"
+                    value={passwordForm.current_password}
+                    onChange={handlePasswordChange}
+                    autoComplete="current-password"
+                    required
+                    disabled={passwordSaving}
+                  />
+                </div>
+                <div className="profile-form__group">
+                  <label htmlFor="new_password">Nueva contraseña</label>
+                  <input
+                    type="password"
+                    id="new_password"
+                    name="new_password"
+                    value={passwordForm.new_password}
+                    onChange={handlePasswordChange}
+                    autoComplete="new-password"
+                    required
+                    disabled={passwordSaving}
+                  />
+                </div>
+                <div className="profile-form__group">
+                  <label htmlFor="confirm_password">Confirmar contraseña</label>
+                  <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    value={passwordForm.confirm_password}
+                    onChange={handlePasswordChange}
+                    autoComplete="new-password"
+                    required
+                    disabled={passwordSaving}
+                  />
+                </div>
+                <div className="profile-form__actions">
+                  <button
+                    type="submit"
+                    className="profile-form__btn profile-form__btn--primary"
+                    disabled={
+                      passwordSaving ||
+                      !passwordForm.current_password ||
+                      !passwordForm.new_password ||
+                      passwordForm.new_password !== passwordForm.confirm_password
+                    }
+                  >
+                    {passwordSaving ? "Guardando..." : "Cambiar contraseña"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
           <section
             className="profile-card profile-card--danger"
             aria-labelledby="profile-actions"
@@ -540,7 +790,7 @@ export default function ProfilePage() {
                     Acciones de cuenta
                   </h2>
                   <p className="profile-card__desc">
-                    Gestiona la seguridad de tu cuenta
+                    Cierra la sesión actual
                   </p>
                 </div>
               </div>
@@ -552,6 +802,7 @@ export default function ProfilePage() {
                   className="profile-actions__btn profile-actions__btn--logout"
                   onClick={handleLogout}
                   disabled={saving}
+                  type="button"
                 >
                   <IconLogout />
                   Cerrar sesión
@@ -563,6 +814,40 @@ export default function ProfilePage() {
       </main>
 
       <HomeFooter />
+    </div>
+  );
+}
+
+function ShortcutList({ shortcuts, navigate, admin = false }) {
+  if (shortcuts.length === 0) {
+    return (
+      <p className="profile-addresses__empty">
+        No tienes accesos internos habilitados.
+      </p>
+    );
+  }
+
+  const listClass = admin ? "profile-admin-options" : "profile-employee-options";
+  const itemClass = admin ? "profile-admin-option" : "profile-employee-option";
+  const titleClass = `${itemClass}__title`;
+  const descClass = `${itemClass}__desc`;
+
+  return (
+    <div className={listClass}>
+      {shortcuts.map((shortcut) => (
+        <button
+          key={shortcut.path}
+          className={itemClass}
+          onClick={() => navigate(shortcut.path)}
+          type="button"
+        >
+          <IconUser />
+          <span>
+            <span className={titleClass}>{shortcut.title}</span>
+            <span className={descClass}>{shortcut.description}</span>
+          </span>
+        </button>
+      ))}
     </div>
   );
 }

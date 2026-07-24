@@ -20,9 +20,21 @@ function remove(url) {
 export const accountService = {
   me: () => get(apiEndpoints.accounts.me),
   updateMe: (data) => patch(apiEndpoints.accounts.me, data),
+  changePassword: (data) => post(apiEndpoints.accounts.passwordChange, data),
+  requestPasswordReset: (data) => post(apiEndpoints.accounts.passwordReset, data),
+  confirmPasswordReset: (data) =>
+    post(apiEndpoints.accounts.passwordResetConfirm, data),
   users: (params) => get(apiEndpoints.accounts.users, params),
   createUser: (data) => post(apiEndpoints.accounts.users, data),
   updateUser: (id, data) => patch(apiEndpoints.accounts.userDetail(id), data),
+};
+
+export const accessService = {
+  roles: () => get(apiEndpoints.access.roles),
+  updateEmployeeRole: (permissionCodes) =>
+    patch(apiEndpoints.access.employeeRole, {
+      permission_codes: permissionCodes,
+    }),
 };
 
 export const catalogService = {
@@ -55,6 +67,11 @@ export const cartService = {
 export const deliveryService = {
   geocode: (data) => post(apiEndpoints.delivery.geocode, data),
   estimate: (data) => post(apiEndpoints.delivery.estimate, data),
+};
+
+export const storeService = {
+  settings: () => get(apiEndpoints.store.settings),
+  updateSettings: (data) => patch(apiEndpoints.store.settings, data),
 };
 
 export const orderService = {

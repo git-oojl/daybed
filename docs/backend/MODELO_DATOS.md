@@ -31,6 +31,45 @@ Reglas:
 - El login público usa `email` + `password`.
 - `username` se conserva por compatibilidad con Django/Admin y se genera desde el correo cuando el registro de cliente no lo envía.
 - `state` y `city` guardan los campos de ubicación básica que ya capturan las vistas actuales de registro.
+- Al cambiar `role`, la membresía del grupo operativo de empleado se sincroniza automáticamente.
+- `/api/accounts/me/` incluye `effective_permission_codes`, calculados contra la base de datos en cada consulta relevante; no se confía en permisos persistidos dentro del JWT.
+
+## Access control
+
+La app `access_control` define un catálogo acotado de permisos operativos usando
+`Group` y `Permission` de Django. No crea roles arbitrarios ni permisos por
+usuario.
+
+Objeto de permiso operativo:
+
+- `app_label`: `access_control`
+- `model`: `operationalpermission`
+- `managed`: `False`
+
+Grupo sincronizado:
+
+- `Daybed Empleado`
+
+Permisos aprobados:
+
+- `dashboard.view`
+- `products.view`
+- `products.create`
+- `products.update`
+- `products.deactivate`
+- `inventory.view`
+- `inventory.adjust`
+- `inventory.movements.view`
+- `orders.view`
+- `orders.status.update`
+
+Reglas:
+
+- `cliente` conserva permisos fijos y reglas de propiedad.
+- `empleado` usa únicamente el paquete operativo configurable del grupo `Daybed Empleado`.
+- `administrador` y superuser tienen bypass completo sobre operaciones internas.
+- User management, permission management y store settings son solo admin, no permisos togglables.
+- Un visitante sin sesión es anónimo; no existe rol, grupo ni conteo `invitado`.
 
 ## Catalog
 
@@ -201,6 +240,42 @@ Reglas:
 
 - El stock se descuenta una sola vez al pasar a `confirmed`.
 - Los datos de entrega guardados desde checkout no aceptan coordenadas, distancia, duración o tarifa fuera de rango válido.
+- `delivery_fee` se recalcula al crear el pedido usando la configuración activa de tienda. El cliente no define el precio final.
+
+## Store
+
+### StoreSettings
+
+Configuración singleton-style de la tienda y sus reglas de entrega.
+
+Campos:
+
+- `store_name`
+- `contact_phone`
+- `contact_email`
+- `street`
+- `neighborhood`
+- `city`
+- `state`
+- `postal_code`
+- `latitude`
+- `longitude`
+- `delivery_base_fee`
+- `delivery_price_per_km`
+- `free_shipping_threshold`
+- `show_cart_estimate`
+- `updated_at`
+- `updated_by`
+
+Reglas:
+
+- Solo puede existir una configuración activa.
+- `latitude` debe estar entre `-90` y `90`.
+- `longitude` debe estar entre `-180` y `180`.
+- Las tarifas de envío y el umbral de envío gratis no pueden ser negativos.
+- `contact_email` debe ser un correo válido.
+- Los valores de entorno `STORE_LATITUDE`, `STORE_LONGITUDE`, `DELIVERY_BASE_FEE` y `DELIVERY_PRICE_PER_KM` son fallback/bootstrap, no sustituyen el registro persistente.
+- No se guardan ni exponen API keys o credenciales de proveedores en este modelo.
 
 ### OrderItem
 
@@ -250,11 +325,12 @@ Restricciones:
 
 ## Delivery
 
-No hay modelos propios en `delivery` para el MVP. La app contiene servicios y serializers para:
+La app contiene servicios y serializers para:
 
 - Geocodificar dirección.
 - Estimar distancia/duración.
-- Calcular tarifa.
+- Calcular tarifa con `StoreSettings`.
+- Aplicar envío gratis cuando el subtotal alcanza el umbral configurado.
 
 Los datos finales de entrega se guardan en `Order`.
 

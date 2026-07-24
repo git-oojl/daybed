@@ -9,6 +9,7 @@ from apps.cart.models import Cart, CartItem
 from apps.catalog.models import Category, Product
 from apps.inventory.models import InventoryMovement
 from apps.orders.models import Order
+from apps.store.models import StoreSettings
 
 pytestmark = pytest.mark.django_db
 
@@ -56,6 +57,12 @@ def add_cart_item(user, product, quantity=2):
     return CartItem.objects.create(cart=cart, product=product, quantity=quantity)
 
 
+def create_store_settings(**overrides):
+    defaults = StoreSettings.bootstrap_defaults()
+    defaults.update(overrides)
+    return StoreSettings.objects.create(**defaults)
+
+
 def delivery_payload(**overrides):
     payload = {
         "original_address": "123 Main St",
@@ -64,7 +71,7 @@ def delivery_payload(**overrides):
         "longitude": "-117.03820000",
         "distance_km": "12.500",
         "estimated_duration_minutes": "30.0",
-        "delivery_fee": "80.00",
+        "delivery_fee": "180.00",
         "delivery_zone": "standard",
         "geocoding_provider": "nominatim",
         "distance_provider": "openrouteservice",
@@ -106,8 +113,8 @@ def test_checkout_creates_pending_order_and_clears_cart_without_stock_decrement(
     assert response.status_code == 201
     assert response.data["status"] == Order.Status.PENDING
     assert response.data["products_subtotal"] == "300.00"
-    assert response.data["delivery_fee"] == "80.00"
-    assert response.data["total"] == "380.00"
+    assert response.data["delivery_fee"] == "180.00"
+    assert response.data["total"] == "480.00"
     assert response.data["original_address"] == "123 Main St"
     assert response.data["formatted_address"] == "123 Main St, Tijuana"
     assert response.data["distance_km"] == "12.500"
@@ -143,6 +150,42 @@ def test_checkout_rejects_invalid_delivery_numbers():
 
     assert response.status_code == 400
     assert "delivery_fee" in response.data
+
+
+def test_checkout_recomputes_delivery_fee_instead_of_trusting_client_payload():
+    customer = create_user("cliente_checkout_recomputed")
+    product = create_product(stock=9, price=Decimal("100.00"))
+    add_cart_item(customer, product, quantity=1)
+    create_store_settings(
+        delivery_base_fee="50.00",
+        delivery_price_per_km="5.00",
+    )
+
+    response = checkout(customer, delivery_payload(delivery_fee="999.00"))
+
+    assert response.status_code == 201
+    assert response.data["products_subtotal"] == "100.00"
+    assert response.data["distance_km"] == "12.500"
+    assert response.data["delivery_fee"] == "112.50"
+    assert response.data["total"] == "212.50"
+
+
+def test_checkout_applies_free_shipping_threshold_from_store_settings():
+    customer = create_user("cliente_checkout_free_shipping")
+    product = create_product(stock=9, price=Decimal("250.00"))
+    add_cart_item(customer, product, quantity=2)
+    create_store_settings(
+        delivery_base_fee="50.00",
+        delivery_price_per_km="5.00",
+        free_shipping_threshold="500.00",
+    )
+
+    response = checkout(customer, delivery_payload())
+
+    assert response.status_code == 201
+    assert response.data["products_subtotal"] == "500.00"
+    assert response.data["delivery_fee"] == "0.00"
+    assert response.data["total"] == "500.00"
 
 
 def test_checkout_rejects_inactive_cart_products():

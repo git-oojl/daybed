@@ -3,7 +3,8 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsCustomer, IsEmployeeOrAdmin
+from apps.access_control.permissions import operational_permission
+from apps.accounts.permissions import IsCustomer
 from apps.orders.models import Order
 from apps.orders.serializers import (
     CheckoutSerializer,
@@ -102,7 +103,6 @@ class StaffOrderViewSet(
     viewsets.GenericViewSet,
 ):
     queryset = Order.objects.prefetch_related("items").order_by("-created_at", "-id")
-    permission_classes = (IsEmployeeOrAdmin,)
     filterset_fields = ("status", "delivery_zone")
     search_fields = ("user__username", "user__email", "original_address")
     ordering_fields = ("created_at", "total", "delivery_fee", "distance_km")
@@ -111,6 +111,11 @@ class StaffOrderViewSet(
         if self.action in {"update", "partial_update"}:
             return OrderStatusSerializer
         return OrderSerializer
+
+    def get_permissions(self):
+        if self.action in {"update", "partial_update"}:
+            return [operational_permission("orders.status.update")()]
+        return [operational_permission("orders.view")()]
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)

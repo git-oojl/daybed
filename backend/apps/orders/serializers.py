@@ -5,6 +5,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.cart.models import Cart
+from apps.delivery.services import calculate_delivery_fee
 from apps.orders.models import Order, OrderItem
 
 
@@ -81,6 +82,7 @@ class CheckoutSerializer(serializers.Serializer):
         max_digits=10,
         decimal_places=2,
         min_value=Decimal("0.00"),
+        required=False,
     )
     delivery_zone = serializers.CharField(max_length=80, default="standard")
     geocoding_provider = serializers.CharField(
@@ -123,6 +125,10 @@ class CheckoutSerializer(serializers.Serializer):
         products_subtotal = sum(
             (item.line_total for item in items),
             Decimal("0.00"),
+        )
+        validated_data["delivery_fee"] = calculate_delivery_fee(
+            validated_data["distance_km"],
+            order_subtotal=products_subtotal,
         )
         total = products_subtotal + validated_data["delivery_fee"]
 

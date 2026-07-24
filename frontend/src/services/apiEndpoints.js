@@ -8,8 +8,15 @@ export const apiEndpoints = {
   accounts: {
     register: "/accounts/register/",
     me: "/accounts/me/",
+    passwordChange: "/accounts/password/change/",
+    passwordReset: "/accounts/password/reset/",
+    passwordResetConfirm: "/accounts/password/reset/confirm/",
     users: "/accounts/users/",
     userDetail: (id) => `/accounts/users/${id}/`,
+  },
+  access: {
+    roles: "/access/roles/",
+    employeeRole: "/access/roles/empleado/",
   },
   catalog: {
     categories: "/catalog/categories/",
@@ -29,6 +36,9 @@ export const apiEndpoints = {
   delivery: {
     geocode: "/delivery/geocode/",
     estimate: "/delivery/estimate/",
+  },
+  store: {
+    settings: "/store/settings/",
   },
   orders: {
     checkout: "/checkout/",

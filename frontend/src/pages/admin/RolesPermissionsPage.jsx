@@ -1,10 +1,7 @@
-// RolesPermissionsPage.jsx
-import { useState, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../../assets/CSS/admin/roles-permissions.css";
+import { accessService } from "../../services/backendServices.js";
 
-// ============================================
-// ICONOS SVG
-// ============================================
 function IconShield() {
   return (
     <svg
@@ -69,26 +66,6 @@ function IconCheck() {
         d="M5 12l5 5L20 7"
         stroke="currentColor"
         strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconEdit() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 20h9M16.5 3.5l4 4L7 21l-5 1 1-5L16.5 3.5Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -214,272 +191,138 @@ function IconCancel() {
   );
 }
 
-// ============================================
-// DEFINICIÓN DE ROLES Y PERMISOS (FUERA DEL COMPONENTE)
-// ============================================
-const ROLES = [
-  {
-    id: "administrador",
-    name: "Administrador",
-    description: "Control total del sistema",
+const ROLE_META = {
+  administrador: {
     icon: <IconShield />,
     color: "#B88E2F",
-    users: 3,
   },
-  {
-    id: "empleado",
-    name: "Empleado",
-    description: "Acceso a funciones básicas",
+  empleado: {
     icon: <IconUser />,
     color: "#6B7280",
-    users: 8,
   },
-  {
-    id: "editor",
-    name: "Editor",
-    description: "Gestión de contenido y productos",
-    icon: <IconEdit />,
-    color: "#3B82F6",
-    users: 4,
-  },
-  {
-    id: "invitado",
-    name: "Invitado",
-    description: "Acceso limitado de solo lectura",
-    icon: <IconUsers />,
-    color: "#8B5CF6",
-    users: 2,
-  },
-];
+};
 
-const PERMISSION_GROUPS = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    permissions: [
-      {
-        id: "dashboard_view",
-        label: "Ver dashboard",
-        admin: true,
-        employee: false,
-        editor: true,
-        guest: false,
-      },
-      {
-        id: "dashboard_edit",
-        label: "Editar widgets",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-    ],
-  },
-  {
-    id: "usuarios",
-    label: "Usuarios",
-    permissions: [
-      {
-        id: "users_view",
-        label: "Ver usuarios",
-        admin: true,
-        employee: false,
-        editor: true,
-        guest: false,
-      },
-      {
-        id: "users_create",
-        label: "Crear usuarios",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-      {
-        id: "users_edit",
-        label: "Editar usuarios",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-      {
-        id: "users_delete",
-        label: "Eliminar usuarios",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-    ],
-  },
-  {
-    id: "productos",
-    label: "Productos",
-    permissions: [
-      {
-        id: "products_view",
-        label: "Ver productos",
-        admin: true,
-        employee: true,
-        editor: true,
-        guest: true,
-      },
-      {
-        id: "products_create",
-        label: "Crear productos",
-        admin: true,
-        employee: false,
-        editor: true,
-        guest: false,
-      },
-      {
-        id: "products_edit",
-        label: "Editar productos",
-        admin: true,
-        employee: false,
-        editor: true,
-        guest: false,
-      },
-      {
-        id: "products_delete",
-        label: "Eliminar productos",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-    ],
-  },
-  {
-    id: "ventas",
-    label: "Ventas",
-    permissions: [
-      {
-        id: "sales_view",
-        label: "Ver ventas",
-        admin: true,
-        employee: true,
-        editor: true,
-        guest: false,
-      },
-      {
-        id: "sales_export",
-        label: "Exportar ventas",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-    ],
-  },
-  {
-    id: "configuracion",
-    label: "Configuración",
-    permissions: [
-      {
-        id: "settings_view",
-        label: "Ver configuración",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-      {
-        id: "settings_edit",
-        label: "Editar configuración",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-    ],
-  },
-  {
-    id: "reportes",
-    label: "Reportes",
-    permissions: [
-      {
-        id: "reports_view",
-        label: "Ver reportes",
-        admin: true,
-        employee: false,
-        editor: true,
-        guest: false,
-      },
-      {
-        id: "reports_generate",
-        label: "Generar reportes",
-        admin: true,
-        employee: false,
-        editor: false,
-        guest: false,
-      },
-    ],
-  },
-];
+const VISIBLE_ROLE_IDS = ["administrador", "empleado"];
 
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
+function groupPermissions(catalog) {
+  return catalog.reduce((groups, permission) => {
+    const group = groups.get(permission.category) ?? [];
+    group.push(permission);
+    groups.set(permission.category, group);
+    return groups;
+  }, new Map());
+}
+
+function getErrorMessage(error) {
+  return error?.message || "No se pudo completar la operación.";
+}
+
 export default function RolesPermissionsPage() {
-  const [selectedRole, setSelectedRole] = useState("administrador");
+  const [selectedRole, setSelectedRole] = useState("empleado");
+  const [rolesData, setRolesData] = useState(null);
+  const [draftEmployeePermissions, setDraftEmployeePermissions] = useState([]);
   const [editingPermissions, setEditingPermissions] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  // ===== OBTENER PERMISOS DEL ROL SELECCIONADO =====
-  const getRolePermissions = useCallback((roleId) => {
-    const roleMap = {
-      administrador: "admin",
-      empleado: "employee",
-      editor: "editor",
-      invitado: "guest",
+  useEffect(() => {
+    let active = true;
+
+    async function loadRoles() {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await accessService.roles();
+        if (!active) return;
+        setRolesData(response);
+        const employeeRole = response.roles.find((role) => role.id === "empleado");
+        setDraftEmployeePermissions(employeeRole?.permission_codes ?? []);
+      } catch (err) {
+        if (active) setError(getErrorMessage(err));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadRoles();
+    return () => {
+      active = false;
     };
-    const key = roleMap[roleId] || "admin";
-    return PERMISSION_GROUPS.flatMap((group) =>
-      group.permissions.map((p) => ({
-        ...p,
-        groupId: group.id,
-        groupLabel: group.label,
-        hasPermission: p[key] || false,
-      })),
+  }, []);
+
+  const visibleRoles = useMemo(() => {
+    return (rolesData?.roles ?? []).filter((role) =>
+      VISIBLE_ROLE_IDS.includes(role.id),
     );
-  }, []);
+  }, [rolesData]);
 
-  const currentPermissions = useMemo(() => {
-    return getRolePermissions(selectedRole);
-  }, [selectedRole, getRolePermissions]);
+  const selectedRoleData = useMemo(() => {
+    return visibleRoles.find((role) => role.id === selectedRole) ?? visibleRoles[0];
+  }, [selectedRole, visibleRoles]);
 
-  // ===== TOGGLE PERMISO =====
-  const togglePermission = useCallback(
-    (permissionId) => {
-      // Simulación de toggle (en producción esto actualizaría el backend)
-      console.log(`Toggle permiso ${permissionId} para rol ${selectedRole}`);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-    },
-    [selectedRole],
-  );
+  const groupedPermissions = useMemo(() => {
+    return Array.from(groupPermissions(rolesData?.permission_catalog ?? []));
+  }, [rolesData]);
 
-  // ===== GUARDAR CAMBIOS =====
-  const handleSave = useCallback(() => {
-    setSuccess(true);
+  const selectedPermissionSet = useMemo(() => {
+    const permissionCodes =
+      selectedRoleData?.id === "empleado"
+        ? draftEmployeePermissions
+        : selectedRoleData?.effective_permission_codes ?? [];
+    return new Set(permissionCodes);
+  }, [draftEmployeePermissions, selectedRoleData]);
+  const selectedRoleName = selectedRoleData?.name ?? "";
+  const canEditSelectedRole = selectedRoleData?.id === "empleado";
+
+  const handleSelectRole = (roleId) => {
+    setSelectedRole(roleId);
     setEditingPermissions(false);
-    setTimeout(() => setSuccess(false), 3000);
-  }, []);
+    setSuccess(null);
+    setError(null);
+  };
 
-  // ===== CANCELAR =====
-  const handleCancel = useCallback(() => {
+  const toggleEmployeePermission = (permissionCode) => {
+    setSuccess(null);
+    setDraftEmployeePermissions((current) => {
+      if (current.includes(permissionCode)) {
+        return current.filter((code) => code !== permissionCode);
+      }
+      return [...current, permissionCode].sort();
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response =
+        await accessService.updateEmployeeRole(draftEmployeePermissions);
+      setRolesData(response);
+      const employeeRole = response.roles.find((role) => role.id === "empleado");
+      setDraftEmployeePermissions(employeeRole?.permission_codes ?? []);
+      setEditingPermissions(false);
+      setSuccess("Permisos de empleado guardados.");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    const employeeRole = rolesData?.roles.find((role) => role.id === "empleado");
+    setDraftEmployeePermissions(employeeRole?.permission_codes ?? []);
     setEditingPermissions(false);
-  }, []);
-
-  // Obtener el nombre del rol seleccionado
-  const selectedRoleName = ROLES.find((r) => r.id === selectedRole)?.name || "";
+    setSuccess(null);
+    setError(null);
+  };
 
   return (
-    
     <div className="roles-permissions">
-      {/* ===== HERO HEADER ===== */}
       <section className="roles-permissions-hero" aria-label="Roles y permisos">
         <div className="roles-permissions-hero__overlay">
           <div className="roles-permissions-hero__content">
@@ -491,25 +334,26 @@ export default function RolesPermissionsPage() {
                 Roles y permisos
               </h1>
               <p className="roles-permissions-hero__subtitle">
-                Gestiona la asignación de roles y el control de acceso para
-                empleados y administradores
+                Gestiona el paquete operativo configurable para empleados
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== CONTENIDO ===== */}
       <div className="roles-permissions__content">
-        {/* ALERTAS */}
         {success && (
           <div className="roles-permissions__alert roles-permissions__alert--success">
             <IconCheck />
-            <span>Cambios guardados exitosamente</span>
+            <span>{success}</span>
+          </div>
+        )}
+        {error && (
+          <div className="roles-permissions__alert roles-permissions__alert--error">
+            <span>{error}</span>
           </div>
         )}
 
-        {/* ===== ASIGNACIÓN DE ROLES ===== */}
         <section
           className="roles-permissions__section"
           aria-labelledby="asignacion-roles"
@@ -519,47 +363,60 @@ export default function RolesPermissionsPage() {
             className="roles-permissions__section-title"
           >
             <IconUserCog />
-            Asignación de roles
+            Roles internos
           </h2>
           <p className="roles-permissions__section-desc">
-            Selecciona un rol para gestionar sus permisos y asignarlo a los
-            usuarios
+            Administrador es fijo. Empleado tiene permisos operativos
+            configurables.
           </p>
 
-          <div className="roles-permissions__roles-grid">
-            {ROLES.map((role) => (
-              <button
-                key={role.id}
-                className={`roles-permissions__role-card ${selectedRole === role.id ? "roles-permissions__role-card--active" : ""}`}
-                onClick={() => setSelectedRole(role.id)}
-              >
-                <div
-                  className="roles-permissions__role-icon"
-                  style={{ color: role.color }}
-                >
-                  {role.icon}
-                </div>
-                <div className="roles-permissions__role-info">
-                  <h3 className="roles-permissions__role-name">{role.name}</h3>
-                  <p className="roles-permissions__role-desc">
-                    {role.description}
-                  </p>
-                  <span className="roles-permissions__role-users">
-                    <IconUsers />
-                    {role.users} usuarios
-                  </span>
-                </div>
-                {selectedRole === role.id && (
-                  <div className="roles-permissions__role-check">
-                    <IconCheck />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
+          {loading ? (
+            <div className="roles-permissions__empty">Cargando permisos...</div>
+          ) : (
+            <div className="roles-permissions__roles-grid">
+              {visibleRoles.map((role) => {
+                const meta = ROLE_META[role.id];
+                return (
+                  <button
+                    key={role.id}
+                    className={`roles-permissions__role-card ${
+                      selectedRoleData?.id === role.id
+                        ? "roles-permissions__role-card--active"
+                        : ""
+                    }`}
+                    onClick={() => handleSelectRole(role.id)}
+                    type="button"
+                  >
+                    <div
+                      className="roles-permissions__role-icon"
+                      style={{ color: meta?.color }}
+                    >
+                      {meta?.icon}
+                    </div>
+                    <div className="roles-permissions__role-info">
+                      <h3 className="roles-permissions__role-name">
+                        {role.name}
+                      </h3>
+                      <p className="roles-permissions__role-desc">
+                        {role.description}
+                      </p>
+                      <span className="roles-permissions__role-users">
+                        <IconUsers />
+                        {role.user_count} usuarios
+                      </span>
+                    </div>
+                    {selectedRoleData?.id === role.id && (
+                      <div className="roles-permissions__role-check">
+                        <IconCheck />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </section>
 
-        {/* ===== CONTROL DE ACCESO ===== */}
         <section
           className="roles-permissions__section"
           aria-labelledby="control-acceso"
@@ -574,38 +431,43 @@ export default function RolesPermissionsPage() {
                 Control de acceso
               </h2>
               <p className="roles-permissions__section-desc">
-                Gestiona los permisos para el rol{" "}
-                <strong>{selectedRoleName}</strong>
+                Permisos efectivos del rol <strong>{selectedRoleName}</strong>
               </p>
             </div>
-            <div className="roles-permissions__section-actions">
-              {editingPermissions ? (
-                <>
-                  <button
-                    className="roles-permissions__btn roles-permissions__btn--secondary"
-                    onClick={handleCancel}
-                  >
-                    <IconCancel />
-                    Cancelar
-                  </button>
+            {canEditSelectedRole && !loading && (
+              <div className="roles-permissions__section-actions">
+                {editingPermissions ? (
+                  <>
+                    <button
+                      className="roles-permissions__btn roles-permissions__btn--secondary"
+                      onClick={handleCancel}
+                      disabled={saving}
+                      type="button"
+                    >
+                      <IconCancel />
+                      Cancelar
+                    </button>
+                    <button
+                      className="roles-permissions__btn roles-permissions__btn--primary"
+                      onClick={handleSave}
+                      disabled={saving}
+                      type="button"
+                    >
+                      <IconSave />
+                      {saving ? "Guardando..." : "Guardar cambios"}
+                    </button>
+                  </>
+                ) : (
                   <button
                     className="roles-permissions__btn roles-permissions__btn--primary"
-                    onClick={handleSave}
+                    onClick={() => setEditingPermissions(true)}
+                    type="button"
                   >
-                    <IconSave />
-                    Guardar cambios
+                    Editar permisos
                   </button>
-                </>
-              ) : (
-                <button
-                  className="roles-permissions__btn roles-permissions__btn--primary"
-                  onClick={() => setEditingPermissions(true)}
-                >
-                  <IconEdit />
-                  Editar permisos
-                </button>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="roles-permissions__table-wrapper">
@@ -619,43 +481,68 @@ export default function RolesPermissionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentPermissions.map((perm, index) => {
-                    const isFirstInGroup =
-                      index === 0 ||
-                      currentPermissions[index - 1]?.groupId !== perm.groupId;
-                    return (
-                      <tr key={perm.id}>
-                        <td className="roles-permissions__table-group">
-                          {isFirstInGroup ? perm.groupLabel : ""}
-                        </td>
-                        <td className="roles-permissions__table-perm">
-                          {perm.label}
-                        </td>
-                        <td className="roles-permissions__table-status">
-                          {editingPermissions ? (
-                            <label className="roles-permissions__toggle">
-                              <input
-                                type="checkbox"
-                                checked={perm.hasPermission}
-                                onChange={() => togglePermission(perm.id)}
-                              />
-                              <span className="roles-permissions__slider"></span>
-                            </label>
-                          ) : (
-                            <span
-                              className={`roles-permissions__status-badge ${perm.hasPermission ? "roles-permissions__status-badge--active" : "roles-permissions__status-badge--inactive"}`}
-                            >
-                              {perm.hasPermission ? "Activo" : "Inactivo"}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {groupedPermissions.flatMap(([category, permissions]) =>
+                    permissions.map((permission, index) => {
+                      const hasPermission = selectedPermissionSet.has(
+                        permission.code,
+                      );
+                      return (
+                        <tr key={permission.code}>
+                          <td className="roles-permissions__table-group">
+                            {index === 0 ? category : ""}
+                          </td>
+                          <td className="roles-permissions__table-perm">
+                            {permission.label}
+                          </td>
+                          <td className="roles-permissions__table-status">
+                            {editingPermissions && canEditSelectedRole ? (
+                              <label className="roles-permissions__toggle">
+                                <input
+                                  type="checkbox"
+                                  checked={hasPermission}
+                                  onChange={() =>
+                                    toggleEmployeePermission(permission.code)
+                                  }
+                                />
+                                <span className="roles-permissions__slider" />
+                              </label>
+                            ) : (
+                              <span
+                                className={`roles-permissions__status-badge ${
+                                  hasPermission
+                                    ? "roles-permissions__status-badge--active"
+                                    : "roles-permissions__status-badge--inactive"
+                                }`}
+                              >
+                                {hasPermission ? "Activo" : "Inactivo"}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    }),
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
+        </section>
+
+        <section
+          className="roles-permissions__section"
+          aria-labelledby="visitante-anonimo"
+        >
+          <h2
+            id="visitante-anonimo"
+            className="roles-permissions__section-title"
+          >
+            <IconUsers />
+            Visitante no autenticado
+          </h2>
+          <p className="roles-permissions__section-desc">
+            Referencia de acceso público: catálogo, detalle de producto,
+            registro e inicio de sesión. No es un rol asignable ni configurable.
+          </p>
         </section>
       </div>
     </div>

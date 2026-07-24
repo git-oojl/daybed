@@ -3,8 +3,10 @@ import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { routePaths } from "../../routes/routePaths.js";
 import { useCart } from "../../context/CartContext.jsx";
+import { storeService } from "../../services/backendServices.js";
 
 function IconTrash() {
   return (
@@ -29,14 +31,39 @@ function IconTrash() {
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getTotalPrice } =
     useCart();
+  const [storeSettings, setStoreSettings] = useState(null);
 
   const formatPrice = (price) => {
     return `$${price.toLocaleString("es-MX")} MX`;
   };
 
+  useEffect(() => {
+    let active = true;
+
+    storeService
+      .settings()
+      .then((settings) => {
+        if (active) setStoreSettings(settings);
+      })
+      .catch(() => {
+        if (active) setStoreSettings(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const subtotal = getTotalPrice();
-  const shipping = subtotal > 0 ? 500 : 0;
-  const total = subtotal + shipping;
+  const freeShippingThreshold = Number(
+    storeSettings?.free_shipping_threshold || 0,
+  );
+  const qualifiesForFreeShipping =
+    freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
+  const shippingLabel = qualifiesForFreeShipping
+    ? "Gratis"
+    : "Se calcula en checkout";
+  const total = subtotal;
 
   if (cartItems.length === 0) {
     return (
@@ -163,10 +190,10 @@ export default function CartPage() {
           </div>
           <div className="cart-summary-row">
             <span>Envío</span>
-            <span>{shipping > 0 ? formatPrice(shipping) : "Gratis"}</span>
+            <span>{shippingLabel}</span>
           </div>
           <div className="cart-summary-row cart-summary-total">
-            <span>Total</span>
+            <span>Total parcial</span>
             <span>{formatPrice(total)}</span>
           </div>
 

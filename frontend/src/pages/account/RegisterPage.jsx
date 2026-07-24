@@ -418,6 +418,15 @@ const ESTADOS_MEXICO = [
   "Zacatecas",
 ];
 
+function splitFullName(value) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  const firstName = parts.shift() ?? "";
+  return {
+    nombre: firstName,
+    apellido: parts.join(" "),
+  };
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -511,15 +520,15 @@ function RegisterPage() {
       return;
     }
 
+    const nameParts = splitFullName(formData.nombre);
     const payload = {
-      name: formData.nombre.trim(),
+      ...nameParts,
       email: formData.email,
+      telefono: formData.telefono,
+      estado: formData.estado,
+      ciudad: formData.ciudad,
       password: formData.password,
-      phone: formData.telefono,
-      address: {
-        state: formData.estado,
-        city: formData.ciudad,
-      },
+      confirmPassword: formData.confirmPassword,
     };
 
     setLoading(true);
@@ -537,10 +546,19 @@ function RegisterPage() {
       if (err.fieldErrors) {
         setFieldErrors(err.fieldErrors);
         const fieldMap = {
-          name: "nombre",
+          first_name: "nombre",
+          last_name: "nombre",
+          nombre: "nombre",
+          apellido: "nombre",
           email: "email",
           password: "password",
+          telefono: "telefono",
           phone: "telefono",
+          estado: "estado",
+          state: "estado",
+          ciudad: "ciudad",
+          city: "ciudad",
+          confirmPassword: "confirmPassword",
         };
 
         Object.keys(err.fieldErrors).forEach((key) => {

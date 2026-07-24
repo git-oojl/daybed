@@ -42,7 +42,7 @@ Propósito:
 
 - Calcular distancia de ruta desde la tienda hasta el destino.
 - Calcular duración estimada.
-- Permitir que Daybed calcule una tarifa simulada.
+- Permitir que Daybed calcule una tarifa real usando la configuración activa de tienda.
 
 Endpoint interno:
 
@@ -55,7 +55,8 @@ Request con coordenadas:
 ```json
 {
   "latitude": "32.51490000",
-  "longitude": "-117.03820000"
+  "longitude": "-117.03820000",
+  "order_subtotal": "6000.00"
 }
 ```
 
@@ -78,6 +79,8 @@ Response esperada:
   "distance_km": "12.400",
   "estimated_duration_minutes": "28.0",
   "delivery_fee": "180.00",
+  "free_shipping_applied": false,
+  "free_shipping_threshold": "5000.00",
   "delivery_zone": "standard",
   "distance_provider": "openrouteservice"
 }
@@ -90,6 +93,12 @@ La API externa no define el precio de entrega. Daybed calcula la tarifa:
 ```text
 delivery_fee = DELIVERY_BASE_FEE + (distance_km * DELIVERY_PRICE_PER_KM)
 ```
+
+En producción la regla usa `StoreSettings` activo. Las variables `STORE_LATITUDE`,
+`STORE_LONGITUDE`, `DELIVERY_BASE_FEE` y `DELIVERY_PRICE_PER_KM` son valores de
+bootstrap/fallback para crear la primera configuración si no existe registro
+persistente. Si `free_shipping_threshold` está configurado y `order_subtotal`
+alcanza ese monto, `delivery_fee` es `0.00`.
 
 ## Variables relacionadas
 

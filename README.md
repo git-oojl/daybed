@@ -189,6 +189,7 @@ Los módulos principales del backend están organizados en `/backend/apps`:
 * `orders`: órdenes, estados y datos de entrega guardados.
 * `inventory`: control de stock y bajo inventario.
 * `delivery`: geocodificación, estimación de distancia y tarifa de entrega.
+* `store`: configuración persistente de tienda, origen y reglas de envío.
 * `dashboard`: métricas básicas para el back-office.
 
 Para más detalles de endpoints, variables de entorno, pruebas y comandos específicos del backend, revisa:

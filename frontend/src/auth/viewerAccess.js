@@ -3,7 +3,7 @@ import { backendRoles, viewerRoles } from "./roleMapping.js";
 export const previewViewers = [
   {
     id: viewerRoles.guest,
-    label: "Invitado",
+    label: "Visitante no autenticado",
     description: "Sin sesión iniciada",
     backendRole: null,
     isAuthenticated: false,
@@ -49,6 +49,7 @@ export const accessGroups = {
     viewerRoles.employee,
     viewerRoles.admin,
   ],
+  authenticated: [viewerRoles.customer, viewerRoles.employee, viewerRoles.admin],
   customerAccount: [viewerRoles.customer],
   checkout: [viewerRoles.customer],
   backOffice: [viewerRoles.employee, viewerRoles.admin],

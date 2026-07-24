@@ -1,0 +1,80 @@
+Daybed work summary
+===================
+
+Scope handled
+-------------
+
+1. Store settings and delivery rules
+
+- Added persistent StoreSettings backend model and API at /api/store/settings/.
+- Wired BasicSettingsPage to load and save real store settings through the backend.
+- Moved delivery origin, base fee, price-per-km, and free-shipping threshold into StoreSettings.
+- Refactored delivery estimates and checkout to use the same delivery fee/free-shipping rule.
+- Kept API keys, provider credentials, and secrets out of public/store settings responses.
+
+2. Constrained role-based access control
+
+- Added apps.access_control with a fixed operational permission catalogue.
+- Kept supported business roles to cliente, empleado, administrador.
+- Did not add editor, invitado, arbitrary roles, or per-user permission overrides.
+- Used Django Group/Permission for the employee operational bundle.
+- Added /api/access/roles/ and /api/access/roles/empleado/.
+- Included effective_permission_codes in /api/accounts/me/.
+- Replaced broad employee/admin backend checks on operational endpoints with action-specific permission checks.
+- Kept admin/superuser bypass intentional.
+- Preserved customer ownership rules.
+- Ensured anonymous visitors remain anonymous, not an assignable role.
+
+3. Shared authenticated profile flow
+
+- Kept /api/accounts/me/ as the canonical profile endpoint for every authenticated user.
+- Made the frontend profile route available to cliente, empleado, and administrador.
+- Removed the frontend customer-only redirect from ProfilePage.
+- Corrected profile field mapping to first_name and last_name instead of unsupported name.
+- Kept id, username, role, and effective_permission_codes read-only through the profile endpoint.
+- Added role-aware navigation shortcuts without duplicating profile forms per role.
+
+4. Password/account security
+
+- Added real authenticated password change at /api/accounts/password/change/.
+- Added password reset request and confirmation endpoints:
+  - /api/accounts/password/reset/
+  - /api/accounts/password/reset/confirm/
+- Used Django password validators and password reset token generation.
+- Made reset request responses generic to avoid account enumeration.
+- Blacklisted existing refresh tokens after password change/reset.
+- Added frontend forgot-password and reset-password pages.
+- Added a real password-change form to the shared profile page.
+- Corrected customer registration payload to use backend-supported fields.
+
+5. Seed/data notes
+
+- Checked the existing seed_demo command.
+- Kept the three supported demo roles only:
+  - cliente@example.com
+  - empleado@example.com
+  - admin@example.com
+- Added test coverage that the seeded employee has effective permissions after RBAC bootstrap.
+- Did not add invitado/editor seed users.
+
+Verification run
+----------------
+
+Latest verification after the password/account work:
+
+- Backend lint: uv run ruff check . passed.
+- Backend tests: uv run pytest -q passed, 119 passed.
+- Frontend lint: npm run lint passed.
+- Frontend build: npm run build passed.
+
+Known build note:
+
+- Vite still reports a large chunk warning. The build completes successfully.
+
+Intentional limitations / deferred work
+---------------------------------------
+
+- Email delivery defaults to Django console email backend in development. Production needs real SMTP or a transactional email provider configured through environment variables.
+- Existing access tokens can remain valid until their normal expiration after password change/reset; refresh tokens are invalidated.
+- Some older back-office screens still contain demo/static data. Security enforcement for RBAC is backend-side and tested through direct API calls.
+

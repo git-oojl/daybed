@@ -12,10 +12,12 @@ import BusinessMetricsPage from "../pages/admin/BusinessMetricsPage.jsx";
 import InternalUsersPage from "../pages/admin/InternalUsersPage.jsx";
 import RolesPermissionsPage from "../pages/admin/RolesPermissionsPage.jsx";
 import LoginPage from "../pages/account/LoginPage.jsx";
+import ForgotPasswordPage from "../pages/account/ForgotPasswordPage.jsx";
 import MyOrdersPage from "../pages/account/MyOrdersPage.jsx";
 import OrderDetailPage from "../pages/account/OrderDetailPage.jsx";
 import ProfilePage from "../pages/account/ProfilePage.jsx";
 import RegisterPage from "../pages/account/RegisterPage.jsx";
+import ResetPasswordPage from "../pages/account/ResetPasswordPage.jsx";
 import DashboardPage from "../pages/back-office/DashboardPage.jsx";
 import InternalOrderDetailPage from "../pages/back-office/InternalOrderDetailPage.jsx";
 import InternalOrdersPage from "../pages/back-office/InternalOrdersPage.jsx";
@@ -48,6 +50,17 @@ const DevViewSwitcher = import.meta.env.DEV
 const DevPreviewRouteBridge = import.meta.env.DEV
   ? lazy(() => import("../dev-preview/DevPreviewRouteBridge.jsx"))
   : null;
+
+function OperationalRoute({ permission, children }) {
+  return (
+    <ProtectedRoute
+      allowedViewers={accessGroups.backOffice}
+      requiredPermission={permission}
+    >
+      {children}
+    </ProtectedRoute>
+  );
+}
 
 function AppRoutes() {
   const showDevTools = import.meta.env.DEV;
@@ -83,6 +96,24 @@ function AppRoutes() {
         >
           <Route path={routePaths.account.login} element={<LoginPage />} />
           <Route path={routePaths.account.register} element={<RegisterPage />} />
+          <Route
+            path={routePaths.account.forgotPassword}
+            element={<ForgotPasswordPage />}
+          />
+          <Route
+            path={routePaths.account.resetPassword}
+            element={<ResetPasswordPage />}
+          />
+        </Route>
+
+        <Route
+          element={
+            <ProtectedRoute allowedViewers={accessGroups.authenticated}>
+              <Outlet />
+            </ProtectedRoute>
+          }
+        >
+          <Route path={routePaths.account.profile} element={<ProfilePage />} />
         </Route>
 
         <Route
@@ -92,7 +123,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          <Route path={routePaths.account.profile} element={<ProfilePage />} />
           <Route path={routePaths.account.orders} element={<MyOrdersPage />} />
           <Route
             path={routePaths.account.orderDetail}
@@ -138,24 +168,51 @@ function AppRoutes() {
       >
         <Route
           path={routePaths.backOffice.dashboard}
-          element={<DashboardPage />}
+          element={
+            <OperationalRoute permission="dashboard.view">
+              <DashboardPage />
+            </OperationalRoute>
+          }
         />
-        <Route path={routePaths.backOffice.products} element={<ProductsPage />} />
+        <Route
+          path={routePaths.backOffice.products}
+          element={
+            <OperationalRoute permission="products.view">
+              <ProductsPage />
+            </OperationalRoute>
+          }
+        />
         <Route
           path={routePaths.backOffice.categories}
-          element={<CategoriesPage />}
+          element={
+            <OperationalRoute permission="products.view">
+              <CategoriesPage />
+            </OperationalRoute>
+          }
         />
         <Route
           path={routePaths.backOffice.inventory}
-          element={<InventoryPage />}
+          element={
+            <OperationalRoute permission="inventory.view">
+              <InventoryPage />
+            </OperationalRoute>
+          }
         />
         <Route
           path={routePaths.backOffice.orders}
-          element={<InternalOrdersPage />}
+          element={
+            <OperationalRoute permission="orders.view">
+              <InternalOrdersPage />
+            </OperationalRoute>
+          }
         />
         <Route
           path={routePaths.backOffice.orderDetail}
-          element={<InternalOrderDetailPage />}
+          element={
+            <OperationalRoute permission="orders.view">
+              <InternalOrderDetailPage />
+            </OperationalRoute>
+          }
         />
       </Route>
 

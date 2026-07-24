@@ -79,7 +79,7 @@ Archivos principales:
 
 - `src/services/apiClient.js`: cliente Axios con `VITE_API_BASE_URL`, JSON headers, bearer token y normalización de errores.
 - `src/services/apiEndpoints.js`: constantes de endpoints del backend.
-- `src/services/backendServices.js`: funciones por dominio para cuentas, catálogo, carrito, delivery, pedidos, inventario y dashboard.
+- `src/services/backendServices.js`: funciones por dominio para cuentas, catálogo, carrito, delivery, tienda, pedidos, inventario y dashboard.
 - `src/services/apiErrors.js`: helpers para mensajes y errores de validación del backend.
 - `src/services/apiFixtures.js`: fixtures con forma de respuesta real para armar estados visuales antes de conectar vistas.
 - `src/auth/tokenStorage.js`: persistencia de access token, refresh token y usuario.
@@ -149,13 +149,22 @@ Authorization: Bearer <ACCESS_TOKEN>
 ```
 
 - El registro de cliente acepta los campos actuales de la vista: `nombre`, `apellido`, `email`, `telefono`, `estado`, `ciudad`, `password` y `confirmPassword`.
+- Recuperación de contraseña usa `accountService.requestPasswordReset()` y `accountService.confirmPasswordReset()` contra endpoints reales. El enlace de correo debe apuntar a `/restablecer-password?uid=<uid>&token=<token>`.
 - Los roles que devuelve el backend son `cliente`, `empleado` y `administrador`.
 - El frontend mapea esos roles a `customer`, `employee` y `admin` para `ProtectedRoute` y el preview de desarrollo.
+- El usuario devuelto por login y `/api/accounts/me/` incluye `effective_permission_codes`. Las rutas y botones internos deben usar esos códigos para ocultar navegación no autorizada, pero el backend sigue siendo la autoridad final.
+- `ProfilePage` es compartida por `cliente`, `empleado` y `administrador`; usa `accountService.me()` y `accountService.updateMe()` con `first_name`, `last_name`, `email`, `phone`, `state` y `city`.
+- El perfil muestra rol y permisos como información de solo lectura. El cambio de contraseña usa `accountService.changePassword()` y limpia la sesión local después de que el backend actualiza la contraseña.
+- La pantalla de roles consume `accessService.roles()` y solo puede guardar permisos operativos del rol `empleado` con `accessService.updateEmployeeRole(...)`.
+- No crear roles frontend/backend como `editor` o `invitado`. Un visitante sin sesión es anónimo; puede verse como `Visitante no autenticado` solo como referencia de acceso público.
 - El frontend no debe llamar directamente a Nominatim ni OpenRouteService.
 - Para checkout usar los endpoints del backend:
   - `/api/delivery/geocode/`
   - `/api/delivery/estimate/`
   - `/api/checkout/`
+- Para configuración básica de tienda usar `storeService.settings()` y
+  `storeService.updateSettings()` contra `/api/store/settings/`. El frontend no
+  debe guardar API keys, proveedores de mapas ni credenciales en estado.
 - Productos siguen usando `id` como identificador para carrito (`product_id`). El backend también devuelve `sku`, dimensiones estructuradas (`width_cm`, `height_cm`, `depth_cm`, `length_cm`, `diameter_cm`, `weight_kg`) y `specifications` para mostrar fichas técnicas y filtros sin romper vistas existentes.
 - No usar un campo libre `dimensions`; la API activa usa campos numéricos y `structured_dimensions`.
 - Los items de pedido devuelven `product_sku` y `product_snapshot` para mostrar el producto comprado aunque el catálogo cambie después.
@@ -187,9 +196,10 @@ const cart = await cartService.get();
 
 - Usuario sin sesión en ruta protegida: redirige a `/login`.
 - Usuario autenticado sin rol permitido: redirige a `/no-autorizado`.
-- Rutas públicas y de soporte aceptan invitado.
-- Rutas de carrito, checkout y cuenta de cliente requieren rol `cliente`.
-- Rutas internas aceptan `empleado` y `administrador`.
+- Rutas públicas y de soporte aceptan visitante no autenticado cuando el backend también lo permite.
+- La ruta de perfil requiere cualquier usuario autenticado.
+- Rutas de carrito, checkout y pedidos de cliente requieren rol `cliente`.
+- Rutas internas aceptan `empleado` y `administrador`; las rutas de empleado también declaran el permiso operativo requerido (`dashboard.view`, `products.view`, `inventory.view` u `orders.view`).
 - Rutas de admin aceptan solo `administrador`.
 
 ## Contexto útil para trabajar con IA

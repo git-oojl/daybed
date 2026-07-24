@@ -13,6 +13,7 @@ import {
   FaTachometerAlt,
   FaCog,
   FaBoxes,
+  FaClipboardList,
   FaUser,
   FaUsers,
   FaChartBar,
@@ -70,6 +71,10 @@ function IconProducts() {
   return <FaBoxes size={16} />;
 }
 
+function IconOrders() {
+  return <FaClipboardList size={16} />;
+}
+
 function IconUsers() {
   return <FaUsers size={16} />;
 }
@@ -96,6 +101,13 @@ const NAV_LINKS = [
   { label: "Contacto", path: routePaths.public.contactHelp },
 ];
 
+function getUserDisplayName(user) {
+  const fullName = [user?.first_name, user?.last_name]
+    .filter(Boolean)
+    .join(" ");
+  return fullName || user?.username || user?.email || "Mi cuenta";
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -118,6 +130,11 @@ export default function HomeHeader() {
   const isEmployee = viewerId === "employee";
   const isCustomer = viewerId === "customer";
   const isGuest = !isAuthenticated;
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+
+  const canUseOperationalPermission = (permissionCode) => {
+    return isAdmin || effectivePermissionCodes.includes(permissionCode);
+  };
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -162,7 +179,7 @@ export default function HomeHeader() {
   // ============================================
   const getUserButtonLabel = () => {
     if (isAuthenticated) {
-      return user?.name || "Mi cuenta";
+      return getUserDisplayName(user);
     }
     return "Iniciar sesión";
   };
@@ -174,7 +191,36 @@ export default function HomeHeader() {
     if (isAdmin) return "Administrador";
     if (isEmployee) return "Empleado";
     if (isCustomer) return "Cliente";
-    return "Invitado";
+    return "Visitante";
+  };
+
+  const getEmployeeDashboardTarget = () => {
+    const targets = [
+      {
+        permission: "dashboard.view",
+        label: "Dashboard",
+        path: routePaths.backOffice.dashboard,
+      },
+      {
+        permission: "products.view",
+        label: "Productos",
+        path: routePaths.backOffice.products,
+      },
+      {
+        permission: "inventory.view",
+        label: "Inventario",
+        path: routePaths.backOffice.inventory,
+      },
+      {
+        permission: "orders.view",
+        label: "Pedidos",
+        path: routePaths.backOffice.orders,
+      },
+    ];
+
+    return targets.find((target) =>
+      canUseOperationalPermission(target.permission),
+    );
   };
 
   // ============================================
@@ -191,16 +237,21 @@ export default function HomeHeader() {
       dashboardPath = routePaths.admin.businessMetrics || "/admin/metricas";
       dashboardLabel = "Métricas del negocio";
     } else if (isEmployee) {
-      dashboardPath = routePaths.backOffice.dashboard || "/interno";
-      dashboardLabel = "Dashboard";
+      const employeeTarget = getEmployeeDashboardTarget();
+      if (employeeTarget) {
+        dashboardPath = employeeTarget.path;
+        dashboardLabel = employeeTarget.label;
+      }
     }
 
-    items.push({
-      label: dashboardLabel,
-      icon: <IconDashboard />,
-      action: () => navigateTo(dashboardPath),
-      isAdmin: false,
-    });
+    if (!isEmployee || getEmployeeDashboardTarget()) {
+      items.push({
+        label: dashboardLabel,
+        icon: <IconDashboard />,
+        action: () => navigateTo(dashboardPath),
+        isAdmin: false,
+      });
+    }
 
     // Mi perfil - siempre visible para autenticados
     items.push({
@@ -236,11 +287,40 @@ export default function HomeHeader() {
     }
 
     // ===== OPCIONES DE EMPLEADO (ADMIN Y EMPLEADO) =====
-    if (isAdmin || isEmployee) {
+    if (isAdmin || canUseOperationalPermission("dashboard.view")) {
+      items.push({
+        label: "Dashboard operativo",
+        icon: <IconDashboard />,
+        action: () =>
+          navigateTo(routePaths.backOffice.dashboard || "/interno"),
+        isAdmin: true,
+      });
+    }
+
+    if (isAdmin || canUseOperationalPermission("products.view")) {
       items.push({
         label: "Productos",
         icon: <IconProducts />,
         action: () => navigateTo(routePaths.backOffice.products || "/interno/productos"),
+        isAdmin: true,
+      });
+    }
+
+    if (isAdmin || canUseOperationalPermission("inventory.view")) {
+      items.push({
+        label: "Inventario",
+        icon: <IconProducts />,
+        action: () =>
+          navigateTo(routePaths.backOffice.inventory || "/interno/inventario"),
+        isAdmin: true,
+      });
+    }
+
+    if (isAdmin || canUseOperationalPermission("orders.view")) {
+      items.push({
+        label: "Pedidos",
+        icon: <IconOrders />,
+        action: () => navigateTo(routePaths.backOffice.orders || "/interno/pedidos"),
         isAdmin: true,
       });
     }
@@ -303,7 +383,7 @@ export default function HomeHeader() {
             <IconSearch />
           </button>
 
-          {/* Favoritos - Solo clientes o invitados */}
+          {/* Favoritos - Solo clientes o visitantes */}
           {(isCustomer || isGuest) && (
             <button
               type="button"
@@ -315,7 +395,7 @@ export default function HomeHeader() {
             </button>
           )}
 
-          {/* Carrito - Solo clientes o invitados */}
+          {/* Carrito - Solo clientes o visitantes */}
           {(isCustomer || isGuest) && (
             <button
               type="button"
@@ -364,11 +444,11 @@ export default function HomeHeader() {
                 {/* Header con info del usuario */}
                 <div className="home-header__user-header">
                   <div className="home-header__user-avatar">
-                    {user?.name?.charAt(0) || "U"}
+                    {getUserDisplayName(user).charAt(0)}
                   </div>
                   <div className="home-header__user-info">
                     <div className="home-header__user-name">
-                      {user?.name || "Usuario"}
+                      {getUserDisplayName(user)}
                     </div>
                     <div className="home-header__user-email">
                       {user?.email || "usuario@email.com"}

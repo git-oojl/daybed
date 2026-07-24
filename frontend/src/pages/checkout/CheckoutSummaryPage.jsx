@@ -80,6 +80,23 @@ function formatPrice(amount) {
   return `$${amount.toLocaleString("es-MX")} MX`;
 }
 
+function getCartItemProduct(item) {
+  return item.product || item;
+}
+
+function getCartItemName(item) {
+  return getCartItemProduct(item).name || "Producto";
+}
+
+function getCartItemPrice(item) {
+  return Number(getCartItemProduct(item).price || item.price || 0);
+}
+
+function getCartItemImage(item) {
+  const product = getCartItemProduct(item);
+  return product.main_image || item.image || "https://via.placeholder.com/50";
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -120,7 +137,7 @@ export default function CheckoutSummaryPage() {
 
   // Métodos de pago
   const [metodoPago, setMetodoPago] = useState("cash");
-  const [envio, setEnvio] = useState("standard");
+  const envio = "standard";
 
   // ============================================
   // ✅ CARGAR DATOS DEL CHECKOUT
@@ -208,6 +225,13 @@ export default function CheckoutSummaryPage() {
       const estimate = await deliveryService.estimate({
         latitude: geocode.latitude,
         longitude: geocode.longitude,
+        order_subtotal: cartItems
+          .reduce(
+            (sum, item) =>
+              sum + getCartItemPrice(item) * (item.quantity || 0),
+            0,
+          )
+          .toFixed(2),
       });
       setDeliveryEstimate(estimate);
       setAddressValidated(true);
@@ -220,7 +244,7 @@ export default function CheckoutSummaryPage() {
     } finally {
       setGeocoding(false);
     }
-  }, [formData.calle, formData.colonia, formData.ciudad, formData.estado, formData.codigoPostal]);
+  }, [cartItems, formData.calle, formData.colonia, formData.ciudad, formData.estado, formData.codigoPostal]);
 
   // ============================================
   // ✅ CALCULAR SHIPPING COST
@@ -229,14 +253,14 @@ export default function CheckoutSummaryPage() {
     if (deliveryEstimate?.delivery_fee) {
       return parseFloat(deliveryEstimate.delivery_fee);
     }
-    return envio === "express" ? 600 : 500;
+    return 0;
   };
 
   // ============================================
   // ✅ CÁLCULOS
   // ============================================
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + (item.price || 0) * (item.quantity || 0),
+    (sum, item) => sum + getCartItemPrice(item) * (item.quantity || 0),
     0
   );
 
@@ -328,29 +352,16 @@ export default function CheckoutSummaryPage() {
       const fullAddress = `${formData.calle}, ${formData.colonia}, ${formData.ciudad}, ${formData.estado}, CP ${formData.codigoPostal}`;
 
       const payload = {
-        shipping_address: {
-          street: formData.calle,
-          colony: formData.colonia,
-          city: formData.ciudad,
-          state: formData.estado,
-          zip_code: formData.codigoPostal,
-          references: formData.referencias || "",
-          formatted_address: geocodeResult?.formatted_address || fullAddress,
-          latitude: geocodeResult?.latitude,
-          longitude: geocodeResult?.longitude,
-        },
-        payment_method: metodoPago,
-        shipping_method: envio,
-        delivery_estimate: deliveryEstimate,
-        items: cartItems.map((item) => ({
-          product_id: item.product_id || item.id,
-          quantity: item.quantity,
-        })),
-        customer: {
-          name: formData.nombre,
-          email: formData.email,
-          phone: formData.telefono,
-        },
+        original_address: fullAddress,
+        formatted_address: geocodeResult?.formatted_address || fullAddress,
+        latitude: geocodeResult?.latitude,
+        longitude: geocodeResult?.longitude,
+        distance_km: deliveryEstimate.distance_km,
+        estimated_duration_minutes: deliveryEstimate.estimated_duration_minutes,
+        delivery_fee: deliveryEstimate.delivery_fee,
+        delivery_zone: envio,
+        geocoding_provider: geocodeResult?.provider || "",
+        distance_provider: deliveryEstimate.distance_provider || "",
       };
 
       const order = await orderService.checkout(payload);
@@ -373,7 +384,7 @@ export default function CheckoutSummaryPage() {
   // ============================================
   const getEstimatedDate = () => {
     const now = new Date();
-    const days = envio === "express" ? 2 : 5;
+    const days = 5;
     const estimated = new Date(now.setDate(now.getDate() + days));
     return estimated.toLocaleDateString("es-MX", {
       year: "numeric",
@@ -684,35 +695,21 @@ export default function CheckoutSummaryPage() {
               </h2>
               <div className="checkout-card__body">
                 <div className="checkout-shipping-options">
-                  <label className={`checkout-shipping-option ${envio === "standard" ? "checkout-shipping-option--selected" : ""}`}>
+                  <label className="checkout-shipping-option checkout-shipping-option--selected">
                     <input
                       type="radio"
                       name="envio"
                       value="standard"
-                      checked={envio === "standard"}
-                      onChange={() => setEnvio("standard")}
+                      checked
+                      readOnly
                       disabled={submitting}
                     />
                     <div className="checkout-shipping-option__info">
                       <span className="checkout-shipping-option__title">Envío estándar</span>
                       <span className="checkout-shipping-option__desc">3-5 días hábiles</span>
-                      <span className="checkout-shipping-option__price">{formatPrice(500)}</span>
-                    </div>
-                  </label>
-
-                  <label className={`checkout-shipping-option ${envio === "express" ? "checkout-shipping-option--selected" : ""}`}>
-                    <input
-                      type="radio"
-                      name="envio"
-                      value="express"
-                      checked={envio === "express"}
-                      onChange={() => setEnvio("express")}
-                      disabled={submitting}
-                    />
-                    <div className="checkout-shipping-option__info">
-                      <span className="checkout-shipping-option__title">Envío express</span>
-                      <span className="checkout-shipping-option__desc">1-2 días hábiles</span>
-                      <span className="checkout-shipping-option__price">{formatPrice(600)}</span>
+                      <span className="checkout-shipping-option__price">
+                        {deliveryEstimate ? formatPrice(shippingCost) : "Valida tu dirección"}
+                      </span>
                     </div>
                   </label>
                 </div>
@@ -818,12 +815,12 @@ export default function CheckoutSummaryPage() {
               <div className="checkout-card__body">
                 {cartItems.map((item) => (
                   <div className="checkout-item" key={item.id || item.product_id}>
-                    <img className="checkout-item__image" src={item.image || "https://via.placeholder.com/50"} alt={item.name} loading="lazy" />
+                    <img className="checkout-item__image" src={getCartItemImage(item)} alt={getCartItemName(item)} loading="lazy" />
                     <div className="checkout-item__info">
-                      <p className="checkout-item__name">{item.name}</p>
+                      <p className="checkout-item__name">{getCartItemName(item)}</p>
                       <p className="checkout-item__qty">Cantidad: {item.quantity}</p>
                     </div>
-                    <span className="checkout-item__price">{formatPrice((item.price || 0) * (item.quantity || 0))}</span>
+                    <span className="checkout-item__price">{formatPrice(getCartItemPrice(item) * (item.quantity || 0))}</span>
                   </div>
                 ))}
 
@@ -836,7 +833,9 @@ export default function CheckoutSummaryPage() {
                   </div>
                   <div className="checkout-totals__row">
                     <span>Envío</span>
-                    <span>{formatPrice(shippingCost)}</span>
+                    <span>
+                      {deliveryEstimate ? formatPrice(shippingCost) : "Calculado al validar dirección"}
+                    </span>
                   </div>
                   <div className="checkout-totals__row">
                     <span>Impuestos (5%)</span>

@@ -9,6 +9,8 @@ export const routePaths = {
   account: {
     login: "/login",
     register: "/crear-cuenta",
+    forgotPassword: "/recuperar-password",
+    resetPassword: "/restablecer-password",
     profile: "/cuenta/perfil",
     orders: "/cuenta/pedidos",
     orderDetail: "/cuenta/pedidos/:orderId",
