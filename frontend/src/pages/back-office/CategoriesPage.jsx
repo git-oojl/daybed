@@ -4,6 +4,8 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import {
   FaCouch,
@@ -23,6 +25,14 @@ import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
 export default function CategoriesPage() {
+  const user = useAuthStore((state) => state.user);
+  const viewerId = getViewerIdForUser(user);
+  const isAdmin = viewerId === "admin";
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
+  const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
+  const canDeactivate =
+    isAdmin || effectivePermissionCodes.includes("products.deactivate");
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,10 +52,10 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     try {
       setLoading(true);
-      const response = await catalogService.categories();
+      const response = await catalogService.manageCategories();
       setCategories(response.results || response || []);
       setError(null);
     } catch (err) {
@@ -53,7 +63,7 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const normalizeString = (str) => {
     return str
@@ -132,7 +142,7 @@ export default function CategoriesPage() {
     try {
       const payload = {
         name: formData.name,
-        status: formData.status === "active",
+        active: formData.status === "active",
       };
 
       if (editingCategory) {
@@ -147,14 +157,14 @@ export default function CategoriesPage() {
     }
   };
 
-  // ✅ Eliminar categoría con catalogService
+  // ✅ Desactivar categoría con catalogService
   const handleDelete = async (id) => {
-    if (window.confirm("¿Eliminar esta categoría?")) {
+    if (window.confirm("¿Desactivar esta categoría?")) {
       try {
-        await catalogService.deactivateCategory?.(id) || await catalogService.updateCategory(id, { status: false });
+        await catalogService.deactivateCategory(id);
         fetchCategories();
       } catch (err) {
-        setError(err.message || "Error al eliminar categoría");
+        setError(err.message || "Error al desactivar categoría");
       }
     }
   };
@@ -272,28 +282,30 @@ export default function CategoriesPage() {
           >
             Lista de categorías
           </h2>
-          <button
-            onClick={() => handleOpenModal()}
-            style={{
-              backgroundColor: "#8B5E3C",
-              color: "#FFFFFF",
-              border: "none",
-              padding: "12px 28px",
-              borderRadius: "8px",
-              fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              transition: "background-color 0.2s ease",
-              boxShadow: "0 2px 8px rgba(139,94,60,0.3)",
-            }}
-            onMouseEnter={(e) => (e.target.style.backgroundColor = "#6B4A2B")}
-            onMouseLeave={(e) => (e.target.style.backgroundColor = "#8B5E3C")}
-          >
-            <FaPlus /> Nueva categoría
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => handleOpenModal()}
+              style={{
+                backgroundColor: "#8B5E3C",
+                color: "#FFFFFF",
+                border: "none",
+                padding: "12px 28px",
+                borderRadius: "8px",
+                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "background-color 0.2s ease",
+                boxShadow: "0 2px 8px rgba(139,94,60,0.3)",
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#6B4A2B")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#8B5E3C")}
+            >
+              <FaPlus /> Nueva categoría
+            </button>
+          )}
         </div>
 
         <div
@@ -434,48 +446,55 @@ export default function CategoriesPage() {
                     justifyContent: "center",
                   }}
                 >
-                  <button
-                    onClick={() => handleOpenModal(category)}
-                    style={{
-                      backgroundColor: "#F8F3ED",
-                      color: "#8B5E3C",
-                      border: "1px solid #E8DCCC",
-                      padding: "8px 18px",
-                      borderRadius: "25px",
-                      fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.2s ease",
-                      flex: 1,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <FaEdit size={14} /> Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    style={{
-                      backgroundColor: "#FDECEA",
-                      color: "#D32F2F",
-                      border: "1px solid #F5D0CC",
-                      padding: "8px 18px",
-                      borderRadius: "25px",
-                      fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.2s ease",
-                      flex: 1,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <FaTrash size={14} /> Eliminar
-                  </button>
+                  {canUpdate && (
+                    <button
+                      onClick={() => handleOpenModal(category)}
+                      style={{
+                        backgroundColor: "#F8F3ED",
+                        color: "#8B5E3C",
+                        border: "1px solid #E8DCCC",
+                        padding: "8px 18px",
+                        borderRadius: "25px",
+                        fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.2s ease",
+                        flex: 1,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FaEdit size={14} /> Editar
+                    </button>
+                  )}
+                  {canDeactivate && (
+                    <button
+                      onClick={() => handleDelete(category.slug)}
+                      style={{
+                        backgroundColor: "#FDECEA",
+                        color: "#D32F2F",
+                        border: "1px solid #F5D0CC",
+                        padding: "8px 18px",
+                        borderRadius: "25px",
+                        fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.2s ease",
+                        flex: 1,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FaTrash size={14} /> Desactivar
+                    </button>
+                  )}
+                  {!canUpdate && !canDeactivate && (
+                    <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Solo lectura</span>
+                  )}
                 </div>
 
                 <div

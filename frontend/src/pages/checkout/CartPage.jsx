@@ -5,7 +5,7 @@ import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
-import { cartService } from "../../services/backendServices.js";
+import { cartService, storeService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
@@ -36,7 +36,7 @@ const getProductImage = (product) => {
   // Si el producto ya tiene imagen, usarla
   if (product.image) return product.image;
   if (product.images?.length > 0) return product.images[0];
-  
+
   const name = product.name || "";
   // Buscar coincidencia exacta o parcial
   for (const [key, value] of Object.entries(productImages)) {
@@ -44,7 +44,7 @@ const getProductImage = (product) => {
       return value;
     }
   }
-  
+
   // Si no coincide, usar imagen por categoría
   const category = product.category?.name || product.category || "";
   if (category.includes("Sofá") || category.includes("Sillón")) {
@@ -56,7 +56,7 @@ const getProductImage = (product) => {
   if (category.includes("Silla")) {
     return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop";
   }
-  
+
   return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
 };
 
@@ -73,6 +73,7 @@ function CachedImage({ src, alt, className }) {
 
   useEffect(() => {
     if (imageCache.has(src)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setImgSrc(imageCache.get(src));
       setIsLoaded(true);
       return;
@@ -155,6 +156,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [storeSettings, setStoreSettings] = useState(null);
 
   // ✅ Función para cargar el carrito
   const fetchCart = useCallback(async () => {
@@ -177,33 +179,28 @@ export default function CartPage() {
       if (!isAuthenticated) {
         navigate(routePaths.account.login);
       } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchCart();
       }
     }
   }, [isAuthenticated, authLoading, navigate, fetchCart]);
 
-  // ✅ Actualizar cantidad SIN recargar toda la lista
-  const updateQuantity = useCallback(async (itemId, newQuantity) => {
-    if (newQuantity < 1) {
-      await removeFromCart(itemId);
-      return;
-    }
+  useEffect(() => {
+    let active = true;
 
-    try {
-      setUpdating(true);
-      setCartItems(prev => prev.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      ));
-      
-      await cartService.updateItem(itemId, { quantity: newQuantity });
-    } catch (err) {
-      console.error("Error al actualizar cantidad:", err);
-      setError(err.message || "Error al actualizar cantidad");
-      await fetchCart();
-    } finally {
-      setUpdating(false);
-    }
-  }, [fetchCart]);
+    storeService
+      .settings()
+      .then((settings) => {
+        if (active) setStoreSettings(settings);
+      })
+      .catch(() => {
+        if (active) setStoreSettings(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ✅ Eliminar item SIN recargar toda la lista
   const removeFromCart = useCallback(async (itemId) => {
@@ -219,6 +216,29 @@ export default function CartPage() {
       setUpdating(false);
     }
   }, [fetchCart]);
+
+  // ✅ Actualizar cantidad SIN recargar toda la lista
+  const updateQuantity = useCallback(async (itemId, newQuantity) => {
+    if (newQuantity < 1) {
+      await removeFromCart(itemId);
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setCartItems(prev => prev.map(item =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      ));
+
+      await cartService.updateItem(itemId, { quantity: newQuantity });
+    } catch (err) {
+      console.error("Error al actualizar cantidad:", err);
+      setError(err.message || "Error al actualizar cantidad");
+      await fetchCart();
+    } finally {
+      setUpdating(false);
+    }
+  }, [fetchCart, removeFromCart]);
 
   // ✅ Vaciar carrito
   const clearCart = useCallback(async () => {
@@ -240,13 +260,21 @@ export default function CartPage() {
   // ✅ Calcular totales con useMemo
   const totals = useMemo(() => {
     const subtotal = cartItems.reduce(
-      (sum, item) => sum + (item.product?.price || item.price || 0) * (item.quantity || 0),
+      (sum, item) =>
+        sum + Number(item.product?.price || item.price || 0) * (item.quantity || 0),
       0
     );
     const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const shipping = subtotal > 0 ? 500 : 0;
-    return { subtotal, totalItems, shipping, total: subtotal + shipping };
-  }, [cartItems]);
+    const freeShippingThreshold = Number(
+      storeSettings?.free_shipping_threshold || 0,
+    );
+    const qualifiesForFreeShipping =
+      freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
+    const shippingLabel = qualifiesForFreeShipping
+      ? "Gratis"
+      : "Se calcula en checkout";
+    return { subtotal, totalItems, shippingLabel, total: subtotal };
+  }, [cartItems, storeSettings]);
 
   const formatPrice = (price) => {
     return `$${price.toLocaleString("es-MX")} MX`;
@@ -318,7 +346,7 @@ export default function CartPage() {
     );
   }
 
-  const { subtotal, totalItems, shipping, total } = totals;
+  const { subtotal, totalItems, shippingLabel, total } = totals;
 
   // ✅ Render principal del carrito
   return (
@@ -356,7 +384,7 @@ export default function CartPage() {
             const productName = product.name || item.name || "Producto";
             const productPrice = product.price || item.price || 0;
             const quantity = item.quantity || 0;
-            
+
             // ✅ Obtener imagen usando la función getProductImage
             const imageUrl = getProductImage(product);
 
@@ -422,10 +450,10 @@ export default function CartPage() {
           </div>
           <div className="cart-summary-row">
             <span>Envío</span>
-            <span>{shipping > 0 ? formatPrice(shipping) : "Gratis"}</span>
+            <span>{shippingLabel}</span>
           </div>
           <div className="cart-summary-row cart-summary-total">
-            <span>Total</span>
+            <span>Total parcial</span>
             <span>{formatPrice(total)}</span>
           </div>
 

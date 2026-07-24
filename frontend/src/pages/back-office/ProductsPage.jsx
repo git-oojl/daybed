@@ -4,6 +4,8 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import {
   FaPlus,
@@ -24,6 +26,14 @@ import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
 
 export default function ProductsPage() {
+  const user = useAuthStore((state) => state.user);
+  const viewerId = getViewerIdForUser(user);
+  const isAdmin = viewerId === "admin";
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
+  const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
+  const canDeactivate =
+    isAdmin || effectivePermissionCodes.includes("products.deactivate");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,19 +55,21 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    // These initial loads intentionally do not track search/filter changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchProducts = async () => {
+  async function fetchProducts() {
     try {
       setLoading(true);
       const params = {};
       if (searchTerm) params.search = searchTerm;
       if (filterCategory) params.category = filterCategory;
-      if (filterStatus) params.status = filterStatus;
-      const response = await apiRequest({ 
-        method: "get", 
-        url: apiEndpoints.catalog.products, 
-        params 
+      if (filterStatus) params.active = filterStatus === "active";
+      const response = await apiRequest({
+        method: "get",
+        url: apiEndpoints.catalog.manageProducts,
+        params
       });
       setProducts(response.results || response || []);
       setError(null);
@@ -66,19 +78,19 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const fetchCategories = async () => {
+  async function fetchCategories() {
     try {
-      const response = await apiRequest({ 
-        method: "get", 
-        url: apiEndpoints.catalog.categories 
+      const response = await apiRequest({
+        method: "get",
+        url: apiEndpoints.catalog.manageCategories
       });
       setCategories(response.results || response || []);
     } catch (err) {
       console.error("Error al cargar categorías:", err);
     }
-  };
+  }
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -101,6 +113,10 @@ export default function ProductsPage() {
       return status ? "active" : "inactive";
     }
     return status === "active" || status === "inactive" ? status : "active";
+  };
+
+  const getProductCategoryName = (product) => {
+    return product.category_detail?.name || product.category?.name || "Sin categoría";
   };
 
   const getStatusLabel = (status) => {
@@ -126,7 +142,7 @@ export default function ProductsPage() {
         price: product.price,
         stock: product.stock,
         category: product.category?.id || product.category,
-        status: getStatusString(product.status),
+        status: getStatusString(product.active),
       });
     } else {
       setEditingProduct(null);
@@ -158,20 +174,20 @@ export default function ProductsPage() {
         price: Number(formData.price),
         stock: Number(formData.stock),
         category: Number(formData.category) || formData.category,
-        status: formData.status,
+        active: formData.status === "active",
       };
-      
+
       if (editingProduct) {
-        await apiRequest({ 
-          method: "patch", 
-          url: apiEndpoints.catalog.manageProductDetail(editingProduct.id), 
-          data: payload 
+        await apiRequest({
+          method: "patch",
+          url: apiEndpoints.catalog.manageProductDetail(editingProduct.id),
+          data: payload
         });
       } else {
-        await apiRequest({ 
-          method: "post", 
-          url: apiEndpoints.catalog.manageProducts, 
-          data: payload 
+        await apiRequest({
+          method: "post",
+          url: apiEndpoints.catalog.manageProducts,
+          data: payload
         });
       }
       handleCloseModal();
@@ -183,13 +199,12 @@ export default function ProductsPage() {
 
   const handleToggleStatus = async (id) => {
     try {
-      const product = products.find(p => p.id === id);
-      const currentStatus = getStatusString(product.status);
-      const newStatus = currentStatus === "active" ? "inactive" : "active";
-      await apiRequest({ 
-        method: "patch", 
-        url: apiEndpoints.catalog.manageProductDetail(id), 
-        data: { status: newStatus } 
+      const product = products.find((p) => p.id === id);
+      const newActive = !product.active;
+      await apiRequest({
+        method: "patch",
+        url: apiEndpoints.catalog.manageProductDetail(id),
+        data: { active: newActive },
       });
       fetchProducts();
     } catch (err) {
@@ -198,15 +213,15 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("¿Eliminar este producto?")) {
+    if (window.confirm("¿Desactivar este producto?")) {
       try {
-        await apiRequest({ 
-          method: "delete", 
-          url: apiEndpoints.catalog.manageProductDetail(id) 
+        await apiRequest({
+          method: "delete",
+          url: apiEndpoints.catalog.manageProductDetail(id)
         });
         fetchProducts();
       } catch (err) {
-        setError(err.message || "Error al eliminar producto");
+        setError(err.message || "Error al desactivar producto");
       }
     }
   };
@@ -242,9 +257,11 @@ export default function ProductsPage() {
       <main className="dashboard-container">
         <div className="dashboard-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: "16px", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
           <h2 style={{ fontSize: "clamp(1.2rem,2vw,1.8rem)", color: "#6B4A2B", margin: 0 }}>Lista de productos</h2>
-          <button onClick={() => handleOpenModal()} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", background: "#8B5E3C", color: "#fff", border: "none", borderRadius: "8px", fontSize: "clamp(0.8rem,1vw,0.9rem)", cursor: "pointer" }}>
-            <FaPlus /> Nuevo producto
-          </button>
+          {canCreate && (
+            <button onClick={() => handleOpenModal()} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px", background: "#8B5E3C", color: "#fff", border: "none", borderRadius: "8px", fontSize: "clamp(0.8rem,1vw,0.9rem)", cursor: "pointer" }}>
+              <FaPlus /> Nuevo producto
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "24px", padding: "16px 20px", background: "#FDF8F0", border: "1px solid #E8DCCC", borderRadius: "12px", alignItems: "center" }}>
@@ -291,14 +308,14 @@ export default function ProductsPage() {
                       <tr key={product.id} style={{ borderBottom: "1px solid #F0EBE3" }}>
                         <td style={{ padding: "12px 10px" }}>
                           <div className="table-product" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            {getCategoryIcon(product.category?.name)}
+                            {getCategoryIcon(getProductCategoryName(product))}
                             <span style={{ fontWeight: 500, fontSize: "clamp(0.85rem,1vw,0.95rem)" }}>{product.name}</span>
                           </div>
                         </td>
                         <td style={{ padding: "12px 10px", fontSize: "clamp(0.85rem,1vw,0.95rem)" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            {getCategoryIcon(product.category?.name)}
-                            <span>{product.category?.name || "Sin categoría"}</span>
+                            {getCategoryIcon(getProductCategoryName(product))}
+                            <span>{getProductCategoryName(product)}</span>
                           </div>
                         </td>
                         <td style={{ padding: "12px 10px", fontWeight: 600, color: "#5C2E0B", fontSize: "clamp(0.85rem,1vw,0.95rem)" }}>${product.price?.toLocaleString()}</td>
@@ -310,28 +327,36 @@ export default function ProductsPage() {
                         <td style={{ textAlign: "center", padding: "12px 10px" }}>
                           <button
                             onClick={() => handleToggleStatus(product.id)}
+                            disabled={!canDeactivate}
                             style={{
                               padding: "4px 14px",
                               borderRadius: "20px",
                               border: "none",
                               fontWeight: 600,
                               fontSize: "clamp(0.7rem,0.85vw,0.8rem)",
-                              cursor: "pointer",
-                              background: getStatusBg(product.status),
-                              color: getStatusColor(product.status),
+                              cursor: canDeactivate ? "pointer" : "default",
+                              background: getStatusBg(product.active),
+                              color: getStatusColor(product.active),
                             }}
                           >
-                            {getStatusLabel(product.status)}
+                            {getStatusLabel(product.active)}
                           </button>
                         </td>
                         <td style={{ textAlign: "center", padding: "12px 10px" }}>
                           <div className="table-actions" style={{ display: "flex", gap: "8px", justifyContent: "center", flexWrap: "wrap" }}>
-                            <button onClick={() => handleOpenModal(product)} className="btn-edit" style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", borderRadius: "6px", border: "none", background: "#8B5E3C", color: "#fff", fontSize: "clamp(0.7rem,0.85vw,0.8rem)", cursor: "pointer", fontWeight: 500 }}>
-                              <FaEdit size={12} /> Editar
-                            </button>
-                            <button onClick={() => handleDelete(product.id)} className="btn-delete" style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", borderRadius: "6px", border: "none", background: "#D32F2F", color: "#fff", fontSize: "clamp(0.7rem,0.85vw,0.8rem)", cursor: "pointer", fontWeight: 500 }}>
-                              <FaTrash size={12} /> Eliminar
-                            </button>
+                            {canUpdate && (
+                              <button onClick={() => handleOpenModal(product)} className="btn-edit" style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", borderRadius: "6px", border: "none", background: "#8B5E3C", color: "#fff", fontSize: "clamp(0.7rem,0.85vw,0.8rem)", cursor: "pointer", fontWeight: 500 }}>
+                                <FaEdit size={12} /> Editar
+                              </button>
+                            )}
+                            {canDeactivate && (
+                              <button onClick={() => handleDelete(product.id)} className="btn-delete" style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", borderRadius: "6px", border: "none", background: "#D32F2F", color: "#fff", fontSize: "clamp(0.7rem,0.85vw,0.8rem)", cursor: "pointer", fontWeight: 500 }}>
+                                <FaTrash size={12} /> Desactivar
+                              </button>
+                            )}
+                            {!canUpdate && !canDeactivate && (
+                              <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Solo lectura</span>
+                            )}
                           </div>
                         </td>
                       </tr>

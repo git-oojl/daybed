@@ -28,12 +28,14 @@ from config.views import health_check
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health_check, name="api-health"),
+    path("api/access/", include("apps.access_control.urls")),
     path("api/accounts/", include("apps.accounts.urls")),
     path("api/cart/", include("apps.cart.urls")),
     path("api/catalog/", include("apps.catalog.urls")),
     path("api/dashboard/", include("apps.dashboard.urls")),
     path("api/delivery/", include("apps.delivery.urls")),
     path("api/inventory/", include("apps.inventory.urls")),
+    path("api/store/", include("apps.store.urls")),
     path("api/", include("apps.orders.urls")),
     path("api/auth/token/", LoginTokenView.as_view(), name="token_obtain_pair"),
     path(

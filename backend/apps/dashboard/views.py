@@ -5,7 +5,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsEmployeeOrAdmin
+from apps.access_control.permissions import operational_permission
 from apps.catalog.models import Product
 from apps.dashboard.serializers import DashboardMetricsSerializer
 from apps.orders.models import Order
@@ -21,7 +21,7 @@ from apps.orders.models import Order
     tags=["Dashboard"],
 )
 class DashboardMetricsView(APIView):
-    permission_classes = (IsEmployeeOrAdmin,)
+    permission_classes = (operational_permission("dashboard.view"),)
 
     def get(self, request):
         status_counts = {

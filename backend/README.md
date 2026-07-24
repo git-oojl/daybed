@@ -75,9 +75,24 @@ STORE_LATITUDE=32.5149
 STORE_LONGITUDE=-117.0382
 DELIVERY_BASE_FEE=80.00
 DELIVERY_PRICE_PER_KM=8.00
+
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+DEFAULT_FROM_EMAIL=no-reply@daybed.local
+FRONTEND_PASSWORD_RESET_URL=http://localhost:5173/restablecer-password
 ```
 
+Los valores `STORE_LATITUDE`, `STORE_LONGITUDE`, `DELIVERY_BASE_FEE` y
+`DELIVERY_PRICE_PER_KM` son fallback/bootstrap para crear la configuración
+persistente inicial de tienda. Después de creada, la API usa
+`/api/store/settings/` como fuente de verdad para origen, tarifas y umbral de
+envío gratis.
+
 `OPENROUTESERVICE_API_KEY` puede quedar vacio para instalar, probar y correr el backend. El endpoint real de estimacion devuelve error controlado si no esta configurado.
+
+En desarrollo, `EMAIL_BACKEND` usa consola para imprimir los enlaces de
+recuperacion de contraseña. En producción debe configurarse un backend SMTP o
+proveedor transaccional real y `FRONTEND_PASSWORD_RESET_URL` debe apuntar a la
+ruta pública del frontend.
 
 ## Datos semilla locales
 
@@ -202,16 +217,24 @@ Content-Type: application/json
 | Rol | Uso |
 | --- | --- |
 | `cliente` | Perfil propio, carrito, checkout y pedidos propios. |
-| `empleado` | Operacion interna de catalogo, inventario y pedidos. |
+| `empleado` | Operacion interna segun el paquete configurable de permisos operativos. |
 | `administrador` | Gestion de usuarios internos y permisos operativos completos. |
 
-Los superusuarios de Django tambien cuentan como administradores.
+Los superusuarios de Django tambien cuentan como administradores. Solo
+`empleado` tiene permisos configurables en `/api/access/roles/empleado/`.
+`cliente`, `administrador`, user management, permission management y store
+settings no son togglables. La API rechaza roles fuera de `cliente`,
+`empleado`, `administrador`; un visitante sin sesion es anonimo, no rol
+`invitado`.
 
 ## Reglas backend relevantes
 
 - El correo de usuarios se normaliza a minusculas y se valida como unico sin distinguir mayusculas/minusculas.
+- `/api/accounts/me/` devuelve `effective_permission_codes`; se calculan contra permisos actuales, no como claims permanentes del JWT.
+- No se permite desactivar o degradar accidentalmente al ultimo administrador/superuser activo desde la gestion interna.
 - La gestion de productos rechaza precios negativos.
 - Checkout rechaza datos de entrega negativos o coordenadas fuera de rango.
+- Checkout recalcula `delivery_fee` desde la configuración persistente de tienda y aplica envío gratis por umbral.
 - Checkout rechaza carritos con productos inactivos o categorias inactivas.
 - El stock se descuenta al confirmar el pedido, no al agregar al carrito ni al crear el pedido `pending`.
 - `Product` sigue siendo el item comprable/SKU del MVP: tiene `sku`, dimensiones estructuradas opcionales y `specifications` JSON para especificaciones por categoría sin introducir variantes ni EAV.

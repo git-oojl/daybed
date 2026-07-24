@@ -19,6 +19,9 @@ env = environ.Env(
     STORE_LONGITUDE=(float, -117.0382),
     DELIVERY_BASE_FEE=(str, "80.00"),
     DELIVERY_PRICE_PER_KM=(str, "8.00"),
+    EMAIL_BACKEND=(str, "django.core.mail.backends.console.EmailBackend"),
+    DEFAULT_FROM_EMAIL=(str, "no-reply@daybed.local"),
+    FRONTEND_PASSWORD_RESET_URL=(str, "http://localhost:5173/restablecer-password"),
 )
 
 env_file = BASE_DIR / ".env"
@@ -54,11 +57,13 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "apps.accounts",
+    "apps.access_control",
     "apps.catalog",
     "apps.cart",
     "apps.orders",
     "apps.inventory",
     "apps.delivery",
+    "apps.store",
     "apps.dashboard",
     "django_extensions",
 ]
@@ -148,6 +153,9 @@ STORE_LATITUDE = env("STORE_LATITUDE")
 STORE_LONGITUDE = env("STORE_LONGITUDE")
 DELIVERY_BASE_FEE = Decimal(env("DELIVERY_BASE_FEE"))
 DELIVERY_PRICE_PER_KM = Decimal(env("DELIVERY_PRICE_PER_KM"))
+EMAIL_BACKEND = env("EMAIL_BACKEND")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
+FRONTEND_PASSWORD_RESET_URL = env("FRONTEND_PASSWORD_RESET_URL")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

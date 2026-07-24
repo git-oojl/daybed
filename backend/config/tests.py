@@ -27,11 +27,13 @@ class FoundationApiTests(SimpleTestCase):
             "drf_spectacular",
             "rest_framework",
             "apps.accounts",
+            "apps.access_control",
             "apps.catalog",
             "apps.cart",
             "apps.orders",
             "apps.inventory",
             "apps.delivery",
+            "apps.store",
             "apps.dashboard",
         }
 

@@ -10,6 +10,9 @@ from apps.accounts.serializers import (
     InternalUserSerializer,
     LoginTokenSerializer,
     LogoutSerializer,
+    PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     UserProfileSerializer,
 )
 
@@ -43,6 +46,38 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class PasswordChangeView(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = PasswordChangeSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PasswordResetRequestView(generics.GenericAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save(), status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = PasswordResetConfirmSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class InternalUserViewSet(viewsets.ModelViewSet):

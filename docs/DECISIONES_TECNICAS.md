@@ -52,8 +52,10 @@ Reglas principales:
 - El backend genera `username` si el cliente no lo envía.
 - Público: catálogo activo.
 - Cliente: perfil propio, carrito, checkout y pedidos propios.
-- Empleado: operación interna de productos, inventario y pedidos.
-- Administrador: gestión de usuarios y roles además de permisos operativos.
+- Empleado: operación interna solo si su grupo tiene el permiso operativo concreto.
+- Administrador: gestión de usuarios, permisos y store settings, además de bypass operativo completo.
+- Solo el rol `empleado` tiene paquete configurable. No hay roles `editor` ni `invitado`, ni permisos por usuario.
+- Los permisos operativos son Django `Group`/`Permission` y se evalúan contra la base actual; no se confía en claims permanentes dentro del JWT.
 
 ## Inventario
 

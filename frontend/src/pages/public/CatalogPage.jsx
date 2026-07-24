@@ -1,7 +1,7 @@
 // Importación de CSS
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
 import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
 import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
@@ -62,6 +62,25 @@ const getProductImage = (product) => {
   return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
 };
 
+// ============================================================
+// PRODUCTOS MOCK (FALLBACK)
+// ============================================================
+const allProductsMock = [
+  { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
+  { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
+  { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
+  { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
+];
+
+const generateMockProducts = () => {
+  const products = [];
+  for (let i = 0; i < 32; i++) {
+    const base = allProductsMock[i % allProductsMock.length];
+    products.push({ ...base, id: i + 1 });
+  }
+  return products;
+};
+
 function CatalogPage() {
   const [sortBy, setSortBy] = useState("default");
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -70,32 +89,9 @@ function CatalogPage() {
   const [products, setProducts] = useState([]);
 
   // ============================================================
-  // PRODUCTOS MOCK (FALLBACK)
-  // ============================================================
-  const allProductsMock = [
-    { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
-    { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
-    { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
-    { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
-  ];
-
-  const generateMockProducts = () => {
-    const products = [];
-    for (let i = 0; i < 32; i++) {
-      const base = allProductsMock[i % allProductsMock.length];
-      products.push({ ...base, id: i + 1 });
-    }
-    return products;
-  };
-
-  // ============================================================
   // ✅ CARGAR PRODUCTOS DEL BACKEND
   // ============================================================
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:8000/api/catalog/products/');
@@ -109,7 +105,12 @@ function CatalogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProducts();
+  }, [fetchProducts]);
 
   // ✅ Usar productos del backend si existen, si no usar mock
   const finalProducts = products.length > 0 ? products : generateMockProducts();

@@ -410,7 +410,7 @@ function LoginPage() {
         </form>
 
         <Box className="login-links-container">
-          <ForgotLink href="#" underline="hover">
+          <ForgotLink href={routePaths.account.forgotPassword} underline="hover">
             ¿Olvidaste tu contraseña?
           </ForgotLink>
         </Box>

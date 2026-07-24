@@ -4,6 +4,8 @@ from decimal import ROUND_HALF_UP, Decimal
 import httpx
 from django.conf import settings
 
+from apps.store.models import StoreSettings
+
 
 class DeliveryServiceError(Exception):
     status_code = 502
@@ -35,6 +37,8 @@ class DeliveryEstimate:
     distance_km: Decimal
     estimated_duration_minutes: Decimal
     delivery_fee: Decimal
+    free_shipping_applied: bool
+    free_shipping_threshold: Decimal | None
     distance_provider: str = "openrouteservice"
 
 
@@ -52,6 +56,29 @@ def _distance(value):
 
 def _duration(value):
     return value.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+
+
+def free_shipping_applies(order_subtotal, store_settings=None):
+    if order_subtotal is None:
+        return False
+
+    store_settings = store_settings or StoreSettings.get_active()
+    threshold = store_settings.free_shipping_threshold
+    if threshold is None:
+        return False
+
+    return _decimal(order_subtotal) >= threshold
+
+
+def calculate_delivery_fee(distance_km, order_subtotal=None, store_settings=None):
+    store_settings = store_settings or StoreSettings.get_active()
+    if free_shipping_applies(order_subtotal, store_settings):
+        return _money(Decimal("0.00"))
+
+    return _money(
+        store_settings.delivery_base_fee
+        + _decimal(distance_km) * store_settings.delivery_price_per_km
+    )
 
 
 def geocode_address(address):
@@ -84,12 +111,13 @@ def geocode_address(address):
     )
 
 
-def estimate_delivery(latitude, longitude):
+def estimate_delivery(latitude, longitude, order_subtotal=None):
     if not settings.OPENROUTESERVICE_API_KEY:
         raise DeliveryConfigurationError("OpenRouteService API key is not configured.")
 
-    origin_latitude = _decimal(settings.STORE_LATITUDE)
-    origin_longitude = _decimal(settings.STORE_LONGITUDE)
+    store_settings = StoreSettings.get_active()
+    origin_latitude = _decimal(store_settings.latitude)
+    origin_longitude = _decimal(store_settings.longitude)
     destination_latitude = _decimal(latitude)
     destination_longitude = _decimal(longitude)
 
@@ -121,8 +149,10 @@ def estimate_delivery(latitude, longitude):
             "Distance provider returned an invalid response."
         ) from exc
 
-    delivery_fee = _money(
-        settings.DELIVERY_BASE_FEE + distance_km * settings.DELIVERY_PRICE_PER_KM
+    delivery_fee = calculate_delivery_fee(
+        distance_km,
+        order_subtotal=order_subtotal,
+        store_settings=store_settings,
     )
 
     return DeliveryEstimate(
@@ -133,4 +163,9 @@ def estimate_delivery(latitude, longitude):
         distance_km=distance_km,
         estimated_duration_minutes=duration_minutes,
         delivery_fee=delivery_fee,
+        free_shipping_applied=free_shipping_applies(
+            order_subtotal,
+            store_settings=store_settings,
+        ),
+        free_shipping_threshold=store_settings.free_shipping_threshold,
     )

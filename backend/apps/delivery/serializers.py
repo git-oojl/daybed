@@ -30,6 +30,12 @@ class DeliveryEstimateRequestSerializer(serializers.Serializer):
         decimal_places=8,
         required=False,
     )
+    order_subtotal = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0,
+        required=False,
+    )
 
     def validate(self, attrs):
         has_address = bool(attrs.get("address"))
@@ -51,6 +57,12 @@ class DeliveryEstimateResponseSerializer(serializers.Serializer):
         max_digits=10, decimal_places=1
     )
     delivery_fee = serializers.DecimalField(max_digits=10, decimal_places=2)
+    free_shipping_applied = serializers.BooleanField()
+    free_shipping_threshold = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        allow_null=True,
+    )
     delivery_zone = serializers.CharField()
     geocoding_provider = serializers.CharField(required=False)
     distance_provider = serializers.CharField()

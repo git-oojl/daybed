@@ -10,14 +10,11 @@ import {
   FaBox,
   FaTruck,
   FaMapMarkerAlt,
-  FaClipboardList,
   FaEdit,
-  FaSave,
   FaTimes,
 } from "react-icons/fa";
 
 export default function InternalOrderDetailPage() {
-  const [orderStatus, setOrderStatus] = useState("Pendiente");
   const [note, setNote] = useState("");
   const [showNoteInput, setShowNoteInput] = useState(false);
 
@@ -36,53 +33,6 @@ export default function InternalOrderDetailPage() {
       { name: "Sofá Esquinero", sku: "DD73844", quantity: 1, price: 6000 },
       { name: "Mesa de Centro", sku: "DD83482", quantity: 1, price: 4000 },
     ],
-  };
-
-  const statusOptions = [
-    "Pendiente",
-    "Confirmado",
-    "Preparando",
-    "Enviado",
-    "Entregado",
-    "Cancelado",
-  ];
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Pendiente":
-        return "#ED6C02";
-      case "Confirmado":
-        return "#2E7D32";
-      case "Preparando":
-        return "#0288D1";
-      case "Enviado":
-        return "#6A5ACD";
-      case "Entregado":
-        return "#4CAF50";
-      case "Cancelado":
-        return "#D32F2F";
-      default:
-        return "#666";
-    }
-  };
-
-  const getStatusBg = (status) => {
-    switch (status) {
-      case "Pendiente":
-        return "#FFF8E1";
-      case "Confirmado":
-        return "#E8F5E9";
-      case "Preparando":
-        return "#E3F2FD";
-      case "Enviado":
-        return "#EDE7F6";
-      case "Entregado":
-        return "#E8F5E9";
-      case "Cancelado":
-        return "#FDECEA";
-      default:
-        return "#F5F5F5";
-    }
   };
 
   return (
@@ -433,107 +383,6 @@ export default function InternalOrderDetailPage() {
             </div>
           </div>
 
-          {/* Cambio de estado del pedido */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <h3
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-                color: "#8B5E3C",
-                margin: "0 0 16px 0",
-              }}
-            >
-              <FaClipboardList /> Cambio de estado del pedido
-            </h3>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-            >
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Estado actual
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    display: "inline-block",
-                    padding: "4px 16px",
-                    borderRadius: "20px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                    fontWeight: 600,
-                    background: getStatusBg(orderStatus),
-                    color: getStatusColor(orderStatus),
-                  }}
-                >
-                  {orderStatus}
-                </p>
-              </div>
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Cambiar estado
-                </span>
-                <select
-                  value={orderStatus}
-                  onChange={(e) => setOrderStatus(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    marginTop: "4px",
-                    border: "2px solid #E8DCCC",
-                    borderRadius: "10px",
-                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                    background: "#FFFFFF",
-                    outline: "none",
-                    cursor: "pointer",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
-                  onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button
-                onClick={() => alert(`Estado actualizado a: ${orderStatus}`)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  padding: "12px",
-                  border: "none",
-                  borderRadius: "10px",
-                  background: "#8B5E3C",
-                  color: "#FFFFFF",
-                  fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "background-color 0.2s ease",
-                  marginTop: "4px",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#6B4A2B")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#8B5E3C")
-                }
-              >
-                <FaSave /> Actualizar estado
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Productos del pedido */}

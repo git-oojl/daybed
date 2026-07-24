@@ -112,6 +112,35 @@ function IconLoading() {
   );
 }
 
+const ROLE_OPTIONS = [
+  { value: "administrador", label: "Administrador" },
+  { value: "empleado", label: "Empleado" },
+  { value: "cliente", label: "Cliente" },
+];
+
+function getUserDisplayName(user) {
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
+  return fullName || user.username || user.email || "Usuario";
+}
+
+function splitFullName(value) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  const firstName = parts.shift() ?? "";
+  return {
+    first_name: firstName,
+    last_name: parts.join(" "),
+  };
+}
+
+function buildUsernameFromEmail(email) {
+  const localPart = email.split("@")[0] || "usuario";
+  return localPart.replace(/[^\w.@+-]/g, "_").slice(0, 140);
+}
+
+function getRoleLabel(role) {
+  return ROLE_OPTIONS.find((option) => option.value === role)?.label || role;
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -134,7 +163,7 @@ export default function InternalUsersPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "Empleado",
+    role: "empleado",
     password: "",
   });
 
@@ -186,28 +215,6 @@ export default function InternalUsersPage() {
   }, [isAuthenticated, authLoading, user, navigate]);
 
   // ============================================
-  // ✅ MAPEO DE ROLES
-  // ============================================
-  const mapBackendRoleToDisplay = (role) => {
-    const roleMap = {
-      administrador: "Administrador",
-      empleado: "Empleado",
-      editor: "Editor",
-      cliente: "Cliente",
-    };
-    return roleMap[role] || role;
-  };
-
-  const mapDisplayRoleToBackend = (role) => {
-    const roleMap = {
-      Administrador: "administrador",
-      Empleado: "empleado",
-      Editor: "editor",
-    };
-    return roleMap[role] || role;
-  };
-
-  // ============================================
   // ✅ FILTRAR USUARIOS
   // ============================================
   const filteredUsers = useMemo(() => {
@@ -218,15 +225,14 @@ export default function InternalUsersPage() {
       const term = searchTerm.toLowerCase();
       result = result.filter(
         (u) =>
-          u.name?.toLowerCase().includes(term) ||
-          u.email?.toLowerCase().includes(term)
+          getUserDisplayName(u).toLowerCase().includes(term) ||
+          u.email?.toLowerCase().includes(term),
       );
     }
 
     // Filtrar por rol
     if (filterRole !== "all") {
-      const backendRole = mapDisplayRoleToBackend(filterRole);
-      result = result.filter((u) => u.role === backendRole);
+      result = result.filter((u) => u.role === filterRole);
     }
 
     return result;
@@ -267,6 +273,9 @@ export default function InternalUsersPage() {
     if (!formData.name.trim()) errors.name = "Nombre requerido";
     if (!formData.email.trim()) errors.email = "Email requerido";
     if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = "Email inválido";
+    if (!ROLE_OPTIONS.some((option) => option.value === formData.role)) {
+      errors.role = "Rol no soportado";
+    }
     if (!editingUser && !formData.password.trim()) {
       errors.password = "Contraseña requerida";
     }
@@ -287,10 +296,13 @@ export default function InternalUsersPage() {
     setError(null);
 
     try {
+      const nameParts = splitFullName(formData.name);
       const payload = {
-        name: formData.name,
+        username: buildUsernameFromEmail(formData.email),
         email: formData.email,
-        role: mapDisplayRoleToBackend(formData.role),
+        first_name: nameParts.first_name,
+        last_name: nameParts.last_name,
+        role: formData.role,
         password: formData.password,
         is_active: true,
       };
@@ -298,7 +310,7 @@ export default function InternalUsersPage() {
       await accountService.createUser(payload);
       setSuccess(true);
       setShowCreateModal(false);
-      setFormData({ name: "", email: "", role: "Empleado", password: "" });
+      setFormData({ name: "", email: "", role: "empleado", password: "" });
       await loadUsers();
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -321,9 +333,9 @@ export default function InternalUsersPage() {
   const handleEditUser = (user) => {
     setEditingUser(user);
     setFormData({
-      name: user.name || "",
+      name: getUserDisplayName(user),
       email: user.email || "",
-      role: mapBackendRoleToDisplay(user.role),
+      role: user.role,
       password: "",
     });
     setShowCreateModal(true);
@@ -336,10 +348,12 @@ export default function InternalUsersPage() {
     setError(null);
 
     try {
+      const nameParts = splitFullName(formData.name);
       const payload = {
-        name: formData.name,
+        first_name: nameParts.first_name,
+        last_name: nameParts.last_name,
         email: formData.email,
-        role: mapDisplayRoleToBackend(formData.role),
+        role: formData.role,
       };
 
       // Solo incluir contraseña si se proporcionó una nueva
@@ -351,7 +365,7 @@ export default function InternalUsersPage() {
       setSuccess(true);
       setShowCreateModal(false);
       setEditingUser(null);
-      setFormData({ name: "", email: "", role: "Empleado", password: "" });
+      setFormData({ name: "", email: "", role: "empleado", password: "" });
       await loadUsers();
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -420,7 +434,7 @@ export default function InternalUsersPage() {
   const handleCancel = () => {
     setShowCreateModal(false);
     setEditingUser(null);
-    setFormData({ name: "", email: "", role: "Empleado", password: "" });
+    setFormData({ name: "", email: "", role: "empleado", password: "" });
     setFormErrors({});
     setError(null);
   };
@@ -432,8 +446,8 @@ export default function InternalUsersPage() {
     switch (role) {
       case "administrador":
         return "internal-users__badge--admin";
-      case "editor":
-        return "internal-users__badge--editor";
+      case "cliente":
+        return "internal-users__badge--customer";
       default:
         return "internal-users__badge--employee";
     }
@@ -574,9 +588,11 @@ export default function InternalUsersPage() {
             <IconFilter />
             <select value={filterRole} onChange={handleFilterChange} disabled={submitting}>
               <option value="all">Todos los roles</option>
-              <option value="Administrador">Administrador</option>
-              <option value="Editor">Editor</option>
-              <option value="Empleado">Empleado</option>
+              {ROLE_OPTIONS.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -584,7 +600,7 @@ export default function InternalUsersPage() {
             className="internal-users__add-btn"
             onClick={() => {
               setEditingUser(null);
-              setFormData({ name: "", email: "", role: "Empleado", password: "" });
+              setFormData({ name: "", email: "", role: "empleado", password: "" });
               setFormErrors({});
               setError(null);
               setShowCreateModal(true);
@@ -625,7 +641,7 @@ export default function InternalUsersPage() {
                           <div className="internal-users__avatar">
                             <IconUser />
                           </div>
-                          <span>{user.name}</span>
+                          <span>{getUserDisplayName(user)}</span>
                         </div>
                       </td>
                       <td>{user.email}</td>
@@ -633,7 +649,7 @@ export default function InternalUsersPage() {
                         <span
                           className={`internal-users__badge ${getRoleBadgeClass(user.role)}`}
                         >
-                          {mapBackendRoleToDisplay(user.role)}
+                          {getRoleLabel(user.role)}
                         </span>
                       </td>
                       <td>
@@ -661,7 +677,7 @@ export default function InternalUsersPage() {
                           <button
                             className="internal-users__action-btn internal-users__action-btn--edit"
                             onClick={() => handleEditUser(user)}
-                            aria-label={`Editar ${user.name}`}
+                            aria-label={`Editar ${getUserDisplayName(user)}`}
                             disabled={submitting}
                           >
                             <IconEdit />
@@ -669,7 +685,7 @@ export default function InternalUsersPage() {
                           <button
                             className="internal-users__action-btn internal-users__action-btn--delete"
                             onClick={() => handleDeleteUser(user.id)}
-                            aria-label={`Eliminar ${user.name}`}
+                            aria-label={`Eliminar ${getUserDisplayName(user)}`}
                             disabled={submitting}
                           >
                             <IconTrash />
@@ -759,10 +775,17 @@ export default function InternalUsersPage() {
                   onChange={handleFormChange}
                   disabled={submitting}
                 >
-                  <option value="Administrador">Administrador</option>
-                  <option value="Editor">Editor</option>
-                  <option value="Empleado">Empleado</option>
+                  {ROLE_OPTIONS.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
+                    </option>
+                  ))}
                 </select>
+                {formErrors.role && (
+                  <span className="internal-users__field-error">
+                    {formErrors.role}
+                  </span>
+                )}
               </div>
 
               <div className="internal-users__field">

@@ -1,7 +1,7 @@
 from django.db.models import F
 from rest_framework import generics
 
-from apps.accounts.permissions import IsEmployeeOrAdmin
+from apps.access_control.permissions import operational_permission
 from apps.catalog.models import Product
 from apps.inventory.models import InventoryMovement
 from apps.inventory.serializers import (
@@ -14,7 +14,7 @@ from apps.inventory.services import record_inventory_movement
 
 class InventoryProductListView(generics.ListAPIView):
     serializer_class = InventoryProductSerializer
-    permission_classes = (IsEmployeeOrAdmin,)
+    permission_classes = (operational_permission("inventory.view"),)
     filterset_fields = ("active", "category", "category__slug")
     search_fields = ("sku", "name", "description", "material", "color", "style")
     ordering_fields = ("name", "stock", "minimum_stock", "updated_at")
@@ -30,7 +30,7 @@ class LowStockProductListView(InventoryProductListView):
 
 class StockUpdateView(generics.UpdateAPIView):
     queryset = Product.objects.select_related("category").order_by("id")
-    permission_classes = (IsEmployeeOrAdmin,)
+    permission_classes = (operational_permission("inventory.adjust"),)
     serializer_class = StockUpdateSerializer
     http_method_names = ["patch", "put", "head", "options"]
 
@@ -59,7 +59,7 @@ class StockUpdateView(generics.UpdateAPIView):
 
 class InventoryMovementListView(generics.ListAPIView):
     serializer_class = InventoryMovementSerializer
-    permission_classes = (IsEmployeeOrAdmin,)
+    permission_classes = (operational_permission("inventory.movements.view"),)
     filterset_fields = ("product", "movement_type", "order", "created_by")
     search_fields = ("product__name", "reason", "created_by__username")
     ordering_fields = ("created_at", "quantity_delta")

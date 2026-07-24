@@ -77,7 +77,11 @@ class DeliveryEstimateView(APIView):
                 latitude = serializer.validated_data["latitude"]
                 longitude = serializer.validated_data["longitude"]
 
-            estimate = estimate_delivery(latitude, longitude)
+            estimate = estimate_delivery(
+                latitude,
+                longitude,
+                order_subtotal=serializer.validated_data.get("order_subtotal"),
+            )
         except DeliveryServiceError as exc:
             return _error_response(exc)
 

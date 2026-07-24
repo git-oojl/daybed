@@ -29,3 +29,13 @@ class User(AbstractUser):
     @property
     def is_administrator(self):
         return self.role == self.Roles.ADMIN or self.is_superuser
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        try:
+            from apps.access_control.services import sync_user_employee_group
+
+            sync_user_employee_group(self)
+        except Exception:
+            # Migrations and early setup can run before auth tables are ready.
+            pass

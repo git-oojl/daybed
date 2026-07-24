@@ -60,6 +60,19 @@ export const useAuthStore = create((set, get) => ({
     });
   },
 
+  setUser(user) {
+    if (isDevPreviewRoute()) {
+      return;
+    }
+
+    setStoredUser(user);
+    set({
+      user,
+      viewerId: getViewerIdForUser(user),
+      isAuthenticated: Boolean(get().accessToken && user),
+    });
+  },
+
   async login(credentials) {
     if (isDevPreviewRoute()) {
       throw new Error(

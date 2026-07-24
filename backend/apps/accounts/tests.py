@@ -1,10 +1,18 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.core import mail
 from django.core.management import call_command
+from django.test import override_settings
 from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 
+from apps.access_control.services import get_effective_permission_codes
 from apps.accounts.permissions import is_admin, is_customer, is_employee_or_admin
+from apps.accounts.serializers import PASSWORD_RESET_SENT_MESSAGE
 from apps.cart.models import CartItem
 from apps.catalog.models import Category, Product
 from apps.inventory.models import InventoryMovement
@@ -142,6 +150,220 @@ def test_jwt_logout_blacklists_refresh_token():
     assert refresh_response.status_code == 401
 
 
+def test_password_change_requires_authentication():
+    client = api_client()
+
+    response = client.post(reverse("password-change"), {}, format="json")
+
+    assert response.status_code == 401
+
+
+def test_password_change_rejects_wrong_current_password():
+    user = create_user("password_change_wrong")
+    client = api_client()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        reverse("password-change"),
+        {
+            "current_password": "WrongPass123!",
+            "new_password": "NewStrongPass123!",
+            "confirm_password": "NewStrongPass123!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.check_password("StrongPass123!")
+
+
+def test_password_change_updates_password_and_blacklists_refresh_tokens():
+    user = create_user("password_change_success")
+    client = api_client()
+    login_response = client.post(
+        reverse("token_obtain_pair"),
+        {"email": user.email, "password": "StrongPass123!"},
+        format="json",
+    )
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        reverse("password-change"),
+        {
+            "current_password": "StrongPass123!",
+            "new_password": "NewStrongPass123!",
+            "confirm_password": "NewStrongPass123!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 204
+    user.refresh_from_db()
+    assert user.check_password("NewStrongPass123!")
+    assert BlacklistedToken.objects.filter(token__user=user).exists()
+
+    old_login_response = api_client().post(
+        reverse("token_obtain_pair"),
+        {"email": user.email, "password": "StrongPass123!"},
+        format="json",
+    )
+    new_login_response = api_client().post(
+        reverse("token_obtain_pair"),
+        {"email": user.email, "password": "NewStrongPass123!"},
+        format="json",
+    )
+    refresh_response = api_client().post(
+        reverse("token_refresh"),
+        {"refresh": login_response.data["refresh"]},
+        format="json",
+    )
+
+    assert old_login_response.status_code == 400
+    assert new_login_response.status_code == 200
+    assert refresh_response.status_code == 401
+
+
+def test_password_change_enforces_password_validation_and_confirmation():
+    user = create_user("password_change_validation")
+    client = api_client()
+    client.force_authenticate(user=user)
+
+    mismatch_response = client.post(
+        reverse("password-change"),
+        {
+            "current_password": "StrongPass123!",
+            "new_password": "NewStrongPass123!",
+            "confirm_password": "DifferentStrongPass123!",
+        },
+        format="json",
+    )
+    weak_response = client.post(
+        reverse("password-change"),
+        {
+            "current_password": "StrongPass123!",
+            "new_password": "123",
+            "confirm_password": "123",
+        },
+        format="json",
+    )
+
+    assert mismatch_response.status_code == 400
+    assert weak_response.status_code == 400
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_PASSWORD_RESET_URL="https://daybed.example/reset-password",
+)
+def test_password_reset_request_is_generic_and_emails_existing_active_user():
+    user = create_user("password_reset_request")
+    client = api_client()
+
+    existing_response = client.post(
+        reverse("password-reset-request"),
+        {"email": user.email.upper()},
+        format="json",
+    )
+    missing_response = client.post(
+        reverse("password-reset-request"),
+        {"email": "missing@example.com"},
+        format="json",
+    )
+
+    assert existing_response.status_code == 200
+    assert missing_response.status_code == 200
+    assert existing_response.data == {"detail": PASSWORD_RESET_SENT_MESSAGE}
+    assert missing_response.data == {"detail": PASSWORD_RESET_SENT_MESSAGE}
+    assert len(mail.outbox) == 1
+    assert user.email in mail.outbox[0].to
+    assert "https://daybed.example/reset-password?uid=" in mail.outbox[0].body
+    assert "&token=" in mail.outbox[0].body
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_password_reset_request_does_not_email_inactive_user():
+    user = create_user("password_reset_inactive")
+    user.is_active = False
+    user.save(update_fields=("is_active",))
+
+    response = api_client().post(
+        reverse("password-reset-request"),
+        {"email": user.email},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert len(mail.outbox) == 0
+
+
+def test_password_reset_confirm_rejects_invalid_token():
+    user = create_user("password_reset_invalid")
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+    response = api_client().post(
+        reverse("password-reset-confirm"),
+        {
+            "uid": uid,
+            "token": "invalid-token",
+            "new_password": "ResetStrongPass123!",
+            "confirm_password": "ResetStrongPass123!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    user.refresh_from_db()
+    assert user.check_password("StrongPass123!")
+
+
+def test_password_reset_confirm_updates_password_and_blacklists_refresh_tokens():
+    user = create_user("password_reset_success")
+    login_response = api_client().post(
+        reverse("token_obtain_pair"),
+        {"email": user.email, "password": "StrongPass123!"},
+        format="json",
+    )
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+
+    response = api_client().post(
+        reverse("password-reset-confirm"),
+        {
+            "uid": uid,
+            "token": token,
+            "new_password": "ResetStrongPass123!",
+            "confirm_password": "ResetStrongPass123!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 204
+    user.refresh_from_db()
+    assert user.check_password("ResetStrongPass123!")
+    assert BlacklistedToken.objects.filter(token__user=user).exists()
+
+    old_login_response = api_client().post(
+        reverse("token_obtain_pair"),
+        {"email": user.email, "password": "StrongPass123!"},
+        format="json",
+    )
+    new_login_response = api_client().post(
+        reverse("token_obtain_pair"),
+        {"email": user.email, "password": "ResetStrongPass123!"},
+        format="json",
+    )
+    refresh_response = api_client().post(
+        reverse("token_refresh"),
+        {"refresh": login_response.data["refresh"]},
+        format="json",
+    )
+
+    assert old_login_response.status_code == 400
+    assert new_login_response.status_code == 200
+    assert refresh_response.status_code == 401
+
+
 def test_current_user_profile_requires_authentication():
     client = api_client()
 
@@ -201,6 +423,82 @@ def test_current_user_profile_update_normalizes_email_and_rejects_duplicate():
     assert user.email == "cliente.updated@example.com"
 
 
+@pytest.mark.parametrize(
+    "role",
+    [User.Roles.CUSTOMER, User.Roles.EMPLOYEE, User.Roles.ADMIN],
+)
+def test_current_user_profile_supports_all_authenticated_roles(role):
+    user = create_user(f"profile_{role}", role=role)
+    client = api_client()
+    client.force_authenticate(user=user)
+
+    response = client.get(reverse("current-user"))
+
+    assert response.status_code == 200
+    assert response.data == {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": "",
+        "last_name": "",
+        "phone": "",
+        "state": "",
+        "city": "",
+        "role": role,
+        "effective_permission_codes": get_effective_permission_codes(user),
+    }
+
+
+@pytest.mark.parametrize(
+    "role",
+    [User.Roles.CUSTOMER, User.Roles.EMPLOYEE, User.Roles.ADMIN],
+)
+def test_current_user_profile_updates_supported_fields_for_all_roles(role):
+    user = create_user(f"profile_update_{role}", role=role)
+    original_username = user.username
+    client = api_client()
+    client.force_authenticate(user=user)
+
+    response = client.patch(
+        reverse("current-user"),
+        {
+            "username": "ignored_username",
+            "email": f"UPDATED.{role}@example.com",
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "phone": "6645550199",
+            "state": "Baja California",
+            "city": "Tijuana",
+            "role": User.Roles.ADMIN
+            if role != User.Roles.ADMIN
+            else User.Roles.CUSTOMER,
+            "effective_permission_codes": ["products.view"],
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["email"] == f"updated.{role}@example.com"
+    assert response.data["first_name"] == "Nombre"
+    assert response.data["last_name"] == "Apellido"
+    assert response.data["phone"] == "6645550199"
+    assert response.data["state"] == "Baja California"
+    assert response.data["city"] == "Tijuana"
+    assert response.data["role"] == role
+    effective_permission_codes = get_effective_permission_codes(user)
+    assert response.data["effective_permission_codes"] == effective_permission_codes
+
+    user.refresh_from_db()
+    assert user.username == original_username
+    assert user.role == role
+    assert user.email == f"updated.{role}@example.com"
+    assert user.first_name == "Nombre"
+    assert user.last_name == "Apellido"
+    assert user.phone == "6645550199"
+    assert user.state == "Baja California"
+    assert user.city == "Tijuana"
+
+
 def test_admin_can_create_internal_employee_user():
     admin = create_user("admin1", role=User.Roles.ADMIN)
     client = api_client()
@@ -253,9 +551,11 @@ def test_seed_demo_command_creates_repeatable_local_dataset():
     call_command("seed_demo")
 
     customer = User.objects.get(email="cliente@example.com")
+    employee = User.objects.get(email="empleado@example.com")
     assert customer.role == User.Roles.CUSTOMER
     assert customer.check_password("DemoPassword123!")
-    assert User.objects.get(email="empleado@example.com").role == User.Roles.EMPLOYEE
+    assert employee.role == User.Roles.EMPLOYEE
+    assert get_effective_permission_codes(employee)
     assert User.objects.get(email="admin@example.com").role == User.Roles.ADMIN
 
     assert Category.objects.count() == 5

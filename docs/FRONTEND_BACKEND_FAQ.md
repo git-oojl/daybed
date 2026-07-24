@@ -48,6 +48,7 @@ si hay token guardado.
 - `user`
 
 El `user` trae `role` con valores del backend: `cliente`, `empleado`, `administrador`.
+También trae `effective_permission_codes`, que el frontend usa para ocultar navegación y controles internos no autorizados.
 
 ## 7. Qué roles usamos en frontend?
 
@@ -65,12 +66,18 @@ El frontend los mapea a:
 
 Ese mapeo está en `frontend/src/auth/roleMapping.js`.
 
+No hay roles `editor` ni `invitado`. Un visitante sin sesión es anónimo; el frontend puede mostrarlo como `Visitante no autenticado` solo como referencia de capacidades públicas.
+
 ## 8. Cómo protegemos rutas?
 
 `ProtectedRoute` ya lee `authStore`.
 
 - Sin sesión en ruta protegida: manda a `/login`.
 - Con sesión pero rol incorrecto: manda a `/no-autorizado`.
+- En rutas internas de empleado, también puede exigir `requiredPermission`.
+
+El backend siempre es la autoridad final: una ruta oculta en frontend no reemplaza
+los permisos DRF, y una respuesta `403` debe tratarse como decisión definitiva.
 
 ## 9. Qué archivo leo primero para integrar una pantalla?
 
@@ -134,9 +141,11 @@ En un `catch`, normalmente puedes usar:
 - `catalogService`
 - `cartService`
 - `deliveryService`
+- `storeService`
 - `orderService`
 - `inventoryService`
 - `dashboardService`
+- `accessService`
 
 ## 14. El frontend debe llamar Nominatim u OpenRouteService?
 
@@ -144,6 +153,12 @@ No. El frontend debe llamar al backend:
 
 - `/api/delivery/geocode/`
 - `/api/delivery/estimate/`
+
+La configuración de tienda se consulta y actualiza por backend:
+
+- `/api/store/settings/`
+
+No guardes API keys, proveedores externos ni credenciales en estado frontend.
 
 ## 15. Hay datos mock para trabajar antes de conectar una vista?
 

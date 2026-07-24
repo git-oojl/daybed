@@ -5,6 +5,8 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from apps.store.models import StoreSettings
+
 pytestmark = pytest.mark.django_db
 
 User = get_user_model()
@@ -32,6 +34,12 @@ def response(status_code, payload, method="GET", url="https://provider.test"):
         json=payload,
         request=httpx.Request(method, url),
     )
+
+
+def create_store_settings(**overrides):
+    defaults = StoreSettings.bootstrap_defaults()
+    defaults.update(overrides)
+    return StoreSettings.objects.create(**defaults)
 
 
 def test_delivery_endpoints_require_authenticated_customer():
@@ -247,3 +255,90 @@ def test_estimate_can_geocode_address_before_distance(monkeypatch):
     assert api_response.data["destination_longitude"] == "-117.20000000"
     assert api_response.data["geocoding_provider"] == "nominatim"
     assert api_response.data["delivery_fee"] == "88.00"
+
+
+@override_settings(OPENROUTESERVICE_API_KEY="test-key")
+def test_estimate_uses_persisted_store_origin_and_delivery_prices(monkeypatch):
+    customer = create_customer()
+    create_store_settings(
+        latitude="32.40000000",
+        longitude="-117.30000000",
+        delivery_base_fee="100.00",
+        delivery_price_per_km="10.00",
+    )
+
+    def fake_post(url, json, headers, timeout):
+        return response(
+            200,
+            {
+                "features": [
+                    {
+                        "properties": {
+                            "summary": {
+                                "distance": 5000,
+                                "duration": 600,
+                            }
+                        }
+                    }
+                ]
+            },
+            method="POST",
+        )
+
+    monkeypatch.setattr("apps.delivery.services.httpx.post", fake_post)
+
+    api_response = api_client(customer).post(
+        reverse("delivery-estimate"),
+        {"latitude": "32.60000000", "longitude": "-117.10000000"},
+        format="json",
+    )
+
+    assert api_response.status_code == 200
+    assert api_response.data["origin_latitude"] == "32.40000000"
+    assert api_response.data["origin_longitude"] == "-117.30000000"
+    assert api_response.data["delivery_fee"] == "150.00"
+
+
+@override_settings(OPENROUTESERVICE_API_KEY="test-key")
+def test_estimate_applies_free_shipping_threshold_from_same_rule(monkeypatch):
+    customer = create_customer()
+    create_store_settings(
+        delivery_base_fee="100.00",
+        delivery_price_per_km="10.00",
+        free_shipping_threshold="500.00",
+    )
+
+    def fake_post(url, json, headers, timeout):
+        return response(
+            200,
+            {
+                "features": [
+                    {
+                        "properties": {
+                            "summary": {
+                                "distance": 5000,
+                                "duration": 600,
+                            }
+                        }
+                    }
+                ]
+            },
+            method="POST",
+        )
+
+    monkeypatch.setattr("apps.delivery.services.httpx.post", fake_post)
+
+    api_response = api_client(customer).post(
+        reverse("delivery-estimate"),
+        {
+            "latitude": "32.60000000",
+            "longitude": "-117.10000000",
+            "order_subtotal": "500.00",
+        },
+        format="json",
+    )
+
+    assert api_response.status_code == 200
+    assert api_response.data["delivery_fee"] == "0.00"
+    assert api_response.data["free_shipping_applied"] is True
+    assert api_response.data["free_shipping_threshold"] == "500.00"

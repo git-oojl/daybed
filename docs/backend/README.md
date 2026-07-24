@@ -6,7 +6,7 @@ Esta carpeta contiene documentación técnica del backend de Daybed, incluyendo 
 
 ![Arquitectura del backend](./diagrams/arquitectura_backend.png)
 
-El backend está organizado en módulos funcionales: autenticación, cuentas de usuario, catálogo, carrito, pedidos, inventario, entregas y dashboard administrativo. Esta separación permite mantener responsabilidades claras entre las partes principales del sistema.
+El backend está organizado en módulos funcionales: autenticación, cuentas de usuario, catálogo, carrito, pedidos, inventario, entregas, configuración de tienda y dashboard administrativo. Esta separación permite mantener responsabilidades claras entre las partes principales del sistema.
 
 La autenticación pública está preparada para las vistas actuales del frontend: login con `email` y `password`, registro de cliente con los campos `nombre`, `apellido`, `telefono`, `estado`, `ciudad`, `password` y `confirmPassword`, perfil propio en `/api/accounts/me/`, refresh de tokens y logout con blacklist del refresh token.
 
