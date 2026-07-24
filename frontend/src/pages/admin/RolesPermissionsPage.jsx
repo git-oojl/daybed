@@ -477,6 +477,7 @@ export default function RolesPermissionsPage() {
   const selectedRoleName = ROLES.find((r) => r.id === selectedRole)?.name || "";
 
   return (
+    
     <div className="roles-permissions">
       {/* ===== HERO HEADER ===== */}
       <section className="roles-permissions-hero" aria-label="Roles y permisos">

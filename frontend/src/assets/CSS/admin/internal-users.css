@@ -682,6 +682,71 @@
   background: #e5e7eb;
 }
 
+/* ===== LOADING ===== */
+.internal-users-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.internal-users-loading__spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.internal-users-loading p {
+  font-family: "Inter", "Poppins", sans-serif;
+  font-size: 16px;
+  color: #6b7280;
+}
+
+/* ===== ERROR ===== */
+.internal-users-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.internal-users-error p {
+  font-family: "Inter", "Poppins", sans-serif;
+  font-size: 16px;
+  color: #dc2626;
+}
+
+.internal-users-error button {
+  padding: 0.5rem 1.5rem;
+  background: #B88E2F;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.internal-users-error button:hover {
+  background: #9a7527;
+}
+
+/* ===== ALERTA DE ERROR ===== */
+.internal-users__alert--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
 /* ============================================
    RESPONSIVE
    ============================================ */

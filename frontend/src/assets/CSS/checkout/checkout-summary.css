@@ -580,6 +580,165 @@
 }
 
 /* ============================================
+   CHECKOUT - ESTADOS DE CARGA Y ERROR
+   ============================================ */
+
+/* LOADING */
+.checkout-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.checkout-loading__spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.checkout-loading p {
+  font-family: "Inter", "Poppins", sans-serif;
+  font-size: 16px;
+  color: #6b7280;
+}
+
+/* EMPTY */
+.checkout-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.checkout-empty p {
+  font-family: "Inter", "Poppins", sans-serif;
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.checkout-empty__btn {
+  padding: 0.75rem 2rem;
+  background: #B88E2F;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: "Inter", "Poppins", sans-serif;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.checkout-empty__btn:hover {
+  background: #9a7527;
+}
+
+/* ALERTA DE ERROR */
+.checkout__alert {
+  max-width: 1280px;
+  margin: 0 auto 1.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.checkout__alert--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* ===== BOTÓN VALIDAR DIRECCIÓN ===== */
+.checkout-address-actions {
+  margin-top: 1rem;
+}
+
+.checkout-validate-btn {
+  padding: 0.6rem 1.5rem;
+  background: #f3f4f6;
+  color: #1a1a2e;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Inter", "Poppins", sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.checkout-validate-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.checkout-validate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== DETALLES DE VALIDACIÓN ===== */
+.checkout-address-validation__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8f0e6;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #4a3520;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.checkout-address-validation__details span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ===== LOADING DE VALIDACIÓN ===== */
+.checkout-address-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-family: "Inter", "Poppins", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.checkout-address-loading__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #B88E2F;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 
@@ -734,12 +893,6 @@
     font-size: 14px;
     padding: 0.8rem;
   }
-
-  /* ============================================
-   CHECKOUT PAGE STYLES - ACTUALIZADO
-   ============================================ */
-
-  /* ... (mantén todos los estilos anteriores) ... */
 
   /* ===== MEJORAS EN FORMULARIOS ===== */
 

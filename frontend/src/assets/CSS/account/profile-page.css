@@ -572,6 +572,159 @@
   transform: translateY(-1px);
 }
 
+/* ===== BADGE DE ROL ===== */
+.profile-role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: "Inter", "Poppins", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-role-badge--admin {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.profile-role-badge--employee {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.profile-role-badge--customer {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* ===== OPCIONES DE EMPLEADO ===== */
+.profile-employee-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-employee-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.profile-employee-option:hover {
+  background: #f8f0e6;
+  border-color: #B88E2F;
+  transform: translateX(4px);
+}
+
+.profile-employee-option svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.profile-employee-option__title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.profile-employee-option__desc {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+/* ===== OPCIONES DE ADMIN ===== */
+.profile-admin-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-admin-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.profile-admin-option:hover {
+  background: #fefce8;
+  border-color: #B88E2F;
+  transform: translateX(4px);
+}
+
+.profile-admin-option svg {
+  width: 20px;
+  height: 20px;
+  color: #B88E2F;
+  flex-shrink: 0;
+}
+
+.profile-admin-option__title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+.profile-admin-option__desc {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  font-family: "Inter", "Poppins", sans-serif;
+}
+
+/* ===== ICONO ADMIN EN CARD ===== */
+.profile-card__icon--admin {
+  background: #fefce8;
+  color: #B88E2F;
+}
+
+.profile-card__icon--admin svg {
+  color: #B88E2F;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .profile-employee-option,
+  .profile-admin-option {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .profile-employee-option__title,
+  .profile-admin-option__title {
+    font-size: 13px;
+  }
+
+  .profile-employee-option__desc,
+  .profile-admin-option__desc {
+    font-size: 11px;
+  }
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */

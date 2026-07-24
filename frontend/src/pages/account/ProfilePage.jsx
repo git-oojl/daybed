@@ -1,9 +1,14 @@
 // ProfilePage.jsx
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/CSS/account/profile-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import { useAuthStore } from "../../auth/authStore.js";
+import { accountService } from "../../services/backendServices.js";
+import { routePaths } from "../../routes/routePaths.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 
 // ============================================
 // ICONOS SVG
@@ -73,26 +78,6 @@ function IconPhone() {
   );
 }
 
-function IconLocation() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 21s-7-4.5-7-10a7 7 0 1 1 14 0c0 5.5-7 10-7 10Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 function IconEdit() {
   return (
     <svg
@@ -108,25 +93,6 @@ function IconEdit() {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconPlus() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 5v14M5 12h14"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
       />
     </svg>
   );
@@ -179,21 +145,22 @@ function IconLogout() {
   );
 }
 
-function IconTrash() {
+function IconLoading() {
   return (
     <svg
-      width="18"
-      height="18"
+      className="profile-loading__spinner"
+      width="40"
+      height="40"
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden="true"
     >
+      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2" />
       <path
-        d="M4 7h16M9 7V5h6v2M10 11v6M14 11v6M6 7l1 12h10l1-12"
-        stroke="currentColor"
-        strokeWidth="1.5"
+        d="M12 2a10 10 0 0 1 10 10"
+        stroke="#B88E2F"
+        strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -203,132 +170,182 @@ function IconTrash() {
 // COMPONENTE PRINCIPAL
 // ============================================
 export default function ProfilePage() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
+
+  // Estados del perfil
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editing, setEditing] = useState(false);
-  const [showAddAddress, setShowAddAddress] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Datos del perfil
-  const [profile, setProfile] = useState({
-    name: "Ana Martínez",
-    email: "ana.martinez@email.com",
-    phone: "+52 55 1234 5678",
-  });
-
-  // Direcciones guardadas
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      name: "Casa",
-      street: "Av. Reforma 456",
-      colony: "Col. Juárez",
-      city: "Ciudad de México",
-      state: "CDMX",
-      zipCode: "06600",
-      isDefault: true,
-    },
-    {
-      id: 2,
-      name: "Oficina",
-      street: "Blvd. Adolfo López Mateos 123",
-      colony: "Col. Polanco",
-      city: "Ciudad de México",
-      state: "CDMX",
-      zipCode: "11560",
-      isDefault: false,
-    },
-  ]);
-
-  // Nueva dirección (formulario)
-  const [newAddress, setNewAddress] = useState({
+  // Formulario de edición
+  const [editForm, setEditForm] = useState({
     name: "",
-    street: "",
-    colony: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    isDefault: false,
+    email: "",
+    phone: "",
   });
 
-  // Manejar cambios en el perfil
+  // ============================================
+  // ✅ OBTENER DATOS DEL PERFIL - CON useCallback
+  // ============================================
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await accountService.me();
+      
+      setProfile(data);
+      setEditForm({
+        name: data.name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+      });
+    } catch (err) {
+      console.error("Error al cargar perfil:", err);
+      setError(err.message || "Error al cargar los datos del perfil");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ============================================
+  // ✅ VERIFICAR ROL Y CARGAR PERFIL
+  // ============================================
+  useEffect(() => {
+    // Si aún está cargando la autenticación, esperar
+    if (authLoading) {
+      return;
+    }
+
+    // Si no está autenticado, redirigir al login
+    if (!isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
+    }
+
+    // Verificar rol del usuario
+    const viewerId = getViewerIdForUser(user);
+    
+    // Solo clientes pueden ver esta página
+    if (viewerId !== "customer") {
+      navigate(routePaths.support.unauthorized || "/no-autorizado");
+      return;
+    }
+    
+    // Cargar datos del perfil
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProfile();
+  }, [isAuthenticated, authLoading, user, navigate, fetchProfile]);
+
+  // ============================================
+  // ✅ ACTUALIZAR PERFIL
+  // ============================================
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    try {
+      const updated = await accountService.updateMe(editForm);
+      
+      setProfile(updated);
+      setEditForm({
+        name: updated.name || "",
+        email: updated.email || "",
+        phone: updated.phone || "",
+      });
+      setEditing(false);
+      setSuccessMessage("Perfil actualizado exitosamente");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      console.error("Error al actualizar perfil:", err);
+      setError(err.message || "Error al actualizar el perfil");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ============================================
+  // ✅ CERRAR SESIÓN
+  // ============================================
+  const handleLogout = async () => {
+    if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+      await logout();
+      navigate(routePaths.public.home);
+    }
+  };
+
+  // ============================================
+  // ✅ HANDLERS DE FORMULARIOS
+  // ============================================
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Manejar cambios en nueva dirección
-  const handleAddressChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setNewAddress((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  // Guardar perfil
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    setEditing(false);
-    setSuccessMessage("Perfil actualizado exitosamente");
-    setTimeout(() => setSuccessMessage(""), 3000);
-  };
-
-  // Agregar dirección
-  const handleAddAddress = (e) => {
-    e.preventDefault();
-    const newAddr = {
-      id: Date.now(),
-      ...newAddress,
-    };
-    setAddresses((prev) => [...prev, newAddr]);
-    setShowAddAddress(false);
-    setNewAddress({
-      name: "",
-      street: "",
-      colony: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      isDefault: false,
-    });
-    setSuccessMessage("Dirección agregada exitosamente");
-    setTimeout(() => setSuccessMessage(""), 3000);
-  };
-
-  // Eliminar dirección
-  const handleDeleteAddress = (id) => {
-    if (window.confirm("¿Estás seguro de eliminar esta dirección?")) {
-      setAddresses((prev) => prev.filter((addr) => addr.id !== id));
-      setSuccessMessage("Dirección eliminada");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    }
-  };
-
-  // Establecer dirección como predeterminada
-  const handleSetDefault = (id) => {
-    setAddresses((prev) =>
-      prev.map((addr) => ({
-        ...addr,
-        isDefault: addr.id === id,
-      })),
+  // ============================================
+  // ✅ ESTADOS DE CARGA Y ERROR
+  // ============================================
+  if (loading || authLoading) {
+    return (
+      <div className="home-page profile-page">
+        <HomeHeader />
+        <div className="profile-loading">
+          <IconLoading />
+          <p>Cargando tu perfil...</p>
+        </div>
+        <HomeFooter />
+      </div>
     );
-  };
+  }
 
-  // Cerrar sesión
-  const handleLogout = () => {
-    if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
-      console.log("Cerrando sesión...");
-      window.location.href = "/login";
-    }
-  };
+  if (error) {
+    return (
+      <div className="home-page profile-page">
+        <HomeHeader />
+        <div className="profile-error">
+          <p>❌ {error}</p>
+          <button onClick={fetchProfile}>Reintentar</button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
 
+  if (!profile) {
+    return (
+      <div className="home-page profile-page">
+        <HomeHeader />
+        <div className="profile-empty">
+          <p>No se encontraron datos de perfil</p>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  // ============================================
+  // ✅ RENDER PRINCIPAL
+  // ============================================
   return (
     <div className="home-page profile-page">
       <HomeHeader />
 
       {/* HERO */}
-      <section className="checkout-hero" aria-label="Resumen de pedido">
-        <div className="checkout-hero__overlay">
-          <h1 className="checkout-hero__title">Mi perfil</h1>
+      <section className="profile-hero" aria-label="Perfil de usuario">
+        <div className="profile-hero__overlay">
+          <div className="profile-hero__content">
+            <h1 className="profile-hero__title">Mi perfil</h1>
+            <p className="profile-hero__breadcrumb">
+              <a href={routePaths.public.home}>Inicio</a>
+              <span aria-hidden="true">&gt;</span>
+              Mi perfil
+            </p>
+          </div>
         </div>
       </section>
 
@@ -338,6 +355,12 @@ export default function ProfilePage() {
           <div className="profile__alert profile__alert--success">
             <IconCheck />
             <span>{successMessage}</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="profile__alert profile__alert--error">
+            <span>⚠️ {error}</span>
           </div>
         )}
 
@@ -362,6 +385,7 @@ export default function ProfilePage() {
                 <button
                   className="profile-card__edit-btn"
                   onClick={() => setEditing(true)}
+                  disabled={saving}
                 >
                   <IconEdit />
                   Editar
@@ -378,10 +402,11 @@ export default function ProfilePage() {
                       type="text"
                       id="name"
                       name="name"
-                      value={profile.name}
+                      value={editForm.name}
                       onChange={handleProfileChange}
-                      placeholder="Ana Martínez"
+                      placeholder="Tu nombre"
                       required
+                      disabled={saving}
                     />
                   </div>
 
@@ -391,10 +416,11 @@ export default function ProfilePage() {
                       type="email"
                       id="email"
                       name="email"
-                      value={profile.email}
+                      value={editForm.email}
                       onChange={handleProfileChange}
-                      placeholder="ana@email.com"
+                      placeholder="tu@email.com"
                       required
+                      disabled={saving}
                     />
                   </div>
 
@@ -404,10 +430,11 @@ export default function ProfilePage() {
                       type="tel"
                       id="phone"
                       name="phone"
-                      value={profile.phone}
+                      value={editForm.phone}
                       onChange={handleProfileChange}
-                      placeholder="+52 55 1234 5678"
+                      placeholder="5512345678"
                       required
+                      disabled={saving}
                     />
                   </div>
 
@@ -416,14 +443,16 @@ export default function ProfilePage() {
                       type="button"
                       className="profile-form__btn profile-form__btn--secondary"
                       onClick={() => setEditing(false)}
+                      disabled={saving}
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       className="profile-form__btn profile-form__btn--primary"
+                      disabled={saving}
                     >
-                      Guardar cambios
+                      {saving ? "Guardando..." : "Guardar cambios"}
                     </button>
                   </div>
                 </form>
@@ -496,217 +525,6 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* ===== DIRECCIONES GUARDADAS ===== */}
-          <section
-            className="profile-card profile-card--addresses"
-            aria-labelledby="profile-addresses"
-          >
-            <div className="profile-card__header">
-              <div className="profile-card__header-left">
-                <div className="profile-card__icon">
-                  <IconLocation />
-                </div>
-                <div>
-                  <h2 id="profile-addresses" className="profile-card__title">
-                    Direcciones guardadas
-                  </h2>
-                  <p className="profile-card__desc">
-                    Gestiona tus direcciones de envío
-                  </p>
-                </div>
-              </div>
-              {!showAddAddress && (
-                <button
-                  className="profile-card__add-btn"
-                  onClick={() => setShowAddAddress(true)}
-                >
-                  <IconPlus />
-                  Agregar
-                </button>
-              )}
-            </div>
-
-            <div className="profile-card__body">
-              {showAddAddress && (
-                <form onSubmit={handleAddAddress} className="profile-form">
-                  <h4 className="profile-form__subtitle">Nueva dirección</h4>
-
-                  <div className="profile-form__group">
-                    <label htmlFor="addr-name">Nombre de la dirección</label>
-                    <input
-                      type="text"
-                      id="addr-name"
-                      name="name"
-                      value={newAddress.name}
-                      onChange={handleAddressChange}
-                      placeholder="Casa, Oficina, etc."
-                      required
-                    />
-                  </div>
-
-                  <div className="profile-form__group">
-                    <label htmlFor="addr-street">Calle y número</label>
-                    <input
-                      type="text"
-                      id="addr-street"
-                      name="street"
-                      value={newAddress.street}
-                      onChange={handleAddressChange}
-                      placeholder="Av. Reforma 456"
-                      required
-                    />
-                  </div>
-
-                  <div className="profile-form__group">
-                    <label htmlFor="addr-colony">Colonia</label>
-                    <input
-                      type="text"
-                      id="addr-colony"
-                      name="colony"
-                      value={newAddress.colony}
-                      onChange={handleAddressChange}
-                      placeholder="Col. Juárez"
-                      required
-                    />
-                  </div>
-
-                  <div className="profile-form__row">
-                    <div className="profile-form__group">
-                      <label htmlFor="addr-city">Ciudad</label>
-                      <input
-                        type="text"
-                        id="addr-city"
-                        name="city"
-                        value={newAddress.city}
-                        onChange={handleAddressChange}
-                        placeholder="Ciudad de México"
-                        required
-                      />
-                    </div>
-                    <div className="profile-form__group">
-                      <label htmlFor="addr-state">Estado</label>
-                      <input
-                        type="text"
-                        id="addr-state"
-                        name="state"
-                        value={newAddress.state}
-                        onChange={handleAddressChange}
-                        placeholder="CDMX"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="profile-form__group">
-                    <label htmlFor="addr-zip">Código postal</label>
-                    <input
-                      type="text"
-                      id="addr-zip"
-                      name="zipCode"
-                      value={newAddress.zipCode}
-                      onChange={handleAddressChange}
-                      placeholder="06600"
-                      required
-                    />
-                  </div>
-
-                  <div className="profile-form__checkbox">
-                    <label>
-                      <input
-                        type="checkbox"
-                        name="isDefault"
-                        checked={newAddress.isDefault}
-                        onChange={handleAddressChange}
-                      />
-                      Establecer como dirección predeterminada
-                    </label>
-                  </div>
-
-                  <div className="profile-form__actions">
-                    <button
-                      type="button"
-                      className="profile-form__btn profile-form__btn--secondary"
-                      onClick={() => {
-                        setShowAddAddress(false);
-                        setNewAddress({
-                          name: "",
-                          street: "",
-                          colony: "",
-                          city: "",
-                          state: "",
-                          zipCode: "",
-                          isDefault: false,
-                        });
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      className="profile-form__btn profile-form__btn--primary"
-                    >
-                      Agregar dirección
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              <div className="profile-addresses">
-                {addresses.length === 0 ? (
-                  <p className="profile-addresses__empty">
-                    No tienes direcciones guardadas.
-                    <br />
-                    Agrega una dirección para facilitar tus compras.
-                  </p>
-                ) : (
-                  addresses.map((address) => (
-                    <div
-                      key={address.id}
-                      className={`profile-address ${address.isDefault ? "profile-address--default" : ""}`}
-                    >
-                      <div className="profile-address__header">
-                        <div>
-                          <span className="profile-address__name">
-                            {address.name}
-                          </span>
-                          {address.isDefault && (
-                            <span className="profile-address__badge">
-                              Predeterminada
-                            </span>
-                          )}
-                        </div>
-                        <div className="profile-address__actions">
-                          {!address.isDefault && (
-                            <button
-                              className="profile-address__btn profile-address__btn--default"
-                              onClick={() => handleSetDefault(address.id)}
-                            >
-                              Establecer como predeterminada
-                            </button>
-                          )}
-                          <button
-                            className="profile-address__btn profile-address__btn--delete"
-                            onClick={() => handleDeleteAddress(address.id)}
-                            aria-label="Eliminar dirección"
-                          >
-                            <IconTrash />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="profile-address__street">
-                        {address.street}
-                      </p>
-                      <p className="profile-address__details">
-                        {address.colony}, {address.city}, {address.state} - CP{" "}
-                        {address.zipCode}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </section>
-
           {/* ===== ACCIONES DE CUENTA ===== */}
           <section
             className="profile-card profile-card--danger"
@@ -733,6 +551,7 @@ export default function ProfilePage() {
                 <button
                   className="profile-actions__btn profile-actions__btn--logout"
                   onClick={handleLogout}
+                  disabled={saving}
                 >
                   <IconLogout />
                   Cerrar sesión

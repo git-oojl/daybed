@@ -38,6 +38,7 @@ const orderStatus = [
 
 function MetricCard({ icon, label, value, detail, trend, tone = "gold" }) {
   return (
+    
     <article className={`business-metric-card business-metric-card--${tone}`}>
       <div className="business-metric-card__icon">{icon}</div>
       <div>
@@ -49,12 +50,14 @@ function MetricCard({ icon, label, value, detail, trend, tone = "gold" }) {
         </span>
       </div>
     </article>
+
   );
 }
 
 function BusinessMetricsPage() {
   return (
     <div className="business-metrics">
+      
       <section
         className="business-metrics__hero"
         style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}

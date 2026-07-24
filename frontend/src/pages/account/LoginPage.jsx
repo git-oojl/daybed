@@ -1,5 +1,6 @@
-/* eslint-disable no-unused-vars */
+// LoginPage.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -22,11 +23,15 @@ import {
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/login-page.css";
 import loginBackground from "../../assets/LoginPage.jpg";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { routePaths } from "../../routes/routePaths.js";
 
 // ============================================
-// ESTILOS - FUSIÓN DE AMBOS CÓDIGOS
+// ESTILOS - SOLO LOS QUE SE USAN
 // ============================================
 
+// ✅ LoginContainer - SE USA en el JSX
 const LoginContainer = styled(Box)(({ theme }) => ({
   minHeight: "100vh",
   width: "100%",
@@ -62,6 +67,7 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
+// ✅ LoginPaper - SE USA en el JSX
 const LoginPaper = styled(Paper)(({ theme }) => ({
   width: "100%",
   maxWidth: 440,
@@ -92,139 +98,7 @@ const LoginPaper = styled(Paper)(({ theme }) => ({
   },
 }));
 
-const LogoWrapper = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: theme.spacing(1.5),
-  marginBottom: theme.spacing(1),
-  [theme.breakpoints.down("sm")]: {
-    gap: theme.spacing(1),
-  },
-  "@media (max-width:480px)": {
-    gap: theme.spacing(0.5),
-    marginBottom: theme.spacing(0.5),
-  },
-}));
-
-const LogoIcon = styled(StoreIcon)(({ theme }) => ({
-  fontSize: 40,
-  color: "#7B5D15",
-  [theme.breakpoints.down("sm")]: {
-    fontSize: 32,
-  },
-  "@media (max-width:480px)": {
-    fontSize: 28,
-  },
-}));
-
-const LogoText = styled(Typography)(({ theme }) => ({
-  fontSize: 34,
-  fontWeight: 700,
-  color: "#8c6918",
-  textAlign: "center",
-  letterSpacing: 1.5,
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down("sm")]: {
-    fontSize: 28,
-    letterSpacing: 1,
-  },
-  "@media (max-width:480px)": {
-    fontSize: 22,
-    letterSpacing: 0.5,
-  },
-}));
-
-const SubtitleText = styled(Typography)(({ theme }) => ({
-  fontSize: 16,
-  color: "#61470c",
-  textAlign: "center",
-  marginBottom: theme.spacing(4),
-  fontWeight: 400,
-  fontFamily: '"Poppins", montserrat, sans-serif',
-  [theme.breakpoints.down("sm")]: {
-    fontSize: 14,
-    marginBottom: theme.spacing(3),
-  },
-  "@media (max-width:480px)": {
-    fontSize: 13,
-    marginBottom: theme.spacing(2),
-  },
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  marginBottom: theme.spacing(2.5),
-
-  "& .MuiOutlinedInput-root": {
-    borderRadius: 12,
-    backgroundColor: "#FEFCF8",
-    transition: "border-color 0.2s ease",
-    "& fieldset": {
-      borderColor: "#D4C5B2",
-    },
-    "&:hover fieldset": {
-      borderColor: "#8B6B4C",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#8B6B4C",
-      borderWidth: 2,
-    },
-    "&.Mui-error fieldset": {
-      borderColor: "#C0392B",
-    },
-  },
-
-  "& .MuiInputLabel-root": {
-    color: "#61470c",
-    fontWeight: 500,
-    fontFamily: '"Poppins", montserrat, sans-serif',
-    "&.Mui-focused": {
-      color: "#8B6B4C",
-    },
-    "&.Mui-error": {
-      color: "#C0392B",
-    },
-  },
-
-  "& .MuiInputLabel-shrink": {
-    fontWeight: 600,
-  },
-
-  "& .MuiFormHelperText-root": {
-    marginLeft: 0,
-    fontWeight: 400,
-    color: "#C0392B",
-    fontFamily: '"Poppins", montserrat, sans-serif',
-  },
-
-  "& .MuiInputBase-input": {
-    fontFamily: '"Poppins", montserrat, sans-serif',
-  },
-
-  [theme.breakpoints.down("sm")]: {
-    flexDirection: "column",
-    alignItems: "center",
-    gap: theme.spacing(1),
-  },
-
-  "@media (max-width:480px)": {
-    marginBottom: theme.spacing(1.5),
-
-    "& .MuiInputBase-input": {
-      fontSize: 15,
-      padding: "13px",
-    },
-
-    "& .MuiInputLabel-root": {
-      fontSize: 14,
-    },
-
-    "& .MuiOutlinedInput-root": {
-      borderRadius: 10,
-    },
-  },
-}));
-
+// ✅ LoginButton - SE USA en el JSX
 const LoginButton = styled(Button)(({ theme }) => ({
   backgroundColor: "#977422",
   color: "#FFFFFF",
@@ -261,22 +135,7 @@ const LoginButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const LinksContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  marginTop: theme.spacing(2),
-  marginBottom: theme.spacing(1),
-  flexWrap: "wrap",
-  gap: theme.spacing(1),
-
-  "@media (max-width:480px)": {
-    flexDirection: "column",
-    gap: theme.spacing(0.5),
-    marginTop: theme.spacing(1.5),
-    marginBottom: theme.spacing(0.5),
-  },
-}));
-
+// ✅ ForgotLink - SE USA en el JSX
 const ForgotLink = styled(Link)(({ theme }) => ({
   color: "#8B6B4C",
   fontSize: 14,
@@ -297,6 +156,7 @@ const ForgotLink = styled(Link)(({ theme }) => ({
   },
 }));
 
+// ✅ RegisterLink - SE USA en el JSX
 const RegisterLink = styled(Link)(({ theme }) => ({
   color: "#8B6B4C",
   fontWeight: 600,
@@ -312,6 +172,7 @@ const RegisterLink = styled(Link)(({ theme }) => ({
   },
 }));
 
+// ✅ DividerStyled - SE USA en el JSX
 const DividerStyled = styled(Divider)(({ theme }) => ({
   margin: theme.spacing(3, 0),
 
@@ -334,32 +195,30 @@ const DividerStyled = styled(Divider)(({ theme }) => ({
   },
 }));
 
-const RegisterWrapper = styled(Box)(({ theme }) => ({
-  textAlign: "center",
-
-  "& .MuiTypography-root": {
-    color: "#61470c",
-    fontSize: 15,
-    fontFamily: '"Poppins", montserrat, sans-serif',
-
-    "@media (max-width:480px)": {
-      fontSize: 13,
-    },
-  },
-}));
+// ============================================
+// ❌ ELIMINADOS: 
+// - LogoWrapper (no se usa, se usa CSS class)
+// - LogoIcon (no se usa, se usa CSS class)
+// - LogoText (no se usa, se usa CSS class)
+// - SubtitleText (no se usa, se usa CSS class)
+// - StyledTextField (no se usa, se usa CSS class)
+// - LinksContainer (no se usa, se usa CSS class)
+// - RegisterWrapper (no se usa, se usa CSS class)
+// ============================================
 
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
-
 function LoginPage() {
+  const navigate = useNavigate();
+  const { login, isLoading, error: authError } = useAuthStore();
+
   const [formData, setFormData] = useState({
-    email: "ejemplo01@email.com",
-    password: "12345",
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
   const [touched, setTouched] = useState({
     email: false,
     password: false,
@@ -376,7 +235,7 @@ function LoginPage() {
 
   const isEmailValid = validateEmail(formData.email);
   const isPasswordValid = validatePassword(formData.password);
-  const isFormValid = isEmailValid && isPasswordValid && !loading;
+  const isFormValid = isEmailValid && isPasswordValid && !isLoading;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -384,7 +243,7 @@ function LoginPage() {
       ...formData,
       [name]: value,
     });
-    setError("");
+    setLocalError("");
   };
 
   const handleBlur = (e) => {
@@ -395,34 +254,38 @@ function LoginPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setLocalError("");
 
     if (!validateEmail(formData.email)) {
-      setError("Por favor, ingresa un correo electrónico válido");
+      setLocalError("Por favor, ingresa un correo electrónico válido");
       return;
     }
 
     if (!validatePassword(formData.password)) {
-      setError("La contraseña debe tener al menos 4 caracteres");
+      setLocalError("La contraseña debe tener al menos 4 caracteres");
       return;
     }
 
-    setLoading(true);
+    try {
+      const session = await login(formData);
+      const viewerId = getViewerIdForUser(session?.user);
 
-    setTimeout(() => {
-      if (
-        formData.email === "ejemplo01@email.com" &&
-        formData.password === "12345"
-      ) {
-        console.log("Login exitoso");
-        window.location.href = "/dashboard";
+      console.log("Usuario autenticado:", { viewerId, user: session?.user });
+
+      if (viewerId === "admin" || viewerId === "employee") {
+        navigate(routePaths.backOffice.dashboard);
       } else {
-        setError("Correo o contraseña incorrectos");
+        navigate(routePaths.public.home);
       }
-      setLoading(false);
-    }, 1500);
+    } catch (error) {
+      const errorMessage =
+        error?.message ||
+        error?.response?.data?.detail ||
+        "Correo o contraseña incorrectos";
+      setLocalError(errorMessage);
+    }
   };
 
   const handleTogglePassword = () => {
@@ -434,12 +297,12 @@ function LoginPage() {
   const showPasswordError =
     touched.password && !isPasswordValid && formData.password !== "";
 
+  const displayError = localError || authError?.message;
+
   return (
-    <Box
-      className="login-container"
-      sx={{ backgroundImage: `url(${loginBackground})` }}
-    >
-      <Paper className="login-paper" elevation={0}>
+    <LoginContainer>
+      <LoginPaper elevation={0}>
+        {/* Logo - Usando clases CSS */}
         <Box className="login-logo-wrapper">
           <StoreIcon className="login-logo-icon" />
           <Typography className="login-logo-text" variant="h1">
@@ -451,7 +314,7 @@ function LoginPage() {
           Iniciar sesión
         </Typography>
 
-        {error && (
+        {displayError && (
           <Alert
             severity="error"
             sx={{
@@ -466,7 +329,7 @@ function LoginPage() {
               },
             }}
           >
-            {error}
+            {displayError}
           </Alert>
         )}
 
@@ -480,7 +343,7 @@ function LoginPage() {
             value={formData.email}
             onChange={handleChange}
             onBlur={handleBlur}
-            placeholder="ejemplo01@email.com"
+            placeholder="correo@ejemplo.com"
             error={showEmailError}
             helperText={showEmailError ? "Ingresa un correo válido" : ""}
             InputProps={{
@@ -505,7 +368,7 @@ function LoginPage() {
             value={formData.password}
             onChange={handleChange}
             onBlur={handleBlur}
-            placeholder="12345"
+            placeholder="••••••••"
             error={showPasswordError}
             helperText={
               showPasswordError
@@ -542,15 +405,15 @@ function LoginPage() {
           />
 
           <LoginButton type="submit" disabled={!isFormValid}>
-            {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+            {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
           </LoginButton>
         </form>
 
-        <LinksContainer>
+        <Box className="login-links-container">
           <ForgotLink href="#" underline="hover">
             ¿Olvidaste tu contraseña?
           </ForgotLink>
-        </LinksContainer>
+        </Box>
 
         <DividerStyled>
           <Typography variant="body2" color="#7A6B5A">
@@ -558,16 +421,16 @@ function LoginPage() {
           </Typography>
         </DividerStyled>
 
-        <RegisterWrapper>
+        <Box className="login-register-wrapper">
           <Typography variant="body1">
             ¿No tienes cuenta?{" "}
-            <RegisterLink href="/crear-cuenta" underline="hover">
+            <RegisterLink href={routePaths.account.register} underline="hover">
               Regístrate
             </RegisterLink>
           </Typography>
-        </RegisterWrapper>
-      </Paper>
-    </Box>
+        </Box>
+      </LoginPaper>
+    </LoginContainer>
   );
 }
 

@@ -1,5 +1,6 @@
-/* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+// RegisterPage.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -28,6 +29,8 @@ import {
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/register-page.css";
 import registerBackground from "../../assets/RegisterPage.jpg";
+import { registerCustomer } from "../../auth/authService.js";
+import { routePaths } from "../../routes/routePaths.js";
 
 const COLORS = {
   primary: "#977422",
@@ -43,93 +46,11 @@ const COLORS = {
   label: "#5A4A3A",
 };
 
-const RegisterContainer = styled(Box)(({ theme }) => ({
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  width: "100vw",
-  height: "100vh",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: theme.spacing(3),
-  boxSizing: "border-box",
-  backgroundImage: `url(${registerBackground})`,
-  backgroundSize: "cover",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
+// ============================================
+// ESTILOS - SOLO LOS QUE SE USAN EN EL JSX
+// ============================================
 
-  [theme.breakpoints.down("md")]: {
-    padding: theme.spacing(3),
-  },
-
-  [theme.breakpoints.down("sm")]: {
-    padding: theme.spacing(2),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  "@media (max-width:480px)": {
-    padding: theme.spacing(1.5),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-}));
-
-const RegisterPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  width: "100%",
-  maxWidth: 480,
-  borderRadius: 20,
-  backgroundColor: COLORS.background,
-  border: "1px solid #E8DCCC",
-  boxShadow: "0 8px 40px rgba(74,53,32,0.2)",
-  position: "relative",
-  zIndex: 1,
-  overflowY: "auto",
-  maxHeight: "84vh",
-
-  "&::-webkit-scrollbar": {
-    width: 4,
-  },
-  "&::-webkit-scrollbar-thumb": {
-    background: COLORS.border,
-    borderRadius: 20,
-  },
-  "&::-webkit-scrollbar-track": {
-    background: "transparent",
-  },
-
-  [theme.breakpoints.down("md")]: {
-    width: "90%",
-    maxWidth: 450,
-    padding: theme.spacing(3.5),
-  },
-
-  [theme.breakpoints.down("sm")]: {
-    width: "95%",
-    maxWidth: 400,
-    padding: theme.spacing(3),
-    maxHeight: "60vh",
-  },
-
-  "@media (max-width:480px)": {
-    width: "96%",
-    maxWidth: 380,
-    padding: theme.spacing(2.5),
-    borderRadius: 16,
-    maxHeight: "60vh",
-  },
-
-  "@media (max-width:360px)": {
-    padding: theme.spacing(2),
-    borderRadius: 14,
-    maxHeight: "50vh",
-  },
-}));
-
+// ✅ BrandSection - SE USA en el JSX
 const BrandSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
@@ -144,6 +65,7 @@ const BrandSection = styled(Box)(({ theme }) => ({
   },
 }));
 
+// ✅ BrandIcon - SE USA en el JSX
 const BrandIcon = styled(StoreIcon)(({ theme }) => ({
   fontSize: 36,
   color: COLORS.primaryLight,
@@ -155,6 +77,7 @@ const BrandIcon = styled(StoreIcon)(({ theme }) => ({
   },
 }));
 
+// ✅ BrandTitle - SE USA en el JSX
 const BrandTitle = styled(Typography)(({ theme }) => ({
   fontSize: 30,
   fontWeight: 700,
@@ -172,6 +95,7 @@ const BrandTitle = styled(Typography)(({ theme }) => ({
   },
 }));
 
+// ✅ DividerLine - SE USA en el JSX
 const DividerLine = styled(Box)(({ theme }) => ({
   width: "80px",
   height: "2px",
@@ -188,6 +112,7 @@ const DividerLine = styled(Box)(({ theme }) => ({
   },
 }));
 
+// ✅ RegisterTitle - SE USA en el JSX
 const RegisterTitle = styled(Typography)(({ theme }) => ({
   fontSize: 20,
   fontWeight: 600,
@@ -202,6 +127,7 @@ const RegisterTitle = styled(Typography)(({ theme }) => ({
   },
 }));
 
+// ✅ RegisterSubtitle - SE USA en el JSX
 const RegisterSubtitle = styled(Typography)(({ theme }) => ({
   fontSize: 13,
   color: COLORS.textSecondary,
@@ -219,6 +145,7 @@ const RegisterSubtitle = styled(Typography)(({ theme }) => ({
   },
 }));
 
+// ✅ FormGroup - SE USA en el JSX
 const FormGroup = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   "&:last-of-type": {
@@ -232,6 +159,7 @@ const FormGroup = styled(Box)(({ theme }) => ({
   },
 }));
 
+// ✅ FormLabel - SE USA en el JSX
 const FormLabel = styled(Typography)(({ theme }) => ({
   fontSize: 13,
   fontWeight: 500,
@@ -250,6 +178,7 @@ const FormLabel = styled(Typography)(({ theme }) => ({
   },
 }));
 
+// ✅ StyledTextField - SE USA en el JSX
 const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     borderRadius: 10,
@@ -317,20 +246,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   },
 }));
 
-const PasswordWrapper = styled(Box)(({ theme }) => ({
-  position: "relative",
-  width: "100%",
-  "& .MuiInputBase-root": {
-    paddingRight: "48px",
-  },
-  "& .MuiInputAdornment-positionEnd": {
-    position: "absolute",
-    right: 4,
-    top: "50%",
-    transform: "translateY(-50%)",
-  },
-}));
-
+// ✅ RegisterButton - SE USA en el JSX
 const RegisterButton = styled(Button)(({ theme }) => ({
   backgroundColor: COLORS.primary,
   color: COLORS.white,
@@ -371,6 +287,7 @@ const RegisterButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+// ✅ StyledFormControlLabel - SE USA en el JSX
 const StyledFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   marginTop: theme.spacing(1),
   marginBottom: theme.spacing(0.5),
@@ -400,7 +317,8 @@ const StyledFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   },
 }));
 
-const LoginLink = styled(Link)(({ theme }) => ({
+// ✅ LoginLink - SE USA en el JSX
+const LoginLink = styled(Link)(() => ({
   color: COLORS.primary,
   fontWeight: 600,
   cursor: "pointer",
@@ -413,6 +331,7 @@ const LoginLink = styled(Link)(({ theme }) => ({
   },
 }));
 
+// ✅ FooterWrapper - SE USA en el JSX
 const FooterWrapper = styled(Box)(({ theme }) => ({
   textAlign: "center",
   marginTop: theme.spacing(2),
@@ -432,6 +351,7 @@ const FooterWrapper = styled(Box)(({ theme }) => ({
   },
 }));
 
+// ✅ ErrorAlert - SE USA en el JSX
 const ErrorAlert = styled(Alert)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   borderRadius: 10,
@@ -453,6 +373,16 @@ const ErrorAlert = styled(Alert)(({ theme }) => ({
   },
 }));
 
+// ============================================
+// ❌ ELIMINADOS:
+// - RegisterContainer (no se usa, se usa CSS class)
+// - RegisterPaper (no se usa, se usa CSS class)
+// - PasswordWrapper (no se usa, se usa CSS class)
+// ============================================
+
+// ============================================
+// DATOS - ESTADOS DE MÉXICO
+// ============================================
 const ESTADOS_MEXICO = [
   "Aguascalientes",
   "Baja California",
@@ -488,10 +418,14 @@ const ESTADOS_MEXICO = [
   "Zacatecas",
 ];
 
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 function RegisterPage() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     nombre: "",
-    apellido: "",
     email: "",
     telefono: "",
     estado: "",
@@ -504,6 +438,7 @@ function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [aceptTerms, setAceptTerms] = useState(false);
   const [touched, setTouched] = useState({});
 
@@ -522,16 +457,24 @@ function RegisterPage() {
   };
 
   const isFormValid = () => {
+    const isNombreValid = formData.nombre.trim() !== "";
+    const isEmailValid = validateEmail(formData.email);
+    const isPhoneValid = validatePhone(formData.telefono);
+    const isEstadoValid = formData.estado !== "";
+    const isCiudadValid = formData.ciudad.trim() !== "";
+    const isPasswordValid = validatePassword(formData.password);
+    const isPasswordMatch = formData.password === formData.confirmPassword;
+    const isTermsAccepted = aceptTerms;
+
     return (
-      formData.nombre.trim() !== "" &&
-      formData.apellido.trim() !== "" &&
-      validateEmail(formData.email) &&
-      validatePhone(formData.telefono) &&
-      formData.estado !== "" &&
-      formData.ciudad.trim() !== "" &&
-      validatePassword(formData.password) &&
-      formData.password === formData.confirmPassword &&
-      aceptTerms
+      isNombreValid &&
+      isEmailValid &&
+      isPhoneValid &&
+      isEstadoValid &&
+      isCiudadValid &&
+      isPasswordValid &&
+      isPasswordMatch &&
+      isTermsAccepted
     );
   };
 
@@ -542,6 +485,7 @@ function RegisterPage() {
       [name]: value,
     });
     setError("");
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleBlur = (e) => {
@@ -552,9 +496,10 @@ function RegisterPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
 
     if (!aceptTerms) {
       setError("Debes aceptar los términos y condiciones");
@@ -566,13 +511,55 @@ function RegisterPage() {
       return;
     }
 
+    const payload = {
+      name: formData.nombre.trim(),
+      email: formData.email,
+      password: formData.password,
+      phone: formData.telefono,
+      address: {
+        state: formData.estado,
+        city: formData.ciudad,
+      },
+    };
+
     setLoading(true);
 
-    setTimeout(() => {
-      console.log("Registro exitoso", formData);
+    try {
+      const response = await registerCustomer(payload);
+      console.log("Registro exitoso:", response);
+
+      navigate(routePaths.account.login, {
+        state: { message: "Cuenta creada exitosamente. Inicia sesión." },
+      });
+    } catch (err) {
+      console.error("Error en registro:", err);
+
+      if (err.fieldErrors) {
+        setFieldErrors(err.fieldErrors);
+        const fieldMap = {
+          name: "nombre",
+          email: "email",
+          password: "password",
+          phone: "telefono",
+        };
+
+        Object.keys(err.fieldErrors).forEach((key) => {
+          const localField = fieldMap[key] || key;
+          const errorMsg = err.fieldErrors[key];
+          setFieldErrors((prev) => ({ ...prev, [localField]: errorMsg }));
+        });
+      }
+
+      const errorMessage =
+        err.message ||
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        "Error al crear la cuenta. Por favor, intenta de nuevo.";
+
+      setError(errorMessage);
+    } finally {
       setLoading(false);
-      window.location.href = "/login";
-    }, 1500);
+    }
   };
 
   const handleTogglePassword = () => {
@@ -583,20 +570,25 @@ function RegisterPage() {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
+  const showNombreError =
+    (touched.nombre && formData.nombre.trim() === "") || fieldErrors.nombre;
   const showEmailError =
-    touched.email && !validateEmail(formData.email) && formData.email !== "";
+    (touched.email && !validateEmail(formData.email) && formData.email !== "") ||
+    fieldErrors.email;
+  const showPhoneError =
+    (touched.telefono &&
+      !validatePhone(formData.telefono) &&
+      formData.telefono !== "") ||
+    fieldErrors.telefono;
   const showPasswordError =
-    touched.password &&
-    !validatePassword(formData.password) &&
-    formData.password !== "";
+    (touched.password &&
+      !validatePassword(formData.password) &&
+      formData.password !== "") ||
+    fieldErrors.password;
   const showConfirmError =
     touched.confirmPassword &&
     formData.confirmPassword !== "" &&
     formData.password !== formData.confirmPassword;
-  const showPhoneError =
-    touched.telefono &&
-    !validatePhone(formData.telefono) &&
-    formData.telefono !== "";
 
   return (
     <Box
@@ -619,6 +611,7 @@ function RegisterPage() {
         {error && <ErrorAlert severity="error">{error}</ErrorAlert>}
 
         <form onSubmit={handleSubmit} noValidate>
+          {/* NOMBRE COMPLETO */}
           <FormGroup>
             <FormLabel variant="body2">Nombre completo:</FormLabel>
             <StyledTextField
@@ -628,9 +621,13 @@ function RegisterPage() {
               onChange={handleChange}
               onBlur={handleBlur}
               placeholder="Juan Pérez"
-              error={touched.nombre && formData.nombre === ""}
+              error={showNombreError}
               helperText={
-                touched.nombre && formData.nombre === "" ? "Requerido" : ""
+                showNombreError
+                  ? typeof fieldErrors.nombre === "string"
+                    ? fieldErrors.nombre
+                    : "Requerido"
+                  : ""
               }
               InputProps={{
                 startAdornment: (
@@ -645,6 +642,7 @@ function RegisterPage() {
             />
           </FormGroup>
 
+          {/* CORREO ELECTRÓNICO */}
           <FormGroup>
             <FormLabel variant="body2">Correo electrónico:</FormLabel>
             <StyledTextField
@@ -656,7 +654,13 @@ function RegisterPage() {
               onBlur={handleBlur}
               placeholder="ejemplo@email.com"
               error={showEmailError}
-              helperText={showEmailError ? "Correo inválido" : ""}
+              helperText={
+                showEmailError
+                  ? typeof fieldErrors.email === "string"
+                    ? fieldErrors.email
+                    : "Correo inválido"
+                  : ""
+              }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -674,6 +678,7 @@ function RegisterPage() {
             />
           </FormGroup>
 
+          {/* TELÉFONO */}
           <FormGroup>
             <FormLabel variant="body2">Teléfono:</FormLabel>
             <StyledTextField
@@ -685,7 +690,13 @@ function RegisterPage() {
               onBlur={handleBlur}
               placeholder="5512345678"
               error={showPhoneError}
-              helperText={showPhoneError ? "10 dígitos" : ""}
+              helperText={
+                showPhoneError
+                  ? typeof fieldErrors.telefono === "string"
+                    ? fieldErrors.telefono
+                    : "10 dígitos"
+                  : ""
+              }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -703,6 +714,7 @@ function RegisterPage() {
             />
           </FormGroup>
 
+          {/* ESTADO */}
           <FormGroup>
             <FormLabel variant="body2">Estado:</FormLabel>
             <StyledTextField
@@ -738,6 +750,7 @@ function RegisterPage() {
             </StyledTextField>
           </FormGroup>
 
+          {/* CIUDAD */}
           <FormGroup>
             <FormLabel variant="body2">Ciudad:</FormLabel>
             <StyledTextField
@@ -747,9 +760,9 @@ function RegisterPage() {
               onChange={handleChange}
               onBlur={handleBlur}
               placeholder="Tijuana"
-              error={touched.ciudad && formData.ciudad === ""}
+              error={touched.ciudad && formData.ciudad.trim() === ""}
               helperText={
-                touched.ciudad && formData.ciudad === "" ? "Requerida" : ""
+                touched.ciudad && formData.ciudad.trim() === "" ? "Requerida" : ""
               }
               InputProps={{
                 startAdornment: (
@@ -764,9 +777,10 @@ function RegisterPage() {
             />
           </FormGroup>
 
+          {/* CONTRASEÑA */}
           <FormGroup>
             <FormLabel variant="body2">Contraseña:</FormLabel>
-            <PasswordWrapper>
+            <Box className="register-password-wrapper">
               <StyledTextField
                 fullWidth
                 name="password"
@@ -776,7 +790,13 @@ function RegisterPage() {
                 onBlur={handleBlur}
                 placeholder="Mínimo 6 caracteres"
                 error={showPasswordError}
-                helperText={showPasswordError ? "Mínimo 6 caracteres" : ""}
+                helperText={
+                  showPasswordError
+                    ? typeof fieldErrors.password === "string"
+                      ? fieldErrors.password
+                      : "Mínimo 6 caracteres"
+                    : ""
+                }
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -810,12 +830,13 @@ function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-            </PasswordWrapper>
+            </Box>
           </FormGroup>
 
+          {/* CONFIRMAR CONTRASEÑA */}
           <FormGroup>
             <FormLabel variant="body2">Confirmar contraseña:</FormLabel>
-            <PasswordWrapper>
+            <Box className="register-password-wrapper">
               <StyledTextField
                 fullWidth
                 name="confirmPassword"
@@ -863,9 +884,10 @@ function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
-            </PasswordWrapper>
+            </Box>
           </FormGroup>
 
+          {/* TÉRMINOS Y CONDICIONES */}
           <StyledFormControlLabel
             control={
               <Checkbox
@@ -877,6 +899,7 @@ function RegisterPage() {
             label="Acepto términos y condiciones"
           />
 
+          {/* BOTÓN CREAR CUENTA */}
           <RegisterButton type="submit" disabled={!isFormValid() || loading}>
             {loading ? "Creando cuenta..." : "Crear cuenta"}
           </RegisterButton>
@@ -885,7 +908,7 @@ function RegisterPage() {
         <FooterWrapper>
           <Typography variant="body1">
             ¿Ya tienes una cuenta?{" "}
-            <LoginLink href="/login" underline="hover">
+            <LoginLink href={routePaths.account.login} underline="hover">
               Inicia sesión
             </LoginLink>
           </Typography>
