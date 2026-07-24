@@ -1,3 +1,6 @@
+// BusinessMetricsPage.jsx
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ AGREGAR ESTA IMPORTACIÓN
 import { FaExclamationTriangle } from "react-icons/fa";
 import {
   FaArrowTrendUp,
@@ -11,34 +14,20 @@ import {
 import { Link } from "react-router-dom";
 import "../../assets/CSS/admin/business-metrics.css";
 import { routePaths } from "../../routes/routePaths.js";
+import { dashboardService } from "../../services/backendServices.js";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
 
 const ADMIN_HERO_IMAGE =
   "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=80";
 
-const lowStockProducts = [
-  {
-    name: "Daybed Roble",
-    reference: "DB-104",
-    units: 2,
-    image: "/images/macetabotom4.jpeg",
-  },
-  {
-    name: "Mesa auxiliar Nórdica",
-    reference: "MN-208",
-    units: 5,
-    image: "/images/maceta5.jpeg",
-  },
-];
-
-const orderStatus = [
-  { label: "Entregados", value: 68, color: "#4d9b63" },
-  { label: "En proceso", value: 24, color: "#c99742" },
-  { label: "Pendientes", value: 8, color: "#d7765d" },
-];
-
+// ============================================
+// ✅ COMPONENTE METRIC CARD
+// ============================================
 function MetricCard({ icon, label, value, detail, trend, tone = "gold" }) {
   return (
-    
     <article className={`business-metric-card business-metric-card--${tone}`}>
       <div className="business-metric-card__icon">{icon}</div>
       <div>
@@ -50,14 +39,184 @@ function MetricCard({ icon, label, value, detail, trend, tone = "gold" }) {
         </span>
       </div>
     </article>
-
   );
 }
 
-function BusinessMetricsPage() {
+// ============================================
+// ✅ ICONO DE CARGA
+// ============================================
+function IconLoading() {
   return (
-    <div className="business-metrics">
+    <svg className="business-metrics-loading__spinner" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="#B88E2F" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ============================================
+// ✅ COMPONENTE PRINCIPAL
+// ============================================
+function BusinessMetricsPage() {
+  const navigate = useNavigate(); // ✅ Ahora useNavigate está definido
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+
+  // Estados
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [metrics, setMetrics] = useState(null);
+
+  // ============================================
+  // ✅ DATOS ESTÁTICOS DE FALLBACK
+  // ============================================
+  const fallbackMetrics = {
+    total_orders: 124,
+    total_simulated_sales: 185500,
+    average_delivery_fee: 280,
+    average_delivery_distance: 18,
+    orders_by_status: [
+      { status: "delivered", label: "Entregados", value: 68, color: "#4d9b63" },
+      { status: "preparing", label: "En proceso", value: 24, color: "#c99742" },
+      { status: "pending", label: "Pendientes", value: 8, color: "#d7765d" },
+    ],
+    low_stock_count: 2,
+    recent_orders: [],
+    low_stock_products: [
+      { name: "Daybed Roble", reference: "DB-104", units: 2, image: "/images/macetabotom4.jpeg" },
+      { name: "Mesa auxiliar Nórdica", reference: "MN-208", units: 5, image: "/images/maceta5.jpeg" },
+    ],
+  };
+
+  // ============================================
+  // ✅ CARGAR MÉTRICAS DEL BACKEND
+  // ============================================
+  const loadMetrics = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await dashboardService.metrics();
+      console.log("📊 Métricas del backend:", response);
       
+      // Mapear la respuesta del backend al formato esperado
+      const mappedMetrics = {
+        total_orders: response.total_orders || 0,
+        total_simulated_sales: response.total_simulated_sales || 0,
+        average_delivery_fee: response.average_delivery_fee || 0,
+        average_delivery_distance: response.average_delivery_distance || 0,
+        orders_by_status: response.orders_by_status || fallbackMetrics.orders_by_status,
+        low_stock_count: response.low_stock_count || 0,
+        recent_orders: response.recent_orders || [],
+        low_stock_products: fallbackMetrics.low_stock_products,
+      };
+      
+      setMetrics(mappedMetrics);
+    } catch (err) {
+      console.error("❌ Error al cargar métricas:", err);
+      setError(err.message || "Error al cargar las métricas");
+      // Usar datos de fallback
+      setMetrics(fallbackMetrics);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================
+  // ✅ VERIFICAR AUTENTICACIÓN Y ROL
+  // ============================================
+  useEffect(() => {
+    const initializeMetrics = async () => {
+      if (!authLoading && !isAuthenticated) {
+        navigate(routePaths.account.login);
+        return;
+      }
+
+      if (!authLoading && isAuthenticated) {
+        const viewerId = getViewerIdForUser(user);
+        if (viewerId !== "admin" && viewerId !== "employee") {
+          navigate(routePaths.support.unauthorized || "/no-autorizado");
+          return;
+        }
+        await loadMetrics();
+      }
+    };
+
+    initializeMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authLoading, user, navigate]);
+
+  // ============================================
+  // ✅ DATOS PARA MOSTRAR
+  // ============================================
+  const data = metrics || fallbackMetrics;
+  
+  const totalOrders = data.total_orders || 0;
+  const totalSales = data.total_simulated_sales || 0;
+  const avgDeliveryFee = data.average_delivery_fee || 0;
+  const avgDistance = data.average_delivery_distance || 0;
+  const orderStatusData = data.orders_by_status || fallbackMetrics.orders_by_status;
+  const lowStockProducts = data.low_stock_products || fallbackMetrics.low_stock_products;
+
+  const formatPrice = (amount) => {
+    return `$${amount.toLocaleString("es-MX")} MXN`;
+  };
+
+  // ============================================
+  // ✅ ESTADOS DE CARGA Y ERROR
+  // ============================================
+  if (loading || authLoading) {
+    return (
+      <div className="home-page business-metrics">
+        <HomeHeader />
+        <section className="business-metrics__hero" style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}>
+          <div className="business-metrics__hero-overlay">
+            <h1>Métricas del negocio</h1>
+            <nav aria-label="Miga de pan" className="business-metrics__breadcrumb">
+              <Link to={routePaths.public.home}>Inicio</Link>
+              <span aria-hidden="true">/</span>
+              <span>Métricas del negocio</span>
+            </nav>
+          </div>
+        </section>
+        <div className="business-metrics-loading">
+          <IconLoading />
+          <p>Cargando métricas...</p>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (error && !metrics) {
+    return (
+      <div className="home-page business-metrics">
+        <HomeHeader />
+        <section className="business-metrics__hero" style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}>
+          <div className="business-metrics__hero-overlay">
+            <h1>Métricas del negocio</h1>
+            <nav aria-label="Miga de pan" className="business-metrics__breadcrumb">
+              <Link to={routePaths.public.home}>Inicio</Link>
+              <span aria-hidden="true">/</span>
+              <span>Métricas del negocio</span>
+            </nav>
+          </div>
+        </section>
+        <div className="business-metrics-error">
+          <p>❌ {error}</p>
+          <button onClick={loadMetrics}>Reintentar</button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  // ============================================
+  // ✅ RENDER PRINCIPAL
+  // ============================================
+  return (
+    <div className="home-page business-metrics">
+      <HomeHeader />
+
       <section
         className="business-metrics__hero"
         style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}
@@ -99,28 +258,28 @@ function BusinessMetricsPage() {
           <MetricCard
             icon={<FaReceipt />}
             label="Total de pedidos"
-            value="124"
-            detail="12.5% vs. mes anterior"
+            value={totalOrders}
+            detail="Pedidos del periodo"
             trend
           />
           <MetricCard
             icon={<FaMoneyBillTrendUp />}
             label="Ventas simuladas"
-            value="$185,500 MXN"
+            value={formatPrice(totalSales)}
             detail="Ingresos del periodo"
             tone="green"
           />
           <MetricCard
             icon={<FaTruckFast />}
             label="Costo promedio de entrega"
-            value="$280 MXN"
+            value={formatPrice(avgDeliveryFee)}
             detail="Por pedido entregado"
             tone="blue"
           />
           <MetricCard
             icon={<FaLocationDot />}
             label="Distancia estimada"
-            value="18 km"
+            value={`${avgDistance} km`}
             detail="Promedio por entrega"
             tone="terracotta"
           />
@@ -140,7 +299,7 @@ function BusinessMetricsPage() {
             <div className="business-stock-list">
               {lowStockProducts.map((product) => (
                 <div className="business-stock-item" key={product.reference}>
-                  <img src={product.image} alt="" />
+                  <img src={product.image || "https://via.placeholder.com/50"} alt="" />
                   <div>
                     <strong>{product.name}</strong>
                     <span>{product.reference}</span>
@@ -150,7 +309,7 @@ function BusinessMetricsPage() {
               ))}
             </div>
             <p className="business-panel__notice">
-              2 productos requieren reposición próxima.
+              {data.low_stock_count || 0} productos requieren reposición próxima.
             </p>
           </article>
 
@@ -162,24 +321,24 @@ function BusinessMetricsPage() {
                 </p>
                 <h3>Pedidos por estado</h3>
               </div>
-              <span className="business-panel__total">124 pedidos</span>
+              <span className="business-panel__total">{totalOrders} pedidos</span>
             </div>
             <div
               className="business-status-chart"
-              aria-label="68 por ciento entregados, 24 por ciento en proceso y 8 por ciento pendientes"
+              aria-label="Distribución de pedidos por estado"
             >
               <div className="business-status-chart__donut">
                 <span>
-                  100<small>%</small>
+                  {totalOrders}<small>%</small>
                 </span>
               </div>
               <div className="business-status-chart__legend">
-                {orderStatus.map((status) => (
-                  <div key={status.label}>
-                    <span style={{ backgroundColor: status.color }} />
+                {orderStatusData.map((status) => (
+                  <div key={status.status || status.label}>
+                    <span style={{ backgroundColor: status.color || "#B88E2F" }} />
                     <p>
                       {status.label}
-                      <b>{status.value}%</b>
+                      <b>{status.value || status.count || 0}%</b>
                     </p>
                   </div>
                 ))}
@@ -194,11 +353,16 @@ function BusinessMetricsPage() {
           </div>
           <div>
             <p>Indicador del periodo</p>
-            <strong>Los pedidos entregados aumentaron 12.5%.</strong>
+            <strong>
+              {totalOrders > 0 
+                ? `Los pedidos entregados representan el ${orderStatusData[0]?.value || 68}% del total.`
+                : "Cargando indicadores..."}
+            </strong>
           </div>
           <Link to={routePaths.backOffice.orders}>Revisar pedidos</Link>
         </section>
       </main>
+
     </div>
   );
 }

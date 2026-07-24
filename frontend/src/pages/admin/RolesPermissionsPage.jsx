@@ -1,7 +1,12 @@
+// RolesPermissionsPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import "../../assets/CSS/admin/roles-permissions.css";
 import { accessService } from "../../services/backendServices.js";
+import HomeHeader from "../../components/HomeHeader.jsx";
 
+// ============================================
+// ICONOS SVG
+// ============================================
 function IconShield() {
   return (
     <svg
@@ -321,8 +326,13 @@ export default function RolesPermissionsPage() {
     setError(null);
   };
 
+  // ============================================
+  // ✅ RENDER CON HOMEHEADER Y HOMEFOOTER
+  // ============================================
   return (
-    <div className="roles-permissions">
+    <div className="home-page roles-permissions">
+      <HomeHeader />
+
       <section className="roles-permissions-hero" aria-label="Roles y permisos">
         <div className="roles-permissions-hero__overlay">
           <div className="roles-permissions-hero__content">
@@ -545,6 +555,7 @@ export default function RolesPermissionsPage() {
           </p>
         </section>
       </div>
+
     </div>
   );
 }

@@ -13,11 +13,13 @@ import {
   FaTachometerAlt,
   FaCog,
   FaBoxes,
-  FaClipboardList,
   FaUser,
   FaUsers,
   FaChartBar,
   FaChevronDown,
+  FaClipboardList,
+  FaTags,
+  FaWarehouse,
 } from "react-icons/fa";
 import "../assets/home-page.css";
 import { routePaths } from "../routes/routePaths.js";
@@ -71,10 +73,6 @@ function IconProducts() {
   return <FaBoxes size={16} />;
 }
 
-function IconOrders() {
-  return <FaClipboardList size={16} />;
-}
-
 function IconUsers() {
   return <FaUsers size={16} />;
 }
@@ -91,6 +89,18 @@ function IconChevronDown() {
   return <FaChevronDown size={12} />;
 }
 
+function IconOrders() {
+  return <FaClipboardList size={16} />;
+}
+
+function IconCategories() {
+  return <FaTags size={16} />;
+}
+
+function IconInventory() {
+  return <FaWarehouse size={16} />;
+}
+
 // ============================================
 // CONSTANTES DE NAVEGACIÓN
 // ============================================
@@ -100,13 +110,6 @@ const NAV_LINKS = [
   { label: "Sobre Nosotros", path: routePaths.public.contactHelp },
   { label: "Contacto", path: routePaths.public.contactHelp },
 ];
-
-function getUserDisplayName(user) {
-  const fullName = [user?.first_name, user?.last_name]
-    .filter(Boolean)
-    .join(" ");
-  return fullName || user?.username || user?.email || "Mi cuenta";
-}
 
 // ============================================
 // COMPONENTE PRINCIPAL
@@ -130,11 +133,6 @@ export default function HomeHeader() {
   const isEmployee = viewerId === "employee";
   const isCustomer = viewerId === "customer";
   const isGuest = !isAuthenticated;
-  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
-
-  const canUseOperationalPermission = (permissionCode) => {
-    return isAdmin || effectivePermissionCodes.includes(permissionCode);
-  };
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -179,7 +177,7 @@ export default function HomeHeader() {
   // ============================================
   const getUserButtonLabel = () => {
     if (isAuthenticated) {
-      return getUserDisplayName(user);
+      return user?.name || "Mi cuenta";
     }
     return "Iniciar sesión";
   };
@@ -191,152 +189,182 @@ export default function HomeHeader() {
     if (isAdmin) return "Administrador";
     if (isEmployee) return "Empleado";
     if (isCustomer) return "Cliente";
-    return "Visitante";
-  };
-
-  const getEmployeeDashboardTarget = () => {
-    const targets = [
-      {
-        permission: "dashboard.view",
-        label: "Dashboard",
-        path: routePaths.backOffice.dashboard,
-      },
-      {
-        permission: "products.view",
-        label: "Productos",
-        path: routePaths.backOffice.products,
-      },
-      {
-        permission: "inventory.view",
-        label: "Inventario",
-        path: routePaths.backOffice.inventory,
-      },
-      {
-        permission: "orders.view",
-        label: "Pedidos",
-        path: routePaths.backOffice.orders,
-      },
-    ];
-
-    return targets.find((target) =>
-      canUseOperationalPermission(target.permission),
-    );
+    return "Invitado";
   };
 
   // ============================================
-  // OPCIONES DEL MENÚ DE USUARIO SEGÚN ROL
+  // ✅ OPCIONES DEL MENÚ DE USUARIO SEGÚN ROL
   // ============================================
   const getUserMenuItems = () => {
     const items = [];
 
-    // Dashboard según rol
-    let dashboardPath = routePaths.account.orders || "/cuenta/pedidos";
-    let dashboardLabel = "Dashboard";
-
-    if (isAdmin) {
-      dashboardPath = routePaths.admin.businessMetrics || "/admin/metricas";
-      dashboardLabel = "Métricas del negocio";
-    } else if (isEmployee) {
-      const employeeTarget = getEmployeeDashboardTarget();
-      if (employeeTarget) {
-        dashboardPath = employeeTarget.path;
-        dashboardLabel = employeeTarget.label;
-      }
-    }
-
-    if (!isEmployee || getEmployeeDashboardTarget()) {
-      items.push({
-        label: dashboardLabel,
-        icon: <IconDashboard />,
-        action: () => navigateTo(dashboardPath),
+    // ============================================
+    // 🛡️ ADMINISTRADOR
+    // ============================================
+if (isAdmin) {
+  items.push({
+        label: "Perfil",
+        icon: <IconProfile />,
+        action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
         isAdmin: false,
       });
-    }
 
-    // Mi perfil - siempre visible para autenticados
-    items.push({
-      label: "Mi perfil",
-      icon: <IconProfile />,
-      action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
-      isAdmin: false,
-    });
+      // Separador
+      items.push({ isDivider: true });
 
-    // Separador
-    items.push({ isDivider: true });
+      // Configuración básica
+      items.push({
+        label: "Configuración básica",
+        icon: <IconSettings />,
+        action: () => navigateTo(routePaths.admin.basicSettings || "/admin/configuracion"),
+        isAdmin: true,
+      });
 
-    // ===== OPCIONES DE ADMINISTRACIÓN (SOLO ADMIN) =====
-    if (isAdmin) {
+      // Métricas del negocio
       items.push({
         label: "Métricas del negocio",
         icon: <IconMetrics />,
         action: () => navigateTo(routePaths.admin.businessMetrics || "/admin/metricas"),
         isAdmin: true,
       });
+
+      // Roles y permisos
       items.push({
-        label: "Usuarios y roles",
+        label: "Roles y permisos",
+        icon: <IconUsers />,
+        action: () => navigateTo(routePaths.admin.rolesPermissions || "/admin/roles-permisos"),
+        isAdmin: true,
+      });
+
+      // Usuarios internos
+      items.push({
+        label: "Usuarios internos",
         icon: <IconUsers />,
         action: () => navigateTo(routePaths.admin.internalUsers || "/admin/usuarios"),
         isAdmin: true,
       });
+
+      // Separador antes de cerrar sesión
+      items.push({ isDivider: true });
+
+      // Cerrar sesión
       items.push({
-        label: "Configuración",
-        icon: <IconSettings />,
-        action: () => navigateTo(routePaths.admin.basicSettings || "/admin/configuracion"),
-        isAdmin: true,
+        label: "Cerrar sesión",
+        icon: <IconLogout />,
+        action: handleLogout,
+        isLogout: true,
       });
+
+      return items;
     }
 
-    // ===== OPCIONES DE EMPLEADO (ADMIN Y EMPLEADO) =====
-    if (isAdmin || canUseOperationalPermission("dashboard.view")) {
+    // ============================================
+    // 👔 EMPLEADO
+    // ============================================
+    if (isEmployee) {
+      // Perfil (solo empleado)
       items.push({
-        label: "Dashboard operativo",
+        label: "Perfil",
+        icon: <IconProfile />,
+        action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
+        isAdmin: false,
+      });
+
+      // Separador
+      items.push({ isDivider: true });
+
+      // Dashboard exclusivo del empleado
+      items.push({
+        label: "Dashboard",
         icon: <IconDashboard />,
-        action: () =>
-          navigateTo(routePaths.backOffice.dashboard || "/interno"),
-        isAdmin: true,
+        action: () => navigateTo(routePaths.backOffice.dashboard || "/interno"),
+        isAdmin: false,
       });
-    }
 
-    if (isAdmin || canUseOperationalPermission("products.view")) {
+      // Productos
       items.push({
         label: "Productos",
         icon: <IconProducts />,
         action: () => navigateTo(routePaths.backOffice.products || "/interno/productos"),
-        isAdmin: true,
+        isAdmin: false,
       });
-    }
 
-    if (isAdmin || canUseOperationalPermission("inventory.view")) {
+      // Categorías
+      items.push({
+        label: "Categorías",
+        icon: <IconCategories />,
+        action: () => navigateTo(routePaths.backOffice.categories || "/interno/categorias"),
+        isAdmin: false,
+      });
+
+      // Inventario
       items.push({
         label: "Inventario",
-        icon: <IconProducts />,
-        action: () =>
-          navigateTo(routePaths.backOffice.inventory || "/interno/inventario"),
-        isAdmin: true,
+        icon: <IconInventory />,
+        action: () => navigateTo(routePaths.backOffice.inventory || "/interno/inventario"),
+        isAdmin: false,
       });
-    }
 
-    if (isAdmin || canUseOperationalPermission("orders.view")) {
+      // Pedidos internos
       items.push({
-        label: "Pedidos",
+        label: "Pedidos internos",
         icon: <IconOrders />,
         action: () => navigateTo(routePaths.backOffice.orders || "/interno/pedidos"),
-        isAdmin: true,
+        isAdmin: false,
       });
+
+      // Separador antes de cerrar sesión
+      items.push({ isDivider: true });
+
+      // Cerrar sesión
+      items.push({
+        label: "Cerrar sesión",
+        icon: <IconLogout />,
+        action: handleLogout,
+        isLogout: true,
+      });
+
+      return items;
     }
 
-    // Separador antes de cerrar sesión
-    items.push({ isDivider: true });
+    // ============================================
+    // 👤 CLIENTE
+    // ============================================
+    if (isCustomer) {
+      // Dashboard del cliente (Mis pedidos)
+      items.push({
+        label: "Dashboard",
+        icon: <IconDashboard />,
+        action: () => navigateTo(routePaths.account.orders || "/cuenta/pedidos"),
+        isAdmin: false,
+      });
 
-    // Cerrar sesión
-    items.push({
-      label: "Cerrar sesión",
-      icon: <IconLogout />,
-      action: handleLogout,
-      isLogout: true,
-    });
+      // Mi perfil
+      items.push({
+        label: "Mi perfil",
+        icon: <IconProfile />,
+        action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
+        isAdmin: false,
+      });
 
-    return items;
+      // Separador antes de cerrar sesión
+      items.push({ isDivider: true });
+
+      // Cerrar sesión
+      items.push({
+        label: "Cerrar sesión",
+        icon: <IconLogout />,
+        action: handleLogout,
+        isLogout: true,
+      });
+
+      return items;
+    }
+
+    // ============================================
+    // 🚪 INVITADO (No debería llegar aquí)
+    // ============================================
+    return [];
   };
 
   // ============================================
@@ -383,7 +411,7 @@ export default function HomeHeader() {
             <IconSearch />
           </button>
 
-          {/* Favoritos - Solo clientes o visitantes */}
+          {/* Favoritos - Solo clientes o invitados */}
           {(isCustomer || isGuest) && (
             <button
               type="button"
@@ -395,7 +423,7 @@ export default function HomeHeader() {
             </button>
           )}
 
-          {/* Carrito - Solo clientes o visitantes */}
+          {/* Carrito - Solo clientes o invitados */}
           {(isCustomer || isGuest) && (
             <button
               type="button"
@@ -444,11 +472,11 @@ export default function HomeHeader() {
                 {/* Header con info del usuario */}
                 <div className="home-header__user-header">
                   <div className="home-header__user-avatar">
-                    {getUserDisplayName(user).charAt(0)}
+                    {user?.name?.charAt(0) || "U"}
                   </div>
                   <div className="home-header__user-info">
                     <div className="home-header__user-name">
-                      {getUserDisplayName(user)}
+                      {user?.name || "Usuario"}
                     </div>
                     <div className="home-header__user-email">
                       {user?.email || "usuario@email.com"}
