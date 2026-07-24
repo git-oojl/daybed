@@ -52,6 +52,7 @@ const DevPreviewRouteBridge = import.meta.env.DEV
 function AppRoutes() {
   const showDevTools = import.meta.env.DEV;
   const routeTree = (
+    
     <Routes>
       {/* ============================================ */}
       {/* RUTAS PÚBLICAS - Acceso para TODOS */}
@@ -241,6 +242,7 @@ function AppRoutes() {
       ) : null}
     </BrowserRouter>
   );
+  
 }
 
 export default AppRoutes;
