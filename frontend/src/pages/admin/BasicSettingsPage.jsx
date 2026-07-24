@@ -1,7 +1,12 @@
+// BasicSettingsPage.jsx
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../assets/CSS/admin/settings-page.css";
 import { storeService } from "../../services/backendServices.js";
+import HomeHeader from "../../components/HomeHeader.jsx";
 
+// ============================================
+// ICONOS (MANTENER IGUALES)
+// ============================================
 function IconStore() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -84,6 +89,9 @@ function IconSettings() {
   );
 }
 
+// ============================================
+// CONSTANTES Y FUNCIONES
+// ============================================
 const EMPTY_FORM = {
   store_name: "",
   contact_phone: "",
@@ -130,6 +138,9 @@ function formatMoney(value) {
   return `$${amount.toFixed(2)} MXN`;
 }
 
+// ============================================
+// COMPONENTE PRINCIPAL
+// ============================================
 export default function BasicSettingsPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -214,8 +225,13 @@ export default function BasicSettingsPage() {
     formData.free_shipping_threshold,
   ]);
 
+  // ============================================
+  // ✅ RENDER PRINCIPAL CON HOMEHEADER Y HOMEFOOTER
+  // ============================================
   return (
-    <div className="admin-settings">
+    <div className="home-page admin-settings">
+      <HomeHeader />
+
       <section className="admin-settings-hero" aria-label="Configuración básica">
         <div className="admin-settings-hero__overlay">
           <div className="admin-settings-hero__content">
@@ -253,7 +269,9 @@ export default function BasicSettingsPage() {
 
       <form className="admin-settings__form" onSubmit={handleSubmit}>
         <div className="admin-settings__grid">
+          {/* COLUMNA IZQUIERDA */}
           <div className="admin-settings__col">
+            {/* DATOS GENERALES */}
             <div className="admin-settings__card">
               <div className="admin-settings__card-header">
                 <div className="admin-settings__card-icon">
@@ -285,6 +303,7 @@ export default function BasicSettingsPage() {
               </div>
             </div>
 
+            {/* UBICACIÓN */}
             <div className="admin-settings__card">
               <div className="admin-settings__card-header">
                 <div className="admin-settings__card-icon">
@@ -352,7 +371,9 @@ export default function BasicSettingsPage() {
             </div>
           </div>
 
+          {/* COLUMNA DERECHA */}
           <div className="admin-settings__col">
+            {/* TARIFAS DE ENVÍO */}
             <div className="admin-settings__card">
               <div className="admin-settings__card-header">
                 <div className="admin-settings__card-icon">
@@ -416,6 +437,7 @@ export default function BasicSettingsPage() {
               </div>
             </div>
 
+            {/* OPCIONES AVANZADAS */}
             <div className="admin-settings__card">
               <div className="admin-settings__card-header">
                 <div className="admin-settings__card-icon">
@@ -456,6 +478,7 @@ export default function BasicSettingsPage() {
               </div>
             </div>
 
+            {/* ACCIONES */}
             <div className="admin-settings__actions">
               <button type="button" className="admin-settings__btn admin-settings__btn--secondary" onClick={handleReset} disabled={pageLoading || saving}>
                 <IconCancel />
@@ -475,6 +498,7 @@ export default function BasicSettingsPage() {
           </div>
         </div>
       </form>
+
     </div>
   );
 }

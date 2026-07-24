@@ -6,6 +6,8 @@ import { accountService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
 
 // ============================================
 // ICONOS SVG
@@ -171,7 +173,6 @@ export default function InternalUsersPage() {
 
   // ============================================
   // ✅ CARGAR USUARIOS
-  // (DECLARADO ANTES DE USARLO EN useEffect)
   // ============================================
   const loadUsers = async () => {
     setLoading(true);
@@ -179,7 +180,6 @@ export default function InternalUsersPage() {
 
     try {
       const response = await accountService.users();
-      // La respuesta puede ser paginada o un array
       const usersList = response.results || response;
       setUsers(usersList);
     } catch (err) {
@@ -220,7 +220,6 @@ export default function InternalUsersPage() {
   const filteredUsers = useMemo(() => {
     let result = users;
 
-    // Filtrar por término de búsqueda
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -230,7 +229,6 @@ export default function InternalUsersPage() {
       );
     }
 
-    // Filtrar por rol
     if (filterRole !== "all") {
       result = result.filter((u) => u.role === filterRole);
     }
@@ -318,7 +316,6 @@ export default function InternalUsersPage() {
       const errorMessage = err.message || "Error al crear el usuario";
       setError(errorMessage);
       
-      // Si hay errores por campo
       if (err.fieldErrors) {
         setFormErrors(err.fieldErrors);
       }
@@ -356,7 +353,6 @@ export default function InternalUsersPage() {
         role: formData.role,
       };
 
-      // Solo incluir contraseña si se proporcionó una nueva
       if (formData.password) {
         payload.password = formData.password;
       }
@@ -415,7 +411,6 @@ export default function InternalUsersPage() {
     setError(null);
 
     try {
-      // Desactivar el usuario en lugar de eliminarlo físicamente
       await accountService.updateUser(userId, { is_active: false });
       await loadUsers();
       setSuccess(true);
@@ -458,7 +453,8 @@ export default function InternalUsersPage() {
   // ============================================
   if (loading || authLoading) {
     return (
-      <div className="internal-users">
+      <div className="home-page internal-users">
+        <HomeHeader />
         <section className="internal-users-hero" aria-label="Usuarios internos">
           <div className="internal-users-hero__overlay">
             <div className="internal-users-hero__content">
@@ -478,13 +474,15 @@ export default function InternalUsersPage() {
           <IconLoading />
           <p>Cargando usuarios...</p>
         </div>
+        <HomeFooter />
       </div>
     );
   }
 
   if (error && !submitting) {
     return (
-      <div className="internal-users">
+      <div className="home-page internal-users">
+        <HomeHeader />
         <section className="internal-users-hero" aria-label="Usuarios internos">
           <div className="internal-users-hero__overlay">
             <div className="internal-users-hero__content">
@@ -504,6 +502,7 @@ export default function InternalUsersPage() {
           <p>❌ {error}</p>
           <button onClick={loadUsers}>Reintentar</button>
         </div>
+        <HomeFooter />
       </div>
     );
   }
@@ -512,7 +511,9 @@ export default function InternalUsersPage() {
   // ✅ RENDER PRINCIPAL
   // ============================================
   return (
-    <div className="internal-users">
+    <div className="home-page internal-users">
+      <HomeHeader />
+
       {/* ===== HERO HEADER ===== */}
       <section className="internal-users-hero" aria-label="Usuarios internos">
         <div className="internal-users-hero__overlay">
@@ -839,6 +840,7 @@ export default function InternalUsersPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

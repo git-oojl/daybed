@@ -1,4 +1,4 @@
-// Importación de CSS
+// CatalogPage.jsx - CORREGIDO (category puede ser objeto o string)
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
 import { useState, useEffect, useCallback } from "react";
@@ -10,7 +10,7 @@ import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
-import { cartService } from "../../services/backendServices.js";
+import { catalogService, cartService } from "../../services/backendServices.js";
 
 // ============================================================
 // ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
@@ -33,6 +33,14 @@ const productImages = {
   "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
 };
 
+// ✅ Función para obtener el nombre de la categoría (string)
+const getCategoryName = (category) => {
+  if (!category) return "";
+  if (typeof category === "string") return category;
+  if (typeof category === "object" && category.name) return category.name;
+  return "";
+};
+
 // ✅ Función para obtener imagen según el producto
 const getProductImage = (product) => {
   // Si el producto ya tiene imagen, usarla
@@ -40,7 +48,8 @@ const getProductImage = (product) => {
   if (product.images?.length > 0) return product.images[0];
   
   const name = product.name || "";
-  // Buscar coincidencia exacta o parcial
+  
+  // Buscar coincidencia exacta o parcial por nombre
   for (const [key, value] of Object.entries(productImages)) {
     if (name.includes(key) || key.includes(name)) {
       return value;
@@ -48,14 +57,15 @@ const getProductImage = (product) => {
   }
   
   // Si no coincide, usar imagen por defecto según categoría
-  const category = product.category?.name || product.category || "";
-  if (category.includes("Sofá") || category.includes("Sillón")) {
+  const categoryName = getCategoryName(product.category);
+  
+  if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
     return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
   }
-  if (category.includes("Mesa")) {
+  if (categoryName.includes("Mesa")) {
     return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop";
   }
-  if (category.includes("Silla")) {
+  if (categoryName.includes("Silla")) {
     return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop";
   }
   
@@ -70,6 +80,14 @@ const allProductsMock = [
   { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
   { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
   { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
+  { id: 5, name: "Respira", description: "Set bar exterior", price: 2899, image: RespiraDaybed, category: "Decoración" },
+  { id: 6, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, category: "Decoración" },
+  { id: 7, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas" },
+  { id: 8, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
+  { id: 9, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
+  { id: 10, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
+  { id: 11, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
+  { id: 12, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas" },
 ];
 
 const generateMockProducts = () => {
@@ -85,22 +103,46 @@ function CatalogPage() {
   const [sortBy, setSortBy] = useState("default");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [error, setError] = useState(null);
 
   // ============================================================
-  // ✅ CARGAR PRODUCTOS DEL BACKEND
+  // ✅ CARGAR PRODUCTOS DEL BACKEND USANDO catalogService
   // ============================================================
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/catalog/products/');
-      const data = await response.json();
-      console.log('📦 Productos del backend:', data.results || data);
-      setProducts(data.results || data || []);
+      setError(null);
+      
+      console.log('Cargando productos desde backend...');
+      
+      // ✅ Usar catalogService
+      const response = await catalogService.products();
+      console.log('Respuesta del backend:', response);
+      
+      // Extraer productos (paginado o array directo)
+      let productsData = [];
+      if (Array.isArray(response)) {
+        productsData = response;
+      } else if (response?.results && Array.isArray(response.results)) {
+        productsData = response.results;
+      } else {
+        productsData = response || [];
+      }
+      
+      if (productsData.length > 0) {
+        console.log('Productos cargados:', productsData.length);
+        setProducts(productsData);
+      } else {
+        console.warn('No hay productos en el backend, usando mock');
+        setProducts(generateMockProducts());
+      }
+      
     } catch (error) {
-      console.error('❌ Error al cargar productos:', error);
-      // Si falla, usar productos mock
+      console.error('Error al cargar productos:', error);
+      setError(error.message);
+      // ✅ Usar productos mock como fallback
       setProducts(generateMockProducts());
     } finally {
       setLoading(false);
@@ -120,7 +162,7 @@ function CatalogPage() {
   // ============================================================
   const maxProductPrice = Math.max(...finalProducts.map(p => 
     typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
-  ));
+  ), 0);
   
   const maxPriceRounded = Math.ceil(Math.max(maxProductPrice, 1000) / 1000) * 1000;
 
@@ -129,13 +171,33 @@ function CatalogPage() {
     max: maxPriceRounded 
   });
 
+  // Actualizar maxPrice cuando cambien los productos
+  useEffect(() => {
+    if (finalProducts.length > 0) {
+      const newMax = Math.max(...finalProducts.map(p => 
+        typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
+      ), 0);
+      const newMaxRounded = Math.ceil(Math.max(newMax, 1000) / 1000) * 1000;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPriceRange(prev => ({ ...prev, max: newMaxRounded }));
+    }
+  }, [finalProducts]);
+
+  // ✅ Función para obtener nombre de categoría (string)
+  const getCategoryNameSafe = (category) => {
+    if (!category) return "";
+    if (typeof category === "string") return category;
+    if (typeof category === "object" && category.name) return category.name;
+    return "";
+  };
+
   // Filtrar productos por precio y categoría
   const filteredProducts = finalProducts.filter((product) => {
     const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
     const inPriceRange = price >= priceRange.min && price <= priceRange.max;
 
     // Obtener nombre de categoría (puede ser objeto o string)
-    const categoryName = typeof product.category === 'object' ? product.category?.name : product.category;
+    const categoryName = getCategoryNameSafe(product.category);
     
     if (selectedCategories.length === 0) {
       return inPriceRange;
@@ -187,7 +249,6 @@ function CatalogPage() {
   // ✅ handleAddToCart usando cartService
   const handleAddToCart = async (product) => {
     try {
-      // Verificar que el producto tiene ID válido
       if (!product.id || product.id < 1) {
         setNotification('❌ Producto no válido');
         setTimeout(() => setNotification(null), 3000);
@@ -202,10 +263,11 @@ function CatalogPage() {
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error('❌ Error al agregar al carrito:', error);
-      if (error.message?.includes('no existe')) {
-        setNotification(`❌ El producto "${product.name}" no existe en la base de datos`);
-      } else if (error.message?.includes('autenticación') || error.status === 401) {
+      
+      if (error.message?.includes('autenticación') || error.status === 401) {
         setNotification('❌ Por favor, inicia sesión para agregar productos');
+      } else if (error.message?.includes('no existe')) {
+        setNotification(`❌ El producto "${product.name}" no existe en la base de datos`);
       } else {
         setNotification(`❌ Error: ${error.message || 'No se pudo agregar al carrito'}`);
       }
@@ -213,20 +275,52 @@ function CatalogPage() {
     }
   };
 
-  // Obtener categorías únicas de los productos
+  // ✅ Obtener categorías únicas de los productos (manejando objetos)
   const categories = [
     ...new Set(finalProducts.map((product) => {
-      if (typeof product.category === 'object') return product.category?.name;
-      return product.category;
+      const cat = product.category;
+      if (!cat) return null;
+      if (typeof cat === "string") return cat;
+      if (typeof cat === "object" && cat.name) return cat.name;
+      return null;
     }).filter(Boolean))
   ];
 
+  // ============================================================
+  // ESTADOS DE CARGA Y ERROR
+  // ============================================================
   if (loading) {
     return (
       <div className="home-page catalog-page">
         <HomeHeader />
         <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
           <p>Cargando productos...</p>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (error && products.length === 0) {
+    return (
+      <div className="home-page catalog-page">
+        <HomeHeader />
+        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <p>❌ Error al cargar productos: {error}</p>
+          <button 
+            onClick={fetchProducts}
+            style={{
+              marginTop: "1rem",
+              padding: "0.5rem 2rem",
+              background: "#2f2a25",
+              color: "white",
+              border: "none",
+              borderRadius: "0.3rem",
+              cursor: "pointer",
+            }}
+          >
+            Reintentar
+          </button>
         </div>
         <HomeFooter />
       </div>
@@ -390,10 +484,8 @@ function CatalogPage() {
                 </div>
               ) : (
                 sortedProducts.map((product) => {
-                  // Obtener imagen del producto
                   const productImage = getProductImage(product);
-                  // Obtener categoría como string
-                  const categoryName = typeof product.category === 'object' ? product.category?.name : product.category;
+                  const categoryName = getCategoryNameSafe(product.category);
                   
                   return (
                     <article className="product-card" key={product.id}>

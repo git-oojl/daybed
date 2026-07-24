@@ -1,3 +1,4 @@
+// CartPage.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
@@ -31,6 +32,14 @@ const productImages = {
   "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=80&h=80&fit=crop",
 };
 
+// ✅ Función para obtener nombre de categoría (string)
+const getCategoryNameSafe = (category) => {
+  if (!category) return "";
+  if (typeof category === "string") return category;
+  if (typeof category === "object" && category.name) return category.name;
+  return "";
+};
+
 // ✅ Función para obtener imagen según el nombre
 const getProductImage = (product) => {
   // Si el producto ya tiene imagen, usarla
@@ -46,14 +55,15 @@ const getProductImage = (product) => {
   }
 
   // Si no coincide, usar imagen por categoría
-  const category = product.category?.name || product.category || "";
-  if (category.includes("Sofá") || category.includes("Sillón")) {
+  const categoryName = getCategoryNameSafe(product.category);
+  
+  if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
     return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
   }
-  if (category.includes("Mesa")) {
+  if (categoryName.includes("Mesa")) {
     return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=80&h=80&fit=crop";
   }
-  if (category.includes("Silla")) {
+  if (categoryName.includes("Silla")) {
     return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop";
   }
 
