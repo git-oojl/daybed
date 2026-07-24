@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -14,24 +15,32 @@ import {
   FaTags,
   FaUserTie,
 } from "react-icons/fa";
+import { dashboardService } from "../../services/backendServices.js";
+import LoadingState from "../../components/support/LoadingState.jsx";
+import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
 export default function DashboardPage() {
-  const ventasPorMes = [
+  // ✅ Estados para datos del backend
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ✅ Estados para los datos del dashboard
+  const [ventasPorMes, setVentasPorMes] = useState([
     { mes: "Enero", monto: 5000 },
     { mes: "Febrero", monto: 8000 },
     { mes: "Marzo", monto: 12000 },
     { mes: "Abril", monto: 15000 },
     { mes: "Mayo", monto: 20000 },
-  ];
+  ]);
 
-  const productosBajoStock = [
+  const [productosBajoStock, setProductosBajoStock] = useState([
     { nombre: "Sofá Esquinero", stock: 2 },
     { nombre: "Mesa de Centro", stock: 3 },
     { nombre: "Silla Ergonómica", stock: 1 },
     { nombre: "Lámpara de Pie", stock: 0 },
-  ];
+  ]);
 
-  const pedidos = [
+  const [pedidos, setPedidos] = useState([
     {
       id: "#DAY001",
       cliente: "Ana García",
@@ -56,9 +65,9 @@ export default function DashboardPage() {
       total: "$6,500",
       estado: "Entregado",
     },
-  ];
+  ]);
 
-  const metrics = [
+  const [metrics, setMetrics] = useState([
     {
       icon: <FaShoppingBag size={28} />,
       label: "Pedidos",
@@ -83,8 +92,150 @@ export default function DashboardPage() {
       value: 6,
       color: "#D84315",
     },
-  ];
+  ]);
 
+  // ✅ Función para traducir estados del backend a español
+  const traducirEstado = (estado) => {
+    const estados = {
+      'pending': 'Pendiente',
+      'confirmed': 'Confirmado',
+      'preparing': 'Preparando',
+      'shipped': 'Enviado',
+      'delivered': 'Entregado',
+      'cancelled': 'Cancelado',
+      'paid': 'Pagado',
+      'processing': 'Procesando',
+      'completed': 'Completado',
+    };
+    return estados[estado?.toLowerCase()] || estado || 'Pendiente';
+  };
+
+  // ✅ Función para obtener color según estado
+  const getEstadoColor = (estado) => {
+    const colores = {
+      'Pendiente': '#FF9800',
+      'Confirmado': '#2196F3',
+      'Preparando': '#9C27B0',
+      'Enviado': '#00BCD4',
+      'Entregado': '#4CAF50',
+      'Cancelado': '#F44336',
+      'Pagado': '#8BC34A',
+      'Procesando': '#FF5722',
+      'Completado': '#2E7D32',
+    };
+    return colores[estado] || '#8B5E3C';
+  };
+
+  // ✅ Cargar datos del dashboard desde el backend
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await dashboardService.metrics();
+
+      // ✅ Actualizar métricas con datos del backend
+      setMetrics([
+        {
+          icon: <FaShoppingBag size={28} />,
+          label: "Pedidos",
+          value: data.total_orders || data.orders_count || 0,
+          color: "#8B5E3C",
+        },
+        {
+          icon: <FaDollarSign size={28} />,
+          label: "Ventas",
+          value: data.total_sales 
+            ? `$${data.total_sales.toLocaleString()}`
+            : data.sales_total 
+              ? `$${data.sales_total.toLocaleString()}`
+              : "$0",
+          color: "#2E7D32",
+        },
+        {
+          icon: <FaBoxes size={28} />,
+          label: "Productos",
+          value: data.total_products || data.products_count || 0,
+          color: "#1565C0",
+        },
+        {
+          icon: <FaExclamationTriangle size={28} />,
+          label: "Bajo Stock",
+          value: data.low_stock_count || data.low_stock?.length || 0,
+          color: "#D84315",
+        },
+      ]);
+
+      // ✅ Actualizar pedidos recientes con estados traducidos
+      if (data.recent_orders && data.recent_orders.length > 0) {
+        setPedidos(data.recent_orders.map(order => {
+          const estadoTraducido = traducirEstado(order.status || order.estado);
+          return {
+            id: order.id || order.order_id || `#${String(Math.random()).slice(2, 8)}`,
+            cliente: order.customer_name || order.cliente || order.customer || "Cliente",
+            total: order.total ? `$${order.total.toLocaleString()}` : "$0",
+            estado: estadoTraducido,
+            _estadoOriginal: order.status || order.estado, // Guardamos original por si acaso
+          };
+        }));
+      }
+
+      // ✅ Actualizar productos con bajo stock
+      if (data.low_stock && data.low_stock.length > 0) {
+        setProductosBajoStock(data.low_stock.map(item => ({
+          nombre: item.name || item.nombre || "Producto",
+          stock: item.stock || item.cantidad || 0,
+        })));
+      }
+
+      // ✅ Actualizar ventas por mes
+      if (data.sales_by_month && data.sales_by_month.length > 0) {
+        setVentasPorMes(data.sales_by_month.map(item => ({
+          mes: item.month || item.mes || "Mes",
+          monto: item.total || item.monto || item.amount || 0,
+        })));
+      }
+
+    } catch (err) {
+      console.error("Error al cargar dashboard:", err);
+      setError(err.message || "Error al cargar los datos del dashboard");
+      // Si falla, mantener los datos de ejemplo
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Estados de carga y error
+  if (loading) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <LoadingState message="Cargando dashboard..." />
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <ErrorMessage message={error} />
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <button onClick={fetchDashboardData} className="btn-primary">
+            Reintentar
+          </button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  // ✅ El resto del diseño se mantiene IGUAL
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
@@ -337,13 +488,14 @@ export default function DashboardPage() {
                       <td style={{ padding: "10px 8px" }}>
                         <span
                           style={{
-                            background: "#F3E8D8",
-                            color: "#8B5E3C",
+                            background: `${getEstadoColor(pedido.estado)}22`,
+                            color: getEstadoColor(pedido.estado),
                             padding: "4px 14px",
                             borderRadius: "20px",
                             fontWeight: 600,
                             fontSize: ".8rem",
                             display: "inline-block",
+                            border: `1px solid ${getEstadoColor(pedido.estado)}44`,
                           }}
                         >
                           {pedido.estado}
@@ -551,7 +703,7 @@ export default function DashboardPage() {
                 fontSize: "clamp(0.85rem, 1.1vw, 1rem)",
               }}
             >
-              1 producto necesita reabastecimiento inmediato.
+              {productosBajoStock.filter(p => p.stock === 0).length} producto{productosBajoStock.filter(p => p.stock === 0).length !== 1 ? 's' : ''} necesita reabastecimiento inmediato.
             </div>
           </div>
         </div>
@@ -743,7 +895,7 @@ export default function DashboardPage() {
                   Pedidos procesados hoy
                 </span>
                 <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  18
+                  {pedidos.length}
                 </strong>
               </div>
               <div
@@ -758,7 +910,7 @@ export default function DashboardPage() {
                   Productos registrados
                 </span>
                 <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  128
+                  {metrics.find(m => m.label === "Productos")?.value || 0}
                 </strong>
               </div>
               <div
