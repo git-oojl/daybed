@@ -1,7 +1,10 @@
 from decimal import Decimal
+from pathlib import Path
+from shutil import copyfile
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.cart.models import Cart, CartItem
@@ -33,6 +36,7 @@ class Command(BaseCommand):
         users = self._seed_users()
         categories = self._seed_categories()
         products = self._seed_products(categories)
+        self._seed_product_images(products)
         self._seed_cart(users["customer"], products)
         self._seed_orders(users, products)
         self._seed_manual_inventory_movement(users["employee"], products)
@@ -430,6 +434,31 @@ class Command(BaseCommand):
             )
             products[item["name"]] = product
         return products
+
+    def _seed_product_images(self, products):
+        image_files = {
+            "Daybed Roble Nórdico": "daybed-roble-nordico.png",
+            "Sofá Cama Lino Arena": "sofa-cama-lino-arena.png",
+            "Mesa Centro Fresno": "mesa-centro-fresno.png",
+            "Mesa Redonda Terra": "mesa-redonda-terra.png",
+            "Silla Lectura Olivo": "silla-lectura-olivo.png",
+            "Banco Baúl Nogal": "banco-baul-nogal.png",
+        }
+        assets_dir = Path(__file__).resolve().parents[2] / "seed_assets" / "products"
+
+        for product_name, image_filename in image_files.items():
+            source = assets_dir / image_filename
+            if not source.is_file():
+                raise CommandError(f"No se encontró la imagen demo: {source}")
+
+            relative_path = f"products/{image_filename}"
+            destination = Path(settings.MEDIA_ROOT) / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            copyfile(source, destination)
+
+            product = products[product_name]
+            product.main_image.name = relative_path
+            product.save(update_fields=("main_image",))
 
     def _seed_cart(self, customer, products):
         cart, _created = Cart.objects.get_or_create(user=customer)

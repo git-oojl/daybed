@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
+import { orderService } from "../../services/backendServices.js";
+import { statusLabel } from "../../services/viewMappers.js";
 import {
   FaUser,
   FaBox,
@@ -15,10 +17,11 @@ import {
 } from "react-icons/fa";
 
 export default function InternalOrderDetailPage() {
+  const { orderId } = useParams();
   const [note, setNote] = useState("");
   const [showNoteInput, setShowNoteInput] = useState(false);
 
-  const orderData = {
+  const [orderData, setOrderData] = useState({
     id: "#DayBed-001",
     customer: "Juan López",
     email: "juanlopez@gmail.com",
@@ -33,7 +36,39 @@ export default function InternalOrderDetailPage() {
       { name: "Sofá Esquinero", sku: "DD73844", quantity: 1, price: 6000 },
       { name: "Mesa de Centro", sku: "DD83482", quantity: 1, price: 4000 },
     ],
-  };
+  });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    orderService
+      .manageDetail(orderId)
+      .then((order) => {
+        if (!active) return;
+        setOrderData({
+          id: `#DayBed-${order.id}`,
+          customer: "Cliente no disponible",
+          email: "No disponible",
+          phone: "No disponible",
+          address: order.formatted_address || order.original_address || "No disponible",
+          deliveryType: order.delivery_zone || "standard",
+          distance: `${Number(order.distance_km || 0)} km`,
+          estimatedCost: Number(order.delivery_fee || 0),
+          total: Number(order.total || 0),
+          status: statusLabel(order.status),
+          items: (order.items || []).map((item) => ({
+            name: item.product_name,
+            sku: item.product_sku,
+            quantity: item.quantity,
+            price: Number(item.unit_price || 0),
+          })),
+        });
+      })
+      .catch((error) => active && setLoadError(error.message || "No se pudo cargar el pedido."))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, [orderId]);
 
   return (
     <div className="home-page dashboard-page">
@@ -125,6 +160,8 @@ export default function InternalOrderDetailPage() {
       </section>
 
       <main className="dashboard-container">
+        {loading ? <p>Cargando pedido...</p> : null}
+        {loadError ? <p role="alert">{loadError}</p> : null}
         <div
           className="dashboard-header-actions"
           style={{
