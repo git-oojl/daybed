@@ -15,8 +15,10 @@ import { Link } from "react-router-dom";
 import "../../assets/CSS/admin/business-metrics.css";
 import { routePaths } from "../../routes/routePaths.js";
 import { dashboardService } from "../../services/backendServices.js";
+import { inventoryService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { productImage, readCollection, statusLabel } from "../../services/viewMappers.js";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 
@@ -90,12 +92,17 @@ function BusinessMetricsPage() {
   // ============================================
   // ✅ CARGAR MÉTRICAS DEL BACKEND
   // ============================================
+  void fallbackMetrics;
+
   const loadMetrics = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await dashboardService.metrics();
+      const [response, lowStockResponse] = await Promise.all([
+        dashboardService.metrics(),
+        inventoryService.lowStock(),
+      ]);
       console.log("📊 Métricas del backend:", response);
       
       // Mapear la respuesta del backend al formato esperado
@@ -104,10 +111,10 @@ function BusinessMetricsPage() {
         total_simulated_sales: response.total_simulated_sales || 0,
         average_delivery_fee: response.average_delivery_fee || 0,
         average_delivery_distance: response.average_delivery_distance || 0,
-        orders_by_status: response.orders_by_status || fallbackMetrics.orders_by_status,
+        orders_by_status: (response.orders_by_status || []).map((item) => ({ ...item, label: statusLabel(item.status), value: item.count })),
         low_stock_count: response.low_stock_count || 0,
         recent_orders: response.recent_orders || [],
-        low_stock_products: fallbackMetrics.low_stock_products,
+        low_stock_products: readCollection(lowStockResponse).map((product) => ({ name: product.name, reference: product.sku, units: product.stock, image: productImage(product) })),
       };
       
       setMetrics(mappedMetrics);
@@ -115,7 +122,7 @@ function BusinessMetricsPage() {
       console.error("❌ Error al cargar métricas:", err);
       setError(err.message || "Error al cargar las métricas");
       // Usar datos de fallback
-      setMetrics(fallbackMetrics);
+      setMetrics(null);
     } finally {
       setLoading(false);
     }
@@ -142,23 +149,22 @@ function BusinessMetricsPage() {
     };
 
     initializeMetrics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading, user, navigate]);
 
   // ============================================
   // ✅ DATOS PARA MOSTRAR
   // ============================================
-  const data = metrics || fallbackMetrics;
+  const data = metrics || { orders_by_status: [], low_stock_products: [] };
   
   const totalOrders = data.total_orders || 0;
   const totalSales = data.total_simulated_sales || 0;
   const avgDeliveryFee = data.average_delivery_fee || 0;
   const avgDistance = data.average_delivery_distance || 0;
-  const orderStatusData = data.orders_by_status || fallbackMetrics.orders_by_status;
-  const lowStockProducts = data.low_stock_products || fallbackMetrics.low_stock_products;
+  const orderStatusData = data.orders_by_status || [];
+  const lowStockProducts = data.low_stock_products || [];
 
   const formatPrice = (amount) => {
-    return `$${amount.toLocaleString("es-MX")} MXN`;
+    return `$${(Number(amount) || 0).toLocaleString("es-MX")} MXN`;
   };
 
   // ============================================

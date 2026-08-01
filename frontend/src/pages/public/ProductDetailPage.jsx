@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/product-detail-page.css";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import { routePaths } from "../../routes/routePaths.js";
+import { cartService, catalogService } from "../../services/backendServices.js";
+import { productCategoryName, productImage, readCollection } from "../../services/viewMappers.js";
 
-const PRODUCT = {
+const DEFAULT_PRODUCT = {
   id: 8,
   name: "Potty",
   subtitle: "Maceta minimalista",
@@ -153,13 +155,67 @@ function IconTwitter() {
 }
 
 export default function ProductDetailPage() {
+  const { productId } = useParams();
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState("13");
   const [selectedColor, setSelectedColor] = useState("sage");
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("descripcion");
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [cartMessage, setCartMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        setLoading(true);
+        setError("");
+      }
+      return Promise.all([catalogService.product(productId), catalogService.products()]);
+    })
+      .then(([detail, list]) => {
+        if (!active) return;
+        const normalized = {
+          ...detail,
+          subtitle: detail.description || detail.name,
+          category: productCategoryName(detail),
+          tags: [detail.material, detail.color, detail.style].filter(Boolean),
+          rating: 0,
+          reviews: 0,
+          images: detail.images?.length ? detail.images.map((image) => typeof image === "string" ? image : image.image) : [productImage(detail)],
+          galleryImages: detail.images?.length ? detail.images.map((image) => typeof image === "string" ? image : image.image) : [productImage(detail)],
+          sizes: ["Único"],
+          colors: detail.color ? [{ id: detail.color, value: detail.color }] : [],
+          longDescription: detail.description || "Sin descripción disponible.",
+        };
+        setProduct(normalized);
+        setRelatedProducts(readCollection(list).filter((item) => item.id !== detail.id).slice(0, 4));
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message || "No se pudo cargar el producto.");
+      })
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, [productId]);
+
+  const handleAddToCart = async () => {
+    try {
+      await cartService.addItem({ product_id: PRODUCT.id, quantity });
+      setCartMessage("Producto agregado al carrito.");
+    } catch (requestError) {
+      setCartMessage(requestError.status === 401 ? "Inicia sesión para agregar productos." : "No se pudo agregar el producto.");
+    }
+  };
+
+  const PRODUCT = product || DEFAULT_PRODUCT;
 
   const fullTitle = `${PRODUCT.name} ${PRODUCT.subtitle}`;
+
+  if (loading) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">Cargando producto...</p><HomeFooter /></div>;
+  if (error) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">{error}</p><HomeFooter /></div>;
 
   return (
     <div className="home-page product-detail-page">
@@ -288,6 +344,7 @@ export default function ProductDetailPage() {
             <button
               type="button"
               className="product-detail__btn product-detail__btn--cart"
+              onClick={handleAddToCart}
             >
               Agregar al carrito
             </button>
@@ -295,6 +352,7 @@ export default function ProductDetailPage() {
               + Comparar
             </button>
           </div>
+          {cartMessage ? <p className="product-detail__cart-message">{cartMessage}</p> : null}
 
           <div className="product-detail__meta">
             <div className="product-detail__meta-row">
@@ -388,12 +446,12 @@ export default function ProductDetailPage() {
           Productos revelantes
         </h2>
         <div className="home-products">
-          {RELATED_PRODUCTS.map((product) => (
+          {(relatedProducts.length ? relatedProducts : RELATED_PRODUCTS).map((product) => (
             <article className="home-product" key={product.id}>
               <div className="home-product__img-wrap">
                 <img
                   className="home-product__img"
-                  src={product.image}
+                  src={productImage(product)}
                   alt={product.name}
                   loading="lazy"
                 />
