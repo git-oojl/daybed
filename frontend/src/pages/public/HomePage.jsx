@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import { routePaths } from "../../routes/routePaths.js";
+import { cartService, catalogService } from "../../services/backendServices.js";
+import { productImage, readCollection } from "../../services/viewMappers.js";
 
 const INITIAL_VISIBLE = 4;
 
@@ -187,7 +189,7 @@ const GALLERY_IMAGES = [
 ];
 
 function formatPrice(amount) {
-  return `$${amount.toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
+  return `$${(Number(amount) || 0).toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
 }
 
 function IconUser() {
@@ -359,7 +361,7 @@ function ProductCard({
       <div className="home-product__img-wrap">
         <img
           className="home-product__img"
-          src={product.image}
+          src={productImage(product)}
           alt={product.name}
           loading="lazy"
         />
@@ -407,7 +409,11 @@ function ProductCard({
         </div>
       </div>
       <div className="home-product__info">
-        <h3 className="home-product__name">{product.name}</h3>
+        <h3 className="home-product__name">
+          <Link to={routePaths.public.productDetail.replace(":productId", product.id)}>
+            {product.name}
+          </Link>
+        </h3>
         <p className="home-product__desc">{product.description}</p>
         <div className="home-product__prices">
           <span className="home-product__price">
@@ -431,23 +437,41 @@ function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [cartCount, setCartCount] = useState(0);
+  const [products, setProducts] = useState([]);
+  const [productsError, setProductsError] = useState("");
   const [wishlist, setWishlist] = useState([]);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterMsg, setNewsletterMsg] = useState("");
   const [toast, setToast] = useState("");
 
+  useEffect(() => {
+    let active = true;
+    catalogService
+      .products({ ordering: "-id" })
+      .then((response) => {
+        if (active) setProducts(readCollection(response));
+      })
+      .catch(() => {
+        if (active) setProductsError("No fue posible cargar los productos.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const productsToShow = products.length ? products : ALL_PRODUCTS;
   const visibleProducts = useMemo(() => {
     const filtered = searchQuery.trim()
-      ? ALL_PRODUCTS.filter(
+      ? productsToShow.filter(
           (p) =>
             p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             p.description.toLowerCase().includes(searchQuery.toLowerCase()),
         )
-      : ALL_PRODUCTS;
+      : productsToShow;
     return filtered.slice(0, visibleCount);
-  }, [searchQuery, visibleCount]);
+  }, [productsToShow, searchQuery, visibleCount]);
 
-  const hasMore = visibleCount < ALL_PRODUCTS.length && !searchQuery.trim();
+  const hasMore = visibleCount < productsToShow.length && !searchQuery.trim();
 
   const showToast = useCallback((message) => {
     setToast(message);
@@ -455,9 +479,14 @@ function HomePage() {
   }, []);
 
   const handleAddToCart = useCallback(
-    (product) => {
-      setCartCount((prev) => prev + 1);
-      showToast(`${product.name} agregado al carrito`);
+    async (product) => {
+      try {
+        await cartService.addItem({ product_id: product.id, quantity: 1 });
+        setCartCount((prev) => prev + 1);
+        showToast(`${product.name} agregado al carrito`);
+      } catch (error) {
+        showToast(error.status === 401 ? "Inicia sesión para agregar productos" : "No se pudo agregar el producto");
+      }
     },
     [showToast],
   );
@@ -595,7 +624,7 @@ function HomePage() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setVisibleCount(ALL_PRODUCTS.length);
+                setVisibleCount(productsToShow.length);
               }}
               autoFocus
             />
@@ -654,6 +683,7 @@ function HomePage() {
           <h2 className="home-section__title" id="home-products-title">
             Nuestros Productos
           </h2>
+          {productsError ? <p className="home-products__message">{productsError}</p> : null}
           <div className="home-products">
             {visibleProducts.map((product) => (
               <ProductCard

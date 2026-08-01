@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -7,6 +7,8 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { inventoryService } from "../../services/backendServices.js";
+import { readCollection } from "../../services/viewMappers.js";
 import {
   FaSearch,
   FaBoxes,
@@ -18,7 +20,7 @@ import {
   FaEdit,
 } from "react-icons/fa";
 
-const INITIAL_PRODUCTS = [
+/* const INITIAL_PRODUCTS = [
   {
     id: 1,
     name: "Sofá Daybed",
@@ -69,7 +71,7 @@ const INITIAL_PRODUCTS = [
     image:
       "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=200&q=80",
   },
-];
+]; */
 
 export default function InventoryPage() {
   const user = useAuthStore((state) => state.user);
@@ -78,7 +80,9 @@ export default function InventoryPage() {
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
   const canAdjustInventory =
     isAdmin || effectivePermissionCodes.includes("inventory.adjust");
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("1");
   const [stockValue, setStockValue] = useState(30);
@@ -86,6 +90,32 @@ export default function InventoryPage() {
   const [modalMessage, setModalMessage] = useState("");
   const [modalTitle, setModalTitle] = useState("");
   const [editingStock, setEditingStock] = useState(null);
+
+  const normalizeProduct = (product) => ({
+    ...product,
+    minStock: product.minimum_stock,
+    status: product.low_stock ? "low" : "active",
+    image: product.image || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=80",
+  });
+
+  const loadInventory = async () => {
+    setLoading(true);
+    setLoadError("");
+    try {
+      const response = await inventoryService.products();
+      setProducts(readCollection(response).map(normalizeProduct));
+    } catch (error) {
+      setLoadError(error.message || "No se pudo cargar el inventario.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    Promise.resolve().then(loadInventory);
+    // The inventory endpoint is fetched when this operational view is mounted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const lowStockProducts = products.filter((p) => p.status === "low");
 
@@ -96,31 +126,29 @@ export default function InventoryPage() {
       p.sku.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleStockUpdate = (e) => {
+  const handleStockUpdate = async (e) => {
     e.preventDefault();
     const productId = Number(selectedProduct);
     const product = products.find((p) => p.id === productId);
 
     if (product) {
-      const newStock = Number(stockValue);
-      const updatedProducts = products.map((p) =>
-        p.id === productId
-          ? {
-              ...p,
-              stock: newStock,
-              status: newStock >= p.minStock ? "active" : "low",
-            }
-          : p,
-      );
-
-      setProducts(updatedProducts);
-
-      setModalTitle("Stock Actualizado");
-      setModalMessage(
-        `El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`,
-      );
-      setShowModal(true);
-      setEditingStock(null);
+      try {
+        const newStock = Number(stockValue);
+        const updated = await inventoryService.updateStock(productId, {
+          stock: newStock,
+          minimum_stock: product.minStock,
+          reason: "Ajuste desde el panel de inventario",
+        });
+        setProducts((current) => current.map((item) => item.id === productId ? normalizeProduct(updated) : item));
+        setModalTitle("Stock actualizado");
+        setModalMessage(`El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`);
+        setShowModal(true);
+        setEditingStock(null);
+      } catch (error) {
+        setModalTitle("No se pudo actualizar");
+        setModalMessage(error.message || "Intenta nuevamente.");
+        setShowModal(true);
+      }
     }
   };
 
@@ -225,6 +253,8 @@ export default function InventoryPage() {
       </section>
 
       <main className="dashboard-container">
+        {loading ? <p>Cargando inventario...</p> : null}
+        {loadError ? <div><p>{loadError}</p><button type="button" onClick={loadInventory}>Reintentar</button></div> : null}
         <div
           className="dashboard-header-actions"
           style={{
