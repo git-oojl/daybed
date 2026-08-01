@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../../assets/home-page.css";
 import "../../assets/order-detail-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
+import { orderService } from "../../services/backendServices.js";
 
 // Importar imágenes de la tienda
 import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
@@ -15,139 +16,152 @@ import RespiraDaybed from "../../assets/RespiraDaybed.jpg";
 function MyOrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Ordenes con productos de la tienda
-  const orders = [
-    {
-      id: "ORD-2024-001",
-      date: "15 de diciembre, 2024",
-      status: "completed",
-      statusText: "Entregado",
-      total: 9500000,
-      subtotal: 9000000,
-      shipping: 500000,
-      customer: "Ana Martinez",
-      items: [
-        {
-          id: 1,
-          name: "Syltherine",
-          description: "Mesa de estilo cafe",
-          quantity: 2,
-          price: 2500000,
-          image: SyltherineDaybed,
-        },
-        {
-          id: 4,
-          name: "Respira",
-          description: "Set bar exterior",
-          quantity: 1,
-          price: 5000000,
-          image: RespiraDaybed,
-        },
-      ],
-      address: {
-        street: "Av. Reforma 123",
-        city: "Ciudad de Mexico",
-        state: "CDMX",
-        zip: "06600",
-        country: "Mexico",
-      },
-    },
-    {
-      id: "ORD-2024-002",
-      date: "10 de diciembre, 2024",
-      status: "pending",
-      statusText: "En proceso",
-      total: 2500000,
-      subtotal: 2500000,
-      shipping: 0,
-      customer: "Carlos Lopez",
-      items: [
-        {
-          id: 2,
-          name: "Leviosa",
-          description: "Silla de estilo cafe",
-          quantity: 1,
-          price: 2500000,
-          image: LeviosaDaybed,
-        },
-      ],
-      address: {
-        street: "Calle Independencia 456",
-        city: "Guadalajara",
-        state: "Jalisco",
-        zip: "44100",
-        country: "Mexico",
-      },
-    },
-    {
-      id: "ORD-2024-003",
-      date: "5 de diciembre, 2024",
-      status: "cancelled",
-      statusText: "Cancelado",
-      total: 7000000,
-      subtotal: 7000000,
-      shipping: 0,
-      customer: "Maria Fernandez",
-      items: [
-        {
-          id: 3,
-          name: "Lolito",
-          description: "Sofa grande",
-          quantity: 1,
-          price: 7000000,
-          image: LolitoDaybed,
-        },
-      ],
-      address: {
-        street: "Boulevard Insurgentes 789",
-        city: "Monterrey",
-        state: "Nuevo Leon",
-        zip: "64700",
-        country: "Mexico",
-      },
-    },
-    {
-      id: "ORD-2024-004",
-      date: "1 de diciembre, 2024",
-      status: "pending",
-      statusText: "En proceso",
-      total: 5000000,
-      subtotal: 5000000,
-      shipping: 0,
-      customer: "Ana Martinez",
-      items: [
-        {
-          id: 4,
-          name: "Respira",
-          description: "Set bar exterior",
-          quantity: 1,
-          price: 5000000,
-          image: RespiraDaybed,
-        },
-      ],
-      address: {
-        street: "Av. Reforma 123",
-        city: "Ciudad de Mexico",
-        state: "CDMX",
-        zip: "06600",
-        country: "Mexico",
-      },
-    },
-  ];
+  useEffect(() => {
+    let isMounted = true;
 
-  // Filtrar ordenes por numero de pedido o cliente
+    const loadOrders = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await orderService.list();
+        const rawOrders = Array.isArray(response)
+          ? response
+          : response?.results || [];
+
+        const normalizedOrders = rawOrders.map((order) => ({
+          id: order.id || order.order_id || "-",
+          customer:
+            order.customer_name ||
+            order.customer?.name ||
+            order.customer ||
+            "Cliente",
+          date: formatOrderDate(
+            order.created_at || order.date || order.order_date,
+          ),
+          status: normalizeOrderStatus(order.status || order.estado || "pending"),
+          statusText: getOrderStatusLabel(
+            order.status || order.estado || "pending",
+          ),
+          total: Number(order.total || order.products_subtotal || order.amount || 0),
+          subtotal: Number(
+            order.products_subtotal || order.subtotal || order.total || 0,
+          ),
+          shipping: Number(order.delivery_fee || order.shipping || 0),
+          items: Array.isArray(order.items)
+            ? order.items.map((item) => ({
+                id: item.id || item.product || item.product_snapshot?.id,
+                name:
+                  item.product_name ||
+                  item.product_snapshot?.name ||
+                  item.name ||
+                  "Producto",
+                description:
+                  item.product_snapshot?.description ||
+                  item.description ||
+                  "Producto sin descripción",
+                quantity: Number(item.quantity || item.qty || 1),
+                price: Number(
+                  item.unit_price || item.price || item.line_total || 0,
+                ),
+                image:
+                  item.product_snapshot?.main_image ||
+                  item.image ||
+                  item.product_snapshot?.images?.[0] ||
+                  SyltherineDaybed,
+              }))
+            : [],
+          address: normalizeAddress(order),
+        }));
+
+        if (isMounted) {
+          setOrders(normalizedOrders);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || "No se pudieron cargar los pedidos.");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const formatOrderDate = (value) => {
+    if (!value) return "-";
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+
+    return parsed.toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const normalizeOrderStatus = (status) => {
+    if (status === "delivered" || status === "completed") return "completed";
+    if (status === "cancelled" || status === "canceled") return "cancelled";
+    return "pending";
+  };
+
+  const getOrderStatusLabel = (status) => {
+    if (status === "delivered" || status === "completed") return "Entregado";
+    if (status === "cancelled" || status === "canceled") return "Cancelado";
+    return "En proceso";
+  };
+
+  const normalizeAddress = (order) => {
+    const addressValue =
+      order.formatted_address ||
+      order.original_address ||
+      order.delivery_address ||
+      [
+        order.address?.street,
+        order.address?.city,
+        order.address?.state,
+        order.address?.zip,
+      ].filter(Boolean).join(", ");
+
+    const parts = (addressValue || "-")
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    return {
+      street: parts[0] || "-",
+      city: parts[1] || "-",
+      state: parts[2] || "-",
+      zip: parts[3] || "-",
+      country: parts[4] || "-",
+      text: addressValue || "-",
+    };
+  };
+
   const filteredOrders = orders.filter((order) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      order.id.toLowerCase().includes(searchLower) ||
+      order.id.toString().toLowerCase().includes(searchLower) ||
       order.customer.toLowerCase().includes(searchLower) ||
       order.items.some((item) => item.name.toLowerCase().includes(searchLower))
     );
   });
 
   const formatPrice = (price) => {
-    return `$${price.toLocaleString("es-MX")} MX`;
+    return `$${Number(price || 0).toLocaleString("es-MX")} MX`;
   };
 
   const getStatusClass = (status) => {
@@ -225,7 +239,15 @@ function MyOrdersPage() {
           </div>
         </div>
 
-        {filteredOrders.length === 0 ? (
+        {loading ? (
+          <div className="orders-empty">
+            <p className="orders-empty__message">Cargando pedidos...</p>
+          </div>
+        ) : error ? (
+          <div className="orders-empty">
+            <p className="orders-empty__message">{error}</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
           <div className="orders-empty">
             <p className="orders-empty__message">
               No se encontraron pedidos para "{searchTerm}"

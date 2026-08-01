@@ -1,4 +1,4 @@
-// CatalogPage.jsx - CORREGIDO (category puede ser objeto o string)
+// CatalogPage.jsx - CORREGIDO (sin warnings de ESLint)
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
 import { useState, useEffect, useCallback } from "react";
@@ -31,6 +31,8 @@ const productImages = {
   "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
   "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
   "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
+  "Banco Baúl Nogal": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop",
+  "Daybed Roble Nórdico": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop",
 };
 
 // ✅ Función para obtener el nombre de la categoría (string)
@@ -38,25 +40,56 @@ const getCategoryName = (category) => {
   if (!category) return "";
   if (typeof category === "string") return category;
   if (typeof category === "object" && category.name) return category.name;
+  if (typeof category === "object" && category.title) return category.title;
+  return "";
+};
+
+const normalizeCategoryDisplayName = (value = "") => {
+  const text = String(value)
+    .replace(/Ã¡/g, "á")
+    .replace(/Ã©/g, "é")
+    .replace(/Ã­/g, "í")
+    .replace(/Ã³/g, "ó")
+    .replace(/Ãº/g, "ú")
+    .replace(/Ã±/g, "ñ")
+    .replace(/Ã/g, "í")
+    .trim();
+
+  return text;
+};
+
+const getCategoryNameSafe = (category) => {
+  if (!category) return "";
+  if (typeof category === "string") return normalizeCategoryDisplayName(category);
+  if (typeof category === "object") {
+    return normalizeCategoryDisplayName(category.name || category.title || category.slug || "");
+  }
+  return "";
+};
+
+const getProductCategoryName = (product) => {
+  const categoryFromDetails = getCategoryNameSafe(product?.category_detail);
+  if (categoryFromDetails) return categoryFromDetails;
+
+  const categoryFromProduct = getCategoryNameSafe(product?.category);
+  if (categoryFromProduct) return categoryFromProduct;
+
   return "";
 };
 
 // ✅ Función para obtener imagen según el producto
 const getProductImage = (product) => {
-  // Si el producto ya tiene imagen, usarla
   if (product.image) return product.image;
   if (product.images?.length > 0) return product.images[0];
   
   const name = product.name || "";
   
-  // Buscar coincidencia exacta o parcial por nombre
   for (const [key, value] of Object.entries(productImages)) {
     if (name.includes(key) || key.includes(name)) {
       return value;
     }
   }
   
-  // Si no coincide, usar imagen por defecto según categoría
   const categoryName = getCategoryName(product.category);
   
   if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
@@ -68,6 +101,9 @@ const getProductImage = (product) => {
   if (categoryName.includes("Silla")) {
     return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop";
   }
+  if (categoryName.includes("Banco") || categoryName.includes("Almacenamiento")) {
+    return "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop";
+  }
   
   return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
 };
@@ -76,18 +112,18 @@ const getProductImage = (product) => {
 // PRODUCTOS MOCK (FALLBACK)
 // ============================================================
 const allProductsMock = [
-  { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
-  { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
-  { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
-  { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
-  { id: 5, name: "Respira", description: "Set bar exterior", price: 2899, image: RespiraDaybed, category: "Decoración" },
-  { id: 6, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, category: "Decoración" },
-  { id: 7, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas" },
-  { id: 8, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas" },
-  { id: 9, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas" },
-  { id: 10, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás" },
-  { id: 11, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración" },
-  { id: 12, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas" },
+  { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas", material: "Madera", color: "Natural", style: "Moderno", specifications: { room: "Sala" } },
+  { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas", material: "Tela", color: "Blanco", style: "Minimalista", specifications: { room: "Recámara" } },
+  { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás", material: "Tela", color: "Gris", style: "Clásico", specifications: { room: "Sala" } },
+  { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración", material: "Metal", color: "Negro", style: "Industrial", specifications: { room: "Comedor" } },
+  { id: 5, name: "Respira", description: "Set bar exterior", price: 2899, image: RespiraDaybed, category: "Decoración", material: "Madera", color: "Claro", style: "Escandinavo", specifications: { room: "Sala" } },
+  { id: 6, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, category: "Decoración", material: "Metal", color: "Blanco", style: "Modern", specifications: { room: "Escritorio" } },
+  { id: 7, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas", material: "Cuero", color: "Marrón", style: "Clásico", specifications: { room: "Escritorio" } },
+  { id: 8, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas", material: "Tela", color: "Verde", style: "Mid-century", specifications: { room: "Recámara" } },
+  { id: 9, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas", material: "Madera", color: "Roble", style: "Moderno", specifications: { room: "Comedor" } },
+  { id: 10, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás", material: "Tela", color: "Beige", style: "Minimalista", specifications: { room: "Sala" } },
+  { id: 11, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración", material: "Metal", color: "Dorado", style: "Lujoso", specifications: { room: "Sala" } },
+  { id: 12, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas", material: "Cuero", color: "Negro", style: "Clásico", specifications: { room: "Escritorio" } },
 ];
 
 const generateMockProducts = () => {
@@ -105,64 +141,103 @@ function CatalogPage() {
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [storeCategories, setStoreCategories] = useState([]);
   const [error, setError] = useState(null);
 
   // ============================================================
-  // ✅ CARGAR PRODUCTOS DEL BACKEND USANDO catalogService
+  // ✅ CARGAR PRODUCTOS DEL BACKEND
   // ============================================================
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('Cargando productos desde backend...');
-      
-      // ✅ Usar catalogService
-      const response = await catalogService.products();
-      console.log('Respuesta del backend:', response);
-      
-      // Extraer productos (paginado o array directo)
+
+      console.log('🔄 Cargando productos y categorías desde backend...');
+
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        catalogService.products(),
+        catalogService.categories().catch(() => []),
+      ]);
+
+      console.log('📦 Respuesta del backend (productos):', productsResponse);
+      console.log('📚 Respuesta del backend (categorías):', categoriesResponse);
+
       let productsData = [];
-      if (Array.isArray(response)) {
-        productsData = response;
-      } else if (response?.results && Array.isArray(response.results)) {
-        productsData = response.results;
+      if (Array.isArray(productsResponse)) {
+        productsData = productsResponse;
+      } else if (productsResponse?.results && Array.isArray(productsResponse.results)) {
+        productsData = productsResponse.results;
       } else {
-        productsData = response || [];
+        productsData = productsResponse || [];
       }
-      
+
+      let categoriesData = [];
+      if (Array.isArray(categoriesResponse)) {
+        categoriesData = categoriesResponse;
+      } else if (categoriesResponse?.results && Array.isArray(categoriesResponse.results)) {
+        categoriesData = categoriesResponse.results;
+      } else {
+        categoriesData = categoriesResponse || [];
+      }
+
+      const realCategoryNames = categoriesData
+        .map((category) => getCategoryNameSafe(category))
+        .filter(Boolean);
+
+      setStoreCategories(realCategoryNames);
+
       if (productsData.length > 0) {
-        console.log('Productos cargados:', productsData.length);
+        console.log(`✅ ${productsData.length} productos cargados`);
         setProducts(productsData);
+        setError(null);
       } else {
-        console.warn('No hay productos en el backend, usando mock');
+        console.warn('⚠️ El servidor devolvió 0 productos');
         setProducts(generateMockProducts());
+        setError('No hay productos en el servidor, usando productos de prueba');
       }
-      
+
     } catch (error) {
-      console.error('Error al cargar productos:', error);
-      setError(error.message);
-      // ✅ Usar productos mock como fallback
+      console.error('❌ Error al cargar productos:', error);
       setProducts(generateMockProducts());
+      setStoreCategories([]);
+      setError('Error de conexión, usando productos de prueba');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // ✅ useEffect CORREGIDO - agregar eslint-disable-next-line
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchProducts();
   }, [fetchProducts]);
 
-  // ✅ Usar productos del backend si existen, si no usar mock
-  const finalProducts = products.length > 0 ? products : generateMockProducts();
+  // ✅ Obtener categorías únicas de los productos reales
+  const getProductCategories = () => {
+    const categories = new Set();
+    products.forEach((product) => {
+      const categoryName = getProductCategoryName(product);
+      if (categoryName) {
+        categories.add(categoryName);
+      }
+    });
+    return [...categories];
+  };
 
-  // ============================================================
-  // CALCULAR EL PRECIO MÁXIMO DINÁMICAMENTE
-  // ============================================================
-  const maxProductPrice = Math.max(...finalProducts.map(p => 
-    typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
-  ), 0);
+  // ✅ Usar las categorías reales del backend y agregar 4 más para navegación del cliente
+  const productCategories = getProductCategories();
+  const extraCatalogCategories = [
+    "Lámparas",
+    "Roperos",
+    "Mesas de noche",
+    "Bancos y taburetes",
+  ];
+  const allCategories = [...new Set([...storeCategories, ...productCategories, ...extraCatalogCategories])];
+
+  // ✅ CALCULAR EL PRECIO MÁXIMO
+  const maxProductPrice = products.length > 0 
+    ? Math.max(...products.map(p => typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0), 0)
+    : 10000;
   
   const maxPriceRounded = Math.ceil(Math.max(maxProductPrice, 1000) / 1000) * 1000;
 
@@ -171,34 +246,25 @@ function CatalogPage() {
     max: maxPriceRounded 
   });
 
-  // Actualizar maxPrice cuando cambien los productos
+  // ✅ useEffect CORREGIDO - agregar eslint-disable-next-line
   useEffect(() => {
-    if (finalProducts.length > 0) {
-      const newMax = Math.max(...finalProducts.map(p => 
+    if (products.length > 0) {
+      const newMax = Math.max(...products.map(p => 
         typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
       ), 0);
       const newMaxRounded = Math.ceil(Math.max(newMax, 1000) / 1000) * 1000;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPriceRange(prev => ({ ...prev, max: newMaxRounded }));
     }
-  }, [finalProducts]);
-
-  // ✅ Función para obtener nombre de categoría (string)
-  const getCategoryNameSafe = (category) => {
-    if (!category) return "";
-    if (typeof category === "string") return category;
-    if (typeof category === "object" && category.name) return category.name;
-    return "";
-  };
+  }, [products]);
 
   // Filtrar productos por precio y categoría
-  const filteredProducts = finalProducts.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
     const inPriceRange = price >= priceRange.min && price <= priceRange.max;
 
-    // Obtener nombre de categoría (puede ser objeto o string)
-    const categoryName = getCategoryNameSafe(product.category);
-    
+    const categoryName = getProductCategoryName(product);
+
     if (selectedCategories.length === 0) {
       return inPriceRange;
     }
@@ -275,17 +341,6 @@ function CatalogPage() {
     }
   };
 
-  // ✅ Obtener categorías únicas de los productos (manejando objetos)
-  const categories = [
-    ...new Set(finalProducts.map((product) => {
-      const cat = product.category;
-      if (!cat) return null;
-      if (typeof cat === "string") return cat;
-      if (typeof cat === "object" && cat.name) return cat.name;
-      return null;
-    }).filter(Boolean))
-  ];
-
   // ============================================================
   // ESTADOS DE CARGA Y ERROR
   // ============================================================
@@ -306,7 +361,7 @@ function CatalogPage() {
       <div className="home-page catalog-page">
         <HomeHeader />
         <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p>❌ Error al cargar productos: {error}</p>
+          <p>❌ {error}</p>
           <button 
             onClick={fetchProducts}
             style={{
@@ -419,11 +474,11 @@ function CatalogPage() {
               </div>
             </div>
 
-            {/* Categorías */}
+            {/* Categorías - CON CATEGORÍAS DINÁMICAS */}
             <div className="catalog-filters-section">
               <h4>Categorías</h4>
               <div className="catalog-filters-categories">
-                {categories.map((category) => (
+                {allCategories.map((category) => (
                   <label className="catalog-filters-category" key={category}>
                     <input
                       type="checkbox"
@@ -435,6 +490,7 @@ function CatalogPage() {
                 ))}
               </div>
             </div>
+
           </aside>
 
           {/* CONTENIDO PRINCIPAL */}
@@ -485,8 +541,8 @@ function CatalogPage() {
               ) : (
                 sortedProducts.map((product) => {
                   const productImage = getProductImage(product);
-                  const categoryName = getCategoryNameSafe(product.category);
-                  
+                  const categoryName = getProductCategoryName(product);
+
                   return (
                     <article className="product-card" key={product.id}>
                       <div
