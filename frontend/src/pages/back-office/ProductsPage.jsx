@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -20,29 +20,42 @@ import {
   FaFilter,
   FaChevronLeft,
   FaChevronRight,
+  FaImage,
+  FaUpload,
+  FaLink,
 } from "react-icons/fa";
 import { catalogService } from "../../services/backendServices.js";
+import { getAccessToken } from "../../auth/tokenStorage.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
+
+const API_URL = "http://localhost:8000";
+const DELETED_PRODUCTS_KEY = 'daybed_deleted_products';
 
 export default function ProductsPage() {
   const user = useAuthStore((state) => state.user);
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  
+  // ✅ PERMISOS: Empleado puede CREAR y EDITAR, pero NO ELIMINAR
   const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
   const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
-  const canDeactivate =
-    isAdmin || effectivePermissionCodes.includes("products.deactivate");
+  const canDelete = isAdmin; // ✅ SOLO ADMIN
+  
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // ✅ Separar searchTerm (para filtrar) de searchInput (para escribir)
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // ✅ NUEVO: input temporal
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
+  const [deletedIds, setDeletedIds] = useState([]);
 
-  // ✅ Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -52,57 +65,143 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
-    description: "", // ✅ Agregado campo description
+    description: "",
     price: "",
     stock: "",
     category: "",
     status: "active",
+    image_url: "",
+    image_file: null,
   });
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageUploadMethod, setImageUploadMethod] = useState("url");
   const [categories, setCategories] = useState([]);
+  
+  const initialLoad = useRef(true);
+  const isFetching = useRef(false);
+
+  const getToken = () => {
+    return getAccessToken() || localStorage.getItem('access_token');
+  };
+
+  // Cargar categorías y productos eliminados
+  useEffect(() => {
+    const saved = localStorage.getItem(DELETED_PRODUCTS_KEY);
+    if (saved) {
+      try {
+        setDeletedIds(JSON.parse(saved));
+      } catch (e) {
+        setDeletedIds([]);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filterCategory, filterStatus, searchTerm]);
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      fetchCategories();
+      fetchProducts();
+    }
+  }, []);
 
-  // ✅ Usando catalogService
+  // ✅ Solo recarga cuando cambia searchTerm (no searchInput)
+  useEffect(() => {
+    if (!initialLoad.current && !isFetching.current) {
+      fetchProducts();
+    }
+  }, [currentPage, filterCategory, filterStatus, searchTerm, deletedIds]);
+
   async function fetchProducts() {
+    if (isFetching.current) return;
+    isFetching.current = true;
+    
     try {
       setLoading(true);
       const params = {
         page: currentPage,
         page_size: pageSize,
       };
-      if (searchTerm) params.search = searchTerm;
+      if (searchTerm) params.search = searchTerm; // ✅ Usa searchTerm
       if (filterCategory) params.category = filterCategory;
-      if (filterStatus) params.active = filterStatus === "active";
+      
+      if (filterStatus === "active") {
+        params.active = true;
+      } else if (filterStatus === "inactive") {
+        params.active = false;
+      }
 
       const response = await catalogService.manageProducts(params);
-      setProducts(response.results || response || []);
-      setTotalCount(response.count || 0);
-      setTotalPages(Math.ceil((response.count || 0) / pageSize));
+      let productsData = response.results || response || [];
+      productsData = productsData.filter(p => !deletedIds.includes(p.id));
+      
+      if (filterStatus === "active") {
+        productsData = productsData.filter(p => p.active === true);
+      } else if (filterStatus === "inactive") {
+        productsData = productsData.filter(p => p.active === false);
+      }
+      
+      setProducts(productsData);
+      setTotalCount(productsData.length || 0);
+      setTotalPages(Math.ceil((productsData.length || 0) / pageSize));
       setError(null);
     } catch (err) {
       setError(err.message || "Error al cargar productos");
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
   }
 
   async function fetchCategories() {
     try {
+      const token = getToken();
+      if (!token) {
+        console.warn("No hay token para cargar categorías");
+        return;
+      }
+      
       const response = await catalogService.manageCategories();
-      setCategories(response.results || response || []);
+      let categoriesData = [];
+      if (Array.isArray(response)) {
+        categoriesData = response;
+      } else if (response?.results && Array.isArray(response.results)) {
+        categoriesData = response.results;
+      } else {
+        categoriesData = response || [];
+      }
+      setCategories(categoriesData);
     } catch (err) {
       console.error("Error al cargar categorías:", err);
+      try {
+        const token = getToken();
+        const response = await fetch(`${API_URL}/api/catalog/manage/categories/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data.results || data || []);
+        }
+      } catch (e) {
+        console.error("Error en fetch directo:", e);
+      }
     }
   }
 
+  // ✅ Buscar SOLO cuando se envía el formulario
   const handleSearch = (e) => {
     e.preventDefault();
+    setSearchTerm(searchInput); // ✅ Actualiza searchTerm con el valor del input
     setCurrentPage(1);
-    fetchProducts();
+  };
+
+  // ✅ Limpiar búsqueda
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchTerm("");
+    setCurrentPage(1);
   };
 
   const handlePageChange = (newPage) => {
@@ -152,6 +251,19 @@ export default function ProductsPage() {
     return normalized === "active" ? "#2E7D32" : "#D32F2F";
   };
 
+  const getProductImageUrl = (product) => {
+    if (!product) return null;
+    if (product.image) {
+      if (product.image.startsWith("http")) return product.image;
+      return `${API_URL}${product.image}`;
+    }
+    if (product.image_url) {
+      if (product.image_url.startsWith("http")) return product.image_url;
+      return `${API_URL}${product.image_url}`;
+    }
+    return null;
+  };
+
   const handleOpenModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
@@ -162,7 +274,11 @@ export default function ProductsPage() {
         stock: product.stock,
         category: product.category?.id || product.category,
         status: getStatusString(product.active),
+        image_url: product.image_url || "",
+        image_file: null,
       });
+      setImagePreview(getProductImageUrl(product));
+      setImageUploadMethod(getProductImageUrl(product) ? "url" : "url");
     } else {
       setEditingProduct(null);
       setFormData({
@@ -172,7 +288,11 @@ export default function ProductsPage() {
         stock: "",
         category: "",
         status: "active",
+        image_url: "",
+        image_file: null,
       });
+      setImagePreview(null);
+      setImageUploadMethod("url");
     }
     setShowModal(true);
   };
@@ -180,37 +300,64 @@ export default function ProductsPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingProduct(null);
+    setImagePreview(null);
+    setImageUploadMethod("url");
   };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ handleSubmit con todos los campos requeridos
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, image_file: file, image_url: "" });
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+    setFormData({ ...formData, image_url: url, image_file: null });
+    setImagePreview(url);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // ✅ Asegurar que TODOS los campos requeridos están presentes
-      const payload = {
-        name: formData.name,
-        description: formData.description || `${formData.name} - Mueble de calidad`,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        category: Number(formData.category) || formData.category,
-        active: formData.status === "active",
-      };
-
-      console.log("📦 Enviando payload:", payload);
-
-      if (editingProduct) {
-        await catalogService.updateProduct(editingProduct.id, payload);
-      } else {
-        await catalogService.createProduct(payload);
+      const formDataToSend = new FormData();
+      
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description || `${formData.name} - Mueble de calidad`);
+      formDataToSend.append("price", Number(formData.price));
+      formDataToSend.append("stock", Number(formData.stock));
+      formDataToSend.append("category", Number(formData.category) || formData.category);
+      formDataToSend.append("active", formData.status === "active");
+      
+      if (formData.image_file) {
+        formDataToSend.append("image", formData.image_file);
       }
-      handleCloseModal();
-      fetchProducts();
+      if (formData.image_url && !formData.image_file) {
+        formDataToSend.append("image_url", formData.image_url);
+      }
+
+      let response;
+      if (editingProduct) {
+        response = await catalogService.updateProduct(editingProduct.id, formDataToSend);
+      } else {
+        response = await catalogService.createProduct(formDataToSend);
+      }
+
+      if (response) {
+        handleCloseModal();
+        fetchProducts();
+      }
     } catch (err) {
-      console.error("❌ Error al guardar:", err);
+      console.error("Error al guardar:", err);
       if (err.response?.data) {
         setError(JSON.stringify(err.response.data, null, 2));
       } else {
@@ -231,12 +378,47 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("¿Desactivar este producto?")) {
+    if (!isAdmin) {
+      setError("No tienes permisos para eliminar productos");
+      return;
+    }
+    
+    if (window.confirm("¿Eliminar este producto permanentemente?")) {
       try {
-        await catalogService.deactivateProduct(id);
-        fetchProducts();
+        setDeletingId(id);
+        const token = getToken();
+        
+        if (!token) {
+          setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
+          setDeletingId(null);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/catalog/manage/products/${id}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const newDeletedIds = [...deletedIds, id];
+          setDeletedIds(newDeletedIds);
+          localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(newDeletedIds));
+          
+          setProducts(prev => prev.filter(p => p.id !== id));
+          setTotalCount(prev => prev - 1);
+          setError(null);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.detail || "Error al eliminar producto");
+        }
       } catch (err) {
-        setError(err.message || "Error al desactivar producto");
+        console.error("Error en handleDelete:", err);
+        setError(err.message || "Error al eliminar producto");
+      } finally {
+        setDeletingId(null);
       }
     }
   };
@@ -280,7 +462,7 @@ export default function ProductsPage() {
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           width: "100%",
-          minHeight: "200px",
+          minHeight: "180px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -300,7 +482,7 @@ export default function ProductsPage() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "40px 20px",
+            padding: "20px 15px",
             width: "100%",
             height: "100%",
           }}
@@ -309,11 +491,12 @@ export default function ProductsPage() {
             className="dashboard-hero__title"
             style={{
               color: "#FFFFFF",
-              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
+              fontSize: "2rem",
               fontWeight: 700,
               textShadow: "0 2px 8px rgba(0,0,0,0.6)",
               margin: 0,
               fontFamily: '"Playfair Display", serif',
+              textAlign: "center",
             }}
           >
             Productos
@@ -322,9 +505,10 @@ export default function ProductsPage() {
             className="dashboard-hero__breadcrumb"
             style={{
               color: "#F5EDE5",
-              fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
+              fontSize: "0.95rem",
               textShadow: "0 1px 4px rgba(0,0,0,0.5)",
               marginTop: "8px",
+              textAlign: "center",
             }}
           >
             <Link
@@ -341,26 +525,27 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      <main className="dashboard-container">
+      <main className="dashboard-container" style={{ padding: "16px" }}>
         <div
           className="dashboard-header-actions"
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "16px",
+            gap: "12px",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "24px",
+            marginBottom: "20px",
           }}
         >
           <h2
             style={{
-              fontSize: "clamp(1.2rem, 2vw, 1.8rem)",
+              fontSize: "1.3rem",
               color: "#6B4A2B",
               margin: 0,
             }}
           >
             Lista de productos {totalCount > 0 && `(${totalCount})`}
+            {deletedIds.length > 0 && ` (${deletedIds.length} eliminados)`}
           </h2>
           {canCreate && (
             <button
@@ -370,28 +555,29 @@ export default function ProductsPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: "10px 20px",
+                padding: "10px 18px",
                 background: "#8B5E3C",
                 color: "#fff",
                 border: "none",
                 borderRadius: "8px",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                fontSize: "0.9rem",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
-              <FaPlus /> Nuevo producto
+              <FaPlus size={14} /> Nuevo producto
             </button>
           )}
         </div>
 
-        {/* Filtros - RESPONSIVOS */}
+        {/* FILTROS - RESPONSIVOS */}
         <div
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "12px",
-            marginBottom: "24px",
-            padding: "16px 20px",
+            gap: "10px",
+            marginBottom: "20px",
+            padding: "14px 16px",
             background: "#FDF8F0",
             border: "1px solid #E8DCCC",
             borderRadius: "12px",
@@ -402,10 +588,10 @@ export default function ProductsPage() {
             onSubmit={handleSearch}
             style={{
               position: "relative",
-              flex: "1 1 200px",
-              minWidth: "200px",
+              flex: "1 1 180px",
+              minWidth: "160px",
               display: "flex",
-              gap: "12px",
+              gap: "10px",
             }}
           >
             <div style={{ position: "relative", flex: 1 }}>
@@ -416,19 +602,20 @@ export default function ProductsPage() {
                   top: "50%",
                   transform: "translateY(-50%)",
                   color: "#999",
+                  fontSize: "14px",
                 }}
               />
               <input
                 type="text"
                 placeholder="Buscar productos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInput} // ✅ Usa searchInput
+                onChange={(e) => setSearchInput(e.target.value)} // ✅ Solo actualiza el input
                 style={{
                   width: "100%",
-                  padding: "10px 12px 10px 38px",
+                  padding: "9px 12px 9px 36px",
                   borderRadius: "8px",
                   border: "1px solid #E8DCCC",
-                  fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                  fontSize: "0.9rem",
                   background: "#FFFFFF",
                 }}
               />
@@ -436,43 +623,60 @@ export default function ProductsPage() {
             <button
               type="submit"
               style={{
-                padding: "10px 20px",
+                padding: "9px 16px",
                 background: "#8B5E3C",
                 color: "#fff",
                 border: "none",
                 borderRadius: "8px",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                fontSize: "0.85rem",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
               }}
             >
               Buscar
             </button>
+            {searchInput && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                style={{
+                  padding: "9px 16px",
+                  background: "#666",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                }}
+              >
+                Limpiar
+              </button>
+            )}
           </form>
 
           <div
             style={{
               display: "flex",
-              gap: "12px",
+              gap: "10px",
               flexWrap: "wrap",
               alignItems: "center",
+              flex: "1 1 auto",
             }}
           >
-            <FaFilter style={{ color: "#8B5E3C" }} />
+            <FaFilter style={{ color: "#8B5E3C", fontSize: "16px" }} />
             <select
               value={filterCategory}
               onChange={(e) => {
                 setFilterCategory(e.target.value);
                 setCurrentPage(1);
-                fetchProducts();
               }}
               style={{
-                padding: "10px 14px",
+                padding: "9px 12px",
                 borderRadius: "8px",
                 border: "1px solid #E8DCCC",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                fontSize: "0.85rem",
                 background: "#FFFFFF",
-                minWidth: "140px",
+                minWidth: "120px",
               }}
             >
               <option value="">Todas las categorías</option>
@@ -482,35 +686,35 @@ export default function ProductsPage() {
                 </option>
               ))}
             </select>
+            
             <select
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);
                 setCurrentPage(1);
-                fetchProducts();
               }}
               style={{
-                padding: "10px 14px",
+                padding: "9px 12px",
                 borderRadius: "8px",
                 border: "1px solid #E8DCCC",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+                fontSize: "0.85rem",
                 background: "#FFFFFF",
-                minWidth: "120px",
+                minWidth: "100px",
               }}
             >
               <option value="">Todos los estados</option>
-              <option value="active">Activo</option>
-              <option value="inactive">Inactivo</option>
+              <option value="active">Activos</option>
+              <option value="inactive">Inactivos</option>
             </select>
           </div>
         </div>
 
-        {/* Tabla de productos - RESPONSIVA */}
+        {/* TABLA - RESPONSIVA */}
         <div className="dashboard-grid" style={{ gridTemplateColumns: "1fr" }}>
           <div
             className="dashboard-card"
             style={{
-              padding: "20px",
+              padding: "16px",
               background: "#FDF8F0",
               border: "1px solid #E8DCCC",
               borderRadius: "16px",
@@ -533,70 +737,28 @@ export default function ProductsPage() {
                     style={{
                       width: "100%",
                       borderCollapse: "collapse",
-                      minWidth: "600px",
-                      fontSize: "clamp(0.75rem, 0.9vw, 0.9rem)",
+                      minWidth: "500px",
+                      fontSize: "0.85rem",
                     }}
                   >
                     <thead>
                       <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
-                        <th
-                          style={{
-                            textAlign: "left",
-                            padding: "12px 10px",
-                            color: "#6B4A2B",
-                            fontWeight: 700,
-                          }}
-                        >
+                        <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B", fontWeight: 700 }}>
                           Producto
                         </th>
-                        <th
-                          style={{
-                            textAlign: "left",
-                            padding: "12px 10px",
-                            color: "#6B4A2B",
-                            fontWeight: 700,
-                          }}
-                        >
+                        <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B", fontWeight: 700 }}>
                           Categoría
                         </th>
-                        <th
-                          style={{
-                            textAlign: "left",
-                            padding: "12px 10px",
-                            color: "#6B4A2B",
-                            fontWeight: 700,
-                          }}
-                        >
+                        <th style={{ textAlign: "left", padding: "10px 8px", color: "#6B4A2B", fontWeight: 700 }}>
                           Precio
                         </th>
-                        <th
-                          style={{
-                            textAlign: "center",
-                            padding: "12px 10px",
-                            color: "#6B4A2B",
-                            fontWeight: 700,
-                          }}
-                        >
+                        <th style={{ textAlign: "center", padding: "10px 8px", color: "#6B4A2B", fontWeight: 700 }}>
                           Stock
                         </th>
-                        <th
-                          style={{
-                            textAlign: "center",
-                            padding: "12px 10px",
-                            color: "#6B4A2B",
-                            fontWeight: 700,
-                          }}
-                        >
+                        <th style={{ textAlign: "center", padding: "10px 8px", color: "#6B4A2B", fontWeight: 700 }}>
                           Estado
                         </th>
-                        <th
-                          style={{
-                            textAlign: "center",
-                            padding: "12px 10px",
-                            color: "#6B4A2B",
-                            fontWeight: 700,
-                          }}
-                        >
+                        <th style={{ textAlign: "center", padding: "10px 8px", color: "#6B4A2B", fontWeight: 700 }}>
                           Acciones
                         </th>
                       </tr>
@@ -607,27 +769,44 @@ export default function ProductsPage() {
                           key={product.id}
                           style={{ borderBottom: "1px solid #F0EBE3" }}
                         >
-                          <td style={{ padding: "12px 10px" }}>
+                          <td style={{ padding: "10px 8px" }}>
                             <div
                               className="table-product"
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: "10px",
+                                gap: "8px",
                               }}
                             >
-                              {getCategoryIcon(getProductCategoryName(product))}
+                              {getProductImageUrl(product) ? (
+                                <img
+                                  src={getProductImageUrl(product)}
+                                  alt={product.name}
+                                  style={{
+                                    width: "35px",
+                                    height: "35px",
+                                    objectFit: "cover",
+                                    borderRadius: "4px",
+                                    border: "1px solid #E8DCCC",
+                                  }}
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                getCategoryIcon(getProductCategoryName(product))
+                              )}
                               <span
                                 style={{
                                   fontWeight: 500,
-                                  fontSize: "clamp(0.8rem, 0.95vw, 0.9rem)",
+                                  fontSize: "0.85rem",
                                 }}
                               >
                                 {product.name}
                               </span>
                             </div>
                           </td>
-                          <td style={{ padding: "12px 10px" }}>
+                          <td style={{ padding: "10px 8px" }}>
                             <div
                               style={{
                                 display: "flex",
@@ -636,29 +815,32 @@ export default function ProductsPage() {
                               }}
                             >
                               {getCategoryIcon(getProductCategoryName(product))}
-                              <span>{getProductCategoryName(product)}</span>
+                              <span style={{ fontSize: "0.8rem" }}>
+                                {getProductCategoryName(product)}
+                              </span>
                             </div>
                           </td>
                           <td
                             style={{
-                              padding: "12px 10px",
+                              padding: "10px 8px",
                               fontWeight: 600,
                               color: "#5C2E0B",
+                              fontSize: "0.85rem",
                             }}
                           >
                             ${product.price?.toLocaleString()}
                           </td>
-                          <td style={{ textAlign: "center", padding: "12px 10px" }}>
+                          <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <span
                               className={`stock-badge ${
                                 product.stock === 0 ? "stock-out" : ""
                               }`}
                               style={{
                                 display: "inline-block",
-                                padding: "4px 14px",
+                                padding: "3px 12px",
                                 borderRadius: "20px",
                                 fontWeight: 600,
-                                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                                fontSize: "0.75rem",
                                 background:
                                   product.stock === 0 ? "#FDECEA" : "#E8F5E9",
                                 color:
@@ -668,17 +850,16 @@ export default function ProductsPage() {
                               {product.stock}
                             </span>
                           </td>
-                          <td style={{ textAlign: "center", padding: "12px 10px" }}>
+                          <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <button
                               onClick={() => handleToggleStatus(product.id)}
-                              disabled={!canDeactivate}
                               style={{
-                                padding: "4px 14px",
+                                padding: "3px 12px",
                                 borderRadius: "20px",
                                 border: "none",
                                 fontWeight: 600,
-                                fontSize: "clamp(0.65rem, 0.8vw, 0.75rem)",
-                                cursor: canDeactivate ? "pointer" : "default",
+                                fontSize: "0.7rem",
+                                cursor: "pointer",
                                 background: getStatusBg(product.active),
                                 color: getStatusColor(product.active),
                               }}
@@ -686,12 +867,12 @@ export default function ProductsPage() {
                               {getStatusLabel(product.active)}
                             </button>
                           </td>
-                          <td style={{ textAlign: "center", padding: "12px 10px" }}>
+                          <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <div
                               className="table-actions"
                               style={{
                                 display: "flex",
-                                gap: "8px",
+                                gap: "6px",
                                 justifyContent: "center",
                                 flexWrap: "wrap",
                               }}
@@ -704,20 +885,20 @@ export default function ProductsPage() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "4px",
-                                    padding: "6px 14px",
+                                    padding: "5px 12px",
                                     borderRadius: "6px",
                                     border: "none",
                                     background: "#8B5E3C",
                                     color: "#fff",
-                                    fontSize: "clamp(0.65rem, 0.8vw, 0.75rem)",
+                                    fontSize: "0.7rem",
                                     cursor: "pointer",
                                     fontWeight: 500,
                                   }}
                                 >
-                                  <FaEdit size={12} /> Editar
+                                  <FaEdit size={11} /> Editar
                                 </button>
                               )}
-                              {canDeactivate && (
+                              {canDelete && (
                                 <button
                                   onClick={() => handleDelete(product.id)}
                                   className="btn-delete"
@@ -725,28 +906,21 @@ export default function ProductsPage() {
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "4px",
-                                    padding: "6px 14px",
+                                    padding: "5px 12px",
                                     borderRadius: "6px",
                                     border: "none",
                                     background: "#D32F2F",
                                     color: "#fff",
-                                    fontSize: "clamp(0.65rem, 0.8vw, 0.75rem)",
+                                    fontSize: "0.7rem",
                                     cursor: "pointer",
                                     fontWeight: 500,
+                                    opacity: deletingId === product.id ? 0.6 : 1,
                                   }}
+                                  disabled={deletingId === product.id}
                                 >
-                                  <FaTrash size={12} /> Desactivar
+                                  <FaTrash size={11} />{" "}
+                                  {deletingId === product.id ? "Eliminando..." : "Eliminar"}
                                 </button>
-                              )}
-                              {!canUpdate && !canDeactivate && (
-                                <span
-                                  style={{
-                                    color: "#7A6B5A",
-                                    fontSize: "0.85rem",
-                                  }}
-                                >
-                                  Solo lectura
-                                </span>
                               )}
                             </div>
                           </td>
@@ -756,7 +930,6 @@ export default function ProductsPage() {
                   </table>
                 </div>
 
-                {/* ✅ PAGINACIÓN - RESPONSIVA */}
                 {totalPages > 1 && (
                   <div
                     style={{
@@ -764,8 +937,8 @@ export default function ProductsPage() {
                       justifyContent: "center",
                       alignItems: "center",
                       gap: "8px",
-                      marginTop: "20px",
-                      paddingTop: "16px",
+                      marginTop: "16px",
+                      paddingTop: "14px",
                       borderTop: "1px solid #E8DCCC",
                       flexWrap: "wrap",
                     }}
@@ -774,34 +947,34 @@ export default function ProductsPage() {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                       style={{
-                        padding: "8px 14px",
+                        padding: "6px 12px",
                         borderRadius: "6px",
                         border: "1px solid #E8DCCC",
                         background: currentPage === 1 ? "#F0EBE3" : "#FFFFFF",
                         color: currentPage === 1 ? "#999" : "#5C2E0B",
                         cursor: currentPage === 1 ? "default" : "pointer",
-                        fontSize: "clamp(0.8rem, 0.9vw, 0.9rem)",
+                        fontSize: "0.85rem",
                       }}
                     >
-                      <FaChevronLeft size={14} />
+                      <FaChevronLeft size={13} />
                     </button>
 
                     <span
                       style={{
-                        fontSize: "clamp(0.8rem, 0.9vw, 0.9rem)",
+                        fontSize: "0.85rem",
                         color: "#6B4A2B",
-                        padding: "0 12px",
+                        padding: "0 10px",
+                        textAlign: "center",
                       }}
                     >
-                      Página {currentPage} de {totalPages} ({totalCount}{" "}
-                      productos)
+                      Página {currentPage} de {totalPages} ({totalCount} productos)
                     </span>
 
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                       style={{
-                        padding: "8px 14px",
+                        padding: "6px 12px",
                         borderRadius: "6px",
                         border: "1px solid #E8DCCC",
                         background:
@@ -810,10 +983,10 @@ export default function ProductsPage() {
                           currentPage === totalPages ? "#999" : "#5C2E0B",
                         cursor:
                           currentPage === totalPages ? "default" : "pointer",
-                        fontSize: "clamp(0.8rem, 0.9vw, 0.9rem)",
+                        fontSize: "0.85rem",
                       }}
                     >
-                      <FaChevronRight size={14} />
+                      <FaChevronRight size={13} />
                     </button>
                   </div>
                 )}
@@ -823,6 +996,7 @@ export default function ProductsPage() {
         </div>
       </main>
 
+      {/* MODAL - RESPONSIVO */}
       {showModal && (
         <div
           className="modal-overlay"
@@ -838,7 +1012,7 @@ export default function ProductsPage() {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
-            padding: "20px",
+            padding: "16px",
           }}
         >
           <div
@@ -847,7 +1021,7 @@ export default function ProductsPage() {
             style={{
               background: "#FFFFFF",
               borderRadius: "16px",
-              padding: "clamp(20px, 4vw, 32px)",
+              padding: "24px",
               maxWidth: "500px",
               width: "100%",
               maxHeight: "90vh",
@@ -858,20 +1032,20 @@ export default function ProductsPage() {
               style={{
                 color: "#6B4A2B",
                 marginTop: 0,
-                fontSize: "clamp(1.2rem, 1.8vw, 1.5rem)",
+                fontSize: "1.3rem",
               }}
             >
               {editingProduct ? "Editar producto" : "Nuevo producto"}
             </h2>
             <form onSubmit={handleSubmit}>
-              <div className="form-group" style={{ marginBottom: "16px" }}>
+              <div className="form-group" style={{ marginBottom: "14px" }}>
                 <label
                   style={{
                     display: "block",
                     fontWeight: 500,
                     marginBottom: "4px",
                     color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                   }}
                 >
                   Nombre del producto *
@@ -884,23 +1058,22 @@ export default function ProductsPage() {
                   required
                   style={{
                     width: "100%",
-                    padding: "10px 14px",
+                    padding: "9px 12px",
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                   }}
                 />
               </div>
 
-              {/* ✅ CAMPO DESCRIPTION AGREGADO */}
-              <div className="form-group" style={{ marginBottom: "16px" }}>
+              <div className="form-group" style={{ marginBottom: "14px" }}>
                 <label
                   style={{
                     display: "block",
                     fontWeight: 500,
                     marginBottom: "4px",
                     color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                   }}
                 >
                   Descripción
@@ -913,78 +1086,86 @@ export default function ProductsPage() {
                   placeholder="Breve descripción del producto"
                   style={{
                     width: "100%",
-                    padding: "10px 14px",
+                    padding: "9px 12px",
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                   }}
                 />
               </div>
 
-              <div className="form-group" style={{ marginBottom: "16px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "10px",
+                  marginBottom: "14px",
+                }}
+              >
+                <div className="form-group">
+                  <label
+                    style={{
+                      display: "block",
+                      fontWeight: 500,
+                      marginBottom: "4px",
+                      color: "#333",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Precio (MXN) *
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #E8DCCC",
+                      borderRadius: "8px",
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label
+                    style={{
+                      display: "block",
+                      fontWeight: 500,
+                      marginBottom: "4px",
+                      color: "#333",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Stock *
+                  </label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleChange}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #E8DCCC",
+                      borderRadius: "8px",
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "14px" }}>
                 <label
                   style={{
                     display: "block",
                     fontWeight: 500,
                     marginBottom: "4px",
                     color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                >
-                  Precio (MXN) *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #E8DCCC",
-                    borderRadius: "8px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontWeight: 500,
-                    marginBottom: "4px",
-                    color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                >
-                  Stock *
-                </label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: "1px solid #E8DCCC",
-                    borderRadius: "8px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontWeight: 500,
-                    marginBottom: "4px",
-                    color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                   }}
                 >
                   Categoría *
@@ -996,10 +1177,10 @@ export default function ProductsPage() {
                   required
                   style={{
                     width: "100%",
-                    padding: "10px 14px",
+                    padding: "9px 12px",
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                     background: "#FFFFFF",
                   }}
                 >
@@ -1012,14 +1193,129 @@ export default function ProductsPage() {
                 </select>
               </div>
 
-              <div className="form-group" style={{ marginBottom: "24px" }}>
+              <div className="form-group" style={{ marginBottom: "14px" }}>
                 <label
                   style={{
                     display: "block",
                     fontWeight: 500,
                     marginBottom: "4px",
                     color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <FaImage style={{ marginRight: "6px" }} /> Imagen del producto
+                </label>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    marginBottom: "8px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setImageUploadMethod("url")}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "6px",
+                      border: imageUploadMethod === "url" ? "2px solid #8B5E3C" : "1px solid #E8DCCC",
+                      background: imageUploadMethod === "url" ? "#FDF8F0" : "#FFFFFF",
+                      color: imageUploadMethod === "url" ? "#8B5E3C" : "#666",
+                      cursor: "pointer",
+                      fontSize: "0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <FaLink size={11} /> URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageUploadMethod("file")}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "6px",
+                      border: imageUploadMethod === "file" ? "2px solid #8B5E3C" : "1px solid #E8DCCC",
+                      background: imageUploadMethod === "file" ? "#FDF8F0" : "#FFFFFF",
+                      color: imageUploadMethod === "file" ? "#8B5E3C" : "#666",
+                      cursor: "pointer",
+                      fontSize: "0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <FaUpload size={11} /> Subir archivo
+                  </button>
+                </div>
+
+                {imageUploadMethod === "url" ? (
+                  <input
+                    type="text"
+                    name="image_url"
+                    value={formData.image_url}
+                    onChange={handleImageUrlChange}
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #E8DCCC",
+                      borderRadius: "8px",
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                ) : (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #E8DCCC",
+                      borderRadius: "8px",
+                      fontSize: "0.9rem",
+                      background: "#FFFFFF",
+                    }}
+                  />
+                )}
+
+                {imagePreview && (
+                  <div style={{ marginTop: "8px" }}>
+                    <img
+                      src={imagePreview}
+                      alt="Vista previa"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "150px",
+                        objectFit: "contain",
+                        borderRadius: "8px",
+                        border: "1px solid #E8DCCC",
+                        padding: "4px",
+                        background: "#FDF8F0",
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+                <small style={{ color: "#999", fontSize: "0.7rem" }}>
+                  Puedes pegar una URL o seleccionar un archivo de imagen.
+                </small>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: 500,
+                    marginBottom: "4px",
+                    color: "#333",
+                    fontSize: "0.9rem",
                   }}
                 >
                   Estado
@@ -1030,10 +1326,10 @@ export default function ProductsPage() {
                   onChange={handleChange}
                   style={{
                     width: "100%",
-                    padding: "10px 14px",
+                    padding: "9px 12px",
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                     background: "#FFFFFF",
                   }}
                 >
@@ -1046,7 +1342,7 @@ export default function ProductsPage() {
                 className="form-actions"
                 style={{
                   display: "flex",
-                  gap: "12px",
+                  gap: "10px",
                   justifyContent: "flex-end",
                   flexWrap: "wrap",
                 }}
@@ -1056,13 +1352,13 @@ export default function ProductsPage() {
                   onClick={handleCloseModal}
                   className="btn-cancel"
                   style={{
-                    padding: "10px 24px",
+                    padding: "9px 20px",
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
                     background: "#FFFFFF",
                     color: "#666",
                     cursor: "pointer",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                   }}
                 >
                   Cancelar
@@ -1071,13 +1367,13 @@ export default function ProductsPage() {
                   type="submit"
                   className="btn-submit"
                   style={{
-                    padding: "10px 24px",
+                    padding: "9px 20px",
                     border: "none",
                     borderRadius: "8px",
                     background: "#8B5E3C",
                     color: "#FFFFFF",
                     cursor: "pointer",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                    fontSize: "0.9rem",
                     fontWeight: 600,
                   }}
                 >
