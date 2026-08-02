@@ -11,7 +11,7 @@ import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 
 // ============================================
-// ICONOS SVG (SOLO LOS QUE SE USAN)
+// ICONOS SVG
 // ============================================
 function IconUser() {
   return (
@@ -66,12 +66,6 @@ function IconLoading() {
     </svg>
   );
 }
-
-// ============================================
-// ❌ ELIMINADOS:
-// - IconEdit (no se usa)
-// - IconMap (no se usa)
-// ============================================
 
 // ============================================
 // FORMATO DE PRECIOS
@@ -141,7 +135,6 @@ export default function CheckoutSummaryPage() {
 
   // ============================================
   // ✅ CARGAR DATOS DEL CHECKOUT
-  // (DECLARADO ANTES DE USARLO EN useEffect)
   // ============================================
   const loadCheckoutData = async () => {
     setLoading(true);
@@ -305,7 +298,6 @@ export default function CheckoutSummaryPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    // Resetear validación de dirección cuando cambian los datos
     if (addressValidated) {
       setAddressValidated(false);
       setGeocodeResult(null);
@@ -451,7 +443,6 @@ export default function CheckoutSummaryPage() {
     <div className="home-page checkout-page">
       <HomeHeader />
 
-      {/* HERO */}
       <section className="checkout-hero" aria-label="Resumen de pedido">
         <div className="checkout-hero__overlay">
           <h1 className="checkout-hero__title">Resumen de pedido</h1>
