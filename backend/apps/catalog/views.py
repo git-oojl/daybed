@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -62,7 +62,6 @@ class StaffCategoryViewSet(viewsets.ModelViewSet):
         permission_code = permission_by_action.get(self.action, "products.view")
         return [operational_permission(permission_code)()]
 
-    # ✅ DESACTIVA (seguro para integridad de datos)
     def destroy(self, request, *args, **kwargs):
         category = self.get_object()
         category.active = False
@@ -107,7 +106,6 @@ class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
         permission_code = permission_by_action.get(self.action, "products.view")
         return [operational_permission(permission_code)()]
 
-    # ✅ DESACTIVA (seguro para integridad de datos)
     def destroy(self, request, *args, **kwargs):
         product = self.get_object()
         product.active = False
