@@ -11,8 +11,7 @@ import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 
 // ============================================
-<<<<<<< HEAD
-=======
+
 // ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
 // ============================================
 const productImages = {
@@ -73,7 +72,7 @@ const getProductImage = (product) => {
 };
 
 // ============================================
->>>>>>> origin/main
+
 // ICONOS SVG
 // ============================================
 function IconUser() {
