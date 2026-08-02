@@ -24,15 +24,18 @@ import { catalogService } from "../../services/backendServices.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
+const API_URL = "http://localhost:8000";
+
 export default function CategoriesPage() {
   const user = useAuthStore((state) => state.user);
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  
   const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
   const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
-  const canDeactivate =
-    isAdmin || effectivePermissionCodes.includes("products.deactivate");
+  const canDeactivate = isAdmin;
+  
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,7 +50,6 @@ export default function CategoriesPage() {
 
   const statusOptions = ["Todos", "Activo", "Inactivo"];
 
-  // ✅ Cargar categorías desde el backend
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -93,6 +95,10 @@ export default function CategoriesPage() {
       "Sillas": <FaChair size={32} color="#8B5E3C" />,
       "Iluminación": <FaLightbulb size={32} color="#8B5E3C" />,
       "Almacenamiento": <FaBoxOpen size={32} color="#8B5E3C" />,
+      "Sofás cama": <FaCouch size={32} color="#8B5E3C" />,
+      "Mesas de centro": <FaTable size={32} color="#8B5E3C" />,
+      "Sillas de acento": <FaChair size={32} color="#8B5E3C" />,
+      "Decoración": <FaLightbulb size={32} color="#8B5E3C" />,
     };
     return icons[name] || <FaBoxOpen size={32} color="#8B5E3C" />;
   };
@@ -136,7 +142,6 @@ export default function CategoriesPage() {
     });
   };
 
-  // ✅ Crear/Actualizar categoría con catalogService
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -157,11 +162,62 @@ export default function CategoriesPage() {
     }
   };
 
-  // ✅ Desactivar categoría con catalogService
-  const handleDelete = async (id) => {
+  // ✅ CAMBIAR ESTADO - CORREGIDO CON FETCH DIRECTO
+  const handleToggleStatus = async (slug, currentStatus) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setError("No hay sesión activa. Inicia sesión nuevamente.");
+      return;
+    }
+
+    try {
+      const newActive = !getStatusValue(currentStatus);
+      console.log(`🔄 Cambiando estado de "${slug}" a ${newActive ? "Activo" : "Inactivo"}`);
+
+      const response = await fetch(`${API_URL}/api/catalog/manage/categories/${slug}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: newActive })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Error al cambiar estado");
+      }
+
+      const data = await response.json();
+      console.log("✅ Categoría actualizada:", data);
+      
+      // Recargar categorías
+      await fetchCategories();
+      
+    } catch (err) {
+      console.error("❌ Error al cambiar estado:", err);
+      setError(err.message || "Error al cambiar estado");
+    }
+  };
+
+  // ✅ DESACTIVAR - SOLO ADMIN
+  const handleDelete = async (slug) => {
+    if (!isAdmin) {
+      setError("No tienes permisos para desactivar categorías");
+      return;
+    }
+    
     if (window.confirm("¿Desactivar esta categoría?")) {
       try {
-        await catalogService.deactivateCategory(id);
+        const token = localStorage.getItem('access_token');
+        await fetch(`${API_URL}/api/catalog/manage/categories/${slug}/`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ active: false })
+        });
         fetchCategories();
       } catch (err) {
         setError(err.message || "Error al desactivar categoría");
@@ -469,6 +525,31 @@ export default function CategoriesPage() {
                       <FaEdit size={14} /> Editar
                     </button>
                   )}
+                  
+                  {/* ✅ BOTÓN PARA CAMBIAR ESTADO */}
+                  <button
+                    onClick={() => handleToggleStatus(category.slug, category.status)}
+                    style={{
+                      backgroundColor: getStatusValue(category.status) ? "#E8F5E9" : "#FFF3E0",
+                      color: getStatusValue(category.status) ? "#2E7D32" : "#EF6C00",
+                      border: "1px solid",
+                      borderColor: getStatusValue(category.status) ? "#A5D6A7" : "#FFCC80",
+                      padding: "8px 18px",
+                      borderRadius: "25px",
+                      fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.2s ease",
+                      flex: 1,
+                      justifyContent: "center",
+                    }}
+                  >
+                    {getStatusLabel(category.status)}
+                  </button>
+
                   {canDeactivate && (
                     <button
                       onClick={() => handleDelete(category.slug)}
