@@ -397,6 +397,51 @@
   transform: translateY(-2px);
 }
 
+/* ============================================
+   ESTADOS DE PEDIDOS - CLIENTE Y EMPLEADO
+   ============================================ */
+
+/* Estados para el cliente (MyOrdersPage) */
+.orders-status--pending {
+  background-color: #FFF8E1 !important;
+  color: #ED6C02 !important;
+}
+
+.orders-status--confirmed {
+  background-color: #E8F5E9 !important;
+  color: #2E7D32 !important;
+}
+
+.orders-status--preparing {
+  background-color: #F3E5F5 !important;
+  color: #6A1B9A !important;
+}
+
+.orders-status--shipped {
+  background-color: #E3F2FD !important;
+  color: #0D47A1 !important;
+}
+
+.orders-status--delivered {
+  background-color: #E8F5E9 !important;
+  color: #1B5E20 !important;
+}
+
+.orders-status--cancelled {
+  background-color: #FDECEA !important;
+  color: #D32F2F !important;
+}
+
+/* Hover effect para estados */
+.orders-status {
+  transition: all 0.2s ease;
+}
+
+.orders-status:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* ============================================ */
 /* MEDIA QUERIES - RESPONSIVE DESIGN */
 /* ============================================ */

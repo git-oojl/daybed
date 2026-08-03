@@ -1,6 +1,6 @@
 // BusinessMetricsPage.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ AGREGAR ESTA IMPORTACIÓN
+import { useNavigate } from "react-router-dom";
 import { FaExclamationTriangle } from "react-icons/fa";
 import {
   FaArrowTrendUp,
@@ -10,12 +10,14 @@ import {
   FaMoneyBillTrendUp,
   FaReceipt,
   FaTruckFast,
+  FaTags,
+  FaBox,
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import "../../assets/CSS/admin/business-metrics.css";
 import { routePaths } from "../../routes/routePaths.js";
 import { dashboardService } from "../../services/backendServices.js";
-import { inventoryService } from "../../services/backendServices.js";
+import { inventoryService, catalogService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { productImage, readCollection, statusLabel } from "../../services/viewMappers.js";
@@ -57,16 +59,46 @@ function IconLoading() {
 }
 
 // ============================================
+// ✅ COMPONENTE DE CATEGORÍA
+// ============================================
+function CategoryItem({ category }) {
+  return (
+    <div className="business-category-item">
+      <span className="business-category-item__name">{category.name}</span>
+      <span className="business-category-item__count">{category.product_count || 0} productos</span>
+    </div>
+  );
+}
+
+// ============================================
+// ✅ COMPONENTE DE PRODUCTO
+// ============================================
+function ProductItem({ product }) {
+  return (
+    <div className="business-product-item">
+      <img src={productImage(product)} alt={product.name} className="business-product-item__image" />
+      <div className="business-product-item__info">
+        <strong className="business-product-item__name">{product.name}</strong>
+        <span className="business-product-item__sku">{product.sku || "Sin SKU"}</span>
+      </div>
+      <span className="business-product-item__stock">{product.stock || 0} uds.</span>
+    </div>
+  );
+}
+
+// ============================================
 // ✅ COMPONENTE PRINCIPAL
 // ============================================
 function BusinessMetricsPage() {
-  const navigate = useNavigate(); // ✅ Ahora useNavigate está definido
+  const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
 
   // Estados
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [metrics, setMetrics] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
 
   // ============================================
   // ✅ DATOS ESTÁTICOS DE FALLBACK
@@ -89,40 +121,74 @@ function BusinessMetricsPage() {
     ],
   };
 
+  const fallbackCategories = [
+    { id: 1, name: "Sofás", product_count: 12 },
+    { id: 2, name: "Mesas", product_count: 8 },
+    { id: 3, name: "Sillas", product_count: 15 },
+    { id: 4, name: "Lámparas", product_count: 6 },
+  ];
+
+  const fallbackProducts = [
+    { id: 1, name: "Sofá Cama Lino", sku: "DAY-SOF-001", stock: 8 },
+    { id: 2, name: "Mesa Centro Fresno", sku: "DAY-MES-002", stock: 12 },
+    { id: 3, name: "Silla Lectura Olivo", sku: "DAY-SIL-003", stock: 5 },
+  ];
+
   // ============================================
   // ✅ CARGAR MÉTRICAS DEL BACKEND
   // ============================================
-  void fallbackMetrics;
-
   const loadMetrics = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [response, lowStockResponse] = await Promise.all([
+      const [response, lowStockResponse, categoriesResponse, productsResponse] = await Promise.all([
         dashboardService.metrics(),
         inventoryService.lowStock(),
+        catalogService.categories(),
+        catalogService.products(),
       ]);
+
       console.log("📊 Métricas del backend:", response);
-      
-      // Mapear la respuesta del backend al formato esperado
+
+      // Mapear métricas
       const mappedMetrics = {
         total_orders: response.total_orders || 0,
         total_simulated_sales: response.total_simulated_sales || 0,
         average_delivery_fee: response.average_delivery_fee || 0,
         average_delivery_distance: response.average_delivery_distance || 0,
-        orders_by_status: (response.orders_by_status || []).map((item) => ({ ...item, label: statusLabel(item.status), value: item.count })),
+        orders_by_status: (response.orders_by_status || []).map((item) => ({
+          ...item,
+          label: statusLabel(item.status),
+          value: item.count,
+        })),
         low_stock_count: response.low_stock_count || 0,
         recent_orders: response.recent_orders || [],
-        low_stock_products: readCollection(lowStockResponse).map((product) => ({ name: product.name, reference: product.sku, units: product.stock, image: productImage(product) })),
+        low_stock_products: readCollection(lowStockResponse).map((product) => ({
+          name: product.name,
+          reference: product.sku,
+          units: product.stock,
+          image: productImage(product),
+        })),
       };
-      
+
       setMetrics(mappedMetrics);
+
+      // Mapear categorías
+      const categoriesData = readCollection(categoriesResponse);
+      setCategories(categoriesData);
+
+      // Mapear productos (últimos 5)
+      const productsData = readCollection(productsResponse);
+      setProducts(productsData.slice(0, 5));
+
     } catch (err) {
       console.error("❌ Error al cargar métricas:", err);
       setError(err.message || "Error al cargar las métricas");
       // Usar datos de fallback
-      setMetrics(null);
+      setMetrics(fallbackMetrics);
+      setCategories(fallbackCategories);
+      setProducts(fallbackProducts);
     } finally {
       setLoading(false);
     }
@@ -149,13 +215,14 @@ function BusinessMetricsPage() {
     };
 
     initializeMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading, user, navigate]);
 
   // ============================================
   // ✅ DATOS PARA MOSTRAR
   // ============================================
-  const data = metrics || { orders_by_status: [], low_stock_products: [] };
-  
+  const data = metrics || fallbackMetrics;
+
   const totalOrders = data.total_orders || 0;
   const totalSales = data.total_simulated_sales || 0;
   const avgDeliveryFee = data.average_delivery_fee || 0;
@@ -303,16 +370,22 @@ function BusinessMetricsPage() {
               <Link to={routePaths.backOffice.inventory}>Ver inventario</Link>
             </div>
             <div className="business-stock-list">
-              {lowStockProducts.map((product) => (
-                <div className="business-stock-item" key={product.reference}>
-                  <img src={product.image || "https://via.placeholder.com/50"} alt="" />
-                  <div>
-                    <strong>{product.name}</strong>
-                    <span>{product.reference}</span>
-                  </div>
-                  <b>{product.units} uds.</b>
+              {lowStockProducts.length === 0 ? (
+                <div className="business-stock-empty">
+                  No hay productos con bajo stock
                 </div>
-              ))}
+              ) : (
+                lowStockProducts.map((product) => (
+                  <div className="business-stock-item" key={product.reference}>
+                    <img src={product.image || "https://via.placeholder.com/50"} alt="" />
+                    <div>
+                      <strong>{product.name}</strong>
+                      <span>{product.reference}</span>
+                    </div>
+                    <b>{product.units} uds.</b>
+                  </div>
+                ))
+              )}
             </div>
             <p className="business-panel__notice">
               {data.low_stock_count || 0} productos requieren reposición próxima.
@@ -353,6 +426,61 @@ function BusinessMetricsPage() {
           </article>
         </section>
 
+        {/* ============================================
+            ✅ CATEGORÍAS Y PRODUCTOS
+            ============================================ */}
+        <section className="business-metrics__catalog">
+          <div className="business-metrics__catalog-grid">
+            {/* CATEGORÍAS */}
+            <article className="business-panel business-panel--categories">
+              <div className="business-panel__heading">
+                <div>
+                  <p className="business-panel__overline">
+                    <FaTags /> Catálogo
+                  </p>
+                  <h3>Categorías</h3>
+                </div>
+                <Link to={routePaths.backOffice.categories}>Ver todas</Link>
+              </div>
+              <div className="business-categories-list">
+                {categories.length === 0 ? (
+                  <div className="business-categories-empty">
+                    No hay categorías registradas
+                  </div>
+                ) : (
+                  categories.map((category) => (
+                    <CategoryItem key={category.id} category={category} />
+                  ))
+                )}
+              </div>
+            </article>
+
+            {/* PRODUCTOS RECIENTES */}
+            <article className="business-panel business-panel--products">
+              <div className="business-panel__heading">
+                <div>
+                  <p className="business-panel__overline">
+                    <FaBox /> Últimos
+                  </p>
+                  <h3>Productos agregados</h3>
+                </div>
+                <Link to={routePaths.backOffice.products}>Ver todos</Link>
+              </div>
+              <div className="business-products-list">
+                {products.length === 0 ? (
+                  <div className="business-products-empty">
+                    No hay productos registrados
+                  </div>
+                ) : (
+                  products.map((product) => (
+                    <ProductItem key={product.id} product={product} />
+                  ))
+                )}
+              </div>
+            </article>
+          </div>
+        </section>
+
         <section className="business-insight" aria-label="Indicador principal">
           <div className="business-insight__icon">
             <FaBoxOpen />
@@ -360,7 +488,7 @@ function BusinessMetricsPage() {
           <div>
             <p>Indicador del periodo</p>
             <strong>
-              {totalOrders > 0 
+              {totalOrders > 0
                 ? `Los pedidos entregados representan el ${orderStatusData[0]?.value || 68}% del total.`
                 : "Cargando indicadores..."}
             </strong>
@@ -369,6 +497,7 @@ function BusinessMetricsPage() {
         </section>
       </main>
 
+      <HomeFooter />
     </div>
   );
 }

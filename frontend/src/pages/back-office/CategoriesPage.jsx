@@ -1,3 +1,4 @@
+// CategoriesPage.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
@@ -19,23 +20,69 @@ import {
   FaSearch,
   FaFilter,
   FaEye,
+  FaSpinner,
 } from "react-icons/fa";
 import { catalogService } from "../../services/backendServices.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
+// eslint-disable-next-line no-unused-vars
 const API_URL = "http://localhost:8000";
 
+// ============================================
+// ✅ MAPA DE ICONOS POR CATEGORÍA
+// ============================================
+const getCategoryIcon = (name) => {
+  const icons = {
+    "Sofás": <FaCouch size={32} color="#8B5E3C" />,
+    "Mesas": <FaTable size={32} color="#8B5E3C" />,
+    "Sillas": <FaChair size={32} color="#8B5E3C" />,
+    "Iluminación": <FaLightbulb size={32} color="#8B5E3C" />,
+    "Almacenamiento": <FaBoxOpen size={32} color="#8B5E3C" />,
+    "Sofás cama": <FaCouch size={32} color="#8B5E3C" />,
+    "Mesas de centro": <FaTable size={32} color="#8B5E3C" />,
+    "Sillas de acento": <FaChair size={32} color="#8B5E3C" />,
+    "Decoración": <FaLightbulb size={32} color="#8B5E3C" />,
+  };
+  return icons[name] || <FaBoxOpen size={32} color="#8B5E3C" />;
+};
+
+// ============================================
+// ✅ FUNCIONES AUXILIARES
+// ============================================
+const normalizeString = (str) => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+};
+
+const getStatusValue = (status) => {
+  if (typeof status === "boolean") return status;
+  return status === "active" || status === "Activo";
+};
+
+const getStatusLabel = (status) => {
+  return getStatusValue(status) ? "Activo" : "Inactivo";
+};
+
+// ============================================
+// ✅ COMPONENTE PRINCIPAL
+// ============================================
 export default function CategoriesPage() {
-  const user = useAuthStore((state) => state.user);
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
+  const isEmployee = viewerId === "employee";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
   
-  const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
-  const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
+  // ✅ PERMISOS
+  const canCreate = isAdmin || effectivePermissionCodes.includes("categories.create");
+  const canUpdate = isAdmin || effectivePermissionCodes.includes("categories.update");
   const canDeactivate = isAdmin;
-  
+  // eslint-disable-next-line no-unused-vars
+  const canView = isAdmin || effectivePermissionCodes.includes("categories.view");
+
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,62 +94,70 @@ export default function CategoriesPage() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("Todos");
+  const [updating, setUpdating] = useState(false);
 
   const statusOptions = ["Todos", "Activo", "Inactivo"];
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  async function fetchCategories() {
+  // ============================================
+  // ✅ CARGAR CATEGORÍAS Y CONTAR PRODUCTOS
+  // ============================================
+  const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await catalogService.manageCategories();
-      setCategories(response.results || response || []);
       setError(null);
+      
+      // Obtener categorías
+      const response = await catalogService.manageCategories();
+      let categoriesData = response.results || response || [];
+      
+      // Obtener productos para contar por categoría
+      try {
+        const productsResponse = await catalogService.manageProducts();
+        const products = productsResponse.results || productsResponse || [];
+        
+        // Contar productos por categoría
+        const productCounts = {};
+        products.forEach(product => {
+          const categoryId = product.category?.id || product.category;
+          if (categoryId) {
+            productCounts[categoryId] = (productCounts[categoryId] || 0) + 1;
+          }
+        });
+        
+        // Agregar contador a cada categoría
+        categoriesData = categoriesData.map(category => ({
+          ...category,
+          product_count: productCounts[category.id] || 0,
+        }));
+        
+        console.log(`✅ ${categoriesData.length} categorías cargadas con conteo de productos`);
+      } catch (err) {
+        console.warn("⚠️ No se pudo obtener el conteo de productos:", err);
+      }
+      
+      setCategories(categoriesData);
     } catch (err) {
+      console.error("❌ Error al cargar categorías:", err);
       setError(err.message || "Error al cargar categorías");
     } finally {
       setLoading(false);
     }
-  }
-
-  const normalizeString = (str) => {
-    return str
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
   };
 
-  const getStatusLabel = (status) => {
-    if (typeof status === "boolean") {
-      return status ? "Activo" : "Inactivo";
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      if (!isAdmin && !isEmployee) {
+        // Redirigir si no es admin ni empleado
+        return;
+      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchCategories();
     }
-    return status === "active" || status === "Activo" ? "Activo" : "Inactivo";
-  };
+  }, [authLoading, isAuthenticated, isAdmin, isEmployee]);
 
-  const getStatusValue = (status) => {
-    if (typeof status === "boolean") {
-      return status;
-    }
-    return status === "active" || status === "Activo";
-  };
-
-  const getCategoryIcon = (name) => {
-    const icons = {
-      "Sofás": <FaCouch size={32} color="#8B5E3C" />,
-      "Mesas": <FaTable size={32} color="#8B5E3C" />,
-      "Sillas": <FaChair size={32} color="#8B5E3C" />,
-      "Iluminación": <FaLightbulb size={32} color="#8B5E3C" />,
-      "Almacenamiento": <FaBoxOpen size={32} color="#8B5E3C" />,
-      "Sofás cama": <FaCouch size={32} color="#8B5E3C" />,
-      "Mesas de centro": <FaTable size={32} color="#8B5E3C" />,
-      "Sillas de acento": <FaChair size={32} color="#8B5E3C" />,
-      "Decoración": <FaLightbulb size={32} color="#8B5E3C" />,
-    };
-    return icons[name] || <FaBoxOpen size={32} color="#8B5E3C" />;
-  };
-
+  // ============================================
+  // ✅ FILTRAR CATEGORÍAS
+  // ============================================
   const filteredCategories = categories.filter((category) => {
     const normalizedSearch = normalizeString(searchTerm);
     const normalizedName = normalizeString(category.name);
@@ -113,6 +168,9 @@ export default function CategoriesPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // ============================================
+  // ✅ CREAR/EDITAR CATEGORÍA
+  // ============================================
   const handleOpenModal = (category = null) => {
     if (category) {
       setEditingCategory(category);
@@ -144,6 +202,9 @@ export default function CategoriesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setUpdating(true);
+    setError(null);
+    
     try {
       const payload = {
         name: formData.name,
@@ -156,82 +217,108 @@ export default function CategoriesPage() {
         await catalogService.createCategory(payload);
       }
       handleCloseModal();
-      fetchCategories();
+      await fetchCategories();
     } catch (err) {
+      console.error("❌ Error al guardar categoría:", err);
       setError(err.message || "Error al guardar categoría");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  // ✅ CAMBIAR ESTADO - CORREGIDO CON FETCH DIRECTO
-  const handleToggleStatus = async (slug, currentStatus) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setError("No hay sesión activa. Inicia sesión nuevamente.");
+  // ============================================
+  // ✅ CAMBIAR ESTADO
+  // ============================================
+  const handleToggleStatus = async (category) => {
+    const newActive = !getStatusValue(category.status);
+    const newStatus = newActive ? "Activo" : "Inactivo";
+    
+    if (!window.confirm(`¿Cambiar estado de "${category.name}" a "${newStatus}"?`)) {
       return;
     }
 
+    setUpdating(true);
+    setError(null);
+
     try {
-      const newActive = !getStatusValue(currentStatus);
-      console.log(`🔄 Cambiando estado de "${slug}" a ${newActive ? "Activo" : "Inactivo"}`);
-
-      const response = await fetch(`${API_URL}/api/catalog/manage/categories/${slug}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ active: newActive })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Error al cambiar estado");
-      }
-
-      const data = await response.json();
-      console.log("✅ Categoría actualizada:", data);
-      
-      // Recargar categorías
+      await catalogService.updateCategory(category.slug, { active: newActive });
       await fetchCategories();
-      
     } catch (err) {
       console.error("❌ Error al cambiar estado:", err);
       setError(err.message || "Error al cambiar estado");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  // ✅ DESACTIVAR - SOLO ADMIN
-  const handleDelete = async (slug) => {
+  // ============================================
+  // ✅ DESACTIVAR CATEGORÍA (SOLO ADMIN)
+  // ============================================
+  const handleDelete = async (category) => {
     if (!isAdmin) {
       setError("No tienes permisos para desactivar categorías");
       return;
     }
     
-    if (window.confirm("¿Desactivar esta categoría?")) {
-      try {
-        const token = localStorage.getItem('access_token');
-        await fetch(`${API_URL}/api/catalog/manage/categories/${slug}/`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ active: false })
-        });
-        fetchCategories();
-      } catch (err) {
-        setError(err.message || "Error al desactivar categoría");
-      }
+    if (!window.confirm(`¿Desactivar la categoría "${category.name}"?`)) {
+      return;
+    }
+
+    setUpdating(true);
+    setError(null);
+
+    try {
+      await catalogService.updateCategory(category.slug, { active: false });
+      await fetchCategories();
+    } catch (err) {
+      console.error("❌ Error al desactivar categoría:", err);
+      setError(err.message || "Error al desactivar categoría");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  if (loading) return <LoadingState message="Cargando categorías..." />;
-  if (error) return <ErrorMessage message={error} />;
+  // ============================================
+  // ✅ ESTADOS DE CARGA
+  // ============================================
+  if (loading || authLoading) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <LoadingState message="Cargando categorías..." />
+        <HomeFooter />
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <ErrorMessage message={error} />
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <button onClick={fetchCategories} style={{
+            padding: "10px 24px",
+            background: "#8B5E3C",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}>Reintentar</button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  // ============================================
+  // ✅ RENDER PRINCIPAL
+  // ============================================
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
 
+      {/* HERO */}
       <section
         className="dashboard-hero"
         aria-label="Categorías"
@@ -294,30 +381,21 @@ export default function CategoriesPage() {
             >
               Inicio
             </Link>
-            <span
-              aria-hidden="true"
-              style={{ margin: "0 8px", color: "#F5EDE5" }}
-            >
-              &gt;
-            </span>
+            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
             <Link
               to={routePaths.public.catalog}
               style={{ color: "#FFD700", textDecoration: "none" }}
             >
               Catálogo
             </Link>
-            <span
-              aria-hidden="true"
-              style={{ margin: "0 8px", color: "#F5EDE5" }}
-            >
-              &gt;
-            </span>
+            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
             <span style={{ color: "#FFFFFF" }}>Categorías</span>
           </p>
         </div>
       </section>
 
       <main className="dashboard-container">
+        {/* HEADER */}
         <div
           style={{
             display: "flex",
@@ -336,7 +414,7 @@ export default function CategoriesPage() {
               margin: 0,
             }}
           >
-            Lista de categorías
+            Lista de categorías ({categories.length})
           </h2>
           {canCreate && (
             <button
@@ -364,6 +442,7 @@ export default function CategoriesPage() {
           )}
         </div>
 
+        {/* FILTROS */}
         <div
           style={{
             display: "flex",
@@ -433,6 +512,7 @@ export default function CategoriesPage() {
           </div>
         </div>
 
+        {/* GRID DE CATEGORÍAS */}
         <div
           className="dashboard-grid"
           style={{
@@ -454,8 +534,18 @@ export default function CategoriesPage() {
                   border: "1px solid #E8DCCC",
                   borderRadius: "16px",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  transition: "transform 0.2s ease, boxShadow 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)";
                 }}
               >
+                {/* ICONO */}
                 <div
                   style={{
                     marginBottom: "12px",
@@ -472,6 +562,7 @@ export default function CategoriesPage() {
                   {getCategoryIcon(category.name)}
                 </div>
 
+                {/* NOMBRE */}
                 <h3
                   style={{
                     margin: "0 0 4px 0",
@@ -483,6 +574,7 @@ export default function CategoriesPage() {
                   {category.name}
                 </h3>
 
+                {/* PRODUCTOS */}
                 <span
                   style={{
                     color: "#7A6B5A",
@@ -490,9 +582,10 @@ export default function CategoriesPage() {
                     marginBottom: "16px",
                   }}
                 >
-                  {category.product_count || category.products_count || 0} productos
+                  {category.product_count || 0} productos
                 </span>
 
+                {/* ACCIONES */}
                 <div
                   style={{
                     display: "flex",
@@ -505,6 +598,7 @@ export default function CategoriesPage() {
                   {canUpdate && (
                     <button
                       onClick={() => handleOpenModal(category)}
+                      disabled={updating}
                       style={{
                         backgroundColor: "#F8F3ED",
                         color: "#8B5E3C",
@@ -513,22 +607,24 @@ export default function CategoriesPage() {
                         borderRadius: "25px",
                         fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
                         fontWeight: 600,
-                        cursor: "pointer",
+                        cursor: updating ? "not-allowed" : "pointer",
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
                         transition: "all 0.2s ease",
                         flex: 1,
                         justifyContent: "center",
+                        opacity: updating ? 0.5 : 1,
                       }}
                     >
                       <FaEdit size={14} /> Editar
                     </button>
                   )}
                   
-                  {/* ✅ BOTÓN PARA CAMBIAR ESTADO */}
+                  {/* BOTÓN DE ESTADO */}
                   <button
-                    onClick={() => handleToggleStatus(category.slug, category.status)}
+                    onClick={() => handleToggleStatus(category)}
+                    disabled={updating}
                     style={{
                       backgroundColor: getStatusValue(category.status) ? "#E8F5E9" : "#FFF3E0",
                       color: getStatusValue(category.status) ? "#2E7D32" : "#EF6C00",
@@ -538,21 +634,24 @@ export default function CategoriesPage() {
                       borderRadius: "25px",
                       fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
                       fontWeight: 600,
-                      cursor: "pointer",
+                      cursor: updating ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "6px",
                       transition: "all 0.2s ease",
                       flex: 1,
                       justifyContent: "center",
+                      opacity: updating ? 0.5 : 1,
                     }}
                   >
-                    {getStatusLabel(category.status)}
+                    {updating ? <FaSpinner className="spinner" /> : getStatusLabel(category.status)}
                   </button>
 
+                  {/* DESACTIVAR - SOLO ADMIN */}
                   {canDeactivate && (
                     <button
-                      onClick={() => handleDelete(category.slug)}
+                      onClick={() => handleDelete(category)}
+                      disabled={updating}
                       style={{
                         backgroundColor: "#FDECEA",
                         color: "#D32F2F",
@@ -561,13 +660,14 @@ export default function CategoriesPage() {
                         borderRadius: "25px",
                         fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
                         fontWeight: 600,
-                        cursor: "pointer",
+                        cursor: updating ? "not-allowed" : "pointer",
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
                         transition: "all 0.2s ease",
                         flex: 1,
                         justifyContent: "center",
+                        opacity: updating ? 0.5 : 1,
                       }}
                     >
                       <FaTrash size={14} /> Desactivar
@@ -578,6 +678,7 @@ export default function CategoriesPage() {
                   )}
                 </div>
 
+                {/* ESTADO Y VER PRODUCTOS */}
                 <div
                   style={{
                     marginTop: "14px",
@@ -590,10 +691,8 @@ export default function CategoriesPage() {
                 >
                   <span
                     style={{
-                      backgroundColor:
-                        getStatusValue(category.status) ? "#E8F5E9" : "#FDECEA",
-                      color:
-                        getStatusValue(category.status) ? "#2E7D32" : "#D32F2F",
+                      backgroundColor: getStatusValue(category.status) ? "#E8F5E9" : "#FDECEA",
+                      color: getStatusValue(category.status) ? "#2E7D32" : "#D32F2F",
                       padding: "4px 16px",
                       borderRadius: "20px",
                       fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
@@ -650,6 +749,7 @@ export default function CategoriesPage() {
         </div>
       </main>
 
+      {/* MODAL CREAR/EDITAR */}
       {showModal && (
         <div
           style={{
@@ -663,6 +763,7 @@ export default function CategoriesPage() {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1000,
+            padding: "16px",
           }}
           onClick={handleCloseModal}
         >
@@ -701,7 +802,7 @@ export default function CategoriesPage() {
                     fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
                   }}
                 >
-                  Nombre de la categoría
+                  Nombre de la categoría *
                 </label>
                 <input
                   type="text"
@@ -709,6 +810,7 @@ export default function CategoriesPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  placeholder="Ej: Sofás, Mesas, Sillas..."
                   style={{
                     width: "100%",
                     padding: "12px 16px",
@@ -716,7 +818,10 @@ export default function CategoriesPage() {
                     borderRadius: "10px",
                     fontSize: "clamp(0.9rem, 1vw, 1rem)",
                     outline: "none",
+                    transition: "border-color 0.2s ease",
                   }}
+                  onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
+                  onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
                 />
               </div>
 
@@ -756,39 +861,44 @@ export default function CategoriesPage() {
                   display: "flex",
                   gap: "12px",
                   justifyContent: "flex-end",
+                  flexWrap: "wrap",
                 }}
               >
                 <button
                   type="button"
                   onClick={handleCloseModal}
+                  disabled={updating}
                   style={{
                     padding: "12px 28px",
                     border: "2px solid #E8DCCC",
                     borderRadius: "10px",
                     backgroundColor: "#FFFFFF",
                     color: "#666",
-                    cursor: "pointer",
+                    cursor: updating ? "not-allowed" : "pointer",
                     fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
                     fontWeight: 600,
+                    opacity: updating ? 0.5 : 1,
                   }}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  disabled={updating}
                   style={{
                     padding: "12px 32px",
                     border: "none",
                     borderRadius: "10px",
                     backgroundColor: "#8B5E3C",
                     color: "#FFFFFF",
-                    cursor: "pointer",
+                    cursor: updating ? "not-allowed" : "pointer",
                     fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
                     fontWeight: 600,
                     boxShadow: "0 4px 12px rgba(139,94,60,0.3)",
+                    opacity: updating ? 0.5 : 1,
                   }}
                 >
-                  {editingCategory ? "Actualizar" : "Crear"}
+                  {updating ? "Guardando..." : editingCategory ? "Actualizar" : "Crear"}
                 </button>
               </div>
             </form>

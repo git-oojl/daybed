@@ -1,4 +1,6 @@
+// MyOrdersPage.jsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/order-detail-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -6,20 +8,227 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
 import { orderService } from "../../services/backendServices.js";
+import { useAuthStore } from "../../auth/authStore.js";
+// eslint-disable-next-line no-unused-vars
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 
-// Importar imágenes de la tienda
+// Importar imágenes de la tienda (fallback)
 import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
-import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
-import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
-import RespiraDaybed from "../../assets/RespiraDaybed.jpg";
 
+// ============================================
+// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
+// ============================================
+const productImages = {
+  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
+  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
+  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop",
+  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=100&h=100&fit=crop",
+  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
+  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
+  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=100&h=100&fit=crop",
+  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=100&h=100&fit=crop",
+  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=100&h=100&fit=crop",
+  "Sillón": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=100&h=100&fit=crop",
+  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=100&h=100&fit=crop",
+  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop",
+  "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop",
+  "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop",
+  "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
+  "Daybed Roble": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
+  "Syltherine": "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=100&h=100&fit=crop",
+  "Leviosa": "https://images.unsplash.com/photo-1683793837504-318275ff665d?w=100&h=100&fit=crop",
+  "Lolito": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=100&h=100&fit=crop",
+  "Respira": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
+};
+
+// ============================================
+// ✅ FUNCIÓN PARA OBTENER IMAGEN DEL PRODUCTO
+// ============================================
+const getProductImage = (item) => {
+  if (item.product_snapshot?.main_image) {
+    return item.product_snapshot.main_image;
+  }
+  if (item.product_snapshot?.images?.length > 0) {
+    return item.product_snapshot.images[0];
+  }
+  
+  if (item.image) return item.image;
+  if (item.main_image) return item.main_image;
+  if (item.images?.length > 0) return item.images[0];
+  
+  if (item.product?.main_image) return item.product.main_image;
+  if (item.product?.images?.length > 0) return item.product.images[0];
+  if (item.product?.image) return item.product.image;
+  
+  const name = item.name || item.product_name || item.product_snapshot?.name || "";
+  
+  for (const [key, value] of Object.entries(productImages)) {
+    if (name.toLowerCase().includes(key.toLowerCase()) || 
+        key.toLowerCase().includes(name.toLowerCase())) {
+      return value;
+    }
+  }
+  
+  const category = item.category?.name || item.category || item.product_snapshot?.category?.name || "";
+  const categoryLower = category.toLowerCase();
+  
+  if (categoryLower.includes("sofá") || categoryLower.includes("sillón") || categoryLower.includes("sofa")) {
+    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop";
+  }
+  if (categoryLower.includes("mesa")) {
+    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop";
+  }
+  if (categoryLower.includes("silla")) {
+    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop";
+  }
+  
+  return SyltherineDaybed;
+};
+
+// ============================================
+// ✅ MAPEO DE ESTADOS
+// ============================================
+const STATUS_MAP = {
+  pending: {
+    label: "Pendiente",
+    color: "#ED6C02",
+    bg: "#FFF8E1",
+  },
+  confirmed: {
+    label: "Confirmado",
+    color: "#2E7D32",
+    bg: "#E8F5E9",
+  },
+  preparing: {
+    label: "En preparación",
+    color: "#6A1B9A",
+    bg: "#F3E5F5",
+  },
+  shipped: {
+    label: "Enviado",
+    color: "#0D47A1",
+    bg: "#E3F2FD",
+  },
+  delivered: {
+    label: "Entregado",
+    color: "#1B5E20",
+    bg: "#E8F5E9",
+  },
+  cancelled: {
+    label: "Cancelado",
+    color: "#D32F2F",
+    bg: "#FDECEA",
+  },
+};
+
+const getStatusInfo = (status) => {
+  return STATUS_MAP[status] || STATUS_MAP.pending;
+};
+
+const getOrderStatusLabel = (status) => {
+  return getStatusInfo(status).label;
+};
+
+const getStatusClass = (status) => {
+  switch (status) {
+    case "pending": return "orders-status--pending";
+    case "confirmed": return "orders-status--confirmed";
+    case "preparing": return "orders-status--preparing";
+    case "shipped": return "orders-status--shipped";
+    case "delivered": return "orders-status--delivered";
+    case "cancelled": return "orders-status--cancelled";
+    default: return "";
+  }
+};
+
+const normalizeOrderStatus = (status) => {
+  const statusMap = {
+    pending: "pending",
+    confirmed: "confirmed",
+    preparing: "preparing",
+    shipped: "shipped",
+    delivered: "delivered",
+    cancelled: "cancelled",
+    completed: "delivered",
+    canceled: "cancelled",
+    "en proceso": "pending",
+    entregado: "delivered",
+    cancelado: "cancelled",
+  };
+  return statusMap[status] || "pending";
+};
+
+const formatOrderDate = (value) => {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatPrice = (price) => {
+  return `$${Number(price || 0).toLocaleString("es-MX")} MX`;
+};
+
+const normalizeAddress = (order) => {
+  const addressValue =
+    order.formatted_address ||
+    order.original_address ||
+    order.delivery_address ||
+    [
+      order.address?.street,
+      order.address?.city,
+      order.address?.state,
+      order.address?.zip,
+    ].filter(Boolean).join(", ");
+
+  const parts = (addressValue || "-")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return {
+    street: parts[0] || "-",
+    city: parts[1] || "-",
+    state: parts[2] || "-",
+    zip: parts[3] || "-",
+    country: parts[4] || "-",
+    text: addressValue || "-",
+  };
+};
+
+// ============================================
+// ✅ COMPONENTE PRINCIPAL
+// ============================================
 function MyOrdersPage() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ Obtener el nombre del cliente autenticado
+  const customerName = user?.name || user?.first_name || "Cliente";
+
+  // ============================================
+  // ✅ VERIFICAR AUTENTICACIÓN
+  // ============================================
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+
+  // ============================================
+  // ✅ CARGAR PEDIDOS DEL CLIENTE
+  // ============================================
   useEffect(() => {
     let isMounted = true;
 
@@ -35,44 +244,23 @@ function MyOrdersPage() {
 
         const normalizedOrders = rawOrders.map((order) => ({
           id: order.id || order.order_id || "-",
-          customer:
-            order.customer_name ||
-            order.customer?.name ||
-            order.customer ||
-            "Cliente",
-          date: formatOrderDate(
-            order.created_at || order.date || order.order_date,
-          ),
-          status: normalizeOrderStatus(order.status || order.estado || "pending"),
-          statusText: getOrderStatusLabel(
-            order.status || order.estado || "pending",
-          ),
+          orderNumber: `#DAY-${String(order.id || 0).padStart(4, '0')}`,
+          customer: order.customer_name || order.customer?.name || order.customer || "Cliente",
+          date: formatOrderDate(order.created_at || order.date || order.order_date),
+          status: normalizeOrderStatus(order.status || "pending"),
+          statusText: getOrderStatusLabel(order.status || "pending"),
           total: Number(order.total || order.products_subtotal || order.amount || 0),
-          subtotal: Number(
-            order.products_subtotal || order.subtotal || order.total || 0,
-          ),
+          subtotal: Number(order.products_subtotal || order.subtotal || order.total || 0),
           shipping: Number(order.delivery_fee || order.shipping || 0),
           items: Array.isArray(order.items)
             ? order.items.map((item) => ({
                 id: item.id || item.product || item.product_snapshot?.id,
-                name:
-                  item.product_name ||
-                  item.product_snapshot?.name ||
-                  item.name ||
-                  "Producto",
-                description:
-                  item.product_snapshot?.description ||
-                  item.description ||
-                  "Producto sin descripción",
+                name: item.product_name || item.product_snapshot?.name || item.name || "Producto",
+                description: item.product_snapshot?.description || item.description || "Producto sin descripción",
                 quantity: Number(item.quantity || item.qty || 1),
-                price: Number(
-                  item.unit_price || item.price || item.line_total || 0,
-                ),
-                image:
-                  item.product_snapshot?.main_image ||
-                  item.image ||
-                  item.product_snapshot?.images?.[0] ||
-                  SyltherineDaybed,
+                price: Number(item.unit_price || item.price || item.line_total || 0),
+                image: getProductImage(item),
+                rawItem: item,
               }))
             : [],
           address: normalizeAddress(order),
@@ -92,91 +280,18 @@ function MyOrdersPage() {
       }
     };
 
-    loadOrders();
+    if (isAuthenticated && !authLoading) {
+      loadOrders();
+    }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
-  const formatOrderDate = (value) => {
-    if (!value) return "-";
-
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return value;
-
-    return parsed.toLocaleDateString("es-MX", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const normalizeOrderStatus = (status) => {
-    if (status === "delivered" || status === "completed") return "completed";
-    if (status === "cancelled" || status === "canceled") return "cancelled";
-    return "pending";
-  };
-
-  const getOrderStatusLabel = (status) => {
-    if (status === "delivered" || status === "completed") return "Entregado";
-    if (status === "cancelled" || status === "canceled") return "Cancelado";
-    return "En proceso";
-  };
-
-  const normalizeAddress = (order) => {
-    const addressValue =
-      order.formatted_address ||
-      order.original_address ||
-      order.delivery_address ||
-      [
-        order.address?.street,
-        order.address?.city,
-        order.address?.state,
-        order.address?.zip,
-      ].filter(Boolean).join(", ");
-
-    const parts = (addressValue || "-")
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean);
-
-    return {
-      street: parts[0] || "-",
-      city: parts[1] || "-",
-      state: parts[2] || "-",
-      zip: parts[3] || "-",
-      country: parts[4] || "-",
-      text: addressValue || "-",
-    };
-  };
-
-  const filteredOrders = orders.filter((order) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      order.id.toString().toLowerCase().includes(searchLower) ||
-      order.customer.toLowerCase().includes(searchLower) ||
-      order.items.some((item) => item.name.toLowerCase().includes(searchLower))
-    );
-  });
-
-  const formatPrice = (price) => {
-    return `$${Number(price || 0).toLocaleString("es-MX")} MX`;
-  };
-
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "pending":
-        return "orders-status--pending";
-      case "completed":
-        return "orders-status--completed";
-      case "cancelled":
-        return "orders-status--cancelled";
-      default:
-        return "";
-    }
-  };
-
+  // ============================================
+  // ✅ HANDLERS
+  // ============================================
   const toggleExpand = (orderId) => {
     if (expandedOrder === orderId) {
       setExpandedOrder(null);
@@ -189,6 +304,36 @@ function MyOrdersPage() {
     setSearchTerm(e.target.value);
   };
 
+  // ============================================
+  // ✅ FILTRAR PEDIDOS
+  // ============================================
+  const filteredOrders = orders.filter((order) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      order.id.toString().toLowerCase().includes(searchLower) ||
+      order.customer.toLowerCase().includes(searchLower) ||
+      order.items.some((item) => item.name.toLowerCase().includes(searchLower))
+    );
+  });
+
+  // ============================================
+  // ✅ ESTADOS DE CARGA
+  // ============================================
+  if (authLoading) {
+    return (
+      <div className="home-page orders-page">
+        <HomeHeader />
+        <div className="orders-empty">
+          <p className="orders-empty__message">Verificando sesión...</p>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  // ============================================
+  // ✅ RENDER
+  // ============================================
   return (
     <div className="home-page orders-page">
       <HomeHeader />
@@ -202,7 +347,9 @@ function MyOrdersPage() {
         }}
       >
         <div className="orders-hero__overlay">
-          <h1 className="orders-hero__title">Mis pedidos</h1>
+          <h1 className="orders-hero__title">
+            Pedidos de {customerName}
+          </h1>
           <p className="orders-hero__breadcrumb">
             <Link to={routePaths.public.home}>Inicio</Link>
             <span aria-hidden="true">&gt;</span>
@@ -212,6 +359,51 @@ function MyOrdersPage() {
       </section>
 
       <main className="orders-main">
+        {/* ✅ BANNER DE BIENVENIDA */}
+        <div style={{
+          background: "#FDF8F0",
+          border: "1px solid #E8DCCC",
+          borderRadius: "12px",
+          padding: "16px 20px",
+          marginBottom: "24px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+        }}>
+          <div>
+            <p style={{ margin: 0, color: "#7A6B5A", fontSize: "0.9rem" }}>
+              <strong style={{ color: "#6B4A2B" }}>{customerName}</strong>, aquí tienes el historial de tus compras
+            </p>
+            <p style={{ margin: "4px 0 0 0", color: "#9A8B7A", fontSize: "0.8rem" }}>
+              {orders.length} pedidos en total
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <span style={{
+              background: "#E8DCCC",
+              color: "#6B4A2B",
+              padding: "4px 12px",
+              borderRadius: "20px",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+            }}>
+              {orders.filter(o => o.status === "pending" || o.status === "confirmed" || o.status === "preparing").length} activos
+            </span>
+            <span style={{
+              background: "#E8F5E9",
+              color: "#2E7D32",
+              padding: "4px 12px",
+              borderRadius: "20px",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+            }}>
+              {orders.filter(o => o.status === "delivered").length} entregados
+            </span>
+          </div>
+        </div>
+
         <div className="orders-toolbar">
           <div className="orders-search">
             <span className="orders-search__icon">
@@ -232,7 +424,7 @@ function MyOrdersPage() {
             <input
               type="text"
               className="orders-search__input"
-              placeholder="Buscar por numero de pedido, cliente o producto..."
+              placeholder="Buscar por numero de pedido o producto..."
               value={searchTerm}
               onChange={handleSearchChange}
             />
@@ -246,18 +438,30 @@ function MyOrdersPage() {
         ) : error ? (
           <div className="orders-empty">
             <p className="orders-empty__message">{error}</p>
+            <button
+              className="orders-empty__btn"
+              onClick={() => window.location.reload()}
+            >
+              Reintentar
+            </button>
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="orders-empty">
             <p className="orders-empty__message">
-              No se encontraron pedidos para "{searchTerm}"
+              {searchTerm ? `No se encontraron pedidos para "${searchTerm}"` : "No tienes pedidos realizados"}
             </p>
-            <button
-              className="orders-empty__btn"
-              onClick={() => setSearchTerm("")}
-            >
-              Limpiar busqueda
-            </button>
+            {searchTerm ? (
+              <button
+                className="orders-empty__btn"
+                onClick={() => setSearchTerm("")}
+              >
+                Limpiar busqueda
+              </button>
+            ) : (
+              <Link to={routePaths.public.catalog} className="orders-empty__btn">
+                Ir a la tienda
+              </Link>
+            )}
           </div>
         ) : (
           <div className="orders-table-wrap">
@@ -265,7 +469,6 @@ function MyOrdersPage() {
               <thead>
                 <tr>
                   <th>Pedido</th>
-                  <th>Cliente</th>
                   <th>Fecha</th>
                   <th>Total</th>
                   <th>Estado</th>
@@ -273,166 +476,185 @@ function MyOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order) => (
-                  <React.Fragment key={order.id}>
-                    <tr
-                      className="orders-table__row"
-                      onClick={() => toggleExpand(order.id)}
-                    >
-                      <td data-label="Pedido" className="orders-table__order">
-                        {order.id}
-                      </td>
-                      <td data-label="Cliente">{order.customer}</td>
-                      <td data-label="Fecha">{order.date}</td>
-                      <td data-label="Total">{formatPrice(order.total)}</td>
-                      <td data-label="Estado">
-                        <span
-                          className={`orders-status ${getStatusClass(order.status)}`}
-                        >
-                          {order.statusText}
-                        </span>
-                      </td>
-                      <td data-label="Detalles">
-                        <button
-                          className="orders-expand-btn"
-                          aria-label="Ver detalles del pedido"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpand(order.id);
-                          }}
-                        >
-                          {expandedOrder === order.id ? "−" : "+"}
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedOrder === order.id && (
-                      <tr className="orders-detail-row">
-                        <td colSpan="6">
-                          <div className="orders-detail-box">
-                            <div className="orders-detail-grid">
-                              <div className="orders-detail-section">
-                                <h4 className="orders-detail__header">
-                                  Productos
-                                </h4>
-                                <div className="orders-detail__content">
-                                  {order.items.map((item) => (
-                                    <div
-                                      className="orders-detail__product"
-                                      key={item.id}
-                                    >
-                                      <div className="orders-detail__product-info">
-                                        <img
-                                          src={item.image}
-                                          alt={item.name}
-                                          className="orders-detail__product-image"
-                                        />
-                                        <div>
-                                          <span className="orders-detail__product-name">
-                                            {item.name}
-                                          </span>
-                                          <span className="orders-detail__product-desc">
-                                            {item.description}
-                                          </span>
-                                          <span className="orders-detail__product-qty">
-                                            × {item.quantity}
-                                          </span>
+                {filteredOrders.map((order) => {
+                  const statusInfo = getStatusInfo(order.status);
+                  return (
+                    <React.Fragment key={order.id}>
+                      <tr
+                        className="orders-table__row"
+                        onClick={() => toggleExpand(order.id)}
+                      >
+                        <td data-label="Pedido" className="orders-table__order">
+                          {order.orderNumber}
+                        </td>
+                        <td data-label="Fecha">{order.date}</td>
+                        <td data-label="Total">{formatPrice(order.total)}</td>
+                        <td data-label="Estado">
+                          <span
+                            className={`orders-status ${getStatusClass(order.status)}`}
+                            style={{
+                              backgroundColor: statusInfo.bg,
+                              color: statusInfo.color,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "4px 14px",
+                              borderRadius: "20px",
+                              fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {order.statusText}
+                          </span>
+                        </td>
+                        <td data-label="Detalles">
+                          <button
+                            className="orders-expand-btn"
+                            aria-label="Ver detalles del pedido"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(order.id);
+                            }}
+                          >
+                            {expandedOrder === order.id ? "−" : "+"}
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedOrder === order.id && (
+                        <tr className="orders-detail-row">
+                          <td colSpan="5">
+                            <div className="orders-detail-box">
+                              <div className="orders-detail-grid">
+                                <div className="orders-detail-section">
+                                  <h4 className="orders-detail__header">
+                                    Productos
+                                  </h4>
+                                  <div className="orders-detail__content">
+                                    {order.items.map((item) => (
+                                      <div
+                                        className="orders-detail__product"
+                                        key={item.id}
+                                      >
+                                        <div className="orders-detail__product-info">
+                                          <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="orders-detail__product-image"
+                                            onError={(e) => {
+                                              e.target.src = SyltherineDaybed;
+                                            }}
+                                          />
+                                          <div>
+                                            <span className="orders-detail__product-name">
+                                              {item.name}
+                                            </span>
+                                            <span className="orders-detail__product-desc">
+                                              {item.description}
+                                            </span>
+                                            <span className="orders-detail__product-qty">
+                                              × {item.quantity}
+                                            </span>
+                                          </div>
                                         </div>
+                                        <span className="orders-detail__product-price">
+                                          {formatPrice(
+                                            item.price * item.quantity,
+                                          )}
+                                        </span>
                                       </div>
-                                      <span className="orders-detail__product-price">
-                                        {formatPrice(
-                                          item.price * item.quantity,
-                                        )}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="orders-detail-section">
-                                <h4 className="orders-detail__header">
-                                  Informacion
-                                </h4>
-                                <div className="orders-detail__content">
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Numero de pedido
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.id}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Cliente
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.customer}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Fecha
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.date}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Estado
-                                    </span>
-                                    <span
-                                      className={`orders-status ${getStatusClass(order.status)}`}
-                                    >
-                                      {order.statusText}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Direccion de entrega
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.address.street}
-                                      <br />
-                                      {order.address.city},{" "}
-                                      {order.address.state}
-                                      <br />
-                                      CP {order.address.zip}
-                                    </span>
+                                    ))}
                                   </div>
                                 </div>
-                              </div>
 
-                              <div className="orders-detail-section">
-                                <h4 className="orders-detail__header">Total</h4>
-                                <div className="orders-detail__content">
-                                  <div className="orders-detail__total">
-                                    <div className="orders-detail__total-row">
-                                      <span>Subtotal</span>
-                                      <span>{formatPrice(order.subtotal)}</span>
-                                    </div>
-                                    <div className="orders-detail__total-row">
-                                      <span>Envio</span>
-                                      <span>
-                                        {order.shipping > 0
-                                          ? formatPrice(order.shipping)
-                                          : "Gratis"}
+                                <div className="orders-detail-section">
+                                  <h4 className="orders-detail__header">
+                                    Información
+                                  </h4>
+                                  <div className="orders-detail__content">
+                                    <div className="orders-detail__item">
+                                      <span className="orders-detail__label">
+                                        Número de pedido
+                                      </span>
+                                      <span className="orders-detail__value">
+                                        {order.orderNumber}
                                       </span>
                                     </div>
-                                    <div className="orders-detail__total-row orders-detail__total-final">
-                                      <span>Total</span>
-                                      <span>{formatPrice(order.total)}</span>
+                                    <div className="orders-detail__item">
+                                      <span className="orders-detail__label">
+                                        Fecha
+                                      </span>
+                                      <span className="orders-detail__value">
+                                        {order.date}
+                                      </span>
+                                    </div>
+                                    <div className="orders-detail__item">
+                                      <span className="orders-detail__label">
+                                        Estado
+                                      </span>
+                                      <span
+                                        className={`orders-status ${getStatusClass(order.status)}`}
+                                        style={{
+                                          backgroundColor: statusInfo.bg,
+                                          color: statusInfo.color,
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: "6px",
+                                          padding: "4px 14px",
+                                          borderRadius: "20px",
+                                          fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {order.statusText}
+                                      </span>
+                                    </div>
+                                    <div className="orders-detail__item">
+                                      <span className="orders-detail__label">
+                                        Dirección de entrega
+                                      </span>
+                                      <span className="orders-detail__value">
+                                        {order.address.street}
+                                        <br />
+                                        {order.address.city},{" "}
+                                        {order.address.state}
+                                        <br />
+                                        CP {order.address.zip}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="orders-detail-section">
+                                  <h4 className="orders-detail__header">Total</h4>
+                                  <div className="orders-detail__content">
+                                    <div className="orders-detail__total">
+                                      <div className="orders-detail__total-row">
+                                        <span>Subtotal</span>
+                                        <span>{formatPrice(order.subtotal)}</span>
+                                      </div>
+                                      <div className="orders-detail__total-row">
+                                        <span>Envío</span>
+                                        <span>
+                                          {order.shipping > 0
+                                            ? formatPrice(order.shipping)
+                                            : "Gratis"}
+                                        </span>
+                                      </div>
+                                      <div className="orders-detail__total-row orders-detail__total-final">
+                                        <span>Total</span>
+                                        <span>{formatPrice(order.total)}</span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -196,17 +196,6 @@ const DividerStyled = styled(Divider)(({ theme }) => ({
 }));
 
 // ============================================
-// ❌ ELIMINADOS: 
-// - LogoWrapper (no se usa, se usa CSS class)
-// - LogoIcon (no se usa, se usa CSS class)
-// - LogoText (no se usa, se usa CSS class)
-// - SubtitleText (no se usa, se usa CSS class)
-// - StyledTextField (no se usa, se usa CSS class)
-// - LinksContainer (no se usa, se usa CSS class)
-// - RegisterWrapper (no se usa, se usa CSS class)
-// ============================================
-
-// ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
 function LoginPage() {
@@ -254,39 +243,46 @@ function LoginPage() {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLocalError("");
+ // LoginPage.jsx - CORRECCIÓN DE REDIRECCIÓN
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLocalError("");
 
-    if (!validateEmail(formData.email)) {
-      setLocalError("Por favor, ingresa un correo electrónico válido");
-      return;
+  if (!validateEmail(formData.email)) {
+    setLocalError("Por favor, ingresa un correo electrónico válido");
+    return;
+  }
+
+  if (!validatePassword(formData.password)) {
+    setLocalError("La contraseña debe tener al menos 4 caracteres");
+    return;
+  }
+
+  try {
+    const session = await login(formData);
+    const viewerId = getViewerIdForUser(session?.user);
+
+    console.log("Usuario autenticado:", { viewerId });
+
+    // ✅ REDIRECCIÓN CORREGIDA
+    if (viewerId === "admin") {
+      // ✅ Administrador → Métricas del negocio
+      navigate(routePaths.admin.businessMetrics || "/admin/metricas");
+    } else if (viewerId === "employee") {
+      // Empleado → Dashboard de empleado
+      navigate(routePaths.backOffice.dashboard || "/interno");
+    } else {
+      // Cliente o fallback → Home
+      navigate(routePaths.public.home || "/");
     }
-
-    if (!validatePassword(formData.password)) {
-      setLocalError("La contraseña debe tener al menos 4 caracteres");
-      return;
-    }
-
-    try {
-      const session = await login(formData);
-      const viewerId = getViewerIdForUser(session?.user);
-
-      console.log("Usuario autenticado:", { viewerId, user: session?.user });
-
-      if (viewerId === "admin" || viewerId === "employee") {
-        navigate(routePaths.backOffice.dashboard);
-      } else {
-        navigate(routePaths.public.home);
-      }
-    } catch (error) {
-      const errorMessage =
-        error?.message ||
-        error?.response?.data?.detail ||
-        "Correo o contraseña incorrectos";
-      setLocalError(errorMessage);
-    }
-  };
+  } catch (error) {
+    const errorMessage =
+      error?.message ||
+      error?.response?.data?.detail ||
+      "Correo o contraseña incorrectos";
+    setLocalError(errorMessage);
+  }
+};
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);

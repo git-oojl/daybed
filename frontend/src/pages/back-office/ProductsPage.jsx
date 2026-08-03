@@ -1,5 +1,6 @@
+// ProductsPage.jsx - CON VALIDACIÓN DE ACCESO
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -34,23 +35,47 @@ const API_URL = "http://localhost:8000";
 const DELETED_PRODUCTS_KEY = 'daybed_deleted_products';
 
 export default function ProductsPage() {
-  const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
+  const isEmployee = viewerId === "employee";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
   
   // ✅ PERMISOS: Empleado puede CREAR y EDITAR, pero NO ELIMINAR
   const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
   const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
   const canDelete = isAdmin; // ✅ SOLO ADMIN
-  
+  const canView = isAdmin || effectivePermissionCodes.includes("products.view");
+
+  // ============================================
+  // ✅ VERIFICAR ACCESO
+  // ============================================
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
+    }
+
+    if (!authLoading && isAuthenticated) {
+      // Empleado necesita permiso para ver productos
+      if (isEmployee && !canView) {
+        navigate(routePaths.support.unauthorized || "/no-autorizado");
+        return;
+      }
+      // Otros roles (cliente, invitado) no pueden acceder
+      if (!isAdmin && !isEmployee) {
+        navigate(routePaths.support.unauthorized || "/no-autorizado");
+      }
+    }
+  }, [isAuthenticated, authLoading, user, isAdmin, isEmployee, canView, navigate]);
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // ✅ Separar searchTerm (para filtrar) de searchInput (para escribir)
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchInput, setSearchInput] = useState(""); // ✅ NUEVO: input temporal
+  const [searchInput, setSearchInput] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [deletingId, setDeletingId] = useState(null);
@@ -104,54 +129,76 @@ export default function ProductsPage() {
     }
   }, []);
 
-  // ✅ Solo recarga cuando cambia searchTerm (no searchInput)
   useEffect(() => {
     if (!initialLoad.current && !isFetching.current) {
       fetchProducts();
     }
   }, [currentPage, filterCategory, filterStatus, searchTerm, deletedIds]);
 
-  async function fetchProducts() {
-    if (isFetching.current) return;
-    isFetching.current = true;
+// ProductsPage.jsx - fetchProducts CORREGIDO
+
+// ProductsPage.jsx - fetchProducts CORREGIDO PARA ADMIN Y EMPLEADO
+
+async function fetchProducts() {
+  if (isFetching.current) return;
+  isFetching.current = true;
+  
+  try {
+    setLoading(true);
+    const params = {
+      page: currentPage,
+      page_size: pageSize,
+    };
+    if (searchTerm) params.search = searchTerm;
+    if (filterCategory) params.category = filterCategory;
     
-    try {
-      setLoading(true);
-      const params = {
-        page: currentPage,
-        page_size: pageSize,
-      };
-      if (searchTerm) params.search = searchTerm; // ✅ Usa searchTerm
-      if (filterCategory) params.category = filterCategory;
-      
-      if (filterStatus === "active") {
-        params.active = true;
-      } else if (filterStatus === "inactive") {
-        params.active = false;
-      }
-
-      const response = await catalogService.manageProducts(params);
-      let productsData = response.results || response || [];
-      productsData = productsData.filter(p => !deletedIds.includes(p.id));
-      
-      if (filterStatus === "active") {
-        productsData = productsData.filter(p => p.active === true);
-      } else if (filterStatus === "inactive") {
-        productsData = productsData.filter(p => p.active === false);
-      }
-      
-      setProducts(productsData);
-      setTotalCount(productsData.length || 0);
-      setTotalPages(Math.ceil((productsData.length || 0) / pageSize));
-      setError(null);
-    } catch (err) {
-      setError(err.message || "Error al cargar productos");
-    } finally {
-      setLoading(false);
-      isFetching.current = false;
+    if (filterStatus === "active") {
+      params.active = true;
+    } else if (filterStatus === "inactive") {
+      params.active = false;
     }
-  }
 
+    const response = await catalogService.manageProducts(params);
+    let productsData = response.results || response || [];
+    
+    // ✅ 1. FILTRAR POR ESTADO (si el filtro está activo)
+    if (filterStatus === "active") {
+      productsData = productsData.filter(p => p.active === true);
+    } else if (filterStatus === "inactive") {
+      productsData = productsData.filter(p => p.active === false);
+    }
+    
+    // ✅ 2. FILTRAR PRODUCTOS ELIMINADOS (USANDO deletedIds)
+    // Esto aplica para TODOS los usuarios (admin y empleado)
+    if (deletedIds.length > 0) {
+      productsData = productsData.filter(p => !deletedIds.includes(p.id));
+      console.log(`🗑️ Filtrados ${deletedIds.length} productos eliminados`);
+    }
+    
+    // ✅ 3. FILTRAR POR ESTADO REAL (active: false) - SOLO para admin
+    // Los admin pueden ver productos inactivos, pero los eliminados lógicamente
+    // deberían tener active: false y no mostrarse como activos
+    if (filterStatus === "active") {
+      productsData = productsData.filter(p => p.active === true);
+    } else if (filterStatus === "inactive") {
+      productsData = productsData.filter(p => p.active === false);
+    }
+    
+    setProducts(productsData);
+    setTotalCount(productsData.length || 0);
+    setTotalPages(Math.ceil((productsData.length || 0) / pageSize));
+    setError(null);
+    
+    console.log(`✅ ${productsData.length} productos cargados`);
+    
+  } catch (err) {
+    console.error("Error al cargar productos:", err);
+    setError(err.message || "Error al cargar productos");
+  } finally {
+    setLoading(false);
+    isFetching.current = false;
+  }
+}
   async function fetchCategories() {
     try {
       const token = getToken();
@@ -190,14 +237,12 @@ export default function ProductsPage() {
     }
   }
 
-  // ✅ Buscar SOLO cuando se envía el formulario
   const handleSearch = (e) => {
     e.preventDefault();
-    setSearchTerm(searchInput); // ✅ Actualiza searchTerm con el valor del input
+    setSearchTerm(searchInput);
     setCurrentPage(1);
   };
 
-  // ✅ Limpiar búsqueda
   const handleClearSearch = () => {
     setSearchInput("");
     setSearchTerm("");
@@ -377,51 +422,84 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!isAdmin) {
-      setError("No tienes permisos para eliminar productos");
-      return;
-    }
-    
-    if (window.confirm("¿Eliminar este producto permanentemente?")) {
-      try {
-        setDeletingId(id);
-        const token = getToken();
-        
-        if (!token) {
-          setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
-          setDeletingId(null);
-          return;
-        }
+// ProductsPage.jsx - handleDelete CORREGIDO
 
-        const response = await fetch(`${API_URL}/api/catalog/manage/products/${id}/`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const newDeletedIds = [...deletedIds, id];
-          setDeletedIds(newDeletedIds);
-          localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(newDeletedIds));
-          
-          setProducts(prev => prev.filter(p => p.id !== id));
-          setTotalCount(prev => prev - 1);
-          setError(null);
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          setError(errorData.detail || "Error al eliminar producto");
-        }
-      } catch (err) {
-        console.error("Error en handleDelete:", err);
-        setError(err.message || "Error al eliminar producto");
-      } finally {
+const handleDelete = async (id) => {
+  if (!isAdmin) {
+    setError("No tienes permisos para eliminar productos");
+    return;
+  }
+  
+  if (window.confirm("¿Desactivar este producto? (Se ocultará del catálogo)")) {
+    try {
+      setDeletingId(id);
+      const token = getToken();
+      
+      if (!token) {
+        setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
         setDeletingId(null);
+        return;
       }
+
+      // ✅ USAR PATCH para desactivar lógicamente
+      const response = await fetch(`${API_URL}/api/catalog/manage/products/${id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: false })
+      });
+
+      if (response.ok) {
+        // ✅ Actualizar estado local
+        setProducts(prev => prev.filter(p => p.id !== id));
+        setTotalCount(prev => prev - 1);
+        
+        // ✅ Guardar en localStorage para ocultar en futuras cargas
+        const newDeletedIds = [...deletedIds, id];
+        setDeletedIds(newDeletedIds);
+        localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(newDeletedIds));
+        
+        setError(null);
+        console.log(`🗑️ Producto ${id} desactivado correctamente`);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.detail || "Error al desactivar producto");
+        await fetchProducts();
+      }
+    } catch (err) {
+      console.error("Error en handleDelete:", err);
+      setError(err.message || "Error al desactivar producto");
+      await fetchProducts();
+    } finally {
+      setDeletingId(null);
     }
-  };
+  }
+};
+
+  // ✅ Si no tiene permiso de ver, mostrar mensaje de "No autorizado"
+  if (!authLoading && isAuthenticated && !canView && isEmployee) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <h2>🔒 Acceso no autorizado</h2>
+          <p style={{ color: "#7A6B5A" }}>No tienes permisos para ver esta página.</p>
+          <Link to={routePaths.public.home} style={{
+            display: "inline-block",
+            marginTop: "1rem",
+            padding: "0.6rem 2rem",
+            background: "#8B5E3C",
+            color: "#FFFFFF",
+            borderRadius: "8px",
+            textDecoration: "none",
+          }}>Volver al inicio</Link>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -448,6 +526,9 @@ export default function ProductsPage() {
     );
   }
 
+  // ============================================
+  // ✅ RENDER PRINCIPAL
+  // ============================================
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
@@ -570,7 +651,7 @@ export default function ProductsPage() {
           )}
         </div>
 
-        {/* FILTROS - RESPONSIVOS */}
+        {/* FILTROS */}
         <div
           style={{
             display: "flex",
@@ -608,8 +689,8 @@ export default function ProductsPage() {
               <input
                 type="text"
                 placeholder="Buscar productos..."
-                value={searchInput} // ✅ Usa searchInput
-                onChange={(e) => setSearchInput(e.target.value)} // ✅ Solo actualiza el input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 style={{
                   width: "100%",
                   padding: "9px 12px 9px 36px",
@@ -709,7 +790,7 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* TABLA - RESPONSIVA */}
+        {/* TABLA */}
         <div className="dashboard-grid" style={{ gridTemplateColumns: "1fr" }}>
           <div
             className="dashboard-card"
@@ -996,7 +1077,7 @@ export default function ProductsPage() {
         </div>
       </main>
 
-      {/* MODAL - RESPONSIVO */}
+      {/* MODAL */}
       {showModal && (
         <div
           className="modal-overlay"

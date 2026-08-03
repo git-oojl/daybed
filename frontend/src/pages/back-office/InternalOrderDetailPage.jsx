@@ -1,12 +1,14 @@
+// InternalOrderDetailPage.jsx
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
-import { orderService } from "../../services/backendServices.js";
-import { statusLabel } from "../../services/viewMappers.js";
+import { orderService, accountService } from "../../services/backendServices.js";
+import { useAuthStore } from "../../auth/authStore.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import {
   FaUser,
   FaBox,
@@ -14,70 +16,200 @@ import {
   FaMapMarkerAlt,
   FaEdit,
   FaTimes,
+  FaClock,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaPhone,
+  FaEnvelope,
+  FaUserCircle,
 } from "react-icons/fa";
 
+// ============================================
+// ✅ MAPA DE ESTADOS
+// ============================================
+const STATUS_MAP = {
+  pending: { label: "Pendiente", color: "#ED6C02", bg: "#FFF8E1", icon: FaClock },
+  confirmed: { label: "Confirmado", color: "#2E7D32", bg: "#E8F5E9", icon: FaCheckCircle },
+  preparing: { label: "En preparación", color: "#6A5ACD", bg: "#EDE7F6", icon: FaBox },
+  shipped: { label: "Enviado", color: "#0288D1", bg: "#E1F5FE", icon: FaTruck },
+  delivered: { label: "Entregado", color: "#2E7D32", bg: "#E8F5E9", icon: FaCheckCircle },
+  cancelled: { label: "Cancelado", color: "#D32F2F", bg: "#FDECEA", icon: FaTimesCircle },
+};
+
+function getStatusInfo(status) {
+  return STATUS_MAP[status] || STATUS_MAP.pending;
+}
+
+// ============================================
+// ✅ COMPONENTE DE CARGA
+// ============================================
+function IconLoading() {
+  return (
+    <svg className="internal-order-detail-loading__spinner" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="#B88E2F" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ============================================
+// ✅ COMPONENTE PRINCIPAL
+// ============================================
 export default function InternalOrderDetailPage() {
   const { orderId } = useParams();
-  const [note, setNote] = useState("");
-  const [showNoteInput, setShowNoteInput] = useState(false);
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
 
-  const [orderData, setOrderData] = useState({
-    id: "#DayBed-001",
-    customer: "Juan López",
-    email: "juanlopez@gmail.com",
-    phone: "(664) 7837-455-45",
-    address: "Blvd. Cucapah 20100-Sur, Col. El Lago, CP 22210, Tijuana, B.C.",
-    deliveryType: "Standard",
-    distance: "17 km",
-    estimatedCost: 350,
-    total: 10000,
-    status: "Pendiente",
-    items: [
-      { name: "Sofá Esquinero", sku: "DD73844", quantity: 1, price: 6000 },
-      { name: "Mesa de Centro", sku: "DD83482", quantity: 1, price: 4000 },
-    ],
-  });
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [error, setError] = useState(null);
+  const [order, setOrder] = useState(null);
+  const [customerData, setCustomerData] = useState(null);
 
+  // ============================================
+  // ✅ VERIFICAR AUTENTICACIÓN Y ROL
+  // ============================================
   useEffect(() => {
-    let active = true;
-    orderService
-      .manageDetail(orderId)
-      .then((order) => {
-        if (!active) return;
-        setOrderData({
-          id: `#DayBed-${order.id}`,
-          customer: "Cliente no disponible",
-          email: "No disponible",
-          phone: "No disponible",
-          address: order.formatted_address || order.original_address || "No disponible",
-          deliveryType: order.delivery_zone || "standard",
-          distance: `${Number(order.distance_km || 0)} km`,
-          estimatedCost: Number(order.delivery_fee || 0),
-          total: Number(order.total || 0),
-          status: statusLabel(order.status),
-          items: (order.items || []).map((item) => ({
-            name: item.product_name,
-            sku: item.product_sku,
-            quantity: item.quantity,
-            price: Number(item.unit_price || 0),
-          })),
+    if (!authLoading && !isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
+    }
+
+    if (!authLoading && isAuthenticated) {
+      const viewerId = getViewerIdForUser(user);
+      if (viewerId !== "admin" && viewerId !== "employee") {
+        navigate(routePaths.support.unauthorized || "/no-autorizado");
+        return;
+      }
+      // eslint-disable-next-line react-hooks/immutability
+      loadOrder();
+    }
+  }, [isAuthenticated, authLoading, user, navigate, orderId]);
+
+  // ============================================
+  // ✅ CARGAR PEDIDO Y DATOS DEL CLIENTE
+  // ============================================
+  const loadOrder = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Obtener el pedido
+      const orderData = await orderService.manageDetail(orderId);
+      console.log("📦 Datos del pedido:", orderData);
+      setOrder(orderData);
+
+      // 2. Obtener todos los usuarios para encontrar al cliente
+      // El endpoint /api/accounts/users/ devuelve todos los usuarios (solo admin/empleado)
+      try {
+        const usersResponse = await accountService.users();
+        const users = usersResponse.results || usersResponse || [];
+        console.log("👥 Usuarios disponibles:", users);
+
+        // 3. Buscar el usuario que hizo el pedido
+        // Intentar encontrar por ID (si el pedido tiene user_id)
+        let foundCustomer = null;
+        
+        if (orderData.user_id) {
+          foundCustomer = users.find(u => u.id === orderData.user_id);
+        }
+        
+        // Si no se encuentra por ID, buscar por email o nombre
+        if (!foundCustomer && orderData.customer_email) {
+          foundCustomer = users.find(u => u.email === orderData.customer_email);
+        }
+        
+        // Si aún no se encuentra, buscar por nombre (coincidencia parcial)
+        if (!foundCustomer && orderData.customer_name) {
+          // eslint-disable-next-line no-unused-vars
+          const nameParts = orderData.customer_name.split(' ');
+          foundCustomer = users.find(u => {
+            const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+            return fullName.includes(orderData.customer_name) || 
+                   orderData.customer_name.includes(fullName);
+          });
+        }
+
+        if (foundCustomer) {
+          console.log("✅ Cliente encontrado:", foundCustomer);
+          setCustomerData(foundCustomer);
+        } else {
+          console.warn("⚠️ No se encontró el cliente asociado al pedido");
+          // Usar datos del pedido si existen
+          setCustomerData({
+            name: orderData.customer_name || "Cliente",
+            email: orderData.customer_email || "No disponible",
+            phone: orderData.customer_phone || "No disponible",
+          });
+        }
+      } catch (err) {
+        console.warn("⚠️ No se pudo obtener la lista de usuarios:", err);
+        // Fallback: usar datos del pedido
+        setCustomerData({
+          name: orderData.customer_name || "Cliente",
+          email: orderData.customer_email || "No disponible",
+          phone: orderData.customer_phone || "No disponible",
         });
-      })
-      .catch((error) => active && setLoadError(error.message || "No se pudo cargar el pedido."))
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, [orderId]);
+      }
 
-  return (
-    <div className="home-page dashboard-page">
-      <HomeHeader />
+    } catch (err) {
+      console.error("Error al cargar pedido:", err);
+      setError(err.message || "No se pudo cargar el pedido");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      <section
-        className="dashboard-hero"
-        aria-label="Detalle de Pedido"
-        style={{
+  // ============================================
+  // ✅ FUNCIONES AUXILIARES
+  // ============================================
+  const formatPrice = (amount) => {
+    return `$${(Number(amount) || 0).toLocaleString("es-MX")}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // ============================================
+  // ✅ OBTENER DATOS DEL CLIENTE
+  // ============================================
+  const getCustomerName = () => {
+    if (customerData?.name) return customerData.name;
+    if (customerData?.first_name) {
+      const firstName = customerData.first_name || "";
+      const lastName = customerData.last_name || "";
+      return `${firstName} ${lastName}`.trim();
+    }
+    if (order?.customer_name) return order.customer_name;
+    return "Cliente";
+  };
+
+  const getCustomerEmail = () => {
+    if (customerData?.email) return customerData.email;
+    if (order?.customer_email) return order.customer_email;
+    return "No disponible";
+  };
+
+  const getCustomerPhone = () => {
+    if (customerData?.phone) return customerData.phone;
+    if (order?.customer_phone) return order.customer_phone;
+    return "No disponible";
+  };
+
+  // ============================================
+  // ✅ ESTADOS DE CARGA
+  // ============================================
+  if (loading || authLoading) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <section className="dashboard-hero" style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -88,11 +220,8 @@ export default function InternalOrderDetailPage() {
           alignItems: "center",
           justifyContent: "center",
           position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
+        }}>
+          <div className="dashboard-hero__overlay" style={{
             position: "absolute",
             top: 0,
             left: 0,
@@ -106,467 +235,414 @@ export default function InternalOrderDetailPage() {
             padding: "40px 20px",
             width: "100%",
             height: "100%",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
+          }}>
+            <h1 className="dashboard-hero__title" style={{
               color: "#FFFFFF",
               fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
               fontWeight: 700,
               textShadow: "0 2px 8px rgba(0,0,0,0.6)",
               margin: 0,
               fontFamily: '"Playfair Display", serif',
-            }}
-          >
-            Detalle de Pedido
-          </h1>
-          <p
-            className="dashboard-hero__breadcrumb"
-            style={{
-              color: "#F5EDE5",
-              fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              marginTop: "8px",
-            }}
-          >
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span
-              aria-hidden="true"
-              style={{ margin: "0 8px", color: "#F5EDE5" }}
-            >
-              &gt;
-            </span>
-            <Link
-              to={routePaths.backOffice.orders}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Pedidos Internos
-            </Link>
-            <span
-              aria-hidden="true"
-              style={{ margin: "0 8px", color: "#F5EDE5" }}
-            >
-              &gt;
-            </span>
+            }}>Detalle de Pedido</h1>
+          </div>
+        </section>
+        <div className="internal-order-detail-loading" style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <IconLoading />
+          <p>Cargando pedido...</p>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <section className="dashboard-hero" style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          width: "100%",
+          minHeight: "200px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+        }}>
+          <div className="dashboard-hero__overlay" style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(62, 42, 27, 0.75)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "40px 20px",
+            width: "100%",
+            height: "100%",
+          }}>
+            <h1 className="dashboard-hero__title" style={{
+              color: "#FFFFFF",
+              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
+              fontWeight: 700,
+              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+              margin: 0,
+              fontFamily: '"Playfair Display", serif',
+            }}>Detalle de Pedido</h1>
+          </div>
+        </section>
+        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <p style={{ color: "#D32F2F" }}>❌ {error}</p>
+          <button onClick={loadOrder} style={{
+            marginTop: "1rem",
+            padding: "0.5rem 2rem",
+            background: "#8B5E3C",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+          }}>Reintentar</button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+          <p>No se encontró el pedido</p>
+          <Link to={routePaths.backOffice.orders} style={{
+            display: "inline-block",
+            marginTop: "1rem",
+            padding: "0.5rem 2rem",
+            background: "#8B5E3C",
+            color: "#FFFFFF",
+            borderRadius: "8px",
+            textDecoration: "none",
+          }}>Volver a pedidos</Link>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  // ============================================
+  // ✅ DATOS DEL PEDIDO
+  // ============================================
+  const statusInfo = getStatusInfo(order.status);
+  const StatusIcon = statusInfo.icon;
+
+  const customerName = getCustomerName();
+  const customerEmail = getCustomerEmail();
+  const customerPhone = getCustomerPhone();
+
+  // ============================================
+  // ✅ RENDER PRINCIPAL
+  // ============================================
+  return (
+    <div className="home-page dashboard-page">
+      <HomeHeader />
+
+      <section className="dashboard-hero" style={{
+        backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        width: "100%",
+        minHeight: "200px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}>
+        <div className="dashboard-hero__overlay" style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(62, 42, 27, 0.75)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 20px",
+          width: "100%",
+          height: "100%",
+        }}>
+          <h1 className="dashboard-hero__title" style={{
+            color: "#FFFFFF",
+            fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
+            fontWeight: 700,
+            textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+            margin: 0,
+            fontFamily: '"Playfair Display", serif',
+          }}>Detalle de Pedido</h1>
+          <p className="dashboard-hero__breadcrumb" style={{
+            color: "#F5EDE5",
+            fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
+            textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+            marginTop: "8px",
+          }}>
+            <Link to={routePaths.public.home} style={{ color: "#FFD700", textDecoration: "none" }}>Inicio</Link>
+            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
+            <Link to={routePaths.backOffice.orders} style={{ color: "#FFD700", textDecoration: "none" }}>Pedidos Internos</Link>
+            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
             <span style={{ color: "#FFFFFF" }}>Detalle</span>
           </p>
         </div>
       </section>
 
       <main className="dashboard-container">
-        {loading ? <p>Cargando pedido...</p> : null}
-        {loadError ? <p role="alert">{loadError}</p> : null}
-        <div
-          className="dashboard-header-actions"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "16px",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{
+        {/* ✅ HEADER DEL PEDIDO */}
+        <div className="dashboard-header-actions" style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "16px",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "24px",
+        }}>
+          <div>
+            <h2 style={{
               fontSize: "clamp(1.2rem, 2vw, 1.8rem)",
               color: "#6B4A2B",
               margin: 0,
-            }}
-          >
-            {orderData.id} - {orderData.customer}
-          </h2>
-          <div
-            className="header-actions"
-            style={{
+            }}>
+              Pedido #{order.id}
+            </h2>
+            <p style={{ color: "#7A6B5A", margin: "4px 0 0" }}>
+              {formatDate(order.created_at)}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+            <Link to={routePaths.backOffice.orders} style={{
               display: "flex",
-              flexWrap: "wrap",
-              gap: "12px",
               alignItems: "center",
-            }}
-          >
-            <Link
-              to={routePaths.backOffice.orders}
-              className="btn-primary"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px 20px",
-                background: "#6A5ACD",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                cursor: "pointer",
-                textDecoration: "none",
-                fontWeight: 600,
-                transition: "background-color 0.2s ease",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#5A4ABD")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "#6A5ACD")
-              }
-            >
+              gap: "8px",
+              padding: "10px 20px",
+              background: "#6A5ACD",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
+              cursor: "pointer",
+              textDecoration: "none",
+              fontWeight: 600,
+              transition: "background-color 0.2s ease",
+            }}>
               <FaTimes /> Volver a pedidos
             </Link>
           </div>
         </div>
 
-        <div
-          className="dashboard-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-            gap: "24px",
-            marginBottom: "24px",
-          }}
-        >
-          {/* Información del cliente */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <h3
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-                color: "#8B5E3C",
-                margin: "0 0 16px 0",
-              }}
-            >
-              <FaUser /> Información del cliente
-            </h3>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-            >
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Nombre
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontWeight: 500,
-                    fontSize: "clamp(0.95rem, 1.1vw, 1rem)",
-                  }}
-                >
-                  {orderData.customer}
-                </p>
-              </div>
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Email
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                  }}
-                >
-                  {orderData.email}
-                </p>
-              </div>
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Teléfono
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                  }}
-                >
-                  {orderData.phone}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Datos de entrega */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <h3
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-                color: "#8B5E3C",
-                margin: "0 0 16px 0",
-              }}
-            >
-              <FaTruck /> Datos de entrega
-            </h3>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-            >
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Tipo de entrega
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontWeight: 500,
-                    fontSize: "clamp(0.95rem, 1.1vw, 1rem)",
-                  }}
-                >
-                  {orderData.deliveryType}
-                </p>
-              </div>
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Dirección
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                  }}
-                >
-                  {orderData.address}
-                </p>
-              </div>
-            </div>
+        {/* ✅ ESTADO ACTUAL - SOLO VISUAL */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
+          padding: "16px 20px",
+          background: statusInfo.bg,
+          border: `1px solid ${statusInfo.color}`,
+          borderRadius: "12px",
+          marginBottom: "24px",
+        }}>
+          <StatusIcon size={24} color={statusInfo.color} />
+          <div>
+            <span style={{ fontSize: "0.8rem", color: "#7A6B5A" }}>Estado actual</span>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: "1.1rem", color: statusInfo.color }}>
+              {statusInfo.label}
+            </p>
           </div>
         </div>
 
-        <div
-          className="dashboard-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-            gap: "24px",
-            marginBottom: "24px",
-          }}
-        >
-          {/* Estimación de distancia y costo */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <h3
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-                color: "#8B5E3C",
-                margin: "0 0 16px 0",
-              }}
-            >
-              <FaMapMarkerAlt /> Estimación de distancia y costo
-            </h3>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-            >
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Distancia Estimada
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontWeight: 500,
-                    fontSize: "clamp(0.95rem, 1.1vw, 1rem)",
-                  }}
-                >
-                  {orderData.distance}
-                </p>
-              </div>
-              <div>
-                <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>
-                  Costo Estimado
-                </span>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontWeight: 700,
-                    color: "#8B5E3C",
-                    fontSize: "clamp(1rem, 1.2vw, 1.1rem)",
-                  }}
-                >
-                  ${orderData.estimatedCost.toFixed(2)} MXN
-                </p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Productos del pedido */}
-        <div
-          className="dashboard-card"
-          style={{
+        {/* ✅ GRID DE INFORMACIÓN */}
+        <div className="dashboard-grid" style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+          gap: "24px",
+          marginBottom: "24px",
+        }}>
+          {/* ✅ INFORMACIÓN DEL CLIENTE (AHORA CON DATOS REALES) */}
+          <div className="dashboard-card" style={{
             padding: "24px",
             background: "#FDF8F0",
             border: "1px solid #E8DCCC",
             borderRadius: "16px",
-            marginBottom: "24px",
-            overflowX: "auto",
-          }}
-        >
-          <h3
-            style={{
+          }}>
+            <h3 style={{
               display: "flex",
               alignItems: "center",
               gap: "10px",
               fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
               color: "#8B5E3C",
               margin: "0 0 16px 0",
-            }}
-          >
+            }}>
+              <FaUserCircle /> Información del cliente
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "10px 14px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #F0EBE3",
+              }}>
+                <FaUser size={16} color="#8B5E3C" />
+                <div>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Nombre</span>
+                  <p style={{ margin: 0, fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
+                    {customerName}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "10px 14px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #F0EBE3",
+              }}>
+                <FaEnvelope size={16} color="#8B5E3C" />
+                <div>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Email</span>
+                  <p style={{ margin: 0, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                    {customerEmail}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "10px 14px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #F0EBE3",
+              }}>
+                <FaPhone size={16} color="#8B5E3C" />
+                <div>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Teléfono</span>
+                  <p style={{ margin: 0, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                    {customerPhone}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dirección de entrega */}
+          <div className="dashboard-card" style={{
+            padding: "24px",
+            background: "#FDF8F0",
+            border: "1px solid #E8DCCC",
+            borderRadius: "16px",
+          }}>
+            <h3 style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+              color: "#8B5E3C",
+              margin: "0 0 16px 0",
+            }}>
+              <FaMapMarkerAlt /> Dirección de entrega
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{
+                padding: "12px 16px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #F0EBE3",
+              }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Dirección</span>
+                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                  {order.formatted_address || order.original_address || "No disponible"}
+                </p>
+              </div>
+              {order.delivery_zone && (
+                <div style={{
+                  padding: "8px 12px",
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #F0EBE3",
+                }}>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Zona de entrega</span>
+                  <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                    {order.delivery_zone}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ PRODUCTOS DEL PEDIDO */}
+        <div className="dashboard-card" style={{
+          padding: "24px",
+          background: "#FDF8F0",
+          border: "1px solid #E8DCCC",
+          borderRadius: "16px",
+          marginBottom: "24px",
+          overflowX: "auto",
+        }}>
+          <h3 style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+            color: "#8B5E3C",
+            margin: "0 0 16px 0",
+          }}>
             <FaBox /> Productos del pedido
           </h3>
           <div className="table-responsive">
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                minWidth: "500px",
-              }}
-            >
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    Producto
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    SKU
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "center",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    Cantidad
-                  </th>
-                  <th
-                    style={{
-                      textAlign: "right",
-                      padding: "12px 10px",
-                      color: "#6B4A2B",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    }}
-                  >
-                    Subtotal
-                  </th>
+                  <th style={{ textAlign: "left", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Producto</th>
+                  <th style={{ textAlign: "left", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>SKU</th>
+                  <th style={{ textAlign: "center", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Cantidad</th>
+                  <th style={{ textAlign: "right", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Subtotal</th>
                 </tr>
               </thead>
               <tbody>
-                {orderData.items.map((item, index) => (
+                {(order.items || []).map((item, index) => (
                   <tr key={index} style={{ borderBottom: "1px solid #F0EBE3" }}>
-                    <td
-                      style={{
-                        padding: "12px 10px",
-                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {item.name}
+                    <td style={{ padding: "12px 10px", fontSize: "clamp(0.85rem, 1vw, 0.95rem)", fontWeight: 500 }}>
+                      {item.product_name || item.name || "Producto"}
                     </td>
-                    <td
-                      style={{
-                        padding: "12px 10px",
-                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                      }}
-                    >
-                      {item.sku}
+                    <td style={{ padding: "12px 10px", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                      {item.product_sku || item.sku || "-"}
                     </td>
-                    <td
-                      style={{
-                        textAlign: "center",
-                        padding: "12px 10px",
-                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                      }}
-                    >
-                      {item.quantity}
+                    <td style={{ textAlign: "center", padding: "12px 10px", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                      {item.quantity || 0}
                     </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        padding: "12px 10px",
-                        fontWeight: 600,
-                        color: "#5C2E0B",
-                        fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                      }}
-                    >
-                      ${(item.price * item.quantity).toFixed(2)} MXN
+                    <td style={{ textAlign: "right", padding: "12px 10px", fontWeight: 600, color: "#5C2E0B", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
+                      {formatPrice((item.unit_price || item.price || 0) * (item.quantity || 0))}
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td
-                    colSpan="3"
-                    style={{
-                      textAlign: "right",
-                      padding: "16px 10px",
-                      fontWeight: 700,
-                      fontSize: "clamp(0.95rem, 1.1vw, 1.05rem)",
-                      color: "#6B4A2B",
-                    }}
-                  >
+                  <td colSpan="3" style={{ textAlign: "right", padding: "16px 10px", fontWeight: 700, fontSize: "clamp(0.95rem, 1.1vw, 1.05rem)", color: "#6B4A2B" }}>
                     Total
                   </td>
-                  <td
-                    style={{
-                      textAlign: "right",
-                      padding: "16px 10px",
-                      fontWeight: 700,
-                      color: "#8B5E3C",
-                      fontSize: "clamp(1rem, 1.2vw, 1.1rem)",
-                    }}
-                  >
-                    ${orderData.total.toFixed(2)} MXN
+                  <td style={{ textAlign: "right", padding: "16px 10px", fontWeight: 700, color: "#8B5E3C", fontSize: "clamp(1rem, 1.2vw, 1.1rem)" }}>
+                    {formatPrice(order.total)}
                   </td>
                 </tr>
               </tbody>
@@ -574,147 +650,26 @@ export default function InternalOrderDetailPage() {
           </div>
         </div>
 
-        {/* Notas internas opcionales */}
-        <div
-          className="dashboard-card"
-          style={{
-            padding: "24px",
-            background: "#FDF8F0",
-            border: "1px solid #E8DCCC",
-            borderRadius: "16px",
-          }}
-        >
-          <h3
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-              color: "#8B5E3C",
-              margin: "0 0 16px 0",
-            }}
-          >
-            <FaEdit /> Notas internas opcionales
+        {/* ✅ NOTAS */}
+        <div className="dashboard-card" style={{
+          padding: "24px",
+          background: "#FDF8F0",
+          border: "1px solid #E8DCCC",
+          borderRadius: "16px",
+        }}>
+          <h3 style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+            color: "#8B5E3C",
+            margin: "0 0 16px 0",
+          }}>
+            <FaEdit /> Notas del pedido
           </h3>
-          {!showNoteInput ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <p style={{ color: "#7A6B5A", margin: 0 }}>
-                {note || "No hay notas para este pedido"}
-              </p>
-              <button
-                onClick={() => setShowNoteInput(true)}
-                style={{
-                  padding: "8px 16px",
-                  border: "1px solid #8B5E3C",
-                  borderRadius: "8px",
-                  background: "transparent",
-                  color: "#8B5E3C",
-                  cursor: "pointer",
-                  fontSize: "clamp(0.8rem, 0.9vw, 0.85rem)",
-                  fontWeight: 500,
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#8B5E3C";
-                  e.currentTarget.style.color = "#FFFFFF";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#8B5E3C";
-                }}
-              >
-                Agregar nota
-              </button>
-            </div>
-          ) : (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-            >
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Escribe una nota sobre el producto o el pedido..."
-                rows="3"
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  border: "2px solid #E8DCCC",
-                  borderRadius: "10px",
-                  fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                  fontFamily: "inherit",
-                  resize: "vertical",
-                  outline: "none",
-                  background: "#FFFFFF",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
-                onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
-              />
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  justifyContent: "flex-end",
-                }}
-              >
-                <button
-                  onClick={() => {
-                    setShowNoteInput(false);
-                    if (!note) setNote("No hay notas para este pedido");
-                  }}
-                  style={{
-                    padding: "8px 20px",
-                    border: "1px solid #E8DCCC",
-                    borderRadius: "8px",
-                    background: "#FFFFFF",
-                    color: "#666",
-                    cursor: "pointer",
-                    fontSize: "clamp(0.8rem, 0.9vw, 0.85rem)",
-                    fontWeight: 500,
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#F5F5F5")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#FFFFFF")
-                  }
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowNoteInput(false);
-                    alert("Nota guardada correctamente");
-                  }}
-                  style={{
-                    padding: "8px 20px",
-                    border: "none",
-                    borderRadius: "8px",
-                    background: "#8B5E3C",
-                    color: "#FFFFFF",
-                    cursor: "pointer",
-                    fontSize: "clamp(0.8rem, 0.9vw, 0.85rem)",
-                    fontWeight: 600,
-                    transition: "background-color 0.2s ease",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#6B4A2B")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#8B5E3C")
-                  }
-                >
-                  Guardar nota
-                </button>
-              </div>
-            </div>
-          )}
+          <p style={{ color: "#7A6B5A", margin: 0 }}>
+            {order.notes || "No hay notas para este pedido"}
+          </p>
         </div>
       </main>
 
