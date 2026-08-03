@@ -201,8 +201,9 @@ export default function HomeHeader() {
     // ============================================
     // 🛡️ ADMINISTRADOR
     // ============================================
-if (isAdmin) {
-  items.push({
+    if (isAdmin) {
+      // Perfil
+      items.push({
         label: "Perfil",
         icon: <IconProfile />,
         action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
@@ -212,19 +213,19 @@ if (isAdmin) {
       // Separador
       items.push({ isDivider: true });
 
+      // ✅ Métricas del negocio (Dashboard del admin)
+      items.push({
+        label: "Dashboard",
+        icon: <IconMetrics />,
+        action: () => navigateTo(routePaths.admin.businessMetrics || "/admin/metricas"),
+        isAdmin: true,
+      });
+
       // Configuración básica
       items.push({
         label: "Configuración básica",
         icon: <IconSettings />,
         action: () => navigateTo(routePaths.admin.basicSettings || "/admin/configuracion"),
-        isAdmin: true,
-      });
-
-      // Métricas del negocio
-      items.push({
-        label: "Métricas del negocio",
-        icon: <IconMetrics />,
-        action: () => navigateTo(routePaths.admin.businessMetrics || "/admin/metricas"),
         isAdmin: true,
       });
 
@@ -262,7 +263,7 @@ if (isAdmin) {
     // 👔 EMPLEADO
     // ============================================
     if (isEmployee) {
-      // Perfil (solo empleado)
+      // Perfil
       items.push({
         label: "Perfil",
         icon: <IconProfile />,
@@ -362,7 +363,7 @@ if (isAdmin) {
     }
 
     // ============================================
-    // 🚪 INVITADO (No debería llegar aquí)
+    // 🚪 INVITADO
     // ============================================
     return [];
   };
