@@ -4,7 +4,8 @@ import "../../assets/home-page.css";
 import "../../assets/CSS/account/profile-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { accountService } from "../../services/backendServices.js";
 import { routePaths } from "../../routes/routePaths.js";
@@ -147,6 +148,14 @@ const ROLE_BADGE_CLASSES = {
   administrador: "profile-role-badge--admin",
 };
 
+const PERSONAL_SHORTCUTS = [
+  { title: "Tienda", description: "Descubre piezas y colecciones", path: routePaths.public.catalog },
+  { title: "Mis pedidos", description: "Consulta compras, entrega y pago", path: routePaths.account.orders },
+  { title: "Guardados", description: "Retoma los productos que te gustaron", path: routePaths.public.savedItems },
+  { title: "Carrito", description: "Continúa una compra pendiente", path: routePaths.checkout.cart },
+  { title: "Ayuda y contacto", description: "Resuelve dudas o habla con Daybed", path: routePaths.public.contactHelp },
+];
+
 const EMPLOYEE_SHORTCUTS = [
   {
     permission: "dashboard.view",
@@ -156,8 +165,8 @@ const EMPLOYEE_SHORTCUTS = [
   },
   {
     permission: "products.view",
-    title: "Productos",
-    description: "Catálogo y categorías internas",
+    title: "Productos internos",
+    description: "Catálogo, fichas y colecciones",
     path: routePaths.backOffice.products,
   },
   {
@@ -177,17 +186,17 @@ const EMPLOYEE_SHORTCUTS = [
 const ADMIN_SHORTCUTS = [
   {
     title: "Mis pedidos",
-    description: "Vista de cliente para validar compras",
+    description: "Consulta tus compras personales",
     path: routePaths.account.orders,
   },
   {
     title: "Carrito",
-    description: "Probar flujo de compra como administrador",
+    description: "Continúa una compra personal",
     path: routePaths.checkout.cart,
   },
   {
     title: "Guardados",
-    description: "Lista local de productos guardados",
+    description: "Retoma piezas guardadas",
     path: routePaths.public.savedItems,
   },
   {
@@ -201,8 +210,8 @@ const ADMIN_SHORTCUTS = [
     path: routePaths.admin.internalUsers,
   },
   {
-    title: "Roles y permisos",
-    description: "Paquete operativo de empleados",
+    title: "Accesos del equipo",
+    description: "Permisos individuales de empleados",
     path: routePaths.admin.rolesPermissions,
   },
   {
@@ -243,7 +252,7 @@ export default function ProfilePage() {
     logout,
     clearSession,
     setUser,
-  } = useAuthStore();
+  } = useEffectiveSession();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -426,18 +435,7 @@ export default function ProfilePage() {
     <div className="home-page profile-page">
       <HomeHeader />
 
-      <section className="profile-hero" aria-label="Perfil de usuario">
-        <div className="profile-hero__overlay">
-          <div className="profile-hero__content">
-            <h1 className="profile-hero__title">Mi perfil</h1>
-            <p className="profile-hero__breadcrumb">
-              <a href={routePaths.public.home}>Inicio</a>
-              <span aria-hidden="true">&gt;</span>
-              Mi perfil
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero title="Mi perfil" eyebrow="Cuenta Daybed" image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82" current="Mi perfil" />
 
       <main className="profile-container">
         {successMessage && (
@@ -668,92 +666,36 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h2 id="profile-shortcuts" className="profile-card__title">
-                    Accesos
+                    Tu espacio Daybed
                   </h2>
                   <p className="profile-card__desc">
-                    Enlaces útiles según tu rol y permisos efectivos
+                    Compras, favoritos, soporte y herramientas de trabajo
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="profile-card__body">
-              {viewerId === "customer" && (
-                <div className="profile-employee-options">
-                  <button
-                    className="profile-employee-option"
-                    onClick={() => navigate(routePaths.public.catalog)}
-                    type="button"
-                  >
-                    <IconUser />
-                    <span>
-                      <span className="profile-employee-option__title">
-                        Tienda
-                      </span>
-                      <span className="profile-employee-option__desc">
-                        Explora el catálogo activo
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    className="profile-employee-option"
-                    onClick={() => navigate(routePaths.account.orders)}
-                    type="button"
-                  >
-                    <IconUser />
-                    <span>
-                      <span className="profile-employee-option__title">
-                        Mis pedidos
-                      </span>
-                      <span className="profile-employee-option__desc">
-                        Historial y seguimiento de compras
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    className="profile-employee-option"
-                    onClick={() => navigate(routePaths.checkout.cart)}
-                    type="button"
-                  >
-                    <IconUser />
-                    <span>
-                      <span className="profile-employee-option__title">
-                        Carrito
-                      </span>
-                      <span className="profile-employee-option__desc">
-                        Revisa productos antes de pagar
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    className="profile-employee-option"
-                    onClick={() => navigate(routePaths.public.savedItems)}
-                    type="button"
-                  >
-                    <IconUser />
-                    <span>
-                      <span className="profile-employee-option__title">
-                        Guardados
-                      </span>
-                      <span className="profile-employee-option__desc">
-                        Productos marcados para revisar después
-                      </span>
-                    </span>
-                  </button>
+              <div className="profile-shortcut-groups">
+                <div>
+                  <h3 className="profile-shortcut-group__title">Cuenta personal</h3>
+                  <ShortcutList shortcuts={PERSONAL_SHORTCUTS} navigate={navigate} />
                 </div>
-              )}
 
-              {viewerId === "employee" && (
-                <ShortcutList shortcuts={employeeShortcuts} navigate={navigate} />
-              )}
+                {viewerId === "employee" ? (
+                  <div>
+                    <h3 className="profile-shortcut-group__title">Operación</h3>
+                    <ShortcutList shortcuts={employeeShortcuts} navigate={navigate} />
+                  </div>
+                ) : null}
 
-              {viewerId === "admin" && (
-                <ShortcutList
-                  shortcuts={ADMIN_SHORTCUTS}
-                  navigate={navigate}
-                  admin
-                />
-              )}
+                {viewerId === "admin" ? (
+                  <div>
+                    <h3 className="profile-shortcut-group__title">Administración</h3>
+                    <ShortcutList shortcuts={ADMIN_SHORTCUTS.slice(3)} navigate={navigate} admin />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
 

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { PreviewSessionContext } from "../auth/previewSessionContext.js";
 
 const OPERATIONAL_PERMISSION_CODES = [
@@ -5,30 +6,38 @@ const OPERATIONAL_PERMISSION_CODES = [
   "products.view",
   "products.create",
   "products.update",
+  "products.deactivate",
   "inventory.view",
   "inventory.adjust",
+  "inventory.movements.view",
   "orders.view",
   "orders.status.update",
 ];
 
+function buildPreviewUser(viewer) {
+  if (!viewer.isAuthenticated) return null;
+  return {
+    id: `preview-${viewer.id}`,
+    username: `preview_${viewer.id}`,
+    email: `preview-${viewer.id}@daybed.local`,
+    first_name: viewer.label,
+    last_name: "Preview",
+    phone: "6645550190",
+    state: "Baja California",
+    city: "Tijuana",
+    role: viewer.backendRole,
+    effective_permission_codes:
+      viewer.id === "employee" || viewer.id === "admin"
+        ? OPERATIONAL_PERMISSION_CODES
+        : [],
+  };
+}
+
 function PreviewSessionProvider({ viewer, children }) {
-  const user = viewer.isAuthenticated
-    ? {
-        id: `preview-${viewer.id}`,
-        username: `preview_${viewer.id}`,
-        email: `preview-${viewer.id}@daybed.local`,
-        first_name: viewer.label,
-        last_name: "Preview",
-        phone: "",
-        state: "",
-        city: "",
-        role: viewer.backendRole,
-        effective_permission_codes:
-          viewer.id === "employee" || viewer.id === "admin"
-            ? OPERATIONAL_PERMISSION_CODES
-            : [],
-      }
-    : null;
+  const initialUser = useMemo(() => buildPreviewUser(viewer), [viewer]);
+  const [user, setUser] = useState(initialUser);
+
+  useEffect(() => { setUser(initialUser); }, [initialUser]);
 
   return (
     <PreviewSessionContext.Provider
@@ -37,7 +46,10 @@ function PreviewSessionProvider({ viewer, children }) {
         viewer,
         viewerId: viewer.id,
         user,
-        isAuthenticated: viewer.isAuthenticated,
+        isAuthenticated: Boolean(user),
+        setUser,
+        clearSession: () => setUser(null),
+        logout: async () => setUser(null),
       }}
     >
       {children}

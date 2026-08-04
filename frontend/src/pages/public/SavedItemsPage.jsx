@@ -6,6 +6,7 @@ import "../../assets/catalog-page.css";
 import "../../assets/saved-items-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
 import {
@@ -78,17 +79,7 @@ export default function SavedItemsPage() {
     <div className="home-page saved-page">
       <HomeHeader />
 
-      <section className="catalog-hero saved-hero">
-        <div className="catalog-hero__overlay" />
-        <div className="catalog-hero__content">
-          <h1>Guardados</h1>
-          <p>
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <span>Guardados</span>
-          </p>
-        </div>
-      </section>
+      <PageHero title="Guardados" eyebrow="Tu selección" image="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1800&q=82" current="Guardados" />
 
       <main className="saved-main">
         <div className="saved-toolbar">

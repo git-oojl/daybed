@@ -131,3 +131,21 @@ def test_dashboard_metrics_handles_empty_database():
     assert response.data["recent_orders"] == []
     assert response.data["average_delivery_fee"] == "0.00"
     assert response.data["average_delivery_distance"] == "0.000"
+
+
+def test_dashboard_range_days_filters_orders_and_reports_period():
+    from datetime import timedelta
+    from django.utils import timezone
+
+    employee = create_user("empleado_dashboard_range")
+    customer = create_user("cliente_dashboard_range", User.Roles.CUSTOMER)
+    recent = create_order(customer, Order.Status.CONFIRMED, total="200.00")
+    old = create_order(customer, Order.Status.CONFIRMED, total="300.00")
+    Order.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=120))
+
+    response = api_client(employee).get(reverse("dashboard-metrics"), {"range_days": 30})
+
+    assert response.status_code == 200
+    assert response.data["range_days"] == 30
+    assert response.data["total_orders"] == 1
+    assert response.data["recent_orders"][0]["id"] == recent.id

@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.catalog.models import Category, Product, ProductImage
+from apps.catalog.models import Category, Product, ProductImage, ProductReview
 
 SPEC_VALUE_TYPES = (str, int, float, bool, type(None))
 DIMENSION_FIELDS = (
@@ -161,9 +161,39 @@ class ProductImageSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at")
 
 
+class ProductReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField()
+    date = serializers.DateTimeField(source="created_at", read_only=True)
+
+    class Meta:
+        model = ProductReview
+        fields = (
+            "id",
+            "author",
+            "rating",
+            "title",
+            "body",
+            "verified_purchase",
+            "date",
+        )
+        read_only_fields = ("id", "author", "verified_purchase", "date")
+
+    def get_author(self, obj):
+        full_name = obj.user.get_full_name().strip()
+        return full_name or obj.user.username or "Cliente Daybed"
+
+    def validate_rating(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("La calificación debe estar entre 1 y 5.")
+        return value
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_detail = CategorySerializer(source="category", read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
+    reviews = ProductReviewSerializer(many=True, read_only=True)
+    review_count = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
     low_stock = serializers.BooleanField(read_only=True)
     structured_dimensions = serializers.SerializerMethodField()
     image = serializers.ImageField(write_only=True, required=False)
@@ -202,6 +232,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "low_stock",
             "active",
             "images",
+            "reviews",
+            "review_count",
+            "average_rating",
             "created_at",
             "updated_at",
         )
@@ -209,6 +242,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "id",
             "low_stock",
             "structured_dimensions",
+            "reviews",
+            "review_count",
+            "average_rating",
             "created_at",
             "updated_at",
         )
@@ -236,6 +272,23 @@ class ProductSerializer(serializers.ModelSerializer):
                     {field: "El valor no puede ser negativo."}
                 )
         return attrs
+
+    def _active_reviews(self, obj):
+        return [review for review in obj.reviews.all() if review.active]
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_review_count(self, obj):
+        return len(self._active_reviews(obj))
+
+    @extend_schema_field(serializers.FloatField())
+    def get_average_rating(self, obj):
+        active_reviews = self._active_reviews(obj)
+        if not active_reviews:
+            return 0
+        return round(
+            sum(review.rating for review in active_reviews) / len(active_reviews),
+            1,
+        )
 
     @extend_schema_field(serializers.DictField(allow_empty=True))
     def get_structured_dimensions(self, obj):

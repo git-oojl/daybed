@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.access_control.permissions import operational_permission
-from apps.accounts.permissions import IsCustomerOrAdmin
+from rest_framework.permissions import IsAuthenticated
 from apps.orders.models import Order, OrderItem
 from apps.orders.serializers import (
     CheckoutSerializer,
@@ -41,7 +41,7 @@ def order_queryset():
     tags=["Pedidos"],
 )
 class CheckoutView(APIView):
-    permission_classes = (IsCustomerOrAdmin,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         serializer = CheckoutSerializer(data=request.data, context={"request": request})
@@ -66,7 +66,7 @@ class CheckoutView(APIView):
 )
 class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = OrderSerializer
-    permission_classes = (IsCustomerOrAdmin,)
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):

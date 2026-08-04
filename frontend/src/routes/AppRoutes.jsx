@@ -77,6 +77,8 @@ const EmptyStatesPage = lazy(
 const FeedbackMessagesPage = lazy(
   () => import("../pages/support/FeedbackMessagesPage.jsx"),
 );
+const SuccessStatePage = lazy(() => import("../pages/support/SuccessStatePage.jsx"));
+const ErrorStatePage = lazy(() => import("../pages/support/ErrorStatePage.jsx"));
 const LoadingStatesPage = lazy(
   () => import("../pages/support/LoadingStatesPage.jsx"),
 );
@@ -111,7 +113,13 @@ function OperationalRoute({ permission, children }) {
 function RouteLoading() {
   return (
     <div className="route-loading" role="status" aria-live="polite">
-      Cargando...
+      <div className="route-loading__card">
+        <span className="route-loading__spinner" aria-hidden="true" />
+        <div>
+          <strong>Preparando este espacio</strong>
+          <p>Estamos acomodando los últimos detalles.</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -145,6 +153,7 @@ function AppRoutes() {
       {/* RUTAS DE CLIENTE / CUENTA */}
       {/* ============================================ */}
       <Route element={<CustomerLayout />}>
+        <Route path={routePaths.account.login} element={<LoginPage />} />
         <Route
           element={
             <ProtectedRoute allowedViewers={accessGroups.guestOnly}>
@@ -152,7 +161,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         >
-          <Route path={routePaths.account.login} element={<LoginPage />} />
           <Route path={routePaths.account.register} element={<RegisterPage />} />
           <Route
             path={routePaths.account.forgotPassword}
@@ -332,10 +340,9 @@ function AppRoutes() {
           path={routePaths.support.emptyStates}
           element={<EmptyStatesPage />}
         />
-        <Route
-          path={routePaths.support.feedbackMessages}
-          element={<FeedbackMessagesPage />}
-        />
+        <Route path={routePaths.support.feedbackMessages} element={<FeedbackMessagesPage />} />
+        <Route path={routePaths.support.success} element={<SuccessStatePage />} />
+        <Route path={routePaths.support.error} element={<ErrorStatePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
       </Routes>

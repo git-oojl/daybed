@@ -1,6 +1,6 @@
 // RegisterPage.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -28,7 +28,7 @@ import {
 } from "react-icons/fa";
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/register-page.css";
-import registerBackground from "../../assets/RegisterPage.jpg";
+import registerBackground from "../../assets/RegisterPage.webp";
 import { registerCustomer } from "../../auth/authService.js";
 import { routePaths } from "../../routes/routePaths.js";
 
@@ -432,6 +432,8 @@ function splitFullName(value) {
 // ============================================
 function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const backPath = location.state?.from?.pathname || routePaths.public.home;
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -610,6 +612,7 @@ function RegisterPage() {
       className="register-container"
       sx={{ backgroundImage: `url(${registerBackground})` }}
     >
+      <RouterLink className="auth-back-link" to={backPath}>← Volver</RouterLink>
       <Paper className="register-paper" elevation={0}>
         <BrandSection>
           <BrandIcon />

@@ -1,6 +1,6 @@
 // LoginPage.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa";
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/login-page.css";
-import loginBackground from "../../assets/LoginPage.jpg";
+import loginBackground from "../../assets/LoginPage.webp";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { usePreviewSession } from "../../dev-preview/usePreviewSession.js";
@@ -201,10 +201,14 @@ const DividerStyled = styled(Divider)(({ theme }) => ({
 // ============================================
 function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading, error: authError } = useAuthStore();
+  const location = useLocation();
+  const backPath = location.state?.from?.pathname || routePaths.public.home;
+  const { login, isLoading, error: authError, isAuthenticated, user } = useAuthStore();
   const previewSession = usePreviewSession();
   const previewAuthenticated =
     previewSession.isPreview && previewSession.isAuthenticated;
+  const alreadyAuthenticated = isAuthenticated || previewAuthenticated;
+  const activeUser = previewAuthenticated ? previewSession.user : user;
 
   const [formData, setFormData] = useState({
     email: "",
@@ -228,7 +232,7 @@ function LoginPage() {
 
   const isEmailValid = validateEmail(formData.email);
   const isPasswordValid = validatePassword(formData.password);
-  const isFormDisabled = isLoading || previewAuthenticated;
+  const isFormDisabled = isLoading || previewSession.isPreview || isAuthenticated;
   const isFormValid = isEmailValid && isPasswordValid && !isFormDisabled;
 
   const handleChange = (e) => {
@@ -299,7 +303,8 @@ const handleSubmit = async (e) => {
   const displayError = localError || authError?.message;
 
   return (
-    <LoginContainer>
+    <LoginContainer className="login-container">
+      <RouterLink className="auth-back-link" to={backPath}>← Volver</RouterLink>
       <LoginPaper elevation={0}>
         {/* Logo - Usando clases CSS */}
         <Box className="login-logo-wrapper">
@@ -313,7 +318,7 @@ const handleSubmit = async (e) => {
           Iniciar sesión
         </Typography>
 
-        {previewAuthenticated && (
+        {previewSession.isPreview && !alreadyAuthenticated && (
           <Alert
             severity="info"
             sx={{
@@ -327,9 +332,37 @@ const handleSubmit = async (e) => {
               },
             }}
           >
-            Ya estas viendo el sitio como {previewSession.viewer.label}. El
-            formulario se mantiene visible solo para revisar la pantalla.
+            En preview, el selector de desarrollo controla la sesión. El formulario se muestra desactivado para que puedas revisar su diseño sin enviar credenciales.
           </Alert>
+        )}
+
+        {alreadyAuthenticated && (
+          <Alert
+            severity="info"
+            sx={{
+              mb: 3,
+              borderRadius: 12,
+              backgroundColor: "#F7EFE5",
+              border: "1px solid #E8DCCC",
+              "& .MuiAlert-message": {
+                color: "#4A3520",
+                fontFamily: '"Poppins", montserrat, sans-serif',
+              },
+            }}
+          >
+            Ya tienes una sesión activa{activeUser?.first_name ? ` como ${activeUser.first_name}` : ""}. El formulario permanece visible para que puedas revisar esta pantalla sin cerrar sesión.
+          </Alert>
+        )}
+
+        {alreadyAuthenticated && (
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={() => navigate(routePaths.account.profile)}
+            sx={{ mb: 2, borderRadius: 3, borderColor: "#8B6B4C", color: "#6B4F3A", textTransform: "none", fontWeight: 700 }}
+          >
+            Ir a mi cuenta
+          </Button>
         )}
 
         {displayError && (

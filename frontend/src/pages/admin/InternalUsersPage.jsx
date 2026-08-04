@@ -4,11 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { FaExclamationTriangle } from "react-icons/fa";
 import "../../assets/CSS/admin/internal-users.css";
 import { accountService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 
 // ============================================
 // ICONOS SVG
@@ -118,7 +119,6 @@ function IconLoading() {
 const ROLE_OPTIONS = [
   { value: "administrador", label: "Administrador" },
   { value: "empleado", label: "Empleado" },
-  { value: "cliente", label: "Cliente" },
 ];
 
 function getUserDisplayName(user) {
@@ -149,7 +149,7 @@ function getRoleLabel(role) {
 // ============================================
 export default function InternalUsersPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
 
   // Estados
   const [loading, setLoading] = useState(true);
@@ -182,7 +182,7 @@ export default function InternalUsersPage() {
     try {
       const response = await accountService.users();
       const usersList = response.results || response;
-      setUsers(usersList);
+      setUsers(usersList.filter((account) => account.role !== "cliente"));
     } catch (err) {
       console.error("Error al cargar usuarios:", err);
       setError(err.message || "Error al cargar los usuarios");
@@ -278,8 +278,8 @@ export default function InternalUsersPage() {
     if (!editingUser && !formData.password.trim()) {
       errors.password = "Contraseña requerida";
     }
-    if (editingUser && formData.password && formData.password.length < 4) {
-      errors.password = "Mínimo 4 caracteres";
+    if (formData.password && formData.password.length < 8) {
+      errors.password = "Mínimo 8 caracteres";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -383,7 +383,7 @@ export default function InternalUsersPage() {
   // ============================================
   const handleToggleActive = async (userId) => {
     const userToToggle = users.find((u) => u.id === userId);
-    if (!userToToggle) return;
+    if (!userToToggle || userToToggle.role === "administrador") return;
 
     setSubmitting(true);
     setError(null);
@@ -406,7 +406,9 @@ export default function InternalUsersPage() {
   // ✅ ELIMINAR USUARIO
   // ============================================
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
+    const target = users.find((account) => account.id === userId);
+    if (!target || target.role === "administrador") return;
+    if (!window.confirm("¿Desactivar esta cuenta de empleado?")) return;
 
     setSubmitting(true);
     setError(null);
@@ -456,21 +458,7 @@ export default function InternalUsersPage() {
     return (
       <div className="home-page internal-users">
         <HomeHeader />
-        <section className="internal-users-hero" aria-label="Usuarios internos">
-          <div className="internal-users-hero__overlay">
-            <div className="internal-users-hero__content">
-              <div className="internal-users-hero__icon">
-                <IconUsers />
-              </div>
-              <div className="internal-users-hero__text">
-                <h1 className="internal-users-hero__title">Usuarios internos</h1>
-                <p className="internal-users-hero__subtitle">
-                  Gestiona empleados y administradores del sistema
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <PageHero title="Equipo interno" eyebrow="Administración" image="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1800&q=82" current="Equipo interno" />
         <div className="internal-users-loading">
           <IconLoading />
           <p>Cargando usuarios...</p>
@@ -484,21 +472,7 @@ export default function InternalUsersPage() {
     return (
       <div className="home-page internal-users">
         <HomeHeader />
-        <section className="internal-users-hero" aria-label="Usuarios internos">
-          <div className="internal-users-hero__overlay">
-            <div className="internal-users-hero__content">
-              <div className="internal-users-hero__icon">
-                <IconUsers />
-              </div>
-              <div className="internal-users-hero__text">
-                <h1 className="internal-users-hero__title">Usuarios internos</h1>
-                <p className="internal-users-hero__subtitle">
-                  Gestiona empleados y administradores del sistema
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <PageHero title="Equipo interno" eyebrow="Administración" image="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1800&q=82" current="Equipo interno" />
         <div className="internal-users-error">
           <p>
             <FaExclamationTriangle aria-hidden="true" />
@@ -519,21 +493,7 @@ export default function InternalUsersPage() {
       <HomeHeader />
 
       {/* ===== HERO HEADER ===== */}
-      <section className="internal-users-hero" aria-label="Usuarios internos">
-        <div className="internal-users-hero__overlay">
-          <div className="internal-users-hero__content">
-            <div className="internal-users-hero__icon">
-              <IconUsers />
-            </div>
-            <div className="internal-users-hero__text">
-              <h1 className="internal-users-hero__title">Usuarios internos</h1>
-              <p className="internal-users-hero__subtitle">
-                Gestiona empleados y administradores del sistema
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero title="Equipo interno" eyebrow="Administración" image="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1800&q=82" current="Equipo interno" />
 
       {/* ===== CONTENIDO CON SCROLL ===== */}
       <div className="internal-users__content">
@@ -662,7 +622,8 @@ export default function InternalUsersPage() {
                         <button
                           className={`internal-users__toggle ${user.is_active !== false ? "internal-users__toggle--active" : "internal-users__toggle--inactive"}`}
                           onClick={() => handleToggleActive(user.id)}
-                          disabled={submitting}
+                          disabled={submitting || user.role === "administrador"}
+                          title={user.role === "administrador" ? "Las cuentas administradoras están protegidas" : undefined}
                         >
                           {user.is_active !== false ? (
                             <>
@@ -692,7 +653,8 @@ export default function InternalUsersPage() {
                             className="internal-users__action-btn internal-users__action-btn--delete"
                             onClick={() => handleDeleteUser(user.id)}
                             aria-label={`Eliminar ${getUserDisplayName(user)}`}
-                            disabled={submitting}
+                            disabled={submitting || user.role === "administrador"}
+                            title={user.role === "administrador" ? "Las cuentas administradoras están protegidas" : undefined}
                           >
                             <IconTrash />
                           </button>
@@ -779,7 +741,7 @@ export default function InternalUsersPage() {
                   name="role"
                   value={formData.role}
                   onChange={handleFormChange}
-                  disabled={submitting}
+                  disabled={submitting || editingUser?.role === "administrador"}
                 >
                   {ROLE_OPTIONS.map((role) => (
                     <option key={role.value} value={role.value}>
@@ -787,6 +749,7 @@ export default function InternalUsersPage() {
                     </option>
                   ))}
                 </select>
+                {editingUser?.role === "administrador" ? <span className="internal-users__field-help">El rol administrador está protegido.</span> : null}
                 {formErrors.role && (
                   <span className="internal-users__field-error">
                     {formErrors.role}
@@ -809,7 +772,7 @@ export default function InternalUsersPage() {
                   placeholder={
                     editingUser
                       ? "Dejar vacío para mantener"
-                      : "Mínimo 4 caracteres"
+                      : "Mínimo 8 caracteres"
                   }
                   className={formErrors.password ? "internal-users__input--error" : ""}
                   disabled={submitting}

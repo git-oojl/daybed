@@ -1260,3 +1260,28 @@
     grid-column: auto;
   }
 }
+
+/* Final storefront shell polish */
+.home-page > main { flex: 1 0 auto; }
+.home-header { --site-header-height: 78px; }
+.home-header__inner { max-width: 1440px; grid-template-columns: minmax(150px,.75fr) auto minmax(340px,1.25fr); padding-block: 16px; }
+.home-header__logo { color: #5a3f2d; letter-spacing: -.04em; }
+.home-nav__link { color: #574438; font-weight: 500; font-size: .94rem; }
+.home-header__user-email { color: #78695d; }
+.home-header__user-dropdown { background: #fffaf4; }
+.home-show-more__btn { display: inline-flex; align-items: center; justify-content: center; position: relative; z-index: 3; }
+.home-footer { margin-top: auto; background: #e6d5bf; border-top: 1px solid #d5bfa2; color: #4f3b2d; }
+.home-footer__inner { max-width: 1440px; grid-template-columns: minmax(260px,1.4fr) repeat(3,minmax(150px,.7fr)); gap: 54px; padding: 58px 40px 42px; }
+.home-footer__brand { max-width: 410px; }
+.home-footer__logo { display: inline-block; color: #4b3425; text-decoration: none; letter-spacing: -.04em; }
+.home-footer__statement { margin: 16px 0 14px; color: #604b3b; line-height: 1.7; }
+.home-footer__address { color: #75604e; line-height: 1.55; }
+.home-footer__heading { color: #4a3425; }
+.home-footer__links a, .home-footer__contact a { color: #5d493a; font-weight: 600; }
+.home-footer__contact { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.home-footer__contact > p:not(.home-footer__heading) { margin: 3px 0 0; color: #766150; font-size: .85rem; }
+.home-footer__contact-link { display: inline-flex; margin-top: 4px; padding-bottom: 3px; border-bottom: 1px solid #755239; text-decoration: none; }
+.home-footer__bottom { border-top: 1px solid rgba(86,59,39,.18); padding: 20px 40px; }
+.home-footer__copy { max-width: 1440px; margin: 0 auto; padding: 0; border: 0; color: #725e4d; text-align: center; font-size: .82rem; }
+@media (max-width: 1120px) { .home-header__inner { grid-template-columns: auto 1fr auto; } .home-footer__inner { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 720px) { .home-footer__inner { grid-template-columns: 1fr; padding-inline: 24px; gap: 32px; } .home-footer__bottom { padding-inline: 24px; } }

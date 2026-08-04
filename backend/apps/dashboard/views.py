@@ -1,7 +1,9 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Avg, Count, F, Q, Sum
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,8 +17,8 @@ from apps.orders.models import Order
 @extend_schema(
     summary="Consultar métricas del dashboard",
     description=(
-        "Devuelve métricas administrativas sobre pedidos, ventas simuladas, "
-        "inventario bajo, pedidos recientes y costos de entrega."
+        "Devuelve métricas administrativas reales sobre pedidos, ventas, "
+        "inventario bajo, actividad reciente y costos de entrega."
     ),
     responses=DashboardMetricsSerializer,
     tags=["Dashboard"],
@@ -25,11 +27,19 @@ class DashboardMetricsView(APIView):
     permission_classes = (operational_permission("dashboard.view"),)
 
     def get(self, request):
+        try:
+            range_days = int(request.query_params.get("range_days", 90))
+        except (TypeError, ValueError):
+            range_days = 90
+        range_days = max(7, min(range_days, 365))
+        range_start = timezone.now() - timedelta(days=range_days)
+        orders = Order.objects.filter(created_at__gte=range_start)
+
         status_counts = {
             row["status"]: row["count"]
-            for row in Order.objects.values("status").annotate(count=Count("id"))
+            for row in orders.values("status").annotate(count=Count("id"))
         }
-        order_aggregates = Order.objects.aggregate(
+        order_aggregates = orders.aggregate(
             total_orders=Count("id"),
             total_simulated_sales=Sum(
                 "total",
@@ -53,12 +63,12 @@ class DashboardMetricsView(APIView):
             "stock",
             "name",
         )[:5]
-        recent_orders = Order.objects.select_related("user").order_by(
+        recent_orders = orders.select_related("user").order_by(
             "-created_at",
             "-id",
         )[:5]
         sales_by_month = (
-            Order.objects.exclude(status=Order.Status.CANCELLED)
+            orders.exclude(status=Order.Status.CANCELLED)
             .annotate(month=TruncMonth("created_at"))
             .values("month")
             .annotate(total=Sum("total", default=Decimal("0.00")))
@@ -67,6 +77,8 @@ class DashboardMetricsView(APIView):
         total_sales = order_aggregates["total_simulated_sales"]
 
         payload = {
+            "range_days": range_days,
+            "range_start": range_start,
             "total_orders": order_aggregates["total_orders"],
             "total_products": product_aggregates["total_products"],
             "total_simulated_sales": total_sales,

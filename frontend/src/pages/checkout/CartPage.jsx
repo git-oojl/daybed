@@ -1,17 +1,18 @@
 // CartPage.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import "../../assets/home-page.css";
 import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, storeService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { productImage } from "../../services/viewMappers.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
-import EmptyState from "../../components/support/EmptyState.jsx";
 
 // ✅ Caché de imágenes GLOBAL
 const imageCache = new Map();
@@ -112,7 +113,7 @@ function IconTrash() {
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useEffectiveSession();
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -257,12 +258,10 @@ export default function CartPage() {
     return (
       <div className="home-page cart-page">
         <HomeHeader />
-        <ErrorMessage message={error} />
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button onClick={fetchCart} className="btn-primary">
-            Reintentar
-          </button>
-        </div>
+        <main className="cart-state cart-state--error">
+          <ErrorMessage message={error} />
+          <button type="button" onClick={fetchCart}>Intentar de nuevo</button>
+        </main>
         <HomeFooter />
       </div>
     );
@@ -273,35 +272,16 @@ export default function CartPage() {
     return (
       <div className="home-page cart-page">
         <HomeHeader />
-        <section className="checkout-hero" aria-label="Carrito de compras">
-          <div className="checkout-hero__overlay">
-            <h1 className="checkout-hero__title">Carrito de compras</h1>
-            <p className="checkout-hero__breadcrumb">
-              <Link to={routePaths.public.home}>Inicio</Link>
-              <span aria-hidden="true">&gt;</span>
-              Carrito
-            </p>
+        <PageHero title="Carrito de compras" eyebrow="Tu selección" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" current="Carrito" />
+        <main className="cart-empty">
+          <div className="cart-empty__icon"><FaShoppingCart aria-hidden="true" /></div>
+          <p className="cart-empty__eyebrow">Tu selección empieza aquí</p>
+          <h2>El carrito está listo para una buena pieza</h2>
+          <p>Explora la tienda, guarda tus favoritos y regresa cuando hayas encontrado lo que encaja en tu espacio.</p>
+          <div className="cart-empty__actions">
+            <Link to={routePaths.public.catalog}>Explorar la tienda</Link>
+            <Link to={routePaths.public.savedItems}><FaHeart aria-hidden="true" /> Ver guardados</Link>
           </div>
-        </section>
-        <main className="cart-container" style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <EmptyState message="Tu carrito está vacío" />
-          <p style={{ margin: "1rem 0 2rem", color: "#7b6f5d" }}>
-            ¡Explora nuestros productos y encuentra lo que necesitas!
-          </p>
-          <Link
-            to={routePaths.public.catalog}
-            style={{
-              display: "inline-block",
-              padding: "0.85rem 2rem",
-              background: "#8B5E3C",
-              color: "white",
-              borderRadius: "0.8rem",
-              textDecoration: "none",
-              fontWeight: "700",
-            }}
-          >
-            Ir a la tienda
-          </Link>
         </main>
         <HomeFooter />
       </div>
@@ -315,20 +295,7 @@ export default function CartPage() {
     <div className="home-page cart-page">
       <HomeHeader />
 
-      <section className="checkout-hero" aria-label="Carrito de compras">
-        <div className="checkout-hero__overlay">
-          <h1 className="checkout-hero__title">
-            Carrito de compras ({totalItems} items)
-          </h1>
-          <p className="checkout-hero__breadcrumb">
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <Link to={routePaths.public.catalog}>Catálogo</Link>
-            <span aria-hidden="true">&gt;</span>
-            Carrito
-          </p>
-        </div>
-      </section>
+      <PageHero title="Carrito de compras" eyebrow="Tu selección" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" current="Carrito" />
 
       <main className="cart-container">
         <div className="cart-table">

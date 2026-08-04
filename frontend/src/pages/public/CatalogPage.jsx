@@ -1,565 +1,175 @@
-// CatalogPage.jsx - CORREGIDO (sin warnings de ESLint)
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
-import { useState, useEffect, useCallback } from "react";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { generatePath, Link, useSearchParams } from "react-router-dom";
-import { FaCheckCircle, FaExclamationTriangle, FaHeart } from "react-icons/fa";
-import { routePaths } from "../../routes/routePaths.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import StoreProductCard from "../../components/store/StoreProductCard.jsx";
 import { catalogService, cartService } from "../../services/backendServices.js";
-import { productImage as resolveProductImage } from "../../services/viewMappers.js";
 import {
   getSavedProductIds,
   subscribeToSavedItems,
   toggleSavedProduct,
 } from "../../services/savedItems.js";
+import { productCategoryName, readCollection } from "../../services/viewMappers.js";
 
-const normalizeCategoryDisplayName = (value = "") => {
-  const text = String(value)
-    .replace(/Ã¡/g, "á")
-    .replace(/Ã©/g, "é")
-    .replace(/Ã­/g, "í")
-    .replace(/Ã³/g, "ó")
-    .replace(/Ãº/g, "ú")
-    .replace(/Ã±/g, "ñ")
-    .replace(/Ã/g, "í")
-    .trim();
+const HERO_IMAGE = "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1800&q=82";
 
-  return text;
-};
+function cleanCategory(value) {
+  return String(value || "").replace(/Ã¡/g, "á").replace(/Ã©/g, "é").replace(/Ã­/g, "í").replace(/Ã³/g, "ó").replace(/Ãº/g, "ú").replace(/Ã±/g, "ñ").trim();
+}
 
-const getCategoryNameSafe = (category) => {
-  if (!category) return "";
-  if (typeof category === "string") return normalizeCategoryDisplayName(category);
-  if (typeof category === "object") {
-    return normalizeCategoryDisplayName(category.name || category.title || category.slug || "");
-  }
-  return "";
-};
-
-const getProductCategoryName = (product) => {
-  const categoryFromDetails = getCategoryNameSafe(product?.category_detail);
-  if (categoryFromDetails) return categoryFromDetails;
-
-  const categoryFromProduct = getCategoryNameSafe(product?.category);
-  if (categoryFromProduct) return categoryFromProduct;
-
-  return "";
-};
-
-// ✅ Función para obtener imagen según el producto
-const getProductImage = (product) => {
-  return resolveProductImage(product);
-};
-
-const getProductDetailPath = (product) =>
-  generatePath(routePaths.public.productDetail, { productId: product.id });
-
-function CatalogPage() {
+export default function CatalogPage() {
   const [searchParams] = useSearchParams();
-  const [sortBy, setSortBy] = useState("default");
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
-  const [notification, setNotification] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [storeCategories, setStoreCategories] = useState([]);
-  const [error, setError] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [sortBy, setSortBy] = useState("default");
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notification, setNotification] = useState(null);
 
-  // ============================================================
-  // ✅ CARGAR PRODUCTOS DEL BACKEND
-  // ============================================================
-  const fetchProducts = useCallback(async () => {
+  const loadCatalog = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-      setError(null);
-
-      const [productsResponse, categoriesResponse] = await Promise.all([
+      const [productResponse, categoryResponse] = await Promise.all([
         catalogService.products(),
         catalogService.categories().catch(() => []),
       ]);
-
-      let productsData = [];
-      if (Array.isArray(productsResponse)) {
-        productsData = productsResponse;
-      } else if (productsResponse?.results && Array.isArray(productsResponse.results)) {
-        productsData = productsResponse.results;
-      } else {
-        productsData = productsResponse || [];
-      }
-
-      let categoriesData = [];
-      if (Array.isArray(categoriesResponse)) {
-        categoriesData = categoriesResponse;
-      } else if (categoriesResponse?.results && Array.isArray(categoriesResponse.results)) {
-        categoriesData = categoriesResponse.results;
-      } else {
-        categoriesData = categoriesResponse || [];
-      }
-
-      const realCategoryNames = categoriesData
-        .map((category) => getCategoryNameSafe(category))
-        .filter(Boolean);
-
-      setStoreCategories(realCategoryNames);
-
-      if (productsData.length > 0) {
-        setProducts(productsData);
-        setError(null);
-      } else {
-        setProducts([]);
-        setError(null);
-      }
-
-    } catch (error) {
-      console.error('Error al cargar productos:', error);
-      setProducts([]);
-      setStoreCategories([]);
-      setError('No fue posible cargar los productos desde el servidor');
+      const nextProducts = readCollection(productResponse);
+      const nextCategories = readCollection(categoryResponse);
+      setProducts(nextProducts);
+      setCategories(nextCategories);
+      const maxPrice = Math.max(1000, ...nextProducts.map((item) => Number(item.price || 0)));
+      setPriceRange({ min: 0, max: Math.ceil(maxPrice / 1000) * 1000 });
+    } catch (requestError) {
+      setError(requestError.message || "No fue posible cargar la colección.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ✅ useEffect CORREGIDO - agregar eslint-disable-next-line
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProducts();
-  }, [fetchProducts]);
-
+  useEffect(() => { loadCatalog(); }, [loadCatalog]);
   useEffect(() => subscribeToSavedItems(setSavedIds), []);
 
-  // ✅ Obtener categorías únicas de los productos reales
-  const getProductCategories = () => {
-    const categories = new Set();
-    products.forEach((product) => {
-      const categoryName = getProductCategoryName(product);
-      if (categoryName) {
-        categories.add(categoryName);
-      }
+  const maxPrice = useMemo(() => Math.max(1000, ...products.map((item) => Number(item.price || 0))), [products]);
+  const maxPriceRounded = Math.ceil(maxPrice / 1000) * 1000;
+  const categoryNames = useMemo(() => {
+    return [...new Set([
+      ...categories.map((category) => cleanCategory(category.name)),
+      ...products.map((product) => cleanCategory(productCategoryName(product))),
+    ].filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+  }, [categories, products]);
+
+  const visibleProducts = useMemo(() => {
+    const search = (searchParams.get("search") || "").trim().toLowerCase();
+    const filtered = products.filter((product) => {
+      const category = cleanCategory(productCategoryName(product));
+      const price = Number(product.price || 0);
+      const haystack = `${product.name || ""} ${product.description || ""} ${product.sku || ""} ${category}`.toLowerCase();
+      return (!search || haystack.includes(search))
+        && price >= priceRange.min
+        && price <= priceRange.max
+        && (!selectedCategories.length || selectedCategories.includes(category));
     });
-    return [...categories];
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "price-asc") return Number(a.price || 0) - Number(b.price || 0);
+      if (sortBy === "price-desc") return Number(b.price || 0) - Number(a.price || 0);
+      if (sortBy === "name") return String(a.name || "").localeCompare(String(b.name || ""), "es");
+      return 0;
+    });
+  }, [products, priceRange, searchParams, selectedCategories, sortBy]);
+
+  const notify = (type, message) => {
+    setNotification({ type, message });
+    window.setTimeout(() => setNotification(null), 3000);
   };
 
-  // ✅ Usar las categorías reales del backend y de los productos visibles
-  const productCategories = getProductCategories();
-  const allCategories = [...new Set([...storeCategories, ...productCategories])];
-
-  // ✅ CALCULAR EL PRECIO MÁXIMO
-  const maxProductPrice = products.length > 0 
-    ? Math.max(...products.map(p => typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0), 0)
-    : 10000;
-  
-  const maxPriceRounded = Math.ceil(Math.max(maxProductPrice, 1000) / 1000) * 1000;
-
-  const [priceRange, setPriceRange] = useState({ 
-    min: 0, 
-    max: maxPriceRounded 
-  });
-
-  // ✅ useEffect CORREGIDO - agregar eslint-disable-next-line
-  useEffect(() => {
-    if (products.length > 0) {
-      const newMax = Math.max(...products.map(p => 
-        typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
-      ), 0);
-      const newMaxRounded = Math.ceil(Math.max(newMax, 1000) / 1000) * 1000;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPriceRange(prev => ({ ...prev, max: newMaxRounded }));
-    }
-  }, [products]);
-
-  // Filtrar productos por precio y categoría
-  const filteredProducts = products.filter((product) => {
-    const searchTerm = (searchParams.get("search") || "").trim().toLowerCase();
-    const matchesSearch =
-      !searchTerm ||
-      `${product.name || ""} ${product.description || ""} ${product.sku || ""} ${getProductCategoryName(product)}`
-        .toLowerCase()
-        .includes(searchTerm);
-    const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
-    const inPriceRange = price >= priceRange.min && price <= priceRange.max;
-
-    const categoryName = getProductCategoryName(product);
-
-    if (selectedCategories.length === 0) {
-      return inPriceRange && matchesSearch;
-    }
-
-    return inPriceRange && matchesSearch && selectedCategories.includes(categoryName);
-  });
-
-  // Ordenar productos
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const priceA = typeof a.price === 'number' ? a.price : parseFloat(a.price) || 0;
-    const priceB = typeof b.price === 'number' ? b.price : parseFloat(b.price) || 0;
-    
-    switch (sortBy) {
-      case "price-asc":
-        return priceA - priceB;
-      case "price-desc":
-        return priceB - priceA;
-      case "name":
-        return (a.name || '').localeCompare(b.name || '');
-      default:
-        return 0;
-    }
-  });
-
-  const formatPrice = (price) => {
-    const numPrice = typeof price === 'number' ? price : parseFloat(price) || 0;
-    return `$${numPrice.toLocaleString("es-MX")} mxn`;
+  const toggleCategory = (category) => {
+    setSelectedCategories((current) => current.includes(category)
+      ? current.filter((item) => item !== category)
+      : [...current, category]);
   };
 
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
-  };
-
-  const handleClearFilters = () => {
-    setPriceRange({ min: 0, max: maxPriceRounded });
+  const clearFilters = () => {
     setSelectedCategories([]);
     setSortBy("default");
-  };
-
-  const handleCategoryToggle = (category) => {
-    if (selectedCategories.includes(category)) {
-      setSelectedCategories(selectedCategories.filter((c) => c !== category));
-    } else {
-      setSelectedCategories([...selectedCategories, category]);
-    }
+    setPriceRange({ min: 0, max: maxPriceRounded });
   };
 
   const handleToggleSaved = (product) => {
-    const nextIds = toggleSavedProduct(product.id);
-    const isSaved = nextIds.includes(String(product.id));
-    setNotification({
-      type: "success",
-      message: isSaved
-        ? `${product.name} agregado a guardados`
-        : `${product.name} eliminado de guardados`,
-    });
-    setTimeout(() => setNotification(null), 2500);
+    const next = toggleSavedProduct(product.id);
+    notify("success", next.includes(String(product.id)) ? `${product.name} guardado` : `${product.name} eliminado de guardados`);
   };
 
-  // ✅ handleAddToCart usando cartService
   const handleAddToCart = async (product) => {
     try {
-      if (!product.id || product.id < 1) {
-        setNotification({ type: "error", message: "Producto no válido" });
-        setTimeout(() => setNotification(null), 3000);
-        return;
-      }
-
-      await cartService.addItem({
-        product_id: product.id,
-        quantity: 1
-      });
-      setNotification({ type: "success", message: `${product.name} agregado al carrito` });
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      console.error('Error al agregar al carrito:', error);
-      
-      if (error.message?.includes('autenticación') || error.status === 401) {
-        setNotification({ type: "error", message: "Por favor, inicia sesión para agregar productos" });
-      } else if (error.message?.includes('no existe')) {
-        setNotification({ type: "error", message: `El producto "${product.name}" no existe en la base de datos` });
-      } else {
-        setNotification({ type: "error", message: error.message || 'No se pudo agregar al carrito' });
-      }
-      setTimeout(() => setNotification(null), 4000);
+      await cartService.addItem({ product_id: product.id, quantity: 1 });
+      notify("success", `${product.name} agregado al carrito`);
+    } catch (requestError) {
+      notify("error", requestError.status === 401 ? "Inicia sesión para agregar productos" : requestError.message || "No pudimos agregar el producto");
     }
   };
-
-  // ============================================================
-  // ESTADOS DE CARGA Y ERROR
-  // ============================================================
-  if (loading) {
-    return (
-      <div className="home-page catalog-page">
-        <HomeHeader />
-        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p>Cargando productos...</p>
-        </div>
-        <HomeFooter />
-      </div>
-    );
-  }
-
-  if (error && products.length === 0) {
-    return (
-      <div className="home-page catalog-page">
-        <HomeHeader />
-        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-            <FaExclamationTriangle aria-hidden="true" />
-            {error}
-          </p>
-          <button 
-            onClick={fetchProducts}
-            style={{
-              marginTop: "1rem",
-              padding: "0.5rem 2rem",
-              background: "#2f2a25",
-              color: "white",
-              border: "none",
-              borderRadius: "0.3rem",
-              cursor: "pointer",
-            }}
-          >
-            Reintentar
-          </button>
-        </div>
-        <HomeFooter />
-      </div>
-    );
-  }
 
   return (
     <div className="home-page catalog-page">
       <HomeHeader />
-
-      {notification && (
-        <div className="cart-notification" style={{
-          position: "fixed",
-          top: "5.75rem",
-          right: "1rem",
-          background: notification.type === "error" ? '#D32F2F' : '#2f2a25',
-          color: "white",
-          padding: "1rem 1.5rem",
-          borderRadius: "0.8rem",
-          zIndex: 9999,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
-          animation: "slideDown 0.3s ease",
-          maxWidth: "350px",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.75rem",
-        }}>
-          {notification.type === "error" ? (
-            <FaExclamationTriangle aria-hidden="true" />
-          ) : (
-            <FaCheckCircle aria-hidden="true" />
-          )}
+      {notification ? (
+        <div className={`catalog-notification catalog-notification--${notification.type}`} role="status">
+          {notification.type === "error" ? <FaExclamationTriangle /> : <FaCheckCircle />}
           <span>{notification.message}</span>
         </div>
-      )}
-
-      {/* Hero Section */}
-      <section className="catalog-hero" style={{
-        backgroundImage: 'url("https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1600&q=80")',
-      }}>
-        <div className="catalog-hero__overlay" />
-        <div className="catalog-hero__content">
-          <h1>Tienda</h1>
-          <p>
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <span>Tienda</span>
-          </p>
-        </div>
-      </section>
+      ) : null}
+      <PageHero title="Tienda" image={HERO_IMAGE} eyebrow="Colección Daybed" />
 
       <main className="catalog-main">
-        {/* LAYOUT: Filtros a la izquierda + Productos a la derecha */}
-        <div className="catalog-layout">
-          
-          {/* SIDEBAR - FILTROS */}
-          <aside className="catalog-filters-sidebar">
-            <div className="catalog-filters-header">
-              <h3>Filtros</h3>
-              <button 
-                className="catalog-filters-clear"
-                onClick={handleClearFilters}
-              >
-                Limpiar todo
-              </button>
-            </div>
+        {loading ? (
+          <section className="catalog-state" role="status"><span className="catalog-state__eyebrow">Tienda Daybed</span><h1>Preparando la colección</h1><p>Estamos organizando productos y disponibilidad.</p></section>
+        ) : error ? (
+          <section className="catalog-state catalog-state--error"><FaExclamationTriangle /><span className="catalog-state__eyebrow">No pudimos abrir la tienda</span><h1>La colección no está disponible</h1><p>{error}</p><button type="button" onClick={loadCatalog}>Intentar de nuevo</button></section>
+        ) : (
+          <div className="catalog-layout">
+            <aside className="catalog-filters-sidebar" aria-label="Filtros del catálogo">
+              <div className="catalog-filters-header"><div><p>Refina la colección</p><h2>Filtros</h2></div><button type="button" className="catalog-filters-clear" onClick={clearFilters}>Limpiar</button></div>
 
-            {/* Rango de Precio */}
-            <div className="catalog-filters-section">
-              <h4>Rango de Precio</h4>
-              <div className="catalog-filters-price-inputs">
-                <span>${(priceRange.min / 1000).toFixed(0)}k</span>
-                <span>${(priceRange.max / 1000).toFixed(0)}k</span>
-              </div>
-              <div className="catalog-filters-price-range">
-                <input
-                  type="range"
-                  min="0"
-                  max={maxPriceRounded}
-                  step="100"
-                  value={priceRange.min}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (val <= priceRange.max) {
-                      setPriceRange({ ...priceRange, min: val });
-                    }
-                  }}
-                  className="catalog-filters-range-input catalog-filters-range-input--min"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max={maxPriceRounded}
-                  step="100"
-                  value={priceRange.max}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (val >= priceRange.min) {
-                      setPriceRange({ ...priceRange, max: val });
-                    }
-                  }}
-                  className="catalog-filters-range-input catalog-filters-range-input--max"
-                />
-              </div>
-            </div>
-
-            {/* Categorías - CON CATEGORÍAS DINÁMICAS */}
-            <div className="catalog-filters-section">
-              <h4>Categorías</h4>
-              <div className="catalog-filters-categories">
-                {allCategories.map((category) => (
-                  <label className="catalog-filters-category" key={category}>
-                    <input
-                      type="checkbox"
-                      checked={selectedCategories.includes(category)}
-                      onChange={() => handleCategoryToggle(category)}
-                    />
-                    {category}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-          </aside>
-
-          {/* CONTENIDO PRINCIPAL */}
-          <div className="catalog-content">
-            {/* Toolbar */}
-            <div className="catalog-toolbar">
-              <div className="catalog-toolbar__start">
-                <span className="catalog-toolbar__results">
-                  {sortedProducts.length} productos
-                </span>
+              <div className="catalog-filters-section">
+                <label className="catalog-filters-sort" htmlFor="catalog-sort"><span>Ordenar por</span><select id="catalog-sort" value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="default">Recomendados</option><option value="price-asc">Precio: menor a mayor</option><option value="price-desc">Precio: mayor a menor</option><option value="name">Nombre</option></select></label>
               </div>
 
-              <div className="catalog-toolbar__end">
-                <span className="catalog-toolbar__label">Ordenar por</span>
-                <select
-                  className="catalog-toolbar__select"
-                  value={sortBy}
-                  onChange={handleSortChange}
-                >
-                  <option value="default">Predeterminado</option>
-                  <option value="price-asc">Precio: Menor a Mayor</option>
-                  <option value="price-desc">Precio: Mayor a Menor</option>
-                  <option value="name">Nombre</option>
-                </select>
+              <div className="catalog-filters-section">
+                <h3>Precio</h3>
+                <div className="catalog-filters-price-inputs"><span>${priceRange.min.toLocaleString("es-MX")}</span><span>${priceRange.max.toLocaleString("es-MX")}</span></div>
+                <label className="catalog-range-label">Precio mínimo<input type="range" min="0" max={maxPriceRounded} step="100" value={priceRange.min} onChange={(event) => setPriceRange((current) => ({ ...current, min: Math.min(Number(event.target.value), current.max) }))} /></label>
+                <label className="catalog-range-label">Precio máximo<input type="range" min="0" max={maxPriceRounded} step="100" value={priceRange.max} onChange={(event) => setPriceRange((current) => ({ ...current, max: Math.max(Number(event.target.value), current.min) }))} /></label>
               </div>
-            </div>
 
-            {/* Grid de productos */}
-            <section className="catalog-grid">
-              {sortedProducts.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "4rem 2rem", width: "100%" }}>
-                  <p>No hay productos que coincidan con los filtros seleccionados</p>
-                  <button
-                    onClick={handleClearFilters}
-                    style={{
-                      marginTop: "1rem",
-                      padding: "0.5rem 2rem",
-                      background: "#2f2a25",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "0.3rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Limpiar filtros
-                  </button>
+              <div className="catalog-filters-section">
+                <h3>Categorías</h3>
+                <div className="catalog-filters-categories">
+                  {categoryNames.map((category) => <label className="catalog-filters-category" key={category}><input type="checkbox" checked={selectedCategories.includes(category)} onChange={() => toggleCategory(category)} /><span>{category}</span></label>)}
+                </div>
+              </div>
+            </aside>
+
+            <section className="catalog-content" aria-label="Productos">
+              <div className="catalog-results-heading"><div><p className="catalog-results-heading__eyebrow">Colección disponible</p><h2>{visibleProducts.length} {visibleProducts.length === 1 ? "producto" : "productos"}</h2></div>{(searchParams.get("search") || "").trim() ? <span>Resultados para “{searchParams.get("search").trim()}”</span> : <span>Piezas para sala, recámara, comedor y trabajo.</span>}</div>
+              {visibleProducts.length ? (
+                <div className="catalog-grid">
+                  {visibleProducts.map((product) => <StoreProductCard key={product.id} product={product} saved={savedIds.includes(String(product.id))} onToggleSaved={handleToggleSaved} onAddToCart={handleAddToCart} />)}
                 </div>
               ) : (
-                sortedProducts.map((product) => {
-                  const productImageUrl = getProductImage(product);
-                  const categoryName = getProductCategoryName(product);
-
-                  return (
-                    <article className="product-card" key={product.id}>
-                      <div className="product-card__image">
-                        <Link
-                          to={getProductDetailPath(product)}
-                          aria-label={`Ver detalle de ${product.name}`}
-                        >
-                          <img
-                            className="product-card__img"
-                            src={productImageUrl}
-                            alt={product.name}
-                            loading="lazy"
-                            onError={(event) => {
-                              event.currentTarget.onerror = null;
-                              event.currentTarget.src = resolveProductImage({});
-                            }}
-                          />
-                        </Link>
-                        <button
-                          type="button"
-                          className={`product-card__save ${
-                            savedIds.includes(String(product.id))
-                              ? "product-card__save--active"
-                              : ""
-                          }`}
-                          aria-label={
-                            savedIds.includes(String(product.id))
-                              ? `Quitar ${product.name} de guardados`
-                              : `Guardar ${product.name}`
-                          }
-                          onClick={() => handleToggleSaved(product)}
-                        >
-                          <FaHeart aria-hidden="true" />
-                        </button>
-                        {product.badge ? (
-                          <span
-                            className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
-                          >
-                            {product.badge}
-                          </span>
-                        ) : null}
-                        <div className="product-card__overlay">
-                          <Link
-                            className="product-card__detail-link"
-                            to={getProductDetailPath(product)}
-                          >
-                            Ver detalle
-                          </Link>
-                          <button type="button" onClick={() => handleAddToCart(product)}>
-                            Agregar a carrito
-                          </button>
-                        </div>
-                      </div>
-                      <div className="product-card__body">
-                        <h3>
-                          <Link to={getProductDetailPath(product)}>
-                            {product.name}
-                          </Link>
-                        </h3>
-                        <p>{product.description || categoryName || "Mueble de calidad"}</p>
-                        <span className="product-card__price">
-                          {formatPrice(product.price)}
-                        </span>
-                      </div>
-                    </article>
-                  );
-                })
+                <div className="catalog-empty"><span className="catalog-empty__eyebrow">Sin coincidencias</span><h2>Probemos con una selección más amplia</h2><p>No hay productos que coincidan con estos filtros.</p><button type="button" onClick={clearFilters}>Limpiar filtros</button></div>
               )}
             </section>
           </div>
-        </div>
+        )}
       </main>
-
       <HomeFooter />
     </div>
   );
 }
-
-export default CatalogPage;

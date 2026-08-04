@@ -129,3 +129,22 @@
     flex-direction: column;
   }
 }
+
+/* A softly faded hero keeps the saved-items page aligned with the rest of the store. */
+.saved-hero {
+  background-image: url("https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82");
+  background-size: cover;
+  background-position: center 58%;
+  position: relative;
+}
+.saved-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(239, 224, 205, 0.18);
+  pointer-events: none;
+}
+.saved-hero .catalog-hero__overlay {
+  background: linear-gradient(90deg, rgba(54, 39, 25, 0.78), rgba(72, 52, 36, 0.42), rgba(96, 73, 53, 0.22));
+}
+.saved-hero .catalog-hero__content { position: relative; z-index: 2; }

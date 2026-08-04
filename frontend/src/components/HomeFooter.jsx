@@ -1,94 +1,59 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../assets/home-page.css";
 import { routePaths } from "../routes/routePaths.js";
 
-const FOOTER_LINKS = [
-  { label: "Inicio", path: routePaths.public.home },
+const STORE_LINKS = [
   { label: "Tienda", path: routePaths.public.catalog },
   { label: "Guardados", path: routePaths.public.savedItems },
-  { label: "Contacto y ayuda", path: routePaths.public.contactHelp },
+  { label: "Nosotros y contacto", path: routePaths.public.contactHelp },
 ];
 
-const HELP_LINKS = [
-  { label: "Opciones de Pago", path: routePaths.public.contactHelp },
-  { label: "Devoluciones", path: routePaths.public.contactHelp },
-  { label: "Políticas de privacidad", path: routePaths.public.contactHelp },
+const ACCOUNT_LINKS = [
+  { label: "Mi perfil", path: routePaths.account.profile },
+  { label: "Mis pedidos", path: routePaths.account.orders },
+  { label: "Carrito", path: routePaths.checkout.cart },
 ];
 
 export default function HomeFooter() {
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [newsletterMsg, setNewsletterMsg] = useState("");
-
-  const handleNewsletter = (event) => {
-    event.preventDefault();
-    if (!newsletterEmail.trim() || !newsletterEmail.includes("@")) {
-      setNewsletterMsg("Ingresa un correo válido");
-      return;
-    }
-
-    setNewsletterMsg("¡Gracias por suscribirte!");
-    setNewsletterEmail("");
-  };
-
   return (
     <footer className="home-footer">
       <div className="home-footer__inner">
-        <div>
-          <p className="home-footer__logo">DayBed</p>
+        <div className="home-footer__brand">
+          <Link to={routePaths.public.home} className="home-footer__logo">DayBed</Link>
+          <p className="home-footer__statement">
+            Muebles cálidos, funcionales y bien elegidos para espacios que se viven todos los días.
+          </p>
           <p className="home-footer__address">
-            Blvd. Cucapah 20100-Sur, El Lago, 22210 Tijuana, B.C., Mexico
+            Blvd. Cucapah 20100 Sur, El Lago, Tijuana, B.C.
           </p>
         </div>
 
         <div>
-          <p className="home-footer__heading">Links</p>
+          <p className="home-footer__heading">Explora</p>
           <ul className="home-footer__links">
-            {FOOTER_LINKS.map((link) => (
-              <li key={link.label}>
-                <Link to={link.path}>{link.label}</Link>
-              </li>
-            ))}
+            {STORE_LINKS.map((link) => <li key={link.label}><Link to={link.path}>{link.label}</Link></li>)}
           </ul>
         </div>
 
         <div>
-          <p className="home-footer__heading">Ayuda</p>
+          <p className="home-footer__heading">Tu cuenta</p>
           <ul className="home-footer__links">
-            {HELP_LINKS.map((link) => (
-              <li key={link.label}>
-                <Link to={link.path}>{link.label}</Link>
-              </li>
-            ))}
+            {ACCOUNT_LINKS.map((link) => <li key={link.label}><Link to={link.path}>{link.label}</Link></li>)}
           </ul>
         </div>
 
-        <div>
-          <p className="home-footer__heading">Noticias</p>
-          <form className="home-newsletter" onSubmit={handleNewsletter}>
-            <input
-              type="email"
-              className="home-newsletter__input"
-              placeholder="Ingresa tu correo electrónico"
-              value={newsletterEmail}
-              onChange={(event) => {
-                setNewsletterEmail(event.target.value);
-                setNewsletterMsg("");
-              }}
-            />
-            <button type="submit" className="home-newsletter__btn">
-              Suscribirse
-            </button>
-          </form>
-          {newsletterMsg && (
-            <p className="home-newsletter__msg">{newsletterMsg}</p>
-          )}
+        <div className="home-footer__contact">
+          <p className="home-footer__heading">Atención</p>
+          <a href="tel:+526645550100">+52 664 555 0100</a>
+          <a href="mailto:contacto@daybed.local">contacto@daybed.local</a>
+          <p>Lunes a viernes · 9:00–18:00</p>
+          <Link to={`${routePaths.public.contactHelp}#contact-form`} className="home-footer__contact-link">Escríbenos</Link>
         </div>
       </div>
 
-      <p className="home-footer__copy">
-        2026 DayBed. Todos los derechos reservados.
-      </p>
+      <div className="home-footer__bottom">
+        <p className="home-footer__copy">© 2026 DayBed · Tijuana, Baja California</p>
+      </div>
     </footer>
   );
 }

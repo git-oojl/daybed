@@ -5,10 +5,11 @@ import "../../assets/home-page.css";
 import "../../assets/CSS/checkout/checkout-summary.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
+import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, orderService, deliveryService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
-import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { productImage } from "../../services/viewMappers.js";
 
 // ============================================
@@ -159,7 +160,7 @@ function isSimulatedCardValid(paymentData) {
 // ============================================
 export default function CheckoutSummaryPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
 
   // Estados del checkout
   const [loading, setLoading] = useState(true);
@@ -216,7 +217,7 @@ export default function CheckoutSummaryPage() {
       if (user) {
         setFormData((prev) => ({
           ...prev,
-          nombre: user.first_name || user.name || "",
+          nombre: [user.first_name, user.last_name].filter(Boolean).join(" ") || user.name || user.username || "",
           email: user.email || "",
           telefono: user.phone || "",
         }));
@@ -252,11 +253,6 @@ export default function CheckoutSummaryPage() {
       }
 
       if (!authLoading && isAuthenticated) {
-        const viewerId = getViewerIdForUser(user);
-        if (viewerId !== "customer") {
-          navigate(routePaths.support.unauthorized || "/no-autorizado");
-          return;
-        }
         await loadCheckoutData();
       }
     };
@@ -400,8 +396,6 @@ export default function CheckoutSummaryPage() {
 
   const isFormValid = () => {
     return (
-      validateField("nombre", formData.nombre) &&
-      validateField("email", formData.email) &&
       validateField("telefono", formData.telefono) &&
       validateField("calle", formData.calle) &&
       validateField("colonia", formData.colonia) &&
@@ -416,11 +410,11 @@ export default function CheckoutSummaryPage() {
   };
 
   const getConfirmButtonText = () => {
-    if (submitting) return metodoPago === "card" ? "Simulando pago..." : "Procesando...";
+    if (submitting) return metodoPago === "card" ? "Validando pago..." : "Procesando...";
     if (!addressValidated) return "Valida tu dirección primero";
     if (!aceptTerms) return "Acepta términos para continuar";
-    if (metodoPago === "card" && !isPaymentValid()) return "Completa la tarjeta simulada";
-    return metodoPago === "card" ? "Simular pago y confirmar" : "Confirmar pedido";
+    if (metodoPago === "card" && !isPaymentValid()) return "Completa los datos de la tarjeta";
+    return metodoPago === "card" ? "Confirmar pago y pedido" : "Confirmar pedido";
   };
 
   // ============================================
@@ -475,7 +469,7 @@ export default function CheckoutSummaryPage() {
       setTouched(allTouched);
       setError(
         metodoPago === "card" && !isPaymentValid()
-          ? "Completa los datos de la tarjeta simulada."
+          ? "Completa correctamente los datos de la tarjeta."
           : "Por favor, completa todos los campos requeridos"
       );
       return;
@@ -548,10 +542,15 @@ export default function CheckoutSummaryPage() {
     return (
       <div className="home-page checkout-page">
         <HomeHeader />
-        <div className="checkout-loading">
-          <IconLoading />
-          <p>Cargando resumen del pedido...</p>
-        </div>
+        <PageHero title="Resumen de pedido" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" eyebrow="Compra Daybed" />
+        <main className="checkout-container checkout-container--state">
+          <section className="checkout-state-card" role="status" aria-live="polite">
+            <IconLoading />
+            <span className="checkout-state-card__eyebrow">Un momento</span>
+            <h2>Estamos preparando tu pedido</h2>
+            <p>Revisamos los artículos, existencias y datos de entrega antes de mostrarlos.</p>
+          </section>
+        </main>
         <HomeFooter />
       </div>
     );
@@ -561,10 +560,16 @@ export default function CheckoutSummaryPage() {
     return (
       <div className="home-page checkout-page">
         <HomeHeader />
-        <div className="checkout-error">
-          <p>{error}</p>
-          <button onClick={loadCheckoutData}>Reintentar</button>
-        </div>
+        <PageHero title="Resumen de pedido" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" eyebrow="Compra Daybed" />
+        <main className="checkout-container checkout-container--state">
+          <section className="checkout-state-card checkout-state-card--error" role="alert">
+            <span className="checkout-state-card__symbol" aria-hidden="true">!</span>
+            <span className="checkout-state-card__eyebrow">No pudimos abrir tu resumen</span>
+            <h2>Tu carrito sigue a salvo</h2>
+            <p>{error}</p>
+            <button type="button" onClick={loadCheckoutData}>Intentar de nuevo</button>
+          </section>
+        </main>
         <HomeFooter />
       </div>
     );
@@ -574,18 +579,15 @@ export default function CheckoutSummaryPage() {
     return (
       <div className="home-page checkout-page">
         <HomeHeader />
-        <section className="checkout-hero" aria-label="Resumen de pedido">
-          <div className="checkout-hero__overlay">
-            <h1 className="checkout-hero__title">Resumen de pedido</h1>
-          </div>
-        </section>
-        <main className="checkout-container">
-          <div className="checkout-empty">
-            <p>Tu carrito está vacío</p>
-            <Link to={routePaths.public.catalog} className="checkout-empty__btn">
-              Ir a la tienda
-            </Link>
-          </div>
+        <PageHero title="Resumen de pedido" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" eyebrow="Compra Daybed" />
+        <main className="checkout-container checkout-container--state">
+          <section className="checkout-state-card">
+            <span className="checkout-state-card__symbol" aria-hidden="true">＋</span>
+            <span className="checkout-state-card__eyebrow">Tu selección está vacía</span>
+            <h2>Encuentra una pieza para comenzar</h2>
+            <p>Guarda tus favoritos o agrega productos al carrito para preparar la entrega.</p>
+            <Link to={routePaths.public.catalog} className="checkout-empty__btn">Explorar la tienda</Link>
+          </section>
         </main>
         <HomeFooter />
       </div>
@@ -599,18 +601,7 @@ export default function CheckoutSummaryPage() {
     <div className="home-page checkout-page">
       <HomeHeader />
 
-      <section className="checkout-hero" aria-label="Resumen de pedido">
-        <div className="checkout-hero__overlay">
-          <h1 className="checkout-hero__title">Resumen de pedido</h1>
-          <p className="checkout-hero__breadcrumb">
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <Link to={routePaths.checkout.cart}>Carrito</Link>
-            <span aria-hidden="true">&gt;</span>
-            Checkout
-          </p>
-        </div>
-      </section>
+      <PageHero title="Resumen de pedido" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" eyebrow="Compra Daybed" />
 
       <main className="checkout-container">
         {error && (
@@ -621,61 +612,28 @@ export default function CheckoutSummaryPage() {
 
         <form className="checkout-grid" onSubmit={(e) => e.preventDefault()}>
           <div className="checkout-form">
-            {/* DATOS DEL CLIENTE */}
+            {/* CUENTA Y CONTACTO */}
             <div className="checkout-card">
               <h2 className="checkout-card__title">
                 <span className="checkout-card__icon"><IconUser /></span>
-                Datos del cliente
+                Cuenta y contacto de entrega
               </h2>
               <div className="checkout-card__body">
+                <div className="checkout-account-summary">
+                  <div className="checkout-account-summary__avatar">{(formData.nombre || formData.email || "D").charAt(0).toUpperCase()}</div>
+                  <div>
+                    <span>Pedido a nombre de</span>
+                    <strong>{formData.nombre || "Usuario Daybed"}</strong>
+                    <small>{formData.email}</small>
+                  </div>
+                  <Link to={routePaths.account.profile}>Editar perfil</Link>
+                </div>
+                <p className="checkout-account-note">El nombre y correo pertenecen a tu cuenta y se registran automáticamente. Solo necesitamos un teléfono para coordinar esta entrega.</p>
                 <div className="checkout-row">
                   <div className="checkout-field checkout-field--full">
-                    <label htmlFor="nombre">Nombre completo *</label>
-                    <input
-                      type="text"
-                      id="nombre"
-                      name="nombre"
-                      value={formData.nombre}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      className={isFieldError("nombre") ? "checkout-input--error" : ""}
-                      placeholder="Tu nombre"
-                      disabled={submitting}
-                    />
-                    {isFieldError("nombre") && <span className="checkout-field__error">Campo requerido</span>}
-                  </div>
-                </div>
-
-                <div className="checkout-row">
-                  <div className="checkout-field">
-                    <label htmlFor="email">Correo electrónico *</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      className={isFieldError("email") ? "checkout-input--error" : ""}
-                      placeholder="tu@email.com"
-                      disabled={submitting}
-                    />
-                    {isFieldError("email") && <span className="checkout-field__error">Correo inválido</span>}
-                  </div>
-                  <div className="checkout-field">
-                    <label htmlFor="telefono">Teléfono *</label>
-                    <input
-                      type="tel"
-                      id="telefono"
-                      name="telefono"
-                      value={formData.telefono}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      className={isFieldError("telefono") ? "checkout-input--error" : ""}
-                      placeholder="5512345678"
-                      disabled={submitting}
-                    />
-                    {isFieldError("telefono") && <span className="checkout-field__error">10 dígitos</span>}
+                    <label htmlFor="telefono">Teléfono para esta entrega *</label>
+                    <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleChange} onBlur={handleBlur} className={isFieldError("telefono") ? "checkout-input--error" : ""} placeholder="6641234567" disabled={submitting} />
+                    {isFieldError("telefono") && <span className="checkout-field__error">Ingresa 10 dígitos</span>}
                   </div>
                 </div>
               </div>
@@ -820,6 +778,18 @@ export default function CheckoutSummaryPage() {
                   </div>
                 )}
 
+                {addressValidated && geocodeResult ? (
+                  <div className="checkout-map-preview">
+                    <OpenStreetMapEmbed
+                      compact
+                      latitude={geocodeResult.latitude}
+                      longitude={geocodeResult.longitude}
+                      label="Punto validado para esta entrega"
+                      title="Dirección de entrega en OpenStreetMap"
+                    />
+                  </div>
+                ) : null}
+
                 {geocoding && (
                   <div className="checkout-address-loading">
                     <span className="checkout-address-loading__spinner"></span>
@@ -934,7 +904,7 @@ export default function CheckoutSummaryPage() {
                   </label>
                 </div>
                 <p className="checkout-payment-note">
-                  Pago simulado para demostración; no se realizan cargos reales.
+                  Entorno de prueba: no se generarán cargos reales.
                 </p>
 
                 {metodoPago === "card" && (
@@ -1056,10 +1026,10 @@ export default function CheckoutSummaryPage() {
                       disabled={submitting}
                     />
                     <span className="checkout-terms__text">
-                      Acepto los <Link to="#" className="checkout-terms__link">términos y condiciones</Link> y <Link to="#" className="checkout-terms__link">política de privacidad</Link>
+                      Acepto las condiciones de compra y el aviso de privacidad de Daybed
                     </span>
                   </label>
-                  {!aceptTerms && touched.nombre && <p className="checkout-terms__error">Debes aceptar los términos para continuar</p>}
+                  {!aceptTerms && touched.telefono && <p className="checkout-terms__error">Debes aceptar los términos para continuar</p>}
                 </div>
 
                 <button
@@ -1071,7 +1041,7 @@ export default function CheckoutSummaryPage() {
                   {getConfirmButtonText()}
                 </button>
 
-                <p className="checkout-secure">Pago simulado para fines académicos. No se realizan cargos reales.</p>
+                <p className="checkout-secure">Tu cuenta, dirección y forma de pago se vinculan únicamente con este pedido.</p>
               </div>
             </div>
           </aside>

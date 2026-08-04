@@ -5,9 +5,10 @@ import "../../assets/home-page.css";
 import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { orderService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { productImage } from "../../services/viewMappers.js";
 
 // ============================================
@@ -99,12 +100,6 @@ function formatRouteDuration(minutes) {
     : `${Math.floor(duration / 60)} h ${Math.round(duration % 60)} min`;
 }
 
-function deliveryCalculationLabel(order) {
-  return order?.distance_provider === "openrouteservice"
-    ? "Ruta de manejo calculada"
-    : "Estimación aproximada";
-}
-
 // ============================================
 // ✅ COMPONENTE PRINCIPAL
 // ============================================
@@ -112,7 +107,7 @@ const OrderConfirmationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { orderId: routeOrderId } = useParams();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
@@ -192,10 +187,10 @@ const OrderConfirmationPage = () => {
 
   const getPaymentStatusLabel = (status) => {
     const statuses = {
-      authorized: "Pago simulado autorizado",
-      awaiting_transfer: "Transferencia simulada pendiente",
+      authorized: "Pago confirmado",
+      awaiting_transfer: "Transferencia pendiente",
       pay_on_delivery: "Pago contra entrega",
-      failed: "Pago simulado fallido",
+      failed: "Pago no aprobado",
     };
     return statuses[status] || status || "No especificado";
   };
@@ -298,20 +293,7 @@ const OrderConfirmationPage = () => {
       <HomeHeader />
 
       {/* HERO - Estilo checkout */}
-      <section className="checkout-hero checkout-hero--order" aria-label="Confirmación de pedido">
-        <div className="checkout-hero__overlay">
-          <h1 className="checkout-hero__title">¡Pedido confirmado!</h1>
-          <p className="checkout-hero__breadcrumb">
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <Link to={routePaths.checkout.cart}>Carrito</Link>
-            <span aria-hidden="true">&gt;</span>
-            <Link to={routePaths.checkout.summary}>Checkout</Link>
-            <span aria-hidden="true">&gt;</span>
-            Confirmación
-          </p>
-        </div>
-      </section>
+      <PageHero title="Pedido confirmado" eyebrow="Gracias por tu compra" image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82" current="Confirmación" />
 
       <main className="order-container">
         {/* ✅ ICONO DE ÉXITO */}
@@ -364,9 +346,6 @@ const OrderConfirmationPage = () => {
                 )}
                 {order.payment_reference && (
                   <p className="order-card__detail">Referencia: {order.payment_reference}</p>
-                )}
-                {order.payment_snapshot?.message && (
-                  <p className="order-card__detail">{order.payment_snapshot.message}</p>
                 )}
               </div>
             </article>
@@ -446,9 +425,6 @@ const OrderConfirmationPage = () => {
                 )}
                 {routeDuration && (
                   <p className="order-card__detail">Tiempo estimado: {routeDuration}</p>
-                )}
-                {order.distance_provider && (
-                  <p className="order-card__detail">{deliveryCalculationLabel(order)}</p>
                 )}
               </div>
             </article>

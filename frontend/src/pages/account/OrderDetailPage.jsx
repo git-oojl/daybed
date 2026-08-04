@@ -4,9 +4,10 @@ import "../../assets/home-page.css";
 import "../../assets/order-detail-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { orderService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { productImage } from "../../services/viewMappers.js";
 
 const STATUS_MAP = {
@@ -20,6 +21,14 @@ const STATUS_MAP = {
   canceled: "Cancelado",
 };
 
+const ORDER_PROGRESS_STEPS = [
+  { id: "pending", label: "Pedido recibido" },
+  { id: "confirmed", label: "Pago confirmado" },
+  { id: "preparing", label: "Preparando" },
+  { id: "shipped", label: "En camino" },
+  { id: "delivered", label: "Entregado" },
+];
+
 const PAYMENT_METHOD_MAP = {
   card: "Tarjeta de crédito/débito",
   transfer: "Transferencia bancaria",
@@ -27,10 +36,10 @@ const PAYMENT_METHOD_MAP = {
 };
 
 const PAYMENT_STATUS_MAP = {
-  authorized: "Pago simulado autorizado",
-  awaiting_transfer: "Transferencia simulada pendiente",
+  authorized: "Pago confirmado",
+  awaiting_transfer: "Transferencia pendiente",
   pay_on_delivery: "Pago contra entrega",
-  failed: "Pago simulado fallido",
+  failed: "Pago no aprobado",
 };
 
 function normalizeOrderStatus(status) {
@@ -158,7 +167,7 @@ function normalizeOrder(order) {
 export default function OrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -223,8 +232,41 @@ export default function OrderDetailPage() {
       );
     }
 
+    const progressIndex = ORDER_PROGRESS_STEPS.findIndex(
+      (step) => step.id === order.status,
+    );
+    const isCancelled = ["cancelled", "canceled"].includes(order.status);
+
     return (
-      <div className="orders-detail-box">
+      <>
+        <section className={`orders-tracker${isCancelled ? " orders-tracker--cancelled" : ""}`} aria-label="Seguimiento del pedido">
+          <div className="orders-tracker__heading">
+            <div>
+              <span>Seguimiento</span>
+              <h2>{isCancelled ? "Pedido cancelado" : order.statusText}</h2>
+            </div>
+            <p>{isCancelled ? "Este pedido ya no continuará su proceso." : "Consulta en qué etapa se encuentra tu compra."}</p>
+          </div>
+          {!isCancelled ? (
+            <ol className="orders-tracker__steps">
+              {ORDER_PROGRESS_STEPS.map((step, index) => {
+                const isComplete = progressIndex >= index;
+                const isCurrent = progressIndex === index;
+                return (
+                  <li
+                    key={step.id}
+                    className={`${isComplete ? "is-complete" : ""}${isCurrent ? " is-current" : ""}`}
+                  >
+                    <span aria-hidden="true">{isComplete ? "✓" : index + 1}</span>
+                    <strong>{step.label}</strong>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : null}
+        </section>
+
+        <div className="orders-detail-box">
         <div className="orders-detail-grid">
           <div className="orders-detail-section">
             <h4 className="orders-detail__header">Productos</h4>
@@ -261,7 +303,7 @@ export default function OrderDetailPage() {
                 ))
               ) : (
                 <p className="orders-empty__message">
-                  Este pedido no tiene productos registrados.
+                  No hay productos asociados a este pedido.
                 </p>
               )}
             </div>
@@ -370,6 +412,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+      </>
     );
   };
 
@@ -377,24 +420,7 @@ export default function OrderDetailPage() {
     <div className="home-page orders-page">
       <HomeHeader />
 
-      <section
-        className="orders-hero"
-        style={{
-          backgroundImage:
-            'url("https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1600&q=80")',
-        }}
-      >
-        <div className="orders-hero__overlay">
-          <h1 className="orders-hero__title">Detalle del pedido</h1>
-          <p className="orders-hero__breadcrumb">
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <Link to={routePaths.account.orders}>Mis pedidos</Link>
-            <span aria-hidden="true">&gt;</span>
-            <span>{order?.orderNumber || "Pedido"}</span>
-          </p>
-        </div>
-      </section>
+      <PageHero title={order ? `Pedido ${order.number || order.id}` : "Detalle del pedido"} eyebrow="Seguimiento" image="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1800&q=82" current="Detalle del pedido" />
 
       <main className="orders-main">
         <div className="orders-toolbar">

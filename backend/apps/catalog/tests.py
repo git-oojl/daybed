@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from apps.catalog.models import Category, Product
+from apps.catalog.models import Category, Product, ProductReview
 
 pytestmark = pytest.mark.django_db
 
@@ -524,3 +524,69 @@ def test_staff_delete_deactivates_product_instead_of_hard_delete():
     product.refresh_from_db()
     assert product.active is False
     assert Product.objects.filter(id=product.id).exists()
+
+
+def test_public_product_detail_includes_active_reviews_and_aggregate():
+    product = create_product()
+    reviewer = create_user("reviewer_catalog", User.Roles.CUSTOMER)
+    ProductReview.objects.create(
+        product=product,
+        user=reviewer,
+        rating=5,
+        title="Excelente pieza",
+        body="Se siente firme y llegó en muy buenas condiciones.",
+        verified_purchase=True,
+    )
+
+    response = api_client().get(reverse("catalog-product-detail", args=[product.id]))
+
+    assert response.status_code == 200
+    assert response.data["review_count"] == 1
+    assert response.data["average_rating"] == 5.0
+    assert response.data["reviews"][0]["author"] == reviewer.username
+    assert response.data["reviews"][0]["verified_purchase"] is True
+
+
+def test_authenticated_customer_can_create_product_review():
+    product = create_product()
+    customer = create_user("customer_review_create", User.Roles.CUSTOMER)
+
+    response = api_client(customer).post(
+        reverse("product-review-list-create", args=[product.id]),
+        {
+            "rating": 4,
+            "title": "Muy buena compra",
+            "body": "Las medidas coinciden y el acabado se ve muy bien.",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    review = ProductReview.objects.get(product=product, user=customer)
+    assert review.rating == 4
+    assert review.verified_purchase is False
+
+
+def test_customer_cannot_review_same_product_twice():
+    product = create_product()
+    customer = create_user("customer_review_duplicate", User.Roles.CUSTOMER)
+    ProductReview.objects.create(
+        product=product,
+        user=customer,
+        rating=5,
+        title="Primera reseña",
+        body="Una buena experiencia.",
+    )
+
+    response = api_client(customer).post(
+        reverse("product-review-list-create", args=[product.id]),
+        {
+            "rating": 3,
+            "title": "Segunda reseña",
+            "body": "No debería guardarse.",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert ProductReview.objects.filter(product=product, user=customer).count() == 1

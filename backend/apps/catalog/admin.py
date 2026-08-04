@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.catalog.models import Category, Product, ProductImage
+from apps.catalog.models import Category, Product, ProductImage, ProductReview
 
 
 @admin.register(Category)
@@ -75,3 +75,11 @@ class ProductImageAdmin(admin.ModelAdmin):
     list_display = ("product", "alt_text", "sort_order", "active")
     list_filter = ("active",)
     search_fields = ("product__name", "alt_text")
+
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = ("product", "user", "rating", "verified_purchase", "active", "created_at")
+    list_filter = ("rating", "verified_purchase", "active")
+    search_fields = ("product__name", "user__email", "title", "body")
+    list_select_related = ("product", "user")

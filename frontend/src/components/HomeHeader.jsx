@@ -24,7 +24,7 @@ import {
 } from "react-icons/fa";
 import "../assets/home-page.css";
 import { routePaths } from "../routes/routePaths.js";
-import { useAuthStore } from "../auth/authStore.js";
+import { useEffectiveSession } from "../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../auth/roleMapping.js";
 import {
   getSavedProductIds,
@@ -116,7 +116,7 @@ function IconInventory() {
 const NAV_LINKS = [
   { label: "Inicio", path: routePaths.public.home },
   { label: "Tienda", path: routePaths.public.catalog },
-  { label: "Contacto y ayuda", path: routePaths.public.contactHelp },
+  { label: "Nosotros y contacto", path: routePaths.public.contactHelp },
 ];
 
 // ============================================
@@ -133,7 +133,7 @@ export default function HomeHeader() {
   const location = useLocation();
 
   // Estado de autenticación
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useEffectiveSession();
 
   // Determinar el rol del usuario
   const viewerId = getViewerIdForUser(user);
@@ -141,7 +141,7 @@ export default function HomeHeader() {
   const isEmployee = viewerId === "employee";
   const isCustomer = viewerId === "customer";
   const isGuest = !isAuthenticated;
-  const canUseBuyerTools = !isEmployee;
+  const canUseBuyerTools = true;
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -281,6 +281,30 @@ export default function HomeHeader() {
         action: () => navigateTo(routePaths.admin.businessMetrics || "/admin/metricas"),
         isAdmin: true,
       });
+      items.push({
+        label: "Productos internos",
+        icon: <IconProducts />,
+        action: () => navigateTo(routePaths.backOffice.products),
+        isAdmin: true,
+      });
+      items.push({
+        label: "Colecciones",
+        icon: <IconCategories />,
+        action: () => navigateTo(routePaths.backOffice.categories),
+        isAdmin: true,
+      });
+      items.push({
+        label: "Inventario",
+        icon: <IconInventory />,
+        action: () => navigateTo(routePaths.backOffice.inventory),
+        isAdmin: true,
+      });
+      items.push({
+        label: "Pedidos de clientes",
+        icon: <IconOrders />,
+        action: () => navigateTo(routePaths.backOffice.orders),
+        isAdmin: true,
+      });
 
       // Configuración básica
       items.push({
@@ -292,7 +316,7 @@ export default function HomeHeader() {
 
       // Roles y permisos
       items.push({
-        label: "Roles y permisos",
+        label: "Accesos del equipo",
         icon: <IconUsers />,
         action: () => navigateTo(routePaths.admin.rolesPermissions || "/admin/roles-permisos"),
         isAdmin: true,
@@ -331,8 +355,26 @@ export default function HomeHeader() {
         action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
         isAdmin: false,
       });
+      items.push({
+        label: "Mis pedidos",
+        icon: <IconOrders />,
+        action: () => navigateTo(routePaths.account.orders || "/cuenta/pedidos"),
+        isAdmin: false,
+      });
+      items.push({
+        label: "Carrito",
+        icon: <IconCart />,
+        action: () => navigateTo(routePaths.checkout.cart || "/carrito"),
+        isAdmin: false,
+      });
+      items.push({
+        label: "Guardados",
+        icon: <IconHeart filled={savedIds.length > 0} />,
+        action: () => navigateTo(routePaths.public.savedItems),
+        isAdmin: false,
+      });
 
-      // Separador
+      // Separador entre la cuenta personal y las herramientas operativas
       items.push({ isDivider: true });
 
       // Dashboard exclusivo del empleado
@@ -345,7 +387,7 @@ export default function HomeHeader() {
 
       // Productos
       items.push({
-        label: "Productos",
+        label: "Productos internos",
         icon: <IconProducts />,
         action: () => navigateTo(routePaths.backOffice.products || "/interno/productos"),
         isAdmin: false,
@@ -353,7 +395,7 @@ export default function HomeHeader() {
 
       // Categorías
       items.push({
-        label: "Categorías",
+        label: "Colecciones",
         icon: <IconCategories />,
         action: () => navigateTo(routePaths.backOffice.categories || "/interno/categorias"),
         isAdmin: false,
@@ -369,7 +411,7 @@ export default function HomeHeader() {
 
       // Pedidos internos
       items.push({
-        label: "Pedidos internos",
+        label: "Pedidos de clientes",
         icon: <IconOrders />,
         action: () => navigateTo(routePaths.backOffice.orders || "/interno/pedidos"),
         isAdmin: false,

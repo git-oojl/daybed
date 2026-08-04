@@ -7,77 +7,49 @@ import {
   FaMapMarkerAlt,
   FaPhone,
   FaQuestionCircle,
-  FaRoute,
-  FaShieldAlt,
+  FaTruck,
 } from "react-icons/fa";
 import "../../assets/home-page.css";
 import "../../assets/CSS/public/contact-help.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
+import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 
 const FAQS = [
   {
     id: "payments",
-    question: "Que metodos de pago puedo probar?",
-    answer:
-      "El checkout simula tarjeta, transferencia y efectivo contra entrega. No se hacen cargos reales.",
+    question: "¿Qué métodos de pago aceptan?",
+    answer: "Puedes pagar con tarjeta, transferencia o efectivo contra entrega cuando la zona y el pedido lo permiten. El método disponible se confirma antes de finalizar la compra.",
   },
   {
     id: "delivery",
-    question: "Como se calcula la entrega?",
-    answer:
-      "La direccion se valida con geocodificacion y la ruta usa OpenRouteService cuando hay API key configurada.",
+    question: "¿Cómo funciona la entrega?",
+    answer: "Calculamos distancia, tiempo estimado y costo con tu dirección. Antes de despachar confirmamos accesos, medidas y una ventana de entrega contigo.",
   },
   {
     id: "returns",
-    question: "Puedo devolver un producto?",
-    answer:
-      "Para esta demo, las devoluciones se documentan como flujo de soporte: el cliente contacta a tienda con su numero de pedido.",
+    question: "¿Qué hago si mi producto llega dañado?",
+    answer: "Contáctanos con tu número de pedido y fotografías dentro de las primeras 48 horas. Nuestro equipo revisará el caso y te explicará la solución disponible.",
   },
   {
     id: "orders",
-    question: "Donde veo mi pedido?",
-    answer:
-      "Inicia sesion y entra a Mis pedidos. Ahi puedes revisar productos, direccion, estado, pago y datos de entrega.",
+    question: "¿Dónde puedo seguir mi pedido?",
+    answer: "Inicia sesión y entra a Mis pedidos. Ahí encontrarás el estado actual, productos, dirección, pago y datos de entrega de cada compra.",
   },
 ];
 
 const CONTACT_CARDS = [
-  {
-    title: "Telefono",
-    value: "+52 664 555 0100",
-    detail: "Lun-Vie 9:00 - 18:00",
-    icon: <FaPhone aria-hidden="true" />,
-  },
-  {
-    title: "Correo",
-    value: "contacto@daybed.local",
-    detail: "Respuesta en horario laboral",
-    icon: <FaEnvelope aria-hidden="true" />,
-  },
-  {
-    title: "Tienda",
-    value: "Av. Reforma 1200",
-    detail: "Zona Centro, Tijuana",
-    icon: <FaMapMarkerAlt aria-hidden="true" />,
-  },
-  {
-    title: "Pedidos",
-    value: "Seguimiento interno",
-    detail: "Ruta, pago y estado simulados",
-    icon: <FaRoute aria-hidden="true" />,
-  },
+  { title: "Llámanos", value: "+52 664 555 0100", detail: "Lun–Vie · 9:00–18:00", href: "tel:+526645550100", icon: <FaPhone /> },
+  { title: "Escríbenos", value: "contacto@daybed.local", detail: "Respuesta en horario laboral", href: "mailto:contacto@daybed.local", icon: <FaEnvelope /> },
+  { title: "Visítanos", value: "Blvd. Cucapah 20100 Sur", detail: "El Lago, Tijuana, B.C.", href: null, icon: <FaMapMarkerAlt /> },
+  { title: "Postventa", value: "Seguimiento de pedidos", detail: "Entrega, cambios y soporte", href: routePaths.account.orders, icon: <FaTruck /> },
 ];
 
 export default function ContactHelpPage() {
   const [activeFaq, setActiveFaq] = useState("payments");
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
 
@@ -90,219 +62,104 @@ export default function ContactHelpPage() {
   const submitForm = (event) => {
     event.preventDefault();
     const nextErrors = {};
-
-    if (!formData.name.trim()) nextErrors.name = "Nombre requerido";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      nextErrors.email = "Correo valido requerido";
-    }
-    if (!formData.subject.trim()) nextErrors.subject = "Asunto requerido";
-    if (!formData.message.trim()) nextErrors.message = "Mensaje requerido";
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors);
-      return;
-    }
-
+    if (!formData.name.trim()) nextErrors.name = "Escribe tu nombre";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) nextErrors.email = "Escribe un correo válido";
+    if (!formData.subject.trim()) nextErrors.subject = "Cuéntanos el motivo";
+    if (!formData.message.trim()) nextErrors.message = "Escribe tu mensaje";
+    if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
     setSent(true);
     setFormData({ name: "", email: "", subject: "", message: "" });
-    window.setTimeout(() => setSent(false), 4200);
+    window.setTimeout(() => setSent(false), 5000);
   };
 
   return (
     <div className="home-page contact-page">
       <HomeHeader />
-
-      <section className="contact-hero" aria-label="Contacto y ayuda">
-        <div className="contact-hero__overlay">
-          <div className="contact-hero__content">
-            <h1 className="contact-hero__title">Contacto y ayuda</h1>
-            <p className="contact-hero__breadcrumb">
-              <Link to={routePaths.public.home}>Inicio</Link>
-              <span aria-hidden="true">&gt;</span>
-              <span>Contacto y ayuda</span>
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title="Nosotros y contacto"
+        eyebrow="Daybed · Tijuana"
+        image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82"
+      />
 
       <main className="contact-container">
-        <section className="contact-section" aria-labelledby="about-daybed">
+        <section className="contact-section contact-section--story" aria-labelledby="about-daybed">
           <div className="about-us">
             <div className="about-us__content">
-              <h2 id="about-daybed" className="contact-section__title">
-                Sobre Daybed
-              </h2>
-              <p className="about-us__text">
-                Daybed es una tienda de muebles enfocada en piezas funcionales
-                para salas, recamaras, comedores, oficina y exterior. El sitio
-                conecta catalogo, carrito, checkout, entrega, pedidos e
-                inventario para probar una operacion completa.
-              </p>
+              <p className="contact-section__eyebrow">Nuestra forma de hacer tienda</p>
+              <h2 id="about-daybed" className="contact-section__title">Piezas que hacen espacio para la vida</h2>
+              <p className="about-us__text">Daybed nació para acercar muebles funcionales y cálidos a hogares de Tijuana. Elegimos piezas que resuelven el día a día sin convertir la casa en un catálogo: materiales honestos, proporciones cómodas y diseños fáciles de combinar.</p>
+              <p className="about-us__text">Te acompañamos desde la medida inicial hasta la entrega. Queremos que sepas qué compras, cuánto ocupa y cómo llegará a tu espacio.</p>
               <div className="about-us__values">
-                <span className="about-us__value">
-                  <FaCheckCircle aria-hidden="true" /> Catalogo conectado
-                </span>
-                <span className="about-us__value">
-                  <FaShieldAlt aria-hidden="true" /> Pagos simulados
-                </span>
-                <span className="about-us__value">
-                  <FaClock aria-hidden="true" /> Seguimiento de pedidos
-                </span>
+                <span><FaCheckCircle /> Selección con intención</span>
+                <span><FaClock /> Atención clara y cercana</span>
+                <span><FaTruck /> Entrega coordinada</span>
               </div>
             </div>
-            <div className="about-us__image" aria-hidden="true">
-              <img
-                src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=900&q=80"
-                alt=""
-              />
-            </div>
+            <div className="about-us__image"><img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1100&q=82" alt="Sala cálida con mobiliario contemporáneo" /></div>
           </div>
         </section>
 
         <section className="contact-section" aria-labelledby="contact-info">
-          <h2 id="contact-info" className="contact-section__title">
-            Informacion de tienda
-          </h2>
+          <p className="contact-section__eyebrow">Estamos cerca</p>
+          <h2 id="contact-info" className="contact-section__title">Hablemos de tu espacio</h2>
           <div className="contact-grid">
-            {CONTACT_CARDS.map((card) => (
-              <article className="contact-card" key={card.title}>
-                <div className="contact-card__icon">{card.icon}</div>
-                <h3 className="contact-card__title">{card.title}</h3>
-                <p className="contact-card__value">{card.value}</p>
-                <p className="contact-card__detail">{card.detail}</p>
-              </article>
-            ))}
+            {CONTACT_CARDS.map((card) => {
+              const content = <><div className="contact-card__icon">{card.icon}</div><h3>{card.title}</h3><p className="contact-card__value">{card.value}</p><p className="contact-card__detail">{card.detail}</p></>;
+              return card.href?.startsWith("/") ? <Link className="contact-card" to={card.href} key={card.title}>{content}</Link> : card.href ? <a className="contact-card" href={card.href} key={card.title}>{content}</a> : <article className="contact-card" key={card.title}>{content}</article>;
+            })}
           </div>
         </section>
 
-        <section className="contact-section" aria-labelledby="faqs" id="faqs">
-          <h2 id="faqs" className="contact-section__title">
-            <FaQuestionCircle aria-hidden="true" />
-            Preguntas frecuentes
-          </h2>
+        <section className="contact-section contact-location" aria-labelledby="daybed-location">
+          <div className="contact-location__intro">
+            <p className="contact-section__eyebrow">Showroom y punto de salida</p>
+            <h2 id="daybed-location" className="contact-section__title">Encuéntranos en Tijuana</h2>
+            <p>Visítanos para ver materiales y proporciones. Desde este punto coordinamos las entregas locales de Daybed.</p>
+            <div className="contact-location__details"><strong>Blvd. Cucapah 20100 Sur, El Lago</strong><span>Lunes a viernes · 9:00–18:00</span><span>Recomendamos agendar antes de visitar.</span></div>
+          </div>
+          <OpenStreetMapEmbed />
+        </section>
+
+        <section className="contact-section contact-section--split" id="faqs">
+          <div className="contact-section__intro">
+            <p className="contact-section__eyebrow">Antes de comprar</p>
+            <h2 className="contact-section__title"><FaQuestionCircle /> Preguntas frecuentes</h2>
+            <p>Las respuestas esenciales sobre pago, entrega, seguimiento y cuidado de tu compra.</p>
+          </div>
           <div className="faqs-list">
             {FAQS.map((faq) => (
               <article className="faq-item" key={faq.id}>
-                <button
-                  type="button"
-                  className={`faq-item__question ${
-                    activeFaq === faq.id ? "faq-item__question--active" : ""
-                  }`}
-                  onClick={() => setActiveFaq(activeFaq === faq.id ? null : faq.id)}
-                >
-                  <span>{faq.question}</span>
-                  <span className="faq-item__icon" aria-hidden="true">
-                    {activeFaq === faq.id ? "-" : "+"}
-                  </span>
+                <button type="button" className={activeFaq === faq.id ? "faq-item__question faq-item__question--active" : "faq-item__question"} onClick={() => setActiveFaq(activeFaq === faq.id ? null : faq.id)} aria-expanded={activeFaq === faq.id}>
+                  <span>{faq.question}</span><span aria-hidden="true">{activeFaq === faq.id ? "−" : "+"}</span>
                 </button>
-                {activeFaq === faq.id ? (
-                  <div className="faq-item__answer">
-                    <p>{faq.answer}</p>
-                  </div>
-                ) : null}
+                {activeFaq === faq.id ? <div className="faq-item__answer"><p>{faq.answer}</p></div> : null}
               </article>
             ))}
           </div>
         </section>
 
-        <section
-          className="contact-section contact-section--form"
-          aria-labelledby="contact-form"
-          id="contact-form"
-        >
-          <h2 id="contact-form" className="contact-section__title">
-            Escribir a soporte
-          </h2>
-          <p className="contact-section__desc">
-            Este formulario registra una respuesta simulada para validar la
-            experiencia de contacto sin depender de correo externo.
-          </p>
-
-          {sent ? (
-            <div className="contact__alert contact__alert--success">
-              <FaCheckCircle aria-hidden="true" />
-              <span>Mensaje simulado enviado. Te responderemos pronto.</span>
-            </div>
-          ) : null}
-
-          <form className="contact-form" onSubmit={submitForm} noValidate>
-            <div className="contact-form__row">
-              <Field
-                label="Nombre"
-                name="name"
-                value={formData.name}
-                error={errors.name}
-                onChange={updateField}
-              />
-              <Field
-                label="Correo"
-                name="email"
-                type="email"
-                value={formData.email}
-                error={errors.email}
-                onChange={updateField}
-              />
-            </div>
-            <Field
-              label="Asunto"
-              name="subject"
-              value={formData.subject}
-              error={errors.subject}
-              onChange={updateField}
-            />
-            <Field
-              label="Mensaje"
-              name="message"
-              value={formData.message}
-              error={errors.message}
-              onChange={updateField}
-              multiline
-            />
-            <button type="submit" className="contact-form__btn">
-              Enviar mensaje
-            </button>
-          </form>
+        <section className="contact-section contact-section--form" id="contact-form" aria-labelledby="contact-form-title">
+          <div className="contact-form__intro">
+            <p className="contact-section__eyebrow">Atención personal</p>
+            <h2 id="contact-form-title" className="contact-section__title">Cuéntanos qué necesitas</h2>
+            <p>Incluye tu número de pedido cuando tu mensaje sea sobre una compra. Así podremos orientarte con mayor precisión.</p>
+          </div>
+          <div>
+            {sent ? <div className="contact__alert contact__alert--success"><FaCheckCircle /><span>Recibimos tu mensaje. Nuestro equipo te responderá en horario laboral.</span></div> : null}
+            <form className="contact-form" onSubmit={submitForm} noValidate>
+              <div className="contact-form__row"><Field label="Nombre" name="name" value={formData.name} error={errors.name} onChange={updateField} /><Field label="Correo" name="email" type="email" value={formData.email} error={errors.email} onChange={updateField} /></div>
+              <Field label="Asunto" name="subject" value={formData.subject} error={errors.subject} onChange={updateField} />
+              <Field label="Mensaje" name="message" value={formData.message} error={errors.message} onChange={updateField} multiline />
+              <button type="submit" className="contact-form__btn">Enviar mensaje</button>
+            </form>
+          </div>
         </section>
       </main>
-
       <HomeFooter />
     </div>
   );
 }
 
-function Field({
-  label,
-  name,
-  value,
-  error,
-  onChange,
-  type = "text",
-  multiline = false,
-}) {
-  const inputClass = error ? "contact-form__input--error" : "";
-  return (
-    <div className="contact-form__group">
-      <label htmlFor={name}>{label}</label>
-      {multiline ? (
-        <textarea
-          id={name}
-          name={name}
-          value={value}
-          onChange={onChange}
-          rows={5}
-          className={inputClass}
-        />
-      ) : (
-        <input
-          id={name}
-          name={name}
-          type={type}
-          value={value}
-          onChange={onChange}
-          className={inputClass}
-        />
-      )}
-      {error ? <span className="contact-form__error">{error}</span> : null}
-    </div>
-  );
+function Field({ label, name, value, error, onChange, type = "text", multiline = false }) {
+  return <div className="contact-form__group"><label htmlFor={name}>{label}</label>{multiline ? <textarea id={name} name={name} value={value} onChange={onChange} rows={5} aria-invalid={Boolean(error)} /> : <input id={name} name={name} type={type} value={value} onChange={onChange} aria-invalid={Boolean(error)} />}{error ? <span className="contact-form__error">{error}</span> : null}</div>;
 }

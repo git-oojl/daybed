@@ -41,5 +41,7 @@ export const routePaths = {
     loadingStates: "/soporte/cargando",
     emptyStates: "/soporte/vacio",
     feedbackMessages: "/soporte/mensajes",
+    success: "/soporte/exito",
+    error: "/soporte/error",
   },
 };

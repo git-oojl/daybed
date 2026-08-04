@@ -617,3 +617,27 @@ def test_seed_demo_command_creates_repeatable_local_dataset(settings, tmp_path):
 
     assert User.objects.filter(email__endswith="@example.com").count() == 4
     assert Order.objects.filter(user__email="cliente@example.com").count() == 6
+
+
+def test_internal_admin_account_cannot_be_demoted_or_deactivated():
+    acting_admin = create_user("protected_admin_actor", role=User.Roles.ADMIN)
+    protected_admin = create_user("protected_admin_target", role=User.Roles.ADMIN)
+    client = api_client()
+    client.force_authenticate(user=acting_admin)
+
+    demote_response = client.patch(
+        reverse("internal-user-detail", args=[protected_admin.id]),
+        {"role": User.Roles.EMPLOYEE},
+        format="json",
+    )
+    deactivate_response = client.patch(
+        reverse("internal-user-detail", args=[protected_admin.id]),
+        {"is_active": False},
+        format="json",
+    )
+
+    assert demote_response.status_code == 400
+    assert deactivate_response.status_code == 400
+    protected_admin.refresh_from_db()
+    assert protected_admin.role == User.Roles.ADMIN
+    assert protected_admin.is_active is True

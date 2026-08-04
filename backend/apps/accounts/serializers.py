@@ -16,7 +16,7 @@ from rest_framework_simplejwt.token_blacklist.models import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.access_control.services import get_effective_permission_codes
+from apps.access_control.services import PERMISSION_BY_CODE, get_effective_permission_codes
 
 User = get_user_model()
 
@@ -278,6 +278,7 @@ class InternalUserSerializer(serializers.ModelSerializer):
         write_only=True,
         trim_whitespace=False,
     )
+    effective_permission_codes = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -292,6 +293,8 @@ class InternalUserSerializer(serializers.ModelSerializer):
             "state",
             "city",
             "role",
+            "operational_permission_codes",
+            "effective_permission_codes",
             "is_active",
             "is_staff",
             "is_superuser",
@@ -304,7 +307,21 @@ class InternalUserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "date_joined",
             "last_login",
+            "effective_permission_codes",
         )
+
+    def get_effective_permission_codes(self, obj) -> list[str]:
+        return get_effective_permission_codes(obj)
+
+    def validate_operational_permission_codes(self, value):
+        if value is None:
+            return None
+        unknown_codes = sorted(set(value) - set(PERMISSION_BY_CODE))
+        if unknown_codes:
+            raise serializers.ValidationError(
+                f"Permisos no compatibles: {', '.join(unknown_codes)}."
+            )
+        return sorted(set(value))
 
     def validate_email(self, value):
         email = normalize_email(value)
@@ -320,13 +337,28 @@ class InternalUserSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        next_role = attrs.get("role", getattr(self.instance, "role", None))
+        if next_role != User.Roles.EMPLOYEE:
+            attrs["operational_permission_codes"] = None
+        if self.instance is not None and (
+            self.instance.role == User.Roles.ADMIN or self.instance.is_superuser
+        ):
+            if next_role != User.Roles.ADMIN or attrs.get("is_active", True) is False:
+                raise serializers.ValidationError(
+                    {
+                        "role": (
+                            "Las cuentas administradoras están protegidas. "
+                            "Puedes actualizar sus datos, pero no degradarlas ni desactivarlas."
+                        )
+                    }
+                )
         if self.instance is None and not attrs.get("password"):
-            raise serializers.ValidationError({"password": "This field is required."})
+            raise serializers.ValidationError({"password": "La contraseña es obligatoria."})
         if self.instance is not None and self._would_remove_last_admin(attrs):
             raise serializers.ValidationError(
                 {
                     "role": (
-                        "At least one active administrator or superuser must remain."
+                        "Debe permanecer al menos una cuenta administradora activa."
                     )
                 }
             )

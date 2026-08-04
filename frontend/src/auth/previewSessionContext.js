@@ -6,4 +6,7 @@ export const PreviewSessionContext = createContext({
   viewerId: null,
   user: null,
   isAuthenticated: false,
+  setUser: () => undefined,
+  clearSession: () => undefined,
+  logout: async () => undefined,
 });

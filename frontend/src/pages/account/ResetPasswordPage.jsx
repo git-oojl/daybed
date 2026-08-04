@@ -19,7 +19,7 @@ import {
   FaStore as StoreIcon,
 } from "react-icons/fa";
 import "../../assets/CSS/account/login-page.css";
-import loginBackground from "../../assets/LoginPage.jpg";
+import loginBackground from "../../assets/LoginPage.webp";
 import { routePaths } from "../../routes/routePaths.js";
 import { accountService } from "../../services/backendServices.js";
 

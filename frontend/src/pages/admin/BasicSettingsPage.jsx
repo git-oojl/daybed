@@ -3,6 +3,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import "../../assets/CSS/admin/settings-page.css";
 import { storeService } from "../../services/backendServices.js";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
+import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
 
 // ============================================
 // ICONOS (MANTENER IGUALES)
@@ -232,21 +235,7 @@ export default function BasicSettingsPage() {
     <div className="home-page admin-settings">
       <HomeHeader />
 
-      <section className="admin-settings-hero" aria-label="Configuración básica">
-        <div className="admin-settings-hero__overlay">
-          <div className="admin-settings-hero__content">
-            <div className="admin-settings-hero__icon">
-              <IconSettings />
-            </div>
-            <div className="admin-settings-hero__text">
-              <h1 className="admin-settings-hero__title">Configuración básica</h1>
-              <p className="admin-settings-hero__subtitle">
-                Gestiona los datos generales de tu tienda y tarifas de envío
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero title="Configuración de tienda" eyebrow="Administración" image="https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1800&q=82" current="Configuración" />
 
       {pageLoading && (
         <div className="admin-settings__alert">
@@ -356,16 +345,15 @@ export default function BasicSettingsPage() {
                 </div>
 
                 <div className="admin-settings__map-preview">
-                  <div className="admin-settings__map-placeholder">
-                    <IconLocation />
-                    <span>Origen de entrega guardado</span>
-                    <span className="admin-settings__map-coords">
-                      {formData.street}, {formData.neighborhood}, {formData.city}
-                    </span>
-                    <span className="admin-settings__map-coords">
-                      {formData.latitude}, {formData.longitude}
-                    </span>
-                  </div>
+                  <OpenStreetMapEmbed
+                    compact
+                    latitude={formData.latitude || undefined}
+                    longitude={formData.longitude || undefined}
+                    label={formData.latitude && formData.longitude
+                      ? `${formData.store_name || "Daybed"} · ${formData.street || "Origen de entrega"}, ${formData.city || "Tijuana"}`
+                      : "Daybed · ubicación de referencia hasta guardar coordenadas"}
+                    title="Origen de entregas de Daybed en OpenStreetMap"
+                  />
                 </div>
               </div>
             </div>
@@ -498,7 +486,7 @@ export default function BasicSettingsPage() {
           </div>
         </div>
       </form>
-
+      <HomeFooter />
     </div>
   );
 }

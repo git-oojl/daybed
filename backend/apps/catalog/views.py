@@ -1,7 +1,8 @@
 from django.db.models import Prefetch
-from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework import generics, viewsets
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 from apps.access_control.permissions import operational_permission
 from apps.catalog.filters import (
@@ -9,8 +10,12 @@ from apps.catalog.filters import (
     SpecificationFilterMixin,
     StaffProductFilter,
 )
-from apps.catalog.models import Category, Product, ProductImage
-from apps.catalog.serializers import CategorySerializer, ProductSerializer
+from apps.catalog.models import Category, Product, ProductImage, ProductReview
+from apps.catalog.serializers import (
+    CategorySerializer,
+    ProductReviewSerializer,
+    ProductSerializer,
+)
 
 
 class PublicCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -47,8 +52,59 @@ class PublicProductViewSet(SpecificationFilterMixin, viewsets.ReadOnlyModelViewS
                         "sort_order",
                         "id",
                     ),
-                )
+                ),
+                Prefetch(
+                    "reviews",
+                    queryset=ProductReview.objects.filter(active=True)
+                    .select_related("user")
+                    .order_by("-created_at", "-id"),
+                ),
             )
+        )
+
+
+class ProductReviewListCreateView(generics.ListCreateAPIView):
+    serializer_class = ProductReviewSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        return (
+            ProductReview.objects.filter(
+                product_id=self.kwargs["product_id"],
+                product__active=True,
+                active=True,
+            )
+            .select_related("user", "product")
+            .order_by("-created_at", "-id")
+        )
+
+    def perform_create(self, serializer):
+        product = Product.objects.filter(
+            pk=self.kwargs["product_id"],
+            active=True,
+        ).first()
+        if product is None:
+            raise ValidationError({"product": "El producto no está disponible."})
+        if ProductReview.objects.filter(product=product, user=self.request.user).exists():
+            raise ValidationError(
+                {"detail": "Ya publicaste una reseña para este producto."}
+            )
+
+        from apps.orders.models import OrderItem
+
+        verified_purchase = OrderItem.objects.filter(
+            order__user=self.request.user,
+            product=product,
+            order__status="delivered",
+        ).exists()
+        serializer.save(
+            product=product,
+            user=self.request.user,
+            verified_purchase=verified_purchase,
         )
 
 
@@ -81,7 +137,15 @@ class StaffCategoryViewSet(viewsets.ModelViewSet):
 class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
     queryset = (
         Product.objects.select_related("category")
-        .prefetch_related("images")
+        .prefetch_related(
+            "images",
+            Prefetch(
+                "reviews",
+                queryset=ProductReview.objects.filter(active=True)
+                .select_related("user")
+                .order_by("-created_at", "-id"),
+            ),
+        )
         .order_by("name")
     )
     serializer_class = ProductSerializer

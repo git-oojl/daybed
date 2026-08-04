@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
-import { routePaths } from "../../routes/routePaths.js";
 import { inventoryService } from "../../services/backendServices.js";
 import { productImage, readCollection } from "../../services/viewMappers.js";
 import {
@@ -23,7 +22,7 @@ import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
 export default function InventoryPage() {
-  const user = useAuthStore((state) => state.user);
+  const { user } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
@@ -167,78 +166,12 @@ export default function InventoryPage() {
     <div className="home-page dashboard-page">
       <HomeHeader />
 
-      <section
-        className="dashboard-hero"
-        aria-label="Inventario"
-        style={{
-          backgroundImage: `url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZ1TEkqyw1tABVn-JkqxcNMuMAmqLaxjYxp3-bTP1JIg&s=10')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "200px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62, 42, 27, 0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px 20px",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
-              color: "#FFFFFF",
-              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Montserrat", sans-serif',
-            }}
-          >
-            Inventario
-          </h1>
-          <p
-            className="dashboard-hero__breadcrumb"
-            style={{
-              color: "#F5EDE5",
-              fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              marginTop: "8px",
-            }}
-          >
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span
-              aria-hidden="true"
-              style={{ margin: "0 8px", color: "#F5EDE5" }}
-            >
-              &gt;
-            </span>
-            <span style={{ color: "#FFFFFF" }}>Inventario</span>
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Inventario"
+        eyebrow="Control de existencias"
+        image="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1800&q=82"
+        current="Inventario"
+      />
 
       <main className="dashboard-container">
         <div

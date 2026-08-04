@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import StoreProductCard from "../../components/store/StoreProductCard.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
 import {
@@ -10,7 +11,7 @@ import {
   subscribeToSavedItems,
   toggleSavedProduct,
 } from "../../services/savedItems.js";
-import { productImage, readCollection } from "../../services/viewMappers.js";
+import { readCollection } from "../../services/viewMappers.js";
 
 const INITIAL_VISIBLE = 4;
 
@@ -88,126 +89,6 @@ function formatPrice(amount) {
   return `$${(Number(amount) || 0).toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
 }
 
-function IconHeart({ filled }) {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      aria-hidden="true"
-    >
-      <path
-        d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.5-7 10-7 10Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconShare() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M8 12h8M14 8l4 4-4 4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ProductCard({
-  product,
-  isWishlisted,
-  onAddToCart,
-  onToggleWishlist,
-  onShare,
-}) {
-  return (
-    <article className="home-product">
-      <div className="home-product__img-wrap">
-        <img
-          className="home-product__img"
-          src={productImage(product)}
-          alt={product.name}
-          loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = productImage({});
-          }}
-        />
-        {product.discount && (
-          <span className="home-product__badge home-product__badge--sale">
-            {product.discount}
-          </span>
-        )}
-        {product.isNew && !product.discount && (
-          <span className="home-product__badge home-product__badge--new">
-            New
-          </span>
-        )}
-        <div className="home-product__overlay">
-          <button
-            type="button"
-            className="home-product__add-btn"
-            onClick={() => onAddToCart(product)}
-          >
-            Agregar al carrito
-          </button>
-          <div className="home-product__actions">
-            <button
-              type="button"
-              className="home-product__action-btn"
-              onClick={() => onShare(product)}
-            >
-              <IconShare />
-              Compartir
-            </button>
-            <button
-              type="button"
-              className={`home-product__action-btn${isWishlisted ? " home-product__action-btn--active" : ""}`}
-              onClick={() => onToggleWishlist(product.id)}
-              aria-pressed={isWishlisted}
-            >
-              <IconHeart filled={isWishlisted} />
-              Guardar
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="home-product__info">
-        <h3 className="home-product__name">
-          <Link to={routePaths.public.productDetail.replace(":productId", product.id)}>
-            {product.name}
-          </Link>
-        </h3>
-        <p className="home-product__desc">{product.description}</p>
-        <div className="home-product__prices">
-          <span className="home-product__price">
-            {formatPrice(product.price)}
-          </span>
-          {product.oldPrice && (
-            <span className="home-product__old-price">
-              {formatPrice(product.oldPrice)}
-            </span>
-          )}
-        </div>
-      </div>
-    </article>
-  );
-}
-
 function HomePage() {
   const navigate = useNavigate();
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
@@ -269,28 +150,6 @@ function HomePage() {
     [showToast],
   );
 
-  const handleShare = useCallback(
-    async (product) => {
-      const shareData = {
-        title: product.name,
-        text: product.description,
-        url: window.location.href,
-      };
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          await navigator.clipboard.writeText(
-            `${product.name} - ${formatPrice(product.price)}`,
-          );
-          showToast("Enlace copiado al portapapeles");
-        }
-      } catch {
-        showToast("No se pudo compartir");
-      }
-    },
-    [showToast],
-  );
 
   return (
     <div className="home-page">
@@ -345,25 +204,26 @@ function HomePage() {
 
         <section className="home-section" aria-labelledby="home-products-title">
           <h2 className="home-section__title" id="home-products-title">
-            Nuestros Productos
+            Nuestros productos
           </h2>
           {productsError ? <p className="home-products__message">{productsError}</p> : null}
           <div className="home-products">
             {visibleProducts.map((product) => (
-              <ProductCard
+              <StoreProductCard
                 key={product.id}
                 product={product}
-                isWishlisted={wishlist.includes(String(product.id))}
+                saved={wishlist.includes(String(product.id))}
                 onAddToCart={handleAddToCart}
-                onToggleWishlist={handleToggleWishlist}
-                onShare={handleShare}
+                onToggleSaved={(item) => handleToggleWishlist(item.id)}
               />
             ))}
           </div>
           {visibleProducts.length === 0 && (
-            <p style={{ textAlign: "center", color: "#9f9f9f" }}>
-              No se encontraron productos
-            </p>
+            <div className="home-products__empty">
+              <strong>La colección se está acomodando</strong>
+              <span>Vuelve a intentar o explora la tienda completa.</span>
+              <Link to={routePaths.public.catalog}>Ir a Tienda</Link>
+            </div>
           )}
           {hasMore && (
             <div className="home-show-more">
@@ -372,7 +232,7 @@ function HomePage() {
                 className="home-show-more__btn"
                 onClick={() => setVisibleCount(productsToShow.length)}
               >
-                Mostrar Más
+                Mostrar más
               </button>
             </div>
           )}
@@ -383,17 +243,16 @@ function HomePage() {
             <p className="home-gallery-header__text">
               Comparte con nosotros tu hogar con
             </p>
-            <p className="home-gallery-header__hashtag">#DayBedFunx</p>
+            <p className="home-gallery-header__hashtag">#ViveDaybed</p>
           </div>
-          <div className="home-gallery">
-            {GALLERY_IMAGES.map((img) => (
-              <div
-                key={img.id}
-                className={`home-gallery__item ${img.className}`}
-              >
-                <img src={img.src} alt={img.alt} loading="lazy" />
-              </div>
-            ))}
+          <div className="home-gallery-marquee">
+            <div className="home-gallery-marquee__track">
+              {[...GALLERY_IMAGES, ...GALLERY_IMAGES].map((img, index) => (
+                <div key={`${img.id}-${index}`} className="home-gallery-marquee__item">
+                  <img src={img.src} alt={index < GALLERY_IMAGES.length ? img.alt : ""} loading="lazy" />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>

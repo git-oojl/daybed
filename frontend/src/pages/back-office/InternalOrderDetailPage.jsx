@@ -1,761 +1,90 @@
-// InternalOrderDetailPage.jsx
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import "../../assets/home-page.css";
-import "../../assets/dashboard-page.css";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { FaArrowLeft, FaBoxOpen, FaCheck, FaCreditCard, FaEnvelope, FaMapMarkerAlt, FaPhone, FaTruck, FaUser } from "react-icons/fa";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
+import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import { orderService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
-import { getViewerIdForUser } from "../../auth/roleMapping.js";
-import {
-  FaUser,
-  FaBox,
-  FaTruck,
-  FaMapMarkerAlt,
-  FaEdit,
-  FaTimes,
-  FaClock,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaPhone,
-  FaEnvelope,
-  FaUserCircle,
-  FaCreditCard,
-} from "react-icons/fa";
+import { formatMoney, formatOrderDate, normalizeOrder, ORDER_STATUSES, paymentMethodLabel, paymentStatusLabel } from "../../utils/orderPresentation.js";
 
-// ============================================
-// ✅ MAPA DE ESTADOS
-// ============================================
-const STATUS_MAP = {
-  pending: { label: "Pendiente", color: "#ED6C02", bg: "#FFF8E1", icon: FaClock },
-  confirmed: { label: "Confirmado", color: "#2E7D32", bg: "#E8F5E9", icon: FaCheckCircle },
-  preparing: { label: "En preparación", color: "#6A5ACD", bg: "#EDE7F6", icon: FaBox },
-  shipped: { label: "Enviado", color: "#0288D1", bg: "#E1F5FE", icon: FaTruck },
-  delivered: { label: "Entregado", color: "#2E7D32", bg: "#E8F5E9", icon: FaCheckCircle },
-  cancelled: { label: "Cancelado", color: "#D32F2F", bg: "#FDECEA", icon: FaTimesCircle },
-};
+const HERO = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1800&q=82";
 
-function getStatusInfo(status) {
-  return STATUS_MAP[status] || STATUS_MAP.pending;
-}
-
-const PAYMENT_METHOD_MAP = {
-  card: "Tarjeta de crédito/débito",
-  transfer: "Transferencia bancaria",
-  cash: "Efectivo contra entrega",
-};
-
-const PAYMENT_STATUS_MAP = {
-  authorized: "Pago simulado autorizado",
-  awaiting_transfer: "Transferencia simulada pendiente",
-  pay_on_delivery: "Pago contra entrega",
-  failed: "Pago simulado fallido",
-};
-
-function getPaymentMethodLabel(method) {
-  return PAYMENT_METHOD_MAP[method] || method || "No especificado";
-}
-
-function getPaymentStatusLabel(status) {
-  return PAYMENT_STATUS_MAP[status] || status || "No especificado";
-}
-
-// ============================================
-// ✅ COMPONENTE DE CARGA
-// ============================================
-function IconLoading() {
-  return (
-    <svg className="internal-order-detail-loading__spinner" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2"/>
-      <path d="M12 2a10 10 0 0 1 10 10" stroke="#B88E2F" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-// ============================================
-// ✅ COMPONENTE PRINCIPAL
-// ============================================
 export default function InternalOrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const viewerId = getViewerIdForUser(user);
-  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
-  const canUpdatePayment =
-    viewerId === "admin" ||
-    effectivePermissionCodes.includes("orders.status.update");
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const canUpdate = viewer === "admin" || (user?.effective_permission_codes || []).includes("orders.status.update");
   const [order, setOrder] = useState(null);
-  const [updatingPayment, setUpdatingPayment] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // ============================================
-  // ✅ CARGAR PEDIDO
-  // ============================================
   const loadOrder = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
     try {
-      const orderData = await orderService.manageDetail(orderId);
-      setOrder(orderData);
+      setLoading(true); setError("");
+      setOrder(normalizeOrder(await orderService.manageDetail(orderId)));
     } catch (err) {
-      console.error("Error al cargar pedido:", err);
-      setError(err.message || "No se pudo cargar el pedido");
-    } finally {
-      setLoading(false);
-    }
+      setError(err.message || "No pudimos abrir este pedido.");
+    } finally { setLoading(false); }
   }, [orderId]);
 
-  // ============================================
-  // ✅ VERIFICAR AUTENTICACIÓN Y ROL
-  // ============================================
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate(routePaths.account.login);
-      return;
-    }
+    if (!authLoading && !isAuthenticated) return navigate(routePaths.account.login);
+    if (!authLoading && isAuthenticated && !["admin", "employee"].includes(viewer)) return navigate(routePaths.support.unauthorized);
+    if (!authLoading && isAuthenticated) loadOrder();
+  }, [authLoading, isAuthenticated, loadOrder, navigate, viewer]);
 
-    if (!authLoading && isAuthenticated) {
-      const viewerId = getViewerIdForUser(user);
-      if (viewerId !== "admin" && viewerId !== "employee") {
-        navigate(routePaths.support.unauthorized || "/no-autorizado");
-        return;
-      }
-      const timeoutId = window.setTimeout(loadOrder, 0);
-      return () => {
-        window.clearTimeout(timeoutId);
-      };
-    }
-  }, [isAuthenticated, authLoading, user, navigate, loadOrder]);
-
-  // ============================================
-  // ✅ FUNCIONES AUXILIARES
-  // ============================================
-  const formatPrice = (amount) => {
-    return `$${(Number(amount) || 0).toLocaleString("es-MX")}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-MX", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  // ============================================
-  // ✅ OBTENER DATOS DEL CLIENTE
-  // ============================================
-  const getCustomerName = () => {
-    if (order?.customer_name) return order.customer_name;
-    return "Cliente";
-  };
-
-  const getCustomerEmail = () => {
-    if (order?.customer_email) return order.customer_email;
-    return "No disponible";
-  };
-
-  const getCustomerPhone = () => {
-    if (order?.customer_phone) return order.customer_phone;
-    return "No disponible";
-  };
-
-  const handleMarkPaymentReceived = async () => {
-    setUpdatingPayment(true);
-    setError(null);
+  async function changeStatus(nextStatus) {
     try {
-      const updatedOrder = await orderService.updatePaymentStatus(order.id, "authorized");
-      setOrder(updatedOrder);
-    } catch (err) {
-      console.error("Error al actualizar pago:", err);
-      setError(err.message || "No se pudo actualizar el pago simulado");
-    } finally {
-      setUpdatingPayment(false);
-    }
-  };
-
-  // ============================================
-  // ✅ ESTADOS DE CARGA
-  // ============================================
-  if (loading || authLoading) {
-    return (
-      <div className="home-page dashboard-page">
-        <HomeHeader />
-        <section className="dashboard-hero" style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "200px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}>
-          <div className="dashboard-hero__overlay" style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62, 42, 27, 0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px 20px",
-            width: "100%",
-            height: "100%",
-          }}>
-            <h1 className="dashboard-hero__title" style={{
-              color: "#FFFFFF",
-              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Montserrat", sans-serif',
-            }}>Detalle de Pedido</h1>
-          </div>
-        </section>
-        <div className="internal-order-detail-loading" style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <IconLoading />
-          <p>Cargando pedido...</p>
-        </div>
-        <HomeFooter />
-      </div>
-    );
+      setSaving(true); setError("");
+      setOrder(normalizeOrder(await orderService.updateStatus(order.id, nextStatus)));
+    } catch (err) { setError(err.message || "No fue posible guardar el estado."); }
+    finally { setSaving(false); }
   }
 
-  if (error) {
-    return (
-      <div className="home-page dashboard-page">
-        <HomeHeader />
-        <section className="dashboard-hero" style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "200px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}>
-          <div className="dashboard-hero__overlay" style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62, 42, 27, 0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px 20px",
-            width: "100%",
-            height: "100%",
-          }}>
-            <h1 className="dashboard-hero__title" style={{
-              color: "#FFFFFF",
-              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Montserrat", sans-serif',
-            }}>Detalle de Pedido</h1>
-          </div>
-        </section>
-        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p style={{ color: "#D32F2F" }}>{error}</p>
-          <button onClick={loadOrder} style={{
-            marginTop: "1rem",
-            padding: "0.5rem 2rem",
-            background: "#8B5E3C",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}>Reintentar</button>
-        </div>
-        <HomeFooter />
-      </div>
-    );
+  async function confirmPayment() {
+    try {
+      setSaving(true); setError("");
+      setOrder(normalizeOrder(await orderService.updatePaymentStatus(order.id, "authorized")));
+    } catch (err) { setError(err.message || "No fue posible confirmar el pago."); }
+    finally { setSaving(false); }
   }
 
-  if (!order) {
-    return (
-      <div className="home-page dashboard-page">
-        <HomeHeader />
-        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p>No se encontró el pedido</p>
-          <Link to={routePaths.backOffice.orders} style={{
-            display: "inline-block",
-            marginTop: "1rem",
-            padding: "0.5rem 2rem",
-            background: "#8B5E3C",
-            color: "#FFFFFF",
-            borderRadius: "8px",
-            textDecoration: "none",
-          }}>Volver a pedidos</Link>
-        </div>
-        <HomeFooter />
-      </div>
-    );
-  }
-
-  // ============================================
-  // ✅ DATOS DEL PEDIDO
-  // ============================================
-  const statusInfo = getStatusInfo(order.status);
-  const StatusIcon = statusInfo.icon;
-
-  const customerName = getCustomerName();
-  const customerEmail = getCustomerEmail();
-  const customerPhone = getCustomerPhone();
-  const paymentSnapshot = order.payment_snapshot || {};
-  const canMarkPaymentReceived =
-    canUpdatePayment &&
-    ["awaiting_transfer", "pay_on_delivery"].includes(order.payment_status);
-
-  // ============================================
-  // ✅ RENDER PRINCIPAL
-  // ============================================
   return (
-    <div className="home-page dashboard-page">
+    <div className="home-page internal-order-detail-v2">
       <HomeHeader />
+      <PageHero title={order ? `Pedido ${order.number}` : "Detalle de pedido"} eyebrow="Operación" image={HERO} current="Detalle de pedido" />
+      <main className="internal-order-detail-v2__main">
+        <Link className="back-inline" to={routePaths.backOffice.orders}><FaArrowLeft /> Volver a pedidos</Link>
+        {loading || authLoading ? <section className="state-card"><span className="state-card__icon"><FaBoxOpen /></span><h2>Abriendo la ficha</h2><p>Reuniendo cliente, productos, pago y entrega.</p></section> : error && !order ? <section className="state-card state-card--error"><span className="state-card__icon">!</span><h2>No pudimos abrir el pedido</h2><p>{error}</p><button onClick={loadOrder}>Reintentar</button></section> : order ? (
+          <>
+            {error ? <div className="inline-notice inline-notice--error">{error}</div> : null}
+            <section className="internal-order-detail-v2__summary">
+              <div><p className="section-kicker">Creado {formatOrderDate(order.created_at, true)}</p><h2>{order.customerName}</h2><p>{order.items.length} {order.items.length === 1 ? "pieza" : "piezas"} · {formatMoney(order.total)}</p></div>
+              <div className="internal-order-detail-v2__status"><span className={`order-pill order-pill--${order.statusInfo.tone}`}>{order.statusInfo.label}</span>{canUpdate ? <select disabled={saving} value={order.status} onChange={(event) => changeStatus(event.target.value)}>{ORDER_STATUSES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select> : null}</div>
+            </section>
 
-      <section className="dashboard-hero" style={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        width: "100%",
-        minHeight: "200px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative",
-      }}>
-        <div className="dashboard-hero__overlay" style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(62, 42, 27, 0.75)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "40px 20px",
-          width: "100%",
-          height: "100%",
-        }}>
-          <h1 className="dashboard-hero__title" style={{
-            color: "#FFFFFF",
-            fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
-            fontWeight: 700,
-            textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-            margin: 0,
-            fontFamily: '"Montserrat", sans-serif',
-          }}>Detalle de Pedido</h1>
-          <p className="dashboard-hero__breadcrumb" style={{
-            color: "#F5EDE5",
-            fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
-            textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-            marginTop: "8px",
-          }}>
-            <Link to={routePaths.public.home} style={{ color: "#FFD700", textDecoration: "none" }}>Inicio</Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
-            <Link to={routePaths.backOffice.orders} style={{ color: "#FFD700", textDecoration: "none" }}>Pedidos Internos</Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
-            <span style={{ color: "#FFFFFF" }}>Detalle</span>
-          </p>
-        </div>
-      </section>
+            <section className="internal-order-detail-v2__layout">
+              <div className="internal-order-detail-v2__primary">
+                <article className="detail-panel"><header><FaBoxOpen /><div><p>Contenido</p><h3>Productos del pedido</h3></div></header><div className="internal-order-products">{order.items.map((item) => <div className="internal-order-product" key={item.id || item.name}><img src={item.image} alt={item.name} /><div><span>{item.sku}</span><h4>{item.name}</h4><p>{item.description}</p>{item.productId ? <Link to={routePaths.public.productDetail.replace(":productId", item.productId)}>Ver producto</Link> : null}</div><dl><div><dt>Cantidad</dt><dd>{item.quantity}</dd></div><div><dt>Unidad</dt><dd>{formatMoney(item.unitPrice)}</dd></div><div><dt>Subtotal</dt><dd>{formatMoney(item.lineTotal)}</dd></div></dl></div>)}</div></article>
 
-      <main className="dashboard-container">
-        {/* ✅ HEADER DEL PEDIDO */}
-        <div className="dashboard-header-actions" style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "16px",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
-        }}>
-          <div>
-            <h2 style={{
-              fontSize: "clamp(1.2rem, 2vw, 1.8rem)",
-              color: "#6B4A2B",
-              margin: 0,
-            }}>
-              Pedido #{order.id}
-            </h2>
-            <p style={{ color: "#7A6B5A", margin: "4px 0 0" }}>
-              {formatDate(order.created_at)}
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-            <Link to={routePaths.backOffice.orders} style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 20px",
-              background: "#6A5ACD",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-              cursor: "pointer",
-              textDecoration: "none",
-              fontWeight: 600,
-              transition: "background-color 0.2s ease",
-            }}>
-              <FaTimes /> Volver a pedidos
-            </Link>
-          </div>
-        </div>
-
-        {/* ✅ ESTADO ACTUAL - SOLO VISUAL */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "16px",
-          padding: "16px 20px",
-          background: statusInfo.bg,
-          border: `1px solid ${statusInfo.color}`,
-          borderRadius: "12px",
-          marginBottom: "24px",
-        }}>
-          <StatusIcon size={24} color={statusInfo.color} />
-          <div>
-            <span style={{ fontSize: "0.8rem", color: "#7A6B5A" }}>Estado actual</span>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: "1.1rem", color: statusInfo.color }}>
-              {statusInfo.label}
-            </p>
-          </div>
-        </div>
-
-        {/* ✅ GRID DE INFORMACIÓN */}
-        <div className="dashboard-grid" style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-          gap: "24px",
-          marginBottom: "24px",
-        }}>
-          {/* ✅ INFORMACIÓN DEL CLIENTE (AHORA CON DATOS REALES) */}
-          <div className="dashboard-card" style={{
-            padding: "24px",
-            background: "#FDF8F0",
-            border: "1px solid #E8DCCC",
-            borderRadius: "16px",
-          }}>
-            <h3 style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-              color: "#8B5E3C",
-              margin: "0 0 16px 0",
-            }}>
-              <FaUserCircle /> Información del cliente
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "10px 14px",
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #F0EBE3",
-              }}>
-                <FaUser size={16} color="#8B5E3C" />
-                <div>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Nombre</span>
-                  <p style={{ margin: 0, fontWeight: 500, fontSize: "clamp(0.95rem, 1.1vw, 1rem)" }}>
-                    {customerName}
-                  </p>
-                </div>
+                <article className="detail-panel"><header><FaMapMarkerAlt /><div><p>Logística</p><h3>Dirección y recorrido</h3></div></header><p className="detail-panel__address">{order.address}</p>{order.latitude && order.longitude ? <OpenStreetMapEmbed latitude={order.latitude} longitude={order.longitude} label={`Entrega · ${order.address}`} /> : <div className="soft-fallback">La ubicación exacta todavía no está disponible para mostrarla en el mapa.</div>}<div className="detail-stat-row"><span><strong>{Number(order.distance_km || 0).toFixed(1)} km</strong> distancia estimada</span><span><strong>{Math.round(Number(order.estimated_duration_minutes || 0))} min</strong> recorrido estimado</span><span><strong>{order.delivery_zone || "Estándar"}</strong> zona</span></div></article>
               </div>
 
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "10px 14px",
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #F0EBE3",
-              }}>
-                <FaEnvelope size={16} color="#8B5E3C" />
-                <div>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Email</span>
-                  <p style={{ margin: 0, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                    {customerEmail}
-                  </p>
-                </div>
-              </div>
-
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "10px 14px",
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #F0EBE3",
-              }}>
-                <FaPhone size={16} color="#8B5E3C" />
-                <div>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Teléfono</span>
-                  <p style={{ margin: 0, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                    {customerPhone}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Dirección de entrega */}
-          <div className="dashboard-card" style={{
-            padding: "24px",
-            background: "#FDF8F0",
-            border: "1px solid #E8DCCC",
-            borderRadius: "16px",
-          }}>
-            <h3 style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-              color: "#8B5E3C",
-              margin: "0 0 16px 0",
-            }}>
-              <FaMapMarkerAlt /> Dirección de entrega
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div style={{
-                padding: "12px 16px",
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #F0EBE3",
-              }}>
-                <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Dirección</span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                  {order.formatted_address || order.original_address || "No disponible"}
-                </p>
-              </div>
-              {order.delivery_zone && (
-                <div style={{
-                  padding: "8px 12px",
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #F0EBE3",
-                }}>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Zona de entrega</span>
-                  <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                    {order.delivery_zone}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Pago simulado */}
-          <div className="dashboard-card" style={{
-            padding: "24px",
-            background: "#FDF8F0",
-            border: "1px solid #E8DCCC",
-            borderRadius: "16px",
-          }}>
-            <h3 style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-              color: "#8B5E3C",
-              margin: "0 0 16px 0",
-            }}>
-              <FaCreditCard /> Pago
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div style={{
-                padding: "12px 16px",
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #F0EBE3",
-              }}>
-                <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Método</span>
-                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                  {getPaymentMethodLabel(order.payment_method)}
-                </p>
-              </div>
-              <div style={{
-                padding: "12px 16px",
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #F0EBE3",
-              }}>
-                <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Estado</span>
-                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                  {getPaymentStatusLabel(order.payment_status)}
-                </p>
-              </div>
-              {paymentSnapshot.masked && (
-                <div style={{
-                  padding: "12px 16px",
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #F0EBE3",
-                }}>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Tarjeta</span>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                    {paymentSnapshot.masked}
-                  </p>
-                </div>
-              )}
-              {order.payment_reference && (
-                <div style={{
-                  padding: "12px 16px",
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #F0EBE3",
-                }}>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Referencia</span>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                    {order.payment_reference}
-                  </p>
-                </div>
-              )}
-              {paymentSnapshot.message && (
-                <div style={{
-                  padding: "12px 16px",
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #F0EBE3",
-                }}>
-                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Nota</span>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
-                    {paymentSnapshot.message}
-                  </p>
-                </div>
-              )}
-              {canMarkPaymentReceived && (
-                <button
-                  type="button"
-                  onClick={handleMarkPaymentReceived}
-                  disabled={updatingPayment}
-                  style={{
-                    padding: "10px 16px",
-                    background: updatingPayment ? "#D4C5B2" : "#8B5E3C",
-                    color: "#FFFFFF",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: updatingPayment ? "not-allowed" : "pointer",
-                    fontWeight: 600,
-                  }}
-                >
-                  {updatingPayment ? "Actualizando..." : "Marcar pago simulado recibido"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ✅ PRODUCTOS DEL PEDIDO */}
-        <div className="dashboard-card" style={{
-          padding: "24px",
-          background: "#FDF8F0",
-          border: "1px solid #E8DCCC",
-          borderRadius: "16px",
-          marginBottom: "24px",
-          overflowX: "auto",
-        }}>
-          <h3 style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-            color: "#8B5E3C",
-            margin: "0 0 16px 0",
-          }}>
-            <FaBox /> Productos del pedido
-          </h3>
-          <div className="table-responsive">
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
-                  <th style={{ textAlign: "left", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Producto</th>
-                  <th style={{ textAlign: "left", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>SKU</th>
-                  <th style={{ textAlign: "center", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Cantidad</th>
-                  <th style={{ textAlign: "right", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(order.items || []).map((item, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #F0EBE3" }}>
-                    <td style={{ padding: "12px 10px", fontSize: "clamp(0.85rem, 1vw, 0.95rem)", fontWeight: 500 }}>
-                      {item.product_name || item.name || "Producto"}
-                    </td>
-                    <td style={{ padding: "12px 10px", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                      {item.product_sku || item.sku || "-"}
-                    </td>
-                    <td style={{ textAlign: "center", padding: "12px 10px", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                      {item.quantity || 0}
-                    </td>
-                    <td style={{ textAlign: "right", padding: "12px 10px", fontWeight: 600, color: "#5C2E0B", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                      {formatPrice((item.unit_price || item.price || 0) * (item.quantity || 0))}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td colSpan="3" style={{ textAlign: "right", padding: "16px 10px", fontWeight: 700, fontSize: "clamp(0.95rem, 1.1vw, 1.05rem)", color: "#6B4A2B" }}>
-                    Total
-                  </td>
-                  <td style={{ textAlign: "right", padding: "16px 10px", fontWeight: 700, color: "#8B5E3C", fontSize: "clamp(1rem, 1.2vw, 1.1rem)" }}>
-                    {formatPrice(order.total)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* ✅ NOTAS */}
-        <div className="dashboard-card" style={{
-          padding: "24px",
-          background: "#FDF8F0",
-          border: "1px solid #E8DCCC",
-          borderRadius: "16px",
-        }}>
-          <h3 style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
-            color: "#8B5E3C",
-            margin: "0 0 16px 0",
-          }}>
-            <FaEdit /> Notas del pedido
-          </h3>
-          <p style={{ color: "#7A6B5A", margin: 0 }}>
-            {order.notes || "No hay notas para este pedido"}
-          </p>
-        </div>
+              <aside className="internal-order-detail-v2__aside">
+                <article className="detail-panel detail-panel--compact"><header><FaUser /><div><p>Cliente</p><h3>Datos de contacto</h3></div></header><ul className="contact-facts"><li><FaUser /><span>{order.customerName}</span></li><li><FaEnvelope /><a href={`mailto:${order.customerEmail}`}>{order.customerEmail}</a></li><li><FaPhone /><a href={`tel:${order.customerPhone}`}>{order.customerPhone}</a></li></ul></article>
+                <article className="detail-panel detail-panel--compact"><header><FaCreditCard /><div><p>Cobro</p><h3>Pago</h3></div></header><dl className="stacked-facts"><div><dt>Método</dt><dd>{paymentMethodLabel(order.payment_method)}</dd></div><div><dt>Estado</dt><dd>{paymentStatusLabel(order.payment_status)}</dd></div>{order.payment_reference ? <div><dt>Referencia</dt><dd>{order.payment_reference}</dd></div> : null}</dl>{canUpdate && order.payment_status === "awaiting_transfer" ? <button className="solid-action" disabled={saving} onClick={confirmPayment}><FaCheck /> Confirmar transferencia</button> : null}</article>
+                <article className="detail-panel detail-panel--compact"><header><FaTruck /><div><p>Resumen</p><h3>Totales</h3></div></header><dl className="order-totals"><div><dt>Productos</dt><dd>{formatMoney(order.subtotal)}</dd></div><div><dt>Entrega</dt><dd>{formatMoney(order.deliveryFee)}</dd></div><div><dt>Total</dt><dd>{formatMoney(order.total)}</dd></div></dl></article>
+              </aside>
+            </section>
+          </>
+        ) : null}
       </main>
-
       <HomeFooter />
     </div>
   );

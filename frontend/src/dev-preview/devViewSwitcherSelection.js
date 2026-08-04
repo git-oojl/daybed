@@ -51,7 +51,7 @@ export function saveDevViewSwitcherSelection(selection) {
 
 export function readDevViewSwitcherOpenState() {
   if (typeof window === "undefined") {
-    return true;
+    return false;
   }
 
   try {
@@ -59,9 +59,9 @@ export function readDevViewSwitcherOpenState() {
       DEV_VIEW_SWITCHER_OPEN_STORAGE_KEY,
     );
 
-    return storedValue === null ? true : storedValue === "true";
+    return storedValue === null ? false : storedValue === "true";
   } catch {
-    return true;
+    return false;
   }
 }
 

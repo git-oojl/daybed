@@ -35,6 +35,8 @@ import ProductDetailPage from "../pages/public/ProductDetailPage.jsx";
 import SavedItemsPage from "../pages/public/SavedItemsPage.jsx";
 import EmptyStatesPage from "../pages/support/EmptyStatesPage.jsx";
 import FeedbackMessagesPage from "../pages/support/FeedbackMessagesPage.jsx";
+import SuccessStatePage from "../pages/support/SuccessStatePage.jsx";
+import ErrorStatePage from "../pages/support/ErrorStatePage.jsx";
 import LoadingStatesPage from "../pages/support/LoadingStatesPage.jsx";
 import NotFoundPage from "../pages/support/NotFoundPage.jsx";
 import UnauthorizedPage from "../pages/support/UnauthorizedPage.jsx";
@@ -119,7 +121,7 @@ export const previewViews = [
   },
   {
     id: "contactHelp",
-    label: "Contacto / Ayuda",
+    label: "Nosotros y contacto",
     group: "Sitio público",
     path: "/contacto-ayuda",
     defaultLayout: "public",
@@ -168,7 +170,7 @@ export const previewViews = [
     path: "/cuenta/pedidos",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
-    allowedViewers: accessGroups.publicStore, // ✅ CAMBIADO
+    allowedViewers: accessGroups.authenticated,
     filePath: "frontend/src/pages/account/MyOrdersPage.jsx",
     Component: MyOrdersPage,
   },
@@ -179,7 +181,7 @@ export const previewViews = [
     path: "/cuenta/pedidos/demo-pedido",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
-    allowedViewers: accessGroups.publicStore, // ✅ CAMBIADO
+    allowedViewers: accessGroups.authenticated,
     filePath: "frontend/src/pages/account/OrderDetailPage.jsx",
     Component: OrderDetailPage,
   },
@@ -229,7 +231,7 @@ export const previewViews = [
   },
   {
     id: "products",
-    label: "Productos",
+    label: "Productos internos",
     group: "Back-office",
     path: "/interno/productos",
     defaultLayout: "backOffice",
@@ -240,7 +242,7 @@ export const previewViews = [
   },
   {
     id: "categories",
-    label: "Categorías",
+    label: "Colecciones y atributos",
     group: "Back-office",
     path: "/interno/categorias",
     defaultLayout: "backOffice",
@@ -262,7 +264,7 @@ export const previewViews = [
   },
   {
     id: "internalOrders",
-    label: "Pedidos internos",
+    label: "Pedidos de clientes",
     group: "Back-office",
     path: "/interno/pedidos",
     defaultLayout: "backOffice",
@@ -273,7 +275,7 @@ export const previewViews = [
   },
   {
     id: "internalOrderDetail",
-    label: "Detalle de pedido interno",
+    label: "Detalle operativo de pedido",
     group: "Back-office",
     path: "/interno/pedidos/demo-pedido",
     defaultLayout: "backOffice",
@@ -295,7 +297,7 @@ export const previewViews = [
   },
   {
     id: "rolesPermissions",
-    label: "Roles y permisos",
+    label: "Accesos del equipo",
     group: "Administración",
     path: "/admin/roles-permisos",
     defaultLayout: "admin",
@@ -372,7 +374,7 @@ export const previewViews = [
   },
   {
     id: "feedbackMessages",
-    label: "Mensajes de error y éxito",
+    label: "Índice de respuestas",
     group: "Vistas de soporte",
     path: "/soporte/mensajes",
     defaultLayout: "support",
@@ -380,6 +382,28 @@ export const previewViews = [
     allowedViewers: accessGroups.support,
     filePath: "frontend/src/pages/support/FeedbackMessagesPage.jsx",
     Component: FeedbackMessagesPage,
+  },
+  {
+    id: "successState",
+    label: "Confirmación",
+    group: "Vistas de soporte",
+    path: "/soporte/exito",
+    defaultLayout: "support",
+    allowedLayouts: ["support"],
+    allowedViewers: accessGroups.support,
+    filePath: "frontend/src/pages/support/SuccessStatePage.jsx",
+    Component: SuccessStatePage,
+  },
+  {
+    id: "errorState",
+    label: "Error",
+    group: "Vistas de soporte",
+    path: "/soporte/error",
+    defaultLayout: "support",
+    allowedLayouts: ["support"],
+    allowedViewers: accessGroups.support,
+    filePath: "frontend/src/pages/support/ErrorStatePage.jsx",
+    Component: ErrorStatePage,
   },
 ];
 

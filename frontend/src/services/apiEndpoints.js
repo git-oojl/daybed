@@ -23,6 +23,7 @@ export const apiEndpoints = {
     categoryDetail: (slug) => `/catalog/categories/${slug}/`,
     products: "/catalog/products/",
     productDetail: (id) => `/catalog/products/${id}/`,
+    productReviews: (id) => `/catalog/products/${id}/reviews/`,
     manageCategories: "/catalog/manage/categories/",
     manageCategoryDetail: (slug) => `/catalog/manage/categories/${slug}/`,
     manageProducts: "/catalog/manage/products/",

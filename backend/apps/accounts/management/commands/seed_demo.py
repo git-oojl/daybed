@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.cart.models import Cart, CartItem
-from apps.catalog.models import Category, Product, ProductImage
+from apps.catalog.models import Category, Product, ProductImage, ProductReview
 from apps.inventory.models import InventoryMovement
 from apps.inventory.services import record_inventory_movement
 from apps.orders.models import Order, OrderItem
@@ -75,6 +75,7 @@ class Command(BaseCommand):
         products = self._seed_products(categories)
         self._seed_carts(users, products)
         self._seed_orders(users, products)
+        self._seed_reviews(users, products)
         self._seed_manual_inventory_movement(users["employee"], products)
 
         self.stdout.write(self.style.SUCCESS("Datos demo cargados correctamente."))
@@ -1184,15 +1185,6 @@ class Command(BaseCommand):
             },
         ]
 
-        for index, item in enumerate(product_data):
-            item["specifications"] = {
-                **item.get("specifications", {}),
-                "reviews": [
-                    DEMO_REVIEW_POOL[index % len(DEMO_REVIEW_POOL)],
-                    DEMO_REVIEW_POOL[(index + 1) % len(DEMO_REVIEW_POOL)],
-                ],
-            }
-
         self._validate_product_images(product_data)
         products = {}
         for item in product_data:
@@ -1282,6 +1274,29 @@ class Command(BaseCommand):
                     save=False,
                 )
             gallery_image.save()
+
+    def _seed_reviews(self, users, products):
+        reviewers = (users["customer"], users["customer_secondary"])
+        for product_index, product in enumerate(products.values()):
+            for reviewer_index, reviewer in enumerate(reviewers):
+                review_data = DEMO_REVIEW_POOL[
+                    (product_index + reviewer_index) % len(DEMO_REVIEW_POOL)
+                ]
+                ProductReview.objects.update_or_create(
+                    product=product,
+                    user=reviewer,
+                    defaults={
+                        "rating": review_data["rating"],
+                        "title": review_data["title"],
+                        "body": review_data["body"],
+                        "verified_purchase": OrderItem.objects.filter(
+                            order__user=reviewer,
+                            order__status=Order.Status.DELIVERED,
+                            product=product,
+                        ).exists(),
+                        "active": True,
+                    },
+                )
 
     def _seed_carts(self, users, products):
         cart_specs = {

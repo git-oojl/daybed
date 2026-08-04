@@ -17,6 +17,12 @@ class User(AbstractUser):
         choices=Roles.choices,
         default=Roles.CUSTOMER,
     )
+    operational_permission_codes = models.JSONField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Optional per-employee operational permission override.",
+    )
 
     @property
     def is_customer(self):

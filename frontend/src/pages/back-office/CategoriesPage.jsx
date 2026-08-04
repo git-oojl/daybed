@@ -5,7 +5,8 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import {
@@ -71,7 +72,7 @@ const getStatusLabel = (status) => {
 // ============================================
 export default function CategoriesPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const isEmployee = viewerId === "employee";
@@ -91,6 +92,8 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
+    attributes: "",
     status: "active",
   });
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,8 +143,8 @@ export default function CategoriesPage() {
       
       setCategories(categoriesData);
     } catch (err) {
-      console.error("Error al cargar categorías:", err);
-      setError(err.message || "Error al cargar categorías");
+      console.error("No pudimos cargar las colecciones:", err);
+      setError(err.message || "No pudimos cargar las colecciones");
     } finally {
       setLoading(false);
     }
@@ -200,12 +203,16 @@ export default function CategoriesPage() {
       setEditingCategory(category);
       setFormData({
         name: category.name,
+        description: category.description || "",
+        attributes: (category.specification_schema || []).map((item) => item.label || item.key).join(", "),
         status: getStatusValue(category) ? "active" : "inactive",
       });
     } else {
       setEditingCategory(null);
       setFormData({
         name: "",
+        description: "",
+        attributes: "",
         status: "active",
       });
     }
@@ -232,6 +239,13 @@ export default function CategoriesPage() {
     try {
       const payload = {
         name: formData.name,
+        description: formData.description,
+        specification_schema: formData.attributes.split(",").map((label) => label.trim()).filter(Boolean).map((label) => ({
+          key: label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""),
+          label,
+          type: "text",
+          filterable: true,
+        })),
         active: formData.status === "active",
       };
 
@@ -280,7 +294,7 @@ export default function CategoriesPage() {
   // ============================================
   const handleDelete = async (category) => {
     if (!isAdmin) {
-      setError("No tienes permisos para desactivar categorías");
+      setError("No tienes permisos para desactivar colecciones");
       return;
     }
     
@@ -309,7 +323,7 @@ export default function CategoriesPage() {
     return (
       <div className="home-page dashboard-page">
         <HomeHeader />
-        <LoadingState message="Cargando categorías..." />
+        <LoadingState message="Cargando colecciones..." />
         <HomeFooter />
       </div>
     );
@@ -343,80 +357,12 @@ export default function CategoriesPage() {
       <HomeHeader />
 
       {/* HERO */}
-      <section
-        className="dashboard-hero"
-        aria-label="Categorías"
-        style={{
-          backgroundImage: `url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHiRSfEbe7wtyi1Tb8akT0CrMXFu44M9J17JpKGlZAsw&s=10')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "200px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62, 42, 27, 0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px 20px",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
-              color: "#FFFFFF",
-              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Montserrat", sans-serif',
-            }}
-          >
-            Categorías
-          </h1>
-          <p
-            className="dashboard-hero__breadcrumb"
-            style={{
-              color: "#F5EDE5",
-              fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              marginTop: "8px",
-            }}
-          >
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
-            <Link
-              to={routePaths.public.catalog}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Catálogo
-            </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>&gt;</span>
-            <span style={{ color: "#FFFFFF" }}>Categorías</span>
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Colecciones y atributos"
+        eyebrow="Merchandising"
+        image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82"
+        current="Colecciones y atributos"
+      />
 
       <main className="dashboard-container">
         {/* HEADER */}
@@ -438,7 +384,7 @@ export default function CategoriesPage() {
               margin: 0,
             }}
           >
-            Lista de categorías ({categories.length})
+            Colecciones de la tienda ({categories.length})
           </h2>
           {canCreate && (
             <button
@@ -461,7 +407,7 @@ export default function CategoriesPage() {
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#6B4A2B")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#8B5E3C")}
             >
-              <FaPlus /> Nueva categoría
+              <FaPlus /> Nueva colección
             </button>
           )}
         </div>
@@ -492,7 +438,7 @@ export default function CategoriesPage() {
             />
             <input
               type="text"
-              placeholder="Buscar categorías..."
+              placeholder="Buscar colecciones..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -608,6 +554,8 @@ export default function CategoriesPage() {
                 >
                   {category.product_count || 0} productos
                 </span>
+                <p className="collection-card__description">{category.description || "Agrupación comercial para organizar productos y sus atributos."}</p>
+                <div className="collection-card__attributes">{(category.specification_schema || []).slice(0, 3).map((attribute) => <span key={attribute.key}>{attribute.label || attribute.key}</span>)}{(category.specification_schema || []).length === 0 ? <span>Sin atributos definidos</span> : null}</div>
 
                 {/* ACCIONES */}
                 <div
@@ -768,7 +716,7 @@ export default function CategoriesPage() {
                 fontSize: "clamp(0.95rem, 1.2vw, 1.1rem)",
               }}
             >
-              No se encontraron categorías que coincidan con los filtros
+              No se encontraron colecciones que coincidan con los filtros
             </div>
           )}
         </div>
@@ -813,7 +761,7 @@ export default function CategoriesPage() {
                 fontWeight: 700,
               }}
             >
-              {editingCategory ? "Editar categoría" : "Nueva categoría"}
+              {editingCategory ? "Editar colección" : "Nueva colección"}
             </h2>
 
             <form onSubmit={handleSubmit}>
@@ -827,7 +775,7 @@ export default function CategoriesPage() {
                     fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
                   }}
                 >
-                  Nombre de la categoría *
+                  Nombre de la colección *
                 </label>
                 <input
                   type="text"
@@ -835,7 +783,7 @@ export default function CategoriesPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  placeholder="Ej: Sofás, Mesas, Sillas..."
+                  placeholder="Ej: Sofás cama, Mesas auxiliares..."
                   style={{
                     width: "100%",
                     padding: "12px 16px",
@@ -848,6 +796,16 @@ export default function CategoriesPage() {
                   onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
                   onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
                 />
+              </div>
+
+              <div className="collection-editor__field">
+                <label>Descripción para la tienda</label>
+                <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Qué reúne esta colección y qué la distingue." />
+              </div>
+              <div className="collection-editor__field">
+                <label>Atributos de producto</label>
+                <input name="attributes" value={formData.attributes} onChange={handleChange} placeholder="Tapiz, acabado, número de plazas" />
+                <small>Sepáralos con comas. Se usarán como ficha y futuros filtros de catálogo.</small>
               </div>
 
               <div style={{ marginBottom: "28px" }}>

@@ -5,7 +5,8 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import {
@@ -37,7 +38,7 @@ export default function ProductsPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get("categoria") || "";
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const isEmployee = viewerId === "employee";
@@ -88,10 +89,20 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
+    sku: "",
     description: "",
     price: "",
     stock: "",
+    minimum_stock: "",
     category: "",
+    material: "",
+    color: "",
+    style: "",
+    width_cm: "",
+    height_cm: "",
+    depth_cm: "",
+    weight_kg: "",
+    specifications: "",
     status: "active",
     image_url: "",
     image_file: null,
@@ -250,10 +261,20 @@ const fetchProducts = useCallback(async () => {
       setEditingProduct(product);
       setFormData({
         name: product.name,
+        sku: product.sku || "",
         description: product.description || "",
         price: product.price,
         stock: product.stock,
+        minimum_stock: product.minimum_stock ?? "",
         category: product.category?.id || product.category,
+        material: product.material || "",
+        color: product.color || "",
+        style: product.style || "",
+        width_cm: product.width_cm || "",
+        height_cm: product.height_cm || "",
+        depth_cm: product.depth_cm || "",
+        weight_kg: product.weight_kg || "",
+        specifications: product.specifications && Object.keys(product.specifications).length ? JSON.stringify(product.specifications, null, 2) : "",
         status: getStatusString(product.active),
         image_url: product.image_url || "",
         image_file: null,
@@ -264,10 +285,20 @@ const fetchProducts = useCallback(async () => {
       setEditingProduct(null);
       setFormData({
         name: "",
+        sku: "",
         description: "",
         price: "",
         stock: "",
+        minimum_stock: "",
         category: "",
+        material: "",
+        color: "",
+        style: "",
+        width_cm: "",
+        height_cm: "",
+        depth_cm: "",
+        weight_kg: "",
+        specifications: "",
         status: "active",
         image_url: "",
         image_file: null,
@@ -313,10 +344,26 @@ const fetchProducts = useCallback(async () => {
       const formDataToSend = new FormData();
       
       formDataToSend.append("name", formData.name);
+      formDataToSend.append("sku", formData.sku || "");
       formDataToSend.append("description", formData.description || `${formData.name} - Mueble de calidad`);
       formDataToSend.append("price", Number(formData.price));
       formDataToSend.append("stock", Number(formData.stock));
+      formDataToSend.append("minimum_stock", Number(formData.minimum_stock || 0));
       formDataToSend.append("category", Number(formData.category) || formData.category);
+      formDataToSend.append("material", formData.material || "");
+      formDataToSend.append("color", formData.color || "");
+      formDataToSend.append("style", formData.style || "");
+      ["width_cm", "height_cm", "depth_cm", "weight_kg"].forEach((field) => {
+        if (formData[field] !== "") formDataToSend.append(field, Number(formData[field]));
+      });
+      if (formData.specifications.trim()) {
+        try {
+          formDataToSend.append("specifications", formData.specifications);
+          JSON.parse(formData.specifications);
+        } catch {
+          throw new Error("Las especificaciones avanzadas deben usar JSON válido.");
+        }
+      }
       formDataToSend.append("active", formData.status === "active");
       
       if (formData.image_file) {
@@ -440,78 +487,12 @@ const handleDelete = async (id) => {
     <div className="home-page dashboard-page">
       <HomeHeader />
 
-      <section
-        className="dashboard-hero"
-        aria-label="Productos"
-        style={{
-          backgroundImage:
-            "url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZ1TEkqyw1tABVn-JkqxcNMuMAmqLaxjYxp3-bTP1JIg&s=10')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "180px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62,42,27,0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px 15px",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
-              color: "#FFFFFF",
-              fontSize: "2rem",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Montserrat", sans-serif',
-              textAlign: "center",
-            }}
-          >
-            Productos
-          </h1>
-          <p
-            className="dashboard-hero__breadcrumb"
-            style={{
-              color: "#F5EDE5",
-              fontSize: "0.95rem",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              marginTop: "8px",
-              textAlign: "center",
-            }}
-          >
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
-              &gt;
-            </span>
-            <span style={{ color: "#FFFFFF" }}>Productos</span>
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Productos internos"
+        eyebrow="Catálogo operativo"
+        image="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1800&q=82"
+        current="Productos internos"
+      />
 
       <main className="dashboard-container" style={{ padding: "16px" }}>
         <div
@@ -1025,7 +1006,7 @@ const handleDelete = async (id) => {
               background: "#FFFFFF",
               borderRadius: "16px",
               padding: "24px",
-              maxWidth: "500px",
+              maxWidth: "780px",
               width: "100%",
               maxHeight: "90vh",
               overflowY: "auto",
@@ -1081,8 +1062,7 @@ const handleDelete = async (id) => {
                 >
                   Descripción
                 </label>
-                <input
-                  type="text"
+                <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
@@ -1093,6 +1073,8 @@ const handleDelete = async (id) => {
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
                     fontSize: "0.9rem",
+                    minHeight: "96px",
+                    resize: "vertical",
                   }}
                 />
               </div>
@@ -1194,6 +1176,35 @@ const handleDelete = async (id) => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <section className="product-editor__section">
+                <div className="product-editor__section-heading">
+                  <strong>Ficha comercial</strong>
+                  <span>Información que ayuda a vender y administrar la pieza.</span>
+                </div>
+                <div className="product-editor__grid">
+                  <label>SKU<input name="sku" value={formData.sku} onChange={handleChange} placeholder="Se genera automáticamente" /></label>
+                  <label>Stock mínimo<input type="number" min="0" name="minimum_stock" value={formData.minimum_stock} onChange={handleChange} /></label>
+                  <label>Material<input name="material" value={formData.material} onChange={handleChange} placeholder="Lino, roble, acero..." /></label>
+                  <label>Color<input name="color" value={formData.color} onChange={handleChange} placeholder="Arena, nogal..." /></label>
+                  <label>Estilo<input name="style" value={formData.style} onChange={handleChange} placeholder="Contemporáneo" /></label>
+                </div>
+              </section>
+
+              <section className="product-editor__section">
+                <div className="product-editor__section-heading"><strong>Dimensiones</strong><span>Medidas en centímetros y peso en kilogramos.</span></div>
+                <div className="product-editor__grid product-editor__grid--dimensions">
+                  <label>Ancho<input type="number" min="0" step="0.01" name="width_cm" value={formData.width_cm} onChange={handleChange} /></label>
+                  <label>Alto<input type="number" min="0" step="0.01" name="height_cm" value={formData.height_cm} onChange={handleChange} /></label>
+                  <label>Profundidad<input type="number" min="0" step="0.01" name="depth_cm" value={formData.depth_cm} onChange={handleChange} /></label>
+                  <label>Peso<input type="number" min="0" step="0.01" name="weight_kg" value={formData.weight_kg} onChange={handleChange} /></label>
+                </div>
+              </section>
+
+              <div className="form-group product-editor__advanced" style={{ marginBottom: "14px" }}>
+                <label>Especificaciones avanzadas <small>JSON opcional, por ejemplo {`{"tapiz":"desenfundable"}`}</small></label>
+                <textarea name="specifications" value={formData.specifications} onChange={handleChange} placeholder={'{"cuidados":"Limpieza en seco"}'} />
               </div>
 
               <div className="form-group" style={{ marginBottom: "14px" }}>

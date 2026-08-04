@@ -29,6 +29,8 @@ class SalesByMonthSerializer(serializers.Serializer):
 
 
 class DashboardMetricsSerializer(serializers.Serializer):
+    range_days = serializers.IntegerField()
+    range_start = serializers.DateTimeField()
     total_orders = serializers.IntegerField()
     total_products = serializers.IntegerField()
     total_simulated_sales = serializers.DecimalField(max_digits=12, decimal_places=2)

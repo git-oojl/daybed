@@ -4,6 +4,7 @@ import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import {
   FaShoppingBag,
@@ -211,65 +212,12 @@ export default function DashboardPage() {
     <div className="home-page dashboard-page">
       <HomeHeader />
 
-      <section
-        className="dashboard-hero"
-        aria-label="Dashboard"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1600')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "230px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(50,35,22,.72)",
-          }}
-        />
-        <div
-          className="dashboard-hero__content"
-          style={{
-            position: "relative",
-            zIndex: 2,
-            textAlign: "left",
-            width: "min(1280px, calc(100% - 3rem))",
-            padding: "2rem 0",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
-              color: "#fff",
-              fontSize: "3rem",
-              marginBottom: "10px",
-              fontWeight: "700",
-              fontFamily: '"Montserrat", sans-serif',
-            }}
-          >
-            Dashboard Interno
-          </h1>
-          <p className="dashboard-hero__breadcrumb" style={{ color: "#F5EDE5", fontSize: "18px" }}>
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD36A", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span style={{ margin: "0 8px" }}>{">"}</span>
-            Dashboard
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Panel operativo"
+        eyebrow="Operación Daybed"
+        image="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1800&q=82"
+        current="Panel operativo"
+      />
 
       <main className="dashboard-container">
         <div className="dashboard-header-actions">
@@ -284,7 +232,7 @@ export default function DashboardPage() {
                 fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)",
               }}
             >
-              Administra pedidos, productos, categorías e inventario.
+              Administra pedidos, productos, colecciones e inventario.
             </p>
           </div>
         </div>
@@ -754,7 +702,7 @@ export default function DashboardPage() {
                 {
                   to: routePaths.backOffice.categories,
                   icon: <FaTags size={32} color="#8B5E3C" />,
-                  label: "Categorías",
+                  label: "Colecciones",
                 },
                 {
                   to: routePaths.backOffice.inventory,
@@ -917,7 +865,7 @@ export default function DashboardPage() {
                 }}
               >
                 <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  Categorías activas
+                  Colecciones activas
                 </span>
                 <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
                   12

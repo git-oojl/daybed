@@ -48,13 +48,11 @@ export async function apiRequest(config) {
     return previewFixture;
   }
 
-  if (
-    isDevPreviewRoute() &&
-    !isReadOnlyRequest(config.method) &&
-    previewFixture === undefined
-  ) {
+  if (isDevPreviewRoute() && previewFixture === undefined) {
     throw new Error(
-      "Dev preview blocks this write request. Use real routes to test backend mutations.",
+      isReadOnlyRequest(config.method)
+        ? "No pudimos preparar la información de esta vista."
+        : "Esta acción necesita una sesión conectada para guardarse de forma permanente.",
     );
   }
 

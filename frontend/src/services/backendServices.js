@@ -42,6 +42,8 @@ export const catalogService = {
   category: (slug) => get(apiEndpoints.catalog.categoryDetail(slug)),
   products: (params) => get(apiEndpoints.catalog.products, params),
   product: (id) => get(apiEndpoints.catalog.productDetail(id)),
+  reviews: (id) => get(apiEndpoints.catalog.productReviews(id)),
+  createReview: (id, data) => post(apiEndpoints.catalog.productReviews(id), data),
   manageCategories: (params) =>
     get(apiEndpoints.catalog.manageCategories, params),
   createCategory: (data) => post(apiEndpoints.catalog.manageCategories, data),
@@ -97,5 +99,5 @@ export const inventoryService = {
 };
 
 export const dashboardService = {
-  metrics: () => get(apiEndpoints.dashboard.metrics),
+  metrics: (params) => get(apiEndpoints.dashboard.metrics, params),
 };

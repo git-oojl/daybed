@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from apps.catalog.views import (
     PublicCategoryViewSet,
     PublicProductViewSet,
+    ProductReviewListCreateView,
     StaffCategoryViewSet,
     StaffProductViewSet,
 )
@@ -17,6 +18,11 @@ staff_router.register("categories", StaffCategoryViewSet, basename="staff-catego
 staff_router.register("products", StaffProductViewSet, basename="staff-product")
 
 urlpatterns = [
+    path(
+        "products/<int:product_id>/reviews/",
+        ProductReviewListCreateView.as_view(),
+        name="product-review-list-create",
+    ),
     path("", include(public_router.urls)),
     path("manage/", include(staff_router.urls)),
 ]
