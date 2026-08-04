@@ -393,7 +393,8 @@ class Command(BaseCommand):
                 "stock": 8,
                 "minimum_stock": 2,
                 "active": True,
-                "image_asset": "LolitoDaybed.jpg",
+                "image_asset": "daybed-roble-nordico.png",
+                "gallery_assets": ["LolitoDaybed.jpg"],
             },
             {
                 "sku": "DAY-SOFA-LIN-002",
@@ -423,7 +424,8 @@ class Command(BaseCommand):
                 "stock": 1,
                 "minimum_stock": 2,
                 "active": True,
-                "image_asset": "RespiraDaybed.jpg",
+                "image_asset": "sofa-cama-lino-arena.png",
+                "gallery_assets": ["RespiraDaybed.jpg"],
             },
             {
                 "sku": "DAY-MESA-FRE-001",
@@ -450,7 +452,8 @@ class Command(BaseCommand):
                 "stock": 10,
                 "minimum_stock": 3,
                 "active": True,
-                "image_asset": "SyltherineDaybed.jpg",
+                "image_asset": "mesa-centro-fresno.png",
+                "gallery_assets": ["SyltherineDaybed.jpg"],
             },
             {
                 "sku": "DAY-MESA-TER-002",
@@ -477,7 +480,8 @@ class Command(BaseCommand):
                 "stock": 4,
                 "minimum_stock": 2,
                 "active": True,
-                "image_asset": "FondoDaybed.jpg",
+                "image_asset": "mesa-redonda-terra.png",
+                "gallery_assets": ["FondoDaybed.jpg"],
             },
             {
                 "sku": "DAY-SILLA-OLI-001",
@@ -504,7 +508,8 @@ class Command(BaseCommand):
                 "stock": 6,
                 "minimum_stock": 2,
                 "active": True,
-                "image_asset": "LeviosaDaybed.jpg",
+                "image_asset": "silla-lectura-olivo.png",
+                "gallery_assets": ["LeviosaDaybed.jpg"],
             },
             {
                 "sku": "DAY-BANCO-NOG-001",
@@ -533,7 +538,8 @@ class Command(BaseCommand):
                 "stock": 0,
                 "minimum_stock": 2,
                 "active": True,
-                "image_asset": "RespiraDaybed.jpg",
+                "image_asset": "banco-baul-nogal.png",
+                "gallery_assets": ["RespiraDaybed.jpg"],
             },
             {
                 "sku": "DAY-DECO-BRU-001",
