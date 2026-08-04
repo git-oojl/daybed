@@ -384,6 +384,12 @@ export default function CheckoutSummaryPage() {
       return;
     }
 
+    if (!geocodeResult || !deliveryEstimate) {
+      setAddressValidated(false);
+      setError("Vuelve a validar tu dirección para calcular la entrega.");
+      return;
+    }
+
     if (!isFormValid()) {
       const allTouched = {};
       Object.keys(formData).forEach((key) => { allTouched[key] = true; });
@@ -405,15 +411,15 @@ export default function CheckoutSummaryPage() {
 
       const payload = {
         original_address: fullAddress,
-        formatted_address: geocodeResult?.formatted_address || fullAddress,
-        latitude: geocodeResult?.latitude || "32.5149",
-        longitude: geocodeResult?.longitude || "-117.0382",
-        distance_km: deliveryEstimate?.distance_km || "5.0",
-        estimated_duration_minutes: deliveryEstimate?.estimated_duration_minutes || "15.0",
-        delivery_fee: deliveryEstimate?.delivery_fee || "150.00",
+        formatted_address: geocodeResult.formatted_address || fullAddress,
+        latitude: geocodeResult.latitude,
+        longitude: geocodeResult.longitude,
+        distance_km: deliveryEstimate.distance_km,
+        estimated_duration_minutes: deliveryEstimate.estimated_duration_minutes,
+        delivery_fee: deliveryEstimate.delivery_fee,
         delivery_zone: envio,
-        geocoding_provider: geocodeResult?.provider || "simulado",
-        distance_provider: deliveryEstimate?.distance_provider || "simulado",
+        geocoding_provider: geocodeResult.provider || "nominatim",
+        distance_provider: deliveryEstimate.distance_provider,
       };
 
       const order = await orderService.checkout(payload);

@@ -84,8 +84,8 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState("1");
-  const [stockValue, setStockValue] = useState(30);
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [stockValue, setStockValue] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalTitle, setModalTitle] = useState("");
@@ -103,7 +103,16 @@ export default function InventoryPage() {
     setLoadError("");
     try {
       const response = await inventoryService.products();
-      setProducts(readCollection(response).map(normalizeProduct));
+      const loadedProducts = readCollection(response).map(normalizeProduct);
+      const selectedId = Number(selectedProduct);
+      const selectedLoadedProduct =
+        loadedProducts.find((product) => product.id === selectedId) ||
+        loadedProducts[0];
+      setProducts(loadedProducts);
+      setSelectedProduct(
+        selectedLoadedProduct ? String(selectedLoadedProduct.id) : "",
+      );
+      setStockValue(selectedLoadedProduct?.stock || 0);
     } catch (error) {
       setLoadError(error.message || "No se pudo cargar el inventario.");
     } finally {
@@ -123,7 +132,7 @@ export default function InventoryPage() {
     (p) =>
       !searchQuery.trim() ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase()),
+      String(p.sku || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleStockUpdate = async (e) => {
@@ -131,24 +140,29 @@ export default function InventoryPage() {
     const productId = Number(selectedProduct);
     const product = products.find((p) => p.id === productId);
 
-    if (product) {
-      try {
-        const newStock = Number(stockValue);
-        const updated = await inventoryService.updateStock(productId, {
-          stock: newStock,
-          minimum_stock: product.minStock,
-          reason: "Ajuste desde el panel de inventario",
-        });
-        setProducts((current) => current.map((item) => item.id === productId ? normalizeProduct(updated) : item));
-        setModalTitle("Stock actualizado");
-        setModalMessage(`El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`);
-        setShowModal(true);
-        setEditingStock(null);
-      } catch (error) {
-        setModalTitle("No se pudo actualizar");
-        setModalMessage(error.message || "Intenta nuevamente.");
-        setShowModal(true);
-      }
+    if (!product) {
+      setModalTitle("Selecciona un producto");
+      setModalMessage("No hay un producto válido para actualizar.");
+      setShowModal(true);
+      return;
+    }
+
+    try {
+      const newStock = Number(stockValue);
+      const updated = await inventoryService.updateStock(productId, {
+        stock: newStock,
+        minimum_stock: product.minStock,
+        reason: "Ajuste desde el panel de inventario",
+      });
+      setProducts((current) => current.map((item) => item.id === productId ? normalizeProduct(updated) : item));
+      setModalTitle("Stock actualizado");
+      setModalMessage(`El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`);
+      setShowModal(true);
+      setEditingStock(null);
+    } catch (error) {
+      setModalTitle("No se pudo actualizar");
+      setModalMessage(error.message || "Intenta nuevamente.");
+      setShowModal(true);
     }
   };
 
@@ -428,6 +442,10 @@ export default function InventoryPage() {
                         <img
                           src={product.image}
                           alt={product.name}
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = productImage({});
+                          }}
                           style={{
                             width: "50px",
                             height: "50px",
@@ -650,6 +668,10 @@ export default function InventoryPage() {
                           <img
                             src={product.image}
                             alt={product.name}
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = productImage({});
+                            }}
                             style={{
                               width: "40px",
                               height: "40px",
@@ -872,6 +894,7 @@ export default function InventoryPage() {
 
               <button
                 type="submit"
+                disabled={products.length === 0}
                 style={{
                   width: "100%",
                   padding: "14px",

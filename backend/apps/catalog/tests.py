@@ -271,6 +271,111 @@ def test_staff_product_management_accepts_uploaded_main_image(settings, tmp_path
     assert product.main_image.name.startswith("products/sofa")
 
 
+def test_staff_product_management_accepts_remote_image_url(
+    monkeypatch,
+    settings,
+    tmp_path,
+):
+    settings.MEDIA_ROOT = tmp_path
+    employee = create_user("empleado_remote_product_image", User.Roles.EMPLOYEE)
+    category = create_category()
+    image_bytes = (
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00"
+        b"\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+    )
+
+    class FakeStreamResponse:
+        headers = {"content-type": "image/gif"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_bytes(self):
+            yield image_bytes
+
+    def fake_stream(method, url, **kwargs):
+        assert method == "GET"
+        assert url == "https://example.test/remote-sofa.gif"
+        assert kwargs["follow_redirects"] is True
+        return FakeStreamResponse()
+
+    monkeypatch.setattr("apps.catalog.serializers.httpx.stream", fake_stream)
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Staff sofa with remote image",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+            "image_url": "https://example.test/remote-sofa.gif",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["main_image"]
+
+    product = Product.objects.get(name="Staff sofa with remote image")
+    assert product.main_image.name.startswith("products/remote-sofa")
+
+
+def test_staff_product_management_rejects_oversized_remote_image(monkeypatch):
+    employee = create_user("empleado_large_remote_product_image", User.Roles.EMPLOYEE)
+    category = create_category()
+
+    class FakeStreamResponse:
+        headers = {"content-type": "image/gif"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_bytes(self):
+            yield b"x" * (5 * 1024 * 1024)
+            yield b"x"
+
+    def fake_stream(method, url, **kwargs):
+        return FakeStreamResponse()
+
+    monkeypatch.setattr("apps.catalog.serializers.httpx.stream", fake_stream)
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Staff sofa with oversized remote image",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+            "image_url": "https://example.test/remote-sofa.gif",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "5 MB" in str(response.data)
+    assert not Product.objects.filter(
+        name="Staff sofa with oversized remote image"
+    ).exists()
+
+
 def test_staff_product_management_rejects_negative_price():
     employee = create_user("empleado_negative_price", User.Roles.EMPLOYEE)
     category = create_category()

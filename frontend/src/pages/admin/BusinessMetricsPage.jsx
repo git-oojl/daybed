@@ -76,7 +76,15 @@ function CategoryItem({ category }) {
 function ProductItem({ product }) {
   return (
     <div className="business-product-item">
-      <img src={productImage(product)} alt={product.name} className="business-product-item__image" />
+      <img
+        src={productImage(product)}
+        alt={product.name}
+        className="business-product-item__image"
+        onError={(event) => {
+          event.currentTarget.onerror = null;
+          event.currentTarget.src = productImage({});
+        }}
+      />
       <div className="business-product-item__info">
         <strong className="business-product-item__name">{product.name}</strong>
         <span className="business-product-item__sku">{product.sku || "Sin SKU"}</span>
@@ -377,7 +385,14 @@ function BusinessMetricsPage() {
               ) : (
                 lowStockProducts.map((product) => (
                   <div className="business-stock-item" key={product.reference}>
-                    <img src={product.image || "https://via.placeholder.com/50"} alt="" />
+                    <img
+                      src={product.image || productImage({})}
+                      alt=""
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = productImage({});
+                      }}
+                    />
                     <div>
                       <strong>{product.name}</strong>
                       <span>{product.reference}</span>

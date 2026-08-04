@@ -92,25 +92,38 @@ def image_filename_from_url(url, content_type):
 
 
 def download_remote_image(url):
+    parsed_url = urlparse(url)
+    if parsed_url.scheme not in {"http", "https"}:
+        raise serializers.ValidationError("La URL de imagen debe usar http o https.")
+
     try:
-        response = httpx.get(url, follow_redirects=True, timeout=10)
-        response.raise_for_status()
+        with httpx.stream("GET", url, follow_redirects=True, timeout=10) as response:
+            response.raise_for_status()
+            content_type = (
+                response.headers.get("content-type", "").split(";", 1)[0].lower()
+            )
+            if content_type not in ALLOWED_REMOTE_IMAGE_TYPES:
+                raise serializers.ValidationError(
+                    "La URL debe apuntar a una imagen JPG, PNG, WEBP o GIF."
+                )
+
+            chunks = []
+            total_bytes = 0
+            for chunk in response.iter_bytes():
+                total_bytes += len(chunk)
+                if total_bytes > MAX_REMOTE_IMAGE_BYTES:
+                    raise serializers.ValidationError(
+                        "La imagen no debe superar 5 MB."
+                    )
+                chunks.append(chunk)
     except httpx.HTTPError as exc:
         raise serializers.ValidationError(
             "No se pudo descargar la imagen desde la URL proporcionada."
         ) from exc
 
-    content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
-    if content_type not in ALLOWED_REMOTE_IMAGE_TYPES:
-        raise serializers.ValidationError(
-            "La URL debe apuntar a una imagen JPG, PNG, WEBP o GIF."
-        )
-
-    content = response.content
+    content = b"".join(chunks)
     if not content:
         raise serializers.ValidationError("La imagen descargada esta vacia.")
-    if len(content) > MAX_REMOTE_IMAGE_BYTES:
-        raise serializers.ValidationError("La imagen no debe superar 5 MB.")
 
     return ContentFile(content, name=image_filename_from_url(url, content_type))
 

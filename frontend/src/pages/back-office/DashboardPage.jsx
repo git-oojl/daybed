@@ -25,47 +25,11 @@ export default function DashboardPage() {
   const [error, setError] = useState(null);
 
   // ✅ Estados para los datos del dashboard
-  const [ventasPorMes, setVentasPorMes] = useState([
-    { mes: "Enero", monto: 5000 },
-    { mes: "Febrero", monto: 8000 },
-    { mes: "Marzo", monto: 12000 },
-    { mes: "Abril", monto: 15000 },
-    { mes: "Mayo", monto: 20000 },
-  ]);
+  const [ventasPorMes, setVentasPorMes] = useState([]);
 
-  const [productosBajoStock, setProductosBajoStock] = useState([
-    { nombre: "Sofá Esquinero", stock: 2 },
-    { nombre: "Mesa de Centro", stock: 3 },
-    { nombre: "Silla Ergonómica", stock: 1 },
-    { nombre: "Lámpara de Pie", stock: 0 },
-  ]);
+  const [productosBajoStock, setProductosBajoStock] = useState([]);
 
-  const [pedidos, setPedidos] = useState([
-    {
-      id: "#DAY001",
-      cliente: "Ana García",
-      total: "$4,200",
-      estado: "Preparando",
-    },
-    {
-      id: "#DAY002",
-      cliente: "Luis Pérez",
-      total: "$8,999",
-      estado: "Confirmado",
-    },
-    {
-      id: "#DAY003",
-      cliente: "María López",
-      total: "$2,800",
-      estado: "Enviado",
-    },
-    {
-      id: "#DAY004",
-      cliente: "Carlos Ruiz",
-      total: "$6,500",
-      estado: "Entregado",
-    },
-  ]);
+  const [pedidos, setPedidos] = useState([]);
 
   const [metrics, setMetrics] = useState([
     {
@@ -163,13 +127,13 @@ export default function DashboardPage() {
       ]);
 
       // ✅ Actualizar pedidos recientes con estados traducidos
-      if (data.recent_orders && data.recent_orders.length > 0) {
+      if (Array.isArray(data.recent_orders)) {
         setPedidos(data.recent_orders.map(order => {
           const estadoTraducido = traducirEstado(order.status || order.estado);
           return {
             id: order.id || order.order_id || `#${String(Math.random()).slice(2, 8)}`,
             cliente: order.customer_name || order.cliente || order.customer || "Cliente",
-            total: order.total ? `$${order.total.toLocaleString()}` : "$0",
+            total: order.total ? `$${Number(order.total).toLocaleString()}` : "$0",
             estado: estadoTraducido,
             _estadoOriginal: order.status || order.estado, // Guardamos original por si acaso
           };
@@ -177,7 +141,7 @@ export default function DashboardPage() {
       }
 
       // ✅ Actualizar productos con bajo stock
-      if (data.low_stock && data.low_stock.length > 0) {
+      if (Array.isArray(data.low_stock)) {
         setProductosBajoStock(data.low_stock.map(item => ({
           nombre: item.name || item.nombre || "Producto",
           stock: item.stock || item.cantidad || 0,
@@ -185,7 +149,7 @@ export default function DashboardPage() {
       }
 
       // ✅ Actualizar ventas por mes
-      if (data.sales_by_month && data.sales_by_month.length > 0) {
+      if (Array.isArray(data.sales_by_month)) {
         setVentasPorMes(data.sales_by_month.map(item => ({
           mes: item.month || item.mes || "Mes",
           monto: Number(item.total || item.monto || item.amount || 0),
@@ -474,42 +438,50 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pedidos.map((pedido) => (
-                    <tr
-                      key={pedido.id}
-                      style={{ borderBottom: "1px solid #F0EBE3" }}
-                    >
-                      <td
-                        style={{
-                          padding: "10px 8px",
-                          fontWeight: 600,
-                          color: "#8B5E3C",
-                        }}
+                  {pedidos.length > 0 ? (
+                    pedidos.map((pedido) => (
+                      <tr
+                        key={pedido.id}
+                        style={{ borderBottom: "1px solid #F0EBE3" }}
                       >
-                        {pedido.id}
-                      </td>
-                      <td style={{ padding: "10px 8px" }}>{pedido.cliente}</td>
-                      <td style={{ padding: "10px 8px", fontWeight: 600 }}>
-                        {pedido.total}
-                      </td>
-                      <td style={{ padding: "10px 8px" }}>
-                        <span
+                        <td
                           style={{
-                            background: `${getEstadoColor(pedido.estado)}22`,
-                            color: getEstadoColor(pedido.estado),
-                            padding: "4px 14px",
-                            borderRadius: "20px",
+                            padding: "10px 8px",
                             fontWeight: 600,
-                            fontSize: ".8rem",
-                            display: "inline-block",
-                            border: `1px solid ${getEstadoColor(pedido.estado)}44`,
+                            color: "#8B5E3C",
                           }}
                         >
-                          {pedido.estado}
-                        </span>
+                          {pedido.id}
+                        </td>
+                        <td style={{ padding: "10px 8px" }}>{pedido.cliente}</td>
+                        <td style={{ padding: "10px 8px", fontWeight: 600 }}>
+                          {pedido.total}
+                        </td>
+                        <td style={{ padding: "10px 8px" }}>
+                          <span
+                            style={{
+                              background: `${getEstadoColor(pedido.estado)}22`,
+                              color: getEstadoColor(pedido.estado),
+                              padding: "4px 14px",
+                              borderRadius: "20px",
+                              fontWeight: 600,
+                              fontSize: ".8rem",
+                              display: "inline-block",
+                              border: `1px solid ${getEstadoColor(pedido.estado)}44`,
+                            }}
+                          >
+                            {pedido.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" style={{ padding: "18px 8px", textAlign: "center", color: "#777" }}>
+                        No hay pedidos recientes
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -541,45 +513,49 @@ export default function DashboardPage() {
                 <FaBoxes /> Inventario crítico
               </h3>
             </div>
-            {productosBajoStock.map((producto) => (
-              <div
-                key={producto.nombre}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "14px 0",
-                  borderBottom: "1px solid #F0EBE3",
-                }}
-              >
-                <div>
-                  <strong style={{ fontSize: "clamp(0.9rem, 1.2vw, 1rem)" }}>
-                    {producto.nombre}
-                  </strong>
-                  <div
-                    style={{
-                      color: "#888",
-                      fontSize: "0.8rem",
-                      marginTop: "4px",
-                    }}
-                  >
-                    Requiere reposición
-                  </div>
-                </div>
-                <span
+            {productosBajoStock.length > 0 ? (
+              productosBajoStock.map((producto) => (
+                <div
+                  key={producto.nombre}
                   style={{
-                    background: producto.stock === 0 ? "#FDECEA" : "#FFF3E0",
-                    color: producto.stock === 0 ? "#C62828" : "#EF6C00",
-                    padding: "6px 16px",
-                    borderRadius: "25px",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 0",
+                    borderBottom: "1px solid #F0EBE3",
                   }}
                 >
-                  {producto.stock}
-                </span>
-              </div>
-            ))}
+                  <div>
+                    <strong style={{ fontSize: "clamp(0.9rem, 1.2vw, 1rem)" }}>
+                      {producto.nombre}
+                    </strong>
+                    <div
+                      style={{
+                        color: "#888",
+                        fontSize: "0.8rem",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Requiere reposición
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      background: producto.stock === 0 ? "#FDECEA" : "#FFF3E0",
+                      color: producto.stock === 0 ? "#C62828" : "#EF6C00",
+                      padding: "6px 16px",
+                      borderRadius: "25px",
+                      fontWeight: 700,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {producto.stock}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: "#777", margin: 0 }}>No hay inventario crítico.</p>
+            )}
           </div>
         </div>
 
@@ -614,24 +590,28 @@ export default function DashboardPage() {
             >
               <FaDollarSign /> Ventas por mes
             </h3>
-            {ventasPorMes.map((venta) => (
-              <div
-                key={venta.mes}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "12px 0",
-                  borderBottom: "1px solid #F0EBE3",
-                }}
-              >
-                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
-                  {venta.mes}
-                </span>
-                <strong style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
-                  ${venta.monto.toLocaleString()}
-                </strong>
-              </div>
-            ))}
+            {ventasPorMes.length > 0 ? (
+              ventasPorMes.map((venta) => (
+                <div
+                  key={venta.mes}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "12px 0",
+                    borderBottom: "1px solid #F0EBE3",
+                  }}
+                >
+                  <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
+                    {venta.mes}
+                  </span>
+                  <strong style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
+                    ${venta.monto.toLocaleString()}
+                  </strong>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: "#777", margin: 0 }}>No hay ventas registradas.</p>
+            )}
             <div
               style={{
                 marginTop: "15px",
@@ -676,29 +656,33 @@ export default function DashboardPage() {
             >
               <FaExclamationTriangle /> Productos con bajo stock
             </h3>
-            {productosBajoStock.map((producto) => (
-              <div
-                key={producto.nombre}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "12px 0",
-                  borderBottom: "1px solid #F0EBE3",
-                }}
-              >
-                <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
-                  {producto.nombre}
-                </span>
-                <strong
+            {productosBajoStock.length > 0 ? (
+              productosBajoStock.map((producto) => (
+                <div
+                  key={producto.nombre}
                   style={{
-                    color: producto.stock === 0 ? "#D32F2F" : "#D28B00",
-                    fontSize: "clamp(0.9rem, 1.1vw, 1rem)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "12px 0",
+                    borderBottom: "1px solid #F0EBE3",
                   }}
                 >
-                  Stock {producto.stock}
-                </strong>
-              </div>
-            ))}
+                  <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
+                    {producto.nombre}
+                  </span>
+                  <strong
+                    style={{
+                      color: producto.stock === 0 ? "#D32F2F" : "#D28B00",
+                      fontSize: "clamp(0.9rem, 1.1vw, 1rem)",
+                    }}
+                  >
+                    Stock {producto.stock}
+                  </strong>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: "#777", margin: 0 }}>No hay productos con bajo stock.</p>
+            )}
             <div
               style={{
                 marginTop: "15px",

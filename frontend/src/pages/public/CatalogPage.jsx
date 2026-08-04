@@ -2,10 +2,6 @@
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
 import { useState, useEffect, useCallback } from "react";
-import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
-import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
-import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
-import RespiraDaybed from "../../assets/RespiraDaybed.jpg";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
@@ -49,33 +45,6 @@ const getProductCategoryName = (product) => {
 // ✅ Función para obtener imagen según el producto
 const getProductImage = (product) => {
   return resolveProductImage(product);
-};
-
-// ============================================================
-// PRODUCTOS MOCK (FALLBACK)
-// ============================================================
-const allProductsMock = [
-  { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas", material: "Madera", color: "Natural", style: "Moderno", specifications: { room: "Sala" } },
-  { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas", material: "Tela", color: "Blanco", style: "Minimalista", specifications: { room: "Recámara" } },
-  { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás", material: "Tela", color: "Gris", style: "Clásico", specifications: { room: "Sala" } },
-  { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración", material: "Metal", color: "Negro", style: "Industrial", specifications: { room: "Comedor" } },
-  { id: 5, name: "Respira", description: "Set bar exterior", price: 2899, image: RespiraDaybed, category: "Decoración", material: "Madera", color: "Claro", style: "Escandinavo", specifications: { room: "Sala" } },
-  { id: 6, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, category: "Decoración", material: "Metal", color: "Blanco", style: "Modern", specifications: { room: "Escritorio" } },
-  { id: 7, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas", material: "Cuero", color: "Marrón", style: "Clásico", specifications: { room: "Escritorio" } },
-  { id: 8, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas", material: "Tela", color: "Verde", style: "Mid-century", specifications: { room: "Recámara" } },
-  { id: 9, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas", material: "Madera", color: "Roble", style: "Moderno", specifications: { room: "Comedor" } },
-  { id: 10, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás", material: "Tela", color: "Beige", style: "Minimalista", specifications: { room: "Sala" } },
-  { id: 11, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración", material: "Metal", color: "Dorado", style: "Lujoso", specifications: { room: "Sala" } },
-  { id: 12, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas", material: "Cuero", color: "Negro", style: "Clásico", specifications: { room: "Escritorio" } },
-];
-
-const generateMockProducts = () => {
-  const products = [];
-  for (let i = 0; i < 32; i++) {
-    const base = allProductsMock[i % allProductsMock.length];
-    products.push({ ...base, id: i + 1 });
-  }
-  return products;
 };
 
 function CatalogPage() {
@@ -135,15 +104,15 @@ function CatalogPage() {
         setError(null);
       } else {
         console.warn('⚠️ El servidor devolvió 0 productos');
-        setProducts(generateMockProducts());
-        setError('No hay productos en el servidor, usando productos de prueba');
+        setProducts([]);
+        setError(null);
       }
 
     } catch (error) {
       console.error('❌ Error al cargar productos:', error);
-      setProducts(generateMockProducts());
+      setProducts([]);
       setStoreCategories([]);
-      setError('Error de conexión, usando productos de prueba');
+      setError('No fue posible cargar los productos desde el servidor');
     } finally {
       setLoading(false);
     }
@@ -167,15 +136,9 @@ function CatalogPage() {
     return [...categories];
   };
 
-  // ✅ Usar las categorías reales del backend y agregar 4 más para navegación del cliente
+  // ✅ Usar las categorías reales del backend y de los productos visibles
   const productCategories = getProductCategories();
-  const extraCatalogCategories = [
-    "Lámparas",
-    "Roperos",
-    "Mesas de noche",
-    "Bancos y taburetes",
-  ];
-  const allCategories = [...new Set([...storeCategories, ...productCategories, ...extraCatalogCategories])];
+  const allCategories = [...new Set([...storeCategories, ...productCategories])];
 
   // ✅ CALCULAR EL PRECIO MÁXIMO
   const maxProductPrice = products.length > 0 
@@ -483,15 +446,22 @@ function CatalogPage() {
                 </div>
               ) : (
                 sortedProducts.map((product) => {
-                  const productImage = getProductImage(product);
+                  const productImageUrl = getProductImage(product);
                   const categoryName = getProductCategoryName(product);
 
                   return (
                     <article className="product-card" key={product.id}>
-                      <div
-                        className="product-card__image"
-                        style={{ backgroundImage: `url(${productImage})` }}
-                      >
+                      <div className="product-card__image">
+                        <img
+                          className="product-card__img"
+                          src={productImageUrl}
+                          alt={product.name}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = resolveProductImage({});
+                          }}
+                        />
                         {product.badge ? (
                           <span
                             className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}

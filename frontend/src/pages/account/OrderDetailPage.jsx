@@ -1,155 +1,331 @@
-import React, { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/order-detail-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
+import { orderService } from "../../services/backendServices.js";
+import { useAuthStore } from "../../auth/authStore.js";
+import { productImage } from "../../services/viewMappers.js";
 
-// Importar imágenes de la tienda
-import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
-import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
-import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
-import RespiraDaybed from "../../assets/RespiraDaybed.jpg";
+const STATUS_MAP = {
+  pending: "Pendiente",
+  confirmed: "Confirmado",
+  preparing: "En preparación",
+  shipped: "Enviado",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
+  completed: "Entregado",
+  canceled: "Cancelado",
+};
 
-function MyOrdersPage() {
-  const [expandedOrder, setExpandedOrder] = useState(null);
+function normalizeOrderStatus(status) {
+  return String(status || "pending").toLowerCase();
+}
 
-  // Órdenes con productos de la tienda
-  const orders = [
-    {
-      id: "ORD-2024-001",
-      date: "15 de diciembre, 2024",
-      status: "completed",
-      statusText: "Entregado",
-      total: 9500000,
-      subtotal: 9000000,
-      shipping: 500000,
-      items: [
-        {
-          id: 1,
-          name: "Syltherine",
-          description: "Mesa de estilo café",
-          quantity: 2,
-          price: 2500000,
-          image: SyltherineDaybed,
-        },
-        {
-          id: 4,
-          name: "Respira",
-          description: "Set bar exterior",
-          quantity: 1,
-          price: 5000000,
-          image: RespiraDaybed,
-        },
-      ],
-      address: {
-        street: "Av. Reforma 123",
-        city: "Ciudad de México",
-        state: "CDMX",
-        zip: "06600",
-        country: "México",
-      },
-      customer: {
-        name: "Ana Martínez",
-        email: "ana.martinez@email.com",
-        phone: "5512345678",
-      },
-    },
-    {
-      id: "ORD-2024-002",
-      date: "10 de diciembre, 2024",
-      status: "pending",
-      statusText: "En proceso",
-      total: 2500000,
-      subtotal: 2500000,
-      shipping: 0,
-      items: [
-        {
-          id: 2,
-          name: "Leviosa",
-          description: "Silla de estilo café",
-          quantity: 1,
-          price: 2500000,
-          image: LeviosaDaybed,
-        },
-      ],
-      address: {
-        street: "Calle Independencia 456",
-        city: "Guadalajara",
-        state: "Jalisco",
-        zip: "44100",
-        country: "México",
-      },
-      customer: {
-        name: "Carlos López",
-        email: "carlos.lopez@email.com",
-        phone: "3312345678",
-      },
-    },
-    {
-      id: "ORD-2024-003",
-      date: "5 de diciembre, 2024",
-      status: "cancelled",
-      statusText: "Cancelado",
-      total: 7000000,
-      subtotal: 7000000,
-      shipping: 0,
-      items: [
-        {
-          id: 3,
-          name: "Lolito",
-          description: "Sofá grande",
-          quantity: 1,
-          price: 7000000,
-          image: LolitoDaybed,
-        },
-      ],
-      address: {
-        street: "Boulevard Insurgentes 789",
-        city: "Monterrey",
-        state: "Nuevo León",
-        zip: "64700",
-        country: "México",
-      },
-      customer: {
-        name: "María Fernández",
-        email: "maria.fernandez@email.com",
-        phone: "8112345678",
-      },
-    },
-  ];
+function getOrderStatusLabel(status) {
+  return STATUS_MAP[normalizeOrderStatus(status)] || "Pendiente";
+}
 
-  const formatPrice = (price) => {
-    return `$${price.toLocaleString("es-MX")} MX`;
+function getStatusClass(status) {
+  switch (normalizeOrderStatus(status)) {
+    case "confirmed":
+    case "preparing":
+    case "shipped":
+      return "orders-status--confirmed";
+    case "delivered":
+    case "completed":
+      return "orders-status--completed";
+    case "cancelled":
+    case "canceled":
+      return "orders-status--cancelled";
+    default:
+      return "orders-status--pending";
+  }
+}
+
+function formatOrderDate(value) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatPrice(price) {
+  return `$${Number(price || 0).toLocaleString("es-MX")} MX`;
+}
+
+function getProductImage(item) {
+  return productImage({
+    ...item,
+    name: item.name || item.product_name || item.product_snapshot?.name,
+  });
+}
+
+function normalizeAddress(order) {
+  return (
+    order.formatted_address ||
+    order.original_address ||
+    order.delivery_address ||
+    [
+      order.address?.street,
+      order.address?.city,
+      order.address?.state,
+      order.address?.zip,
+    ]
+      .filter(Boolean)
+      .join(", ") ||
+    "-"
+  );
+}
+
+function normalizeOrder(order) {
+  const items = Array.isArray(order.items)
+    ? order.items.map((item) => {
+        const quantity = Number(item.quantity || item.qty || 1);
+        const unitPrice = Number(item.unit_price || item.price || 0);
+        const lineTotal = Number(item.line_total || unitPrice * quantity);
+        return {
+          id: item.id || item.product || item.product_snapshot?.id,
+          name:
+            item.product_name ||
+            item.product_snapshot?.name ||
+            item.name ||
+            "Producto",
+          description:
+            item.product_snapshot?.description ||
+            item.description ||
+            "Producto sin descripción",
+          quantity,
+          unitPrice,
+          lineTotal,
+          image: getProductImage(item),
+        };
+      })
+    : [];
+
+  return {
+    id: order.id,
+    orderNumber: `#DAY-${String(order.id || 0).padStart(4, "0")}`,
+    createdAt: formatOrderDate(order.created_at || order.date || order.order_date),
+    status: normalizeOrderStatus(order.status),
+    statusText: getOrderStatusLabel(order.status),
+    customerName: order.customer_name || "Cliente",
+    customerEmail: order.customer_email || "No disponible",
+    customerPhone: order.customer_phone || "No disponible",
+    address: normalizeAddress(order),
+    subtotal: Number(order.products_subtotal || order.subtotal || 0),
+    shipping: Number(order.delivery_fee || order.shipping || 0),
+    total: Number(order.total || 0),
+    distanceKm: order.distance_km,
+    durationMinutes: order.estimated_duration_minutes,
+    items,
   };
+}
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "pending":
-        return "orders-status--pending";
-      case "completed":
-        return "orders-status--completed";
-      case "cancelled":
-        return "orders-status--cancelled";
-      default:
-        return "";
-    }
-  };
+export default function OrderDetailPage() {
+  const { orderId } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const toggleExpand = (orderId) => {
-    if (expandedOrder === orderId) {
-      setExpandedOrder(null);
-    } else {
-      setExpandedOrder(orderId);
+  const loadOrder = useCallback(async () => {
+    if (!orderId) {
+      setError("Pedido no válido.");
+      setLoading(false);
+      return;
     }
+
+    try {
+      setLoading(true);
+      setError("");
+      const response = await orderService.detail(orderId);
+      setOrder(normalizeOrder(response));
+    } catch (requestError) {
+      setError(requestError.message || "No se pudo cargar el pedido.");
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
+    }
+
+    if (!authLoading && isAuthenticated) {
+      const timeoutId = window.setTimeout(loadOrder, 0);
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+  }, [authLoading, isAuthenticated, loadOrder, navigate]);
+
+  const renderBody = () => {
+    if (loading || authLoading) {
+      return <p className="orders-empty__message">Cargando pedido...</p>;
+    }
+
+    if (error) {
+      return (
+        <div className="orders-empty">
+          <p className="orders-empty__message">{error}</p>
+          <button type="button" className="orders-empty__btn" onClick={loadOrder}>
+            Reintentar
+          </button>
+        </div>
+      );
+    }
+
+    if (!order) {
+      return (
+        <div className="orders-empty">
+          <p className="orders-empty__message">No se encontró el pedido.</p>
+          <Link to={routePaths.account.orders} className="orders-empty__btn">
+            Volver a mis pedidos
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="orders-detail-box">
+        <div className="orders-detail-grid">
+          <div className="orders-detail-section">
+            <h4 className="orders-detail__header">Productos</h4>
+            <div className="orders-detail__content">
+              {order.items.length > 0 ? (
+                order.items.map((item) => (
+                  <div className="orders-detail__product" key={item.id}>
+                    <div className="orders-detail__product-info">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="orders-detail__product-image"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = productImage({});
+                        }}
+                      />
+                      <div>
+                        <span className="orders-detail__product-name">
+                          {item.name}
+                        </span>
+                        <span className="orders-detail__product-desc">
+                          {item.description}
+                        </span>
+                        <span className="orders-detail__product-qty">
+                          x {item.quantity}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="orders-detail__product-price">
+                      {formatPrice(item.lineTotal)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="orders-empty__message">
+                  Este pedido no tiene productos registrados.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="orders-detail-section">
+            <h4 className="orders-detail__header">Información</h4>
+            <div className="orders-detail__content">
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Número de pedido</span>
+                <span className="orders-detail__value">{order.orderNumber}</span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Fecha</span>
+                <span className="orders-detail__value">{order.createdAt}</span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Estado</span>
+                <span className={`orders-status ${getStatusClass(order.status)}`}>
+                  {order.statusText}
+                </span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Dirección de entrega</span>
+                <span className="orders-detail__value">{order.address}</span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Distancia</span>
+                <span className="orders-detail__value">
+                  {order.distanceKm ? `${order.distanceKm} km` : "No disponible"}
+                </span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Tiempo estimado</span>
+                <span className="orders-detail__value">
+                  {order.durationMinutes
+                    ? `${order.durationMinutes} min`
+                    : "No disponible"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="orders-detail-section">
+            <h4 className="orders-detail__header">Cliente</h4>
+            <div className="orders-detail__content">
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Nombre</span>
+                <span className="orders-detail__value">{order.customerName}</span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Correo</span>
+                <span className="orders-detail__value">{order.customerEmail}</span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Teléfono</span>
+                <span className="orders-detail__value">{order.customerPhone}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="orders-detail-section">
+            <h4 className="orders-detail__header">Total</h4>
+            <div className="orders-detail__content">
+              <div className="orders-detail__total">
+                <div className="orders-detail__total-row">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(order.subtotal)}</span>
+                </div>
+                <div className="orders-detail__total-row">
+                  <span>Envío</span>
+                  <span>
+                    {order.shipping > 0 ? formatPrice(order.shipping) : "Gratis"}
+                  </span>
+                </div>
+                <div className="orders-detail__total-row orders-detail__total-final">
+                  <span>Total</span>
+                  <span>{formatPrice(order.total)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="home-page orders-page">
       <HomeHeader />
 
-      {/* Hero Section */}
       <section
         className="orders-hero"
         style={{
@@ -158,218 +334,27 @@ function MyOrdersPage() {
         }}
       >
         <div className="orders-hero__overlay">
-          <h1 className="orders-hero__title">Mis pedidos</h1>
+          <h1 className="orders-hero__title">Detalle del pedido</h1>
           <p className="orders-hero__breadcrumb">
             <Link to={routePaths.public.home}>Inicio</Link>
             <span aria-hidden="true">&gt;</span>
-            <span>Mis pedidos</span>
+            <Link to={routePaths.account.orders}>Mis pedidos</Link>
+            <span aria-hidden="true">&gt;</span>
+            <span>{order?.orderNumber || "Pedido"}</span>
           </p>
         </div>
       </section>
 
       <main className="orders-main">
         <div className="orders-toolbar">
-          <div className="orders-search">
-            <span className="orders-search__icon">🔍</span>
-            <input
-              type="text"
-              className="orders-search__input"
-              placeholder="Buscar pedido por número o producto..."
-            />
-          </div>
+          <Link to={routePaths.account.orders} className="orders-empty__btn">
+            Volver a mis pedidos
+          </Link>
         </div>
-
-        {orders.length === 0 ? (
-          <div className="orders-empty">
-            <p className="orders-empty__message">
-              No tienes pedidos realizados
-            </p>
-            <Link to={routePaths.public.catalog} className="orders-empty__btn">
-              Ir a la tienda
-            </Link>
-          </div>
-        ) : (
-          <div className="orders-table-wrap">
-            <table className="orders-table">
-              <thead>
-                <tr>
-                  <th>Pedido</th>
-                  <th>Fecha</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                  <th>Detalles</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <React.Fragment key={order.id}>
-                    <tr
-                      className="orders-table__row"
-                      onClick={() => toggleExpand(order.id)}
-                    >
-                      <td data-label="Pedido" className="orders-table__order">
-                        {order.id}
-                      </td>
-                      <td data-label="Fecha">{order.date}</td>
-                      <td data-label="Total">{formatPrice(order.total)}</td>
-                      <td data-label="Estado">
-                        <span
-                          className={`orders-status ${getStatusClass(order.status)}`}
-                        >
-                          {order.statusText}
-                        </span>
-                      </td>
-                      <td data-label="Detalles">
-                        <button
-                          className="orders-expand-btn"
-                          aria-label="Ver detalles del pedido"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleExpand(order.id);
-                          }}
-                        >
-                          {expandedOrder === order.id ? "−" : "+"}
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedOrder === order.id && (
-                      <tr className="orders-detail-row">
-                        <td colSpan="5">
-                          <div className="orders-detail-box">
-                            <div className="orders-detail-grid">
-                              <div className="orders-detail-section">
-                                <h4 className="orders-detail__header">
-                                  Productos
-                                </h4>
-                                <div className="orders-detail__content">
-                                  {order.items.map((item) => (
-                                    <div
-                                      className="orders-detail__product"
-                                      key={item.id}
-                                    >
-                                      <div className="orders-detail__product-info">
-                                        <img
-                                          src={item.image}
-                                          alt={item.name}
-                                          className="orders-detail__product-image"
-                                        />
-                                        <div>
-                                          <span className="orders-detail__product-name">
-                                            {item.name}
-                                          </span>
-                                          <span className="orders-detail__product-desc">
-                                            {item.description}
-                                          </span>
-                                          <span className="orders-detail__product-qty">
-                                            × {item.quantity}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <span className="orders-detail__product-price">
-                                        {formatPrice(
-                                          item.price * item.quantity,
-                                        )}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="orders-detail-section">
-                                <h4 className="orders-detail__header">
-                                  Información
-                                </h4>
-                                <div className="orders-detail__content">
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Número de pedido
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.id}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Fecha
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.date}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Estado
-                                    </span>
-                                    <span
-                                      className={`orders-status ${getStatusClass(order.status)}`}
-                                    >
-                                      {order.statusText}
-                                    </span>
-                                  </div>
-                                  <div className="orders-detail__item">
-                                    <span className="orders-detail__label">
-                                      Dirección de entrega
-                                    </span>
-                                    <span className="orders-detail__value">
-                                      {order.address.street}
-                                      <br />
-                                      {order.address.city},{" "}
-                                      {order.address.state}
-                                      <br />
-                                      CP {order.address.zip}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="orders-detail-section">
-                                <h4 className="orders-detail__header">Total</h4>
-                                <div className="orders-detail__content">
-                                  <div className="orders-detail__total">
-                                    <div className="orders-detail__total-row">
-                                      <span>Subtotal</span>
-                                      <span>{formatPrice(order.subtotal)}</span>
-                                    </div>
-                                    <div className="orders-detail__total-row">
-                                      <span>Envío</span>
-                                      <span>
-                                        {order.shipping > 0
-                                          ? formatPrice(order.shipping)
-                                          : "Gratis"}
-                                      </span>
-                                    </div>
-                                    <div className="orders-detail__total-row orders-detail__total-final">
-                                      <span>Total</span>
-                                      <span>{formatPrice(order.total)}</span>
-                                    </div>
-                                  </div>
-                                  <Link
-                                    to={routePaths.account.orderDetail.replace(
-                                      ":orderId",
-                                      order.id,
-                                    )}
-                                    className="orders-detail__view-btn"
-                                  >
-                                    Ver detalle completo
-                                  </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {renderBody()}
       </main>
 
       <HomeFooter />
     </div>
   );
 }
-
-export default MyOrdersPage;

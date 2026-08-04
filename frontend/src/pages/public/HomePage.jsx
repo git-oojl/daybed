@@ -51,97 +51,6 @@ const CATEGORIES = [
   },
 ];
 
-const ALL_PRODUCTS = [
-  {
-    id: 1,
-    name: "Syltherine",
-    description: "Elegante mesa y silla estilo café",
-    price: 2500000,
-    oldPrice: 3500000,
-    discount: "-30%",
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&q=80",
-  },
-  {
-    id: 2,
-    name: "Leviosa",
-    description: "Comodo y estilo",
-    price: 2500000,
-    oldPrice: null,
-    discount: null,
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1683793837504-318275ff665d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    id: 3,
-    name: "Lolito",
-    description: "La mejor cama que existió",
-    price: 7000000,
-    oldPrice: 14000000,
-    discount: "-50%",
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=500&q=80",
-  },
-  {
-    id: 4,
-    name: "Respira",
-    description: "Sofá respira",
-    price: 500000,
-    oldPrice: null,
-    discount: null,
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=80",
-  },
-  {
-    id: 5,
-    name: "Grifo",
-    description: "Lámpara de noche",
-    price: 1500000,
-    oldPrice: null,
-    discount: null,
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&q=80",
-  },
-  {
-    id: 6,
-    name: "Muggo",
-    description: "Lámpara de noche",
-    price: 1500000,
-    oldPrice: null,
-    discount: null,
-    isNew: true,
-    image:
-      "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=500&q=80",
-  },
-  {
-    id: 7,
-    name: "Pingky",
-    description: "Cómoda pingky",
-    price: 7000000,
-    oldPrice: 14000000,
-    discount: "-50%",
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1594620302200-9a762244a156?w=500&q=80",
-  },
-  {
-    id: 8,
-    name: "Potty",
-    description: "Florero pequeño",
-    price: 500000,
-    oldPrice: null,
-    discount: null,
-    isNew: true,
-    image:
-      "https://images.unsplash.com/photo-1615529182904-1488c6e4435e?w=500&q=80",
-  },
-];
-
 const GALLERY_IMAGES = [
   {
     id: 1,
@@ -364,6 +273,10 @@ function ProductCard({
           src={productImage(product)}
           alt={product.name}
           loading="lazy"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = productImage({});
+          }}
         />
         {product.discount && (
           <span className="home-product__badge home-product__badge--sale">
@@ -459,13 +372,13 @@ function HomePage() {
     };
   }, []);
 
-  const productsToShow = products.length ? products : ALL_PRODUCTS;
+  const productsToShow = products;
   const visibleProducts = useMemo(() => {
     const filtered = searchQuery.trim()
       ? productsToShow.filter(
           (p) =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.description.toLowerCase().includes(searchQuery.toLowerCase()),
+            String(p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            String(p.description || "").toLowerCase().includes(searchQuery.toLowerCase()),
         )
       : productsToShow;
     return filtered.slice(0, visibleCount);
@@ -706,7 +619,7 @@ function HomePage() {
               <button
                 type="button"
                 className="home-show-more__btn"
-                onClick={() => setVisibleCount(ALL_PRODUCTS.length)}
+                onClick={() => setVisibleCount(productsToShow.length)}
               >
                 Mostrar Más
               </button>

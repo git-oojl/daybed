@@ -56,15 +56,16 @@ export function assetUrl(value) {
 }
 
 export function productImage(product) {
-  const firstImage = product?.images?.[0];
   const snapshot = product?.product_snapshot;
+  const firstImage = firstUsableImage(product?.images);
+  const firstSnapshotImage = firstUsableImage(snapshot?.images);
   const candidates = [
     product?.main_image,
     product?.image,
     firstImage,
     snapshot?.main_image,
     snapshot?.image,
-    snapshot?.images?.[0],
+    firstSnapshotImage,
   ];
   const image = candidates.map(assetUrl).find(Boolean);
   return image || productImageFallback(product);
@@ -84,6 +85,11 @@ function productImageFallback(product) {
     keys.some((key) => hint.includes(key)),
   );
   return fallback?.image || FALLBACK_PRODUCT_IMAGE;
+}
+
+function firstUsableImage(images) {
+  if (!Array.isArray(images)) return null;
+  return images.find((image) => image?.active !== false && assetUrl(image));
 }
 
 export function formatCurrency(value) {

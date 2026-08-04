@@ -183,6 +183,11 @@ export default function ProductDetailPage() {
     })
       .then(([detail, list]) => {
         if (!active) return;
+        const galleryImages = (detail.images || [])
+          .filter((image) => image?.active !== false)
+          .map((image) => assetUrl(image))
+          .filter(Boolean);
+        const displayImages = galleryImages.length ? galleryImages : [productImage(detail)];
         const normalized = {
           ...detail,
           subtitle: detail.description || detail.name,
@@ -190,12 +195,8 @@ export default function ProductDetailPage() {
           tags: [detail.material, detail.color, detail.style].filter(Boolean),
           rating: 0,
           reviews: 0,
-          images: detail.images?.length
-            ? detail.images.map((image) => assetUrl(image))
-            : [productImage(detail)],
-          galleryImages: detail.images?.length
-            ? detail.images.map((image) => assetUrl(image))
-            : [productImage(detail)],
+          images: displayImages,
+          galleryImages: displayImages,
           sizes: ["Único"],
           colors: detail.color ? [{ id: detail.color, value: detail.color }] : [],
           longDescription: detail.description || "Sin descripción disponible.",
@@ -261,12 +262,26 @@ export default function ProductDetailPage() {
                 aria-label={`Ver imagen ${index + 1}`}
                 aria-current={activeImage === index ? "true" : undefined}
               >
-                <img src={src} alt="" />
+                <img
+                  src={src}
+                  alt=""
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = productImage({});
+                  }}
+                />
               </button>
             ))}
           </div>
           <div className="product-detail__main-img">
-            <img src={PRODUCT.images[activeImage]} alt={fullTitle} />
+            <img
+              src={PRODUCT.images[activeImage]}
+              alt={fullTitle}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = productImage({});
+              }}
+            />
           </div>
         </section>
 
@@ -442,6 +457,10 @@ export default function ProductDetailPage() {
               src={src}
               alt={`${fullTitle} vista ${index + 1}`}
               loading="lazy"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = productImage({});
+              }}
             />
           </div>
         ))}
@@ -463,6 +482,10 @@ export default function ProductDetailPage() {
                   src={productImage(product)}
                   alt={product.name}
                   loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = productImage({});
+                  }}
                 />
                 {product.discount && (
                   <span className="home-product__badge home-product__badge--sale">

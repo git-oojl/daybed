@@ -547,7 +547,9 @@ def test_role_permission_helpers():
     assert not is_admin(employee)
 
 
-def test_seed_demo_command_creates_repeatable_local_dataset():
+def test_seed_demo_command_creates_repeatable_local_dataset(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+
     call_command("seed_demo")
 
     customer = User.objects.get(email="cliente@example.com")
@@ -563,6 +565,10 @@ def test_seed_demo_command_creates_repeatable_local_dataset():
     seeded_product = Product.objects.get(sku="DAY-SOFA-ROB-001")
     assert seeded_product.width_cm == 200
     assert seeded_product.specifications["assembly_required"] is False
+    assert seeded_product.main_image.name.startswith(
+        "products/demo/day-sofa-rob-001"
+    )
+    assert Product.objects.filter(main_image="").count() == 0
     assert CartItem.objects.filter(cart__user=customer).count() == 2
     assert Order.objects.filter(user=customer).count() == 6
     assert Order.objects.filter(

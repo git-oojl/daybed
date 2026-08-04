@@ -1,7 +1,10 @@
 from decimal import Decimal
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.files import File
+from django.core.files.storage import default_storage
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.cart.models import Cart, CartItem
@@ -13,6 +16,9 @@ from apps.orders.models import Order, OrderItem
 User = get_user_model()
 
 DEMO_PASSWORD = "DemoPassword123!"
+SEED_PRODUCT_IMAGE_DIR = (
+    Path(__file__).resolve().parents[2] / "seed_assets" / "products"
+)
 
 
 class Command(BaseCommand):
@@ -257,6 +263,7 @@ class Command(BaseCommand):
                 "stock": 8,
                 "minimum_stock": 2,
                 "active": True,
+                "image_asset": "LolitoDaybed.jpg",
             },
             {
                 "sku": "DAY-SOFA-LIN-002",
@@ -286,6 +293,7 @@ class Command(BaseCommand):
                 "stock": 1,
                 "minimum_stock": 2,
                 "active": True,
+                "image_asset": "RespiraDaybed.jpg",
             },
             {
                 "sku": "DAY-MESA-FRE-001",
@@ -312,6 +320,7 @@ class Command(BaseCommand):
                 "stock": 10,
                 "minimum_stock": 3,
                 "active": True,
+                "image_asset": "SyltherineDaybed.jpg",
             },
             {
                 "sku": "DAY-MESA-TER-002",
@@ -338,6 +347,7 @@ class Command(BaseCommand):
                 "stock": 4,
                 "minimum_stock": 2,
                 "active": True,
+                "image_asset": "FondoDaybed.jpg",
             },
             {
                 "sku": "DAY-SILLA-OLI-001",
@@ -364,6 +374,7 @@ class Command(BaseCommand):
                 "stock": 6,
                 "minimum_stock": 2,
                 "active": True,
+                "image_asset": "LeviosaDaybed.jpg",
             },
             {
                 "sku": "DAY-BANCO-NOG-001",
@@ -392,6 +403,7 @@ class Command(BaseCommand):
                 "stock": 0,
                 "minimum_stock": 2,
                 "active": True,
+                "image_asset": "RespiraDaybed.jpg",
             },
             {
                 "sku": "DAY-DECO-BRU-001",
@@ -419,17 +431,60 @@ class Command(BaseCommand):
                 "stock": 12,
                 "minimum_stock": 2,
                 "active": False,
+                "image_asset": "FondoDaybed.jpg",
             },
         ]
 
+        self._validate_product_images(product_data)
         products = {}
         for item in product_data:
+            image_asset = item["image_asset"]
+            defaults = {
+                key: value for key, value in item.items() if key != "image_asset"
+            }
             product, _created = Product.objects.update_or_create(
                 name=item["name"],
-                defaults=item,
+                defaults=defaults,
             )
+            self._apply_product_image(product, image_asset)
             products[item["name"]] = product
         return products
+
+    def _validate_product_images(self, product_data):
+        missing_assets = sorted(
+            {
+                item["image_asset"]
+                for item in product_data
+                if not (SEED_PRODUCT_IMAGE_DIR / item["image_asset"]).is_file()
+            }
+        )
+        if missing_assets:
+            missing_list = ", ".join(missing_assets)
+            raise CommandError(f"Faltan imagenes demo de productos: {missing_list}")
+
+    def _apply_product_image(self, product, image_asset):
+        image_path = SEED_PRODUCT_IMAGE_DIR / image_asset
+        target_filename = f"{product.sku.lower()}{image_path.suffix.lower()}"
+        target_field_name = f"demo/{target_filename}"
+        target_storage_name = f"products/{target_field_name}"
+
+        if product.main_image.name == target_storage_name and default_storage.exists(
+            target_storage_name
+        ):
+            return
+
+        old_image_name = product.main_image.name
+        if (
+            old_image_name
+            and old_image_name != target_storage_name
+            and old_image_name.startswith("products/demo/")
+            and default_storage.exists(old_image_name)
+        ):
+            default_storage.delete(old_image_name)
+
+        with image_path.open("rb") as image_file:
+            product.main_image.save(target_field_name, File(image_file), save=False)
+        product.save(update_fields=("main_image", "updated_at"))
 
     def _seed_cart(self, customer, products):
         cart, _created = Cart.objects.get_or_create(user=customer)
