@@ -73,6 +73,37 @@
   margin: 0 auto;
   padding: 48px 0 64px;
 }
+
+.business-metrics-error {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 4rem 1.5rem;
+  color: #991b1b;
+}
+
+.business-metrics-error p {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.business-metrics-error button {
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1.4rem;
+  background: #8a6332;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.business-metrics-error button:hover {
+  background: #704d26;
+}
+
 .business-metrics__heading {
   display: flex;
   gap: 24px;

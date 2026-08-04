@@ -668,7 +668,12 @@ export default function InternalOrdersPage() {
                   >
                     <StatusIcon size={18} />
                     {status.label}
-                    {isSelected && <span style={{ marginLeft: "auto", color: status.color }}>✓</span>}
+                    {isSelected && (
+                      <FaCheckCircle
+                        aria-hidden="true"
+                        style={{ marginLeft: "auto", color: status.color }}
+                      />
+                    )}
                   </button>
                 );
               })}

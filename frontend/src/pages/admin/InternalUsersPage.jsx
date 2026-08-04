@@ -1,6 +1,7 @@
 // InternalUsersPage.jsx
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaExclamationTriangle } from "react-icons/fa";
 import "../../assets/CSS/admin/internal-users.css";
 import { accountService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
@@ -499,7 +500,10 @@ export default function InternalUsersPage() {
           </div>
         </section>
         <div className="internal-users-error">
-          <p>❌ {error}</p>
+          <p>
+            <FaExclamationTriangle aria-hidden="true" />
+            {error}
+          </p>
           <button onClick={loadUsers}>Reintentar</button>
         </div>
         <HomeFooter />
@@ -543,7 +547,8 @@ export default function InternalUsersPage() {
 
         {error && (
           <div className="internal-users__alert internal-users__alert--error">
-            <span>⚠️ {error}</span>
+            <FaExclamationTriangle aria-hidden="true" />
+            <span>{error}</span>
           </div>
         )}
 

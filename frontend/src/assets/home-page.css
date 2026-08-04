@@ -375,10 +375,14 @@
 }
 
 .home-nav__link--admin::after {
-  content: "★";
-  font-size: 10px;
-  margin-left: 4px;
-  color: #B88E2F;
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #B88E2F;
+  vertical-align: middle;
 }
 
 .home-nav__link--admin:hover {

@@ -163,6 +163,7 @@
 }
 
 .about-us__value-icon {
+  flex: 0 0 auto;
   color: #b88e2f;
   font-size: 14px;
 }

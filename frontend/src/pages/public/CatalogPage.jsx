@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
+import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { routePaths } from "../../routes/routePaths.js";
 import { catalogService, cartService } from "../../services/backendServices.js";
 import { productImage as resolveProductImage } from "../../services/viewMappers.js";
@@ -64,15 +65,10 @@ function CatalogPage() {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Cargando productos y categorías desde backend...');
-
       const [productsResponse, categoriesResponse] = await Promise.all([
         catalogService.products(),
         catalogService.categories().catch(() => []),
       ]);
-
-      console.log('📦 Respuesta del backend (productos):', productsResponse);
-      console.log('📚 Respuesta del backend (categorías):', categoriesResponse);
 
       let productsData = [];
       if (Array.isArray(productsResponse)) {
@@ -99,17 +95,15 @@ function CatalogPage() {
       setStoreCategories(realCategoryNames);
 
       if (productsData.length > 0) {
-        console.log(`✅ ${productsData.length} productos cargados`);
         setProducts(productsData);
         setError(null);
       } else {
-        console.warn('⚠️ El servidor devolvió 0 productos');
         setProducts([]);
         setError(null);
       }
 
     } catch (error) {
-      console.error('❌ Error al cargar productos:', error);
+      console.error('Error al cargar productos:', error);
       setProducts([]);
       setStoreCategories([]);
       setError('No fue posible cargar los productos desde el servidor');
@@ -222,7 +216,7 @@ function CatalogPage() {
   const handleAddToCart = async (product) => {
     try {
       if (!product.id || product.id < 1) {
-        setNotification('❌ Producto no válido');
+        setNotification({ type: "error", message: "Producto no válido" });
         setTimeout(() => setNotification(null), 3000);
         return;
       }
@@ -231,17 +225,17 @@ function CatalogPage() {
         product_id: product.id,
         quantity: 1
       });
-      setNotification(`✅ ${product.name} agregado al carrito`);
+      setNotification({ type: "success", message: `${product.name} agregado al carrito` });
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
-      console.error('❌ Error al agregar al carrito:', error);
+      console.error('Error al agregar al carrito:', error);
       
       if (error.message?.includes('autenticación') || error.status === 401) {
-        setNotification('❌ Por favor, inicia sesión para agregar productos');
+        setNotification({ type: "error", message: "Por favor, inicia sesión para agregar productos" });
       } else if (error.message?.includes('no existe')) {
-        setNotification(`❌ El producto "${product.name}" no existe en la base de datos`);
+        setNotification({ type: "error", message: `El producto "${product.name}" no existe en la base de datos` });
       } else {
-        setNotification(`❌ Error: ${error.message || 'No se pudo agregar al carrito'}`);
+        setNotification({ type: "error", message: error.message || 'No se pudo agregar al carrito' });
       }
       setTimeout(() => setNotification(null), 4000);
     }
@@ -267,7 +261,10 @@ function CatalogPage() {
       <div className="home-page catalog-page">
         <HomeHeader />
         <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p>❌ {error}</p>
+          <p style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+            <FaExclamationTriangle aria-hidden="true" />
+            {error}
+          </p>
           <button 
             onClick={fetchProducts}
             style={{
@@ -297,7 +294,7 @@ function CatalogPage() {
           position: "fixed",
           top: "1rem",
           right: "1rem",
-          background: notification.includes('❌') ? '#D32F2F' : '#2f2a25',
+          background: notification.type === "error" ? '#D32F2F' : '#2f2a25',
           color: "white",
           padding: "1rem 1.5rem",
           borderRadius: "0.8rem",
@@ -305,8 +302,16 @@ function CatalogPage() {
           boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
           animation: "slideDown 0.3s ease",
           maxWidth: "350px",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
         }}>
-          {notification}
+          {notification.type === "error" ? (
+            <FaExclamationTriangle aria-hidden="true" />
+          ) : (
+            <FaCheckCircle aria-hidden="true" />
+          )}
+          <span>{notification.message}</span>
         </div>
       )}
 

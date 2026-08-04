@@ -157,8 +157,6 @@ function BusinessMetricsPage() {
         catalogService.products(),
       ]);
 
-      console.log("📊 Métricas del backend:", response);
-
       // Mapear métricas
       const mappedMetrics = {
         total_orders: response.total_orders || 0,
@@ -191,7 +189,7 @@ function BusinessMetricsPage() {
       setProducts(productsData.slice(0, 5));
 
     } catch (err) {
-      console.error("❌ Error al cargar métricas:", err);
+      console.error("Error al cargar métricas:", err);
       setError(err.message || "Error al cargar las métricas");
       // Usar datos de fallback
       setMetrics(fallbackMetrics);
@@ -283,7 +281,10 @@ function BusinessMetricsPage() {
           </div>
         </section>
         <div className="business-metrics-error">
-          <p>❌ {error}</p>
+          <p>
+            <FaExclamationTriangle aria-hidden="true" />
+            {error}
+          </p>
           <button onClick={loadMetrics}>Reintentar</button>
         </div>
         <HomeFooter />

@@ -4,6 +4,7 @@ import "../../assets/home-page.css";
 import "../../assets/CSS/public/contact-help.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import { FaCheckCircle } from "react-icons/fa";
 
 // ============================================
 // ICONOS SVG
@@ -398,15 +399,15 @@ export default function ContactHelpPage() {
               </p>
               <div className="about-us__values">
                 <div className="about-us__value">
-                  <span className="about-us__value-icon">✦</span>
+                  <FaCheckCircle className="about-us__value-icon" aria-hidden="true" />
                   <span>Calidad garantizada</span>
                 </div>
                 <div className="about-us__value">
-                  <span className="about-us__value-icon">✦</span>
+                  <FaCheckCircle className="about-us__value-icon" aria-hidden="true" />
                   <span>Diseño único</span>
                 </div>
                 <div className="about-us__value">
-                  <span className="about-us__value-icon">✦</span>
+                  <FaCheckCircle className="about-us__value-icon" aria-hidden="true" />
                   <span>Compromiso con el cliente</span>
                 </div>
               </div>

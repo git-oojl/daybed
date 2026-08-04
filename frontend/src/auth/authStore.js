@@ -47,7 +47,7 @@ export const useAuthStore = create((set, get) => ({
         error: null,
       });
     } else {
-      console.warn("⚠️ Intento de setSession sin token de acceso");
+      console.warn("Intento de setSession sin token de acceso");
     }
   },
 
@@ -105,10 +105,10 @@ export const useAuthStore = create((set, get) => ({
       // ✅ Guardar sesión
       get().setSession(session);
       
-      console.log("✅ Login exitoso, token guardado");
+      console.log("Login exitoso, token guardado");
       return session;
     } catch (error) {
-      console.error("❌ Error en login:", error);
+      console.error("Error en login:", error);
       set({ error: error.message || "Error al iniciar sesión" });
       throw error;
     } finally {
