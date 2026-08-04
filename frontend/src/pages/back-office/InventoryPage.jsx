@@ -19,6 +19,8 @@ import {
   FaCheckCircle,
   FaEdit,
 } from "react-icons/fa";
+import LoadingState from "../../components/support/LoadingState.jsx";
+import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
 export default function InventoryPage() {
   const user = useAuthStore((state) => state.user);
@@ -136,6 +138,31 @@ export default function InventoryPage() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
+  if (loading) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <LoadingState message="Cargando inventario..." />
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <ErrorMessage message={loadError} />
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <button type="button" onClick={loadInventory} className="btn-primary">
+            Reintentar
+          </button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
@@ -214,8 +241,6 @@ export default function InventoryPage() {
       </section>
 
       <main className="dashboard-container">
-        {loading ? <p>Cargando inventario...</p> : null}
-        {loadError ? <div><p>{loadError}</p><button type="button" onClick={loadInventory}>Reintentar</button></div> : null}
         <div
           className="dashboard-header-actions"
           style={{
