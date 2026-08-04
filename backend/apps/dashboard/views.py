@@ -39,14 +39,20 @@ class DashboardMetricsView(APIView):
             average_delivery_fee=Avg("delivery_fee", default=Decimal("0.00")),
             average_delivery_distance=Avg("distance_km", default=Decimal("0.000")),
         )
+        product_aggregates = Product.objects.aggregate(
+            total_products=Count("id", filter=Q(active=True)),
+            low_stock_count=Count(
+                "id",
+                filter=Q(active=True, stock__lte=F("minimum_stock")),
+            ),
+        )
         low_stock_products = Product.objects.filter(
             active=True,
             stock__lte=F("minimum_stock"),
-        ).order_by("stock", "name")[:5]
-        low_stock_count = Product.objects.filter(
-            active=True,
-            stock__lte=F("minimum_stock"),
-        ).count()
+        ).only("id", "name", "sku", "stock", "minimum_stock").order_by(
+            "stock",
+            "name",
+        )[:5]
         recent_orders = Order.objects.select_related("user").order_by(
             "-created_at",
             "-id",
@@ -62,14 +68,14 @@ class DashboardMetricsView(APIView):
 
         payload = {
             "total_orders": order_aggregates["total_orders"],
-            "total_products": Product.objects.filter(active=True).count(),
+            "total_products": product_aggregates["total_products"],
             "total_simulated_sales": total_sales,
             "total_sales": total_sales,
             "orders_by_status": [
                 {"status": status, "count": status_counts.get(status, 0)}
                 for status, _label in Order.Status.choices
             ],
-            "low_stock_count": low_stock_count,
+            "low_stock_count": product_aggregates["low_stock_count"],
             "low_stock": [
                 {
                     "id": product.id,

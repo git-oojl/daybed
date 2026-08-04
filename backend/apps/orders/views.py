@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
@@ -5,7 +6,7 @@ from rest_framework.views import APIView
 
 from apps.access_control.permissions import operational_permission
 from apps.accounts.permissions import IsCustomer
-from apps.orders.models import Order
+from apps.orders.models import Order, OrderItem
 from apps.orders.serializers import (
     CheckoutSerializer,
     OrderSerializer,
@@ -18,6 +19,15 @@ ORDER_ID_PARAMETER = OpenApiParameter(
     location=OpenApiParameter.PATH,
     description="ID del pedido.",
 )
+
+
+def order_queryset():
+    return Order.objects.select_related("user").prefetch_related(
+        Prefetch(
+            "items",
+            queryset=OrderItem.objects.select_related("product").order_by("id"),
+        )
+    )
 
 
 @extend_schema(
@@ -37,6 +47,7 @@ class CheckoutView(APIView):
         serializer = CheckoutSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
+        order = order_queryset().get(pk=order.pk)
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
@@ -61,9 +72,8 @@ class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return Order.objects.none()
         return (
-            Order.objects.filter(user=self.request.user)
-            .select_related("user")
-            .prefetch_related("items")
+            order_queryset()
+            .filter(user=self.request.user)
             .order_by("-created_at", "-id")
         )
 
@@ -103,11 +113,7 @@ class StaffOrderViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = (
-        Order.objects.select_related("user")
-        .prefetch_related("items")
-        .order_by("-created_at", "-id")
-    )
+    queryset = order_queryset().order_by("-created_at", "-id")
     filterset_fields = ("status", "delivery_zone")
     search_fields = ("user__username", "user__email", "original_address")
     ordering_fields = ("created_at", "total", "delivery_fee", "distance_km")
@@ -128,4 +134,5 @@ class StaffOrderViewSet(
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
+        order = order_queryset().get(pk=order.pk)
         return Response(OrderSerializer(order).data)

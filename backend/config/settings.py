@@ -1,4 +1,5 @@
 from decimal import Decimal
+from importlib.util import find_spec
 from pathlib import Path
 
 import environ
@@ -65,8 +66,10 @@ INSTALLED_APPS = [
     "apps.delivery",
     "apps.store",
     "apps.dashboard",
-    "django_extensions",
 ]
+
+if DEBUG and find_spec("django_extensions"):
+    INSTALLED_APPS.append("django_extensions")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

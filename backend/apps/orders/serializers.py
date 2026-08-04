@@ -110,12 +110,17 @@ class CheckoutSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        cart = Cart.objects.filter(user=user).prefetch_related("items__product").first()
-        if not cart or not cart.items.exists():
+        cart = Cart.objects.filter(user=user).first()
+        if not cart:
             raise serializers.ValidationError("Cart is empty.")
+
+        items = list(cart.items.select_related("product", "product__category"))
+        if not items:
+            raise serializers.ValidationError("Cart is empty.")
+
         inactive_items = [
             item.product.name
-            for item in cart.items.select_related("product", "product__category")
+            for item in items
             if not item.product.active or not item.product.category.active
         ]
         if inactive_items:
@@ -128,12 +133,13 @@ class CheckoutSerializer(serializers.Serializer):
                 }
             )
         attrs["cart"] = cart
+        attrs["cart_items"] = items
         return attrs
 
     @transaction.atomic
     def create(self, validated_data):
         cart = validated_data.pop("cart")
-        items = list(cart.items.select_related("product"))
+        items = validated_data.pop("cart_items")
         products_subtotal = sum(
             (item.line_total for item in items),
             Decimal("0.00"),

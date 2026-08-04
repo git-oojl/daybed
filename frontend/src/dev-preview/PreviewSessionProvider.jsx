@@ -1,4 +1,4 @@
-import { PreviewSessionContext } from "./previewSessionContext.js";
+import { PreviewSessionContext } from "../auth/previewSessionContext.js";
 
 function PreviewSessionProvider({ viewer, children }) {
   const user = viewer.isAuthenticated

@@ -534,15 +534,12 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await registerCustomer(payload);
-      console.log("Registro exitoso:", response);
+      await registerCustomer(payload);
 
       navigate(routePaths.account.login, {
         state: { message: "Cuenta creada exitosamente. Inicia sesión." },
       });
     } catch (err) {
-      console.error("Error en registro:", err);
-
       if (err.fieldErrors) {
         setFieldErrors(err.fieldErrors);
         const fieldMap = {

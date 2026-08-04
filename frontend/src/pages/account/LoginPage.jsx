@@ -262,8 +262,6 @@ const handleSubmit = async (e) => {
     const session = await login(formData);
     const viewerId = getViewerIdForUser(session?.user);
 
-    console.log("Usuario autenticado:", { viewerId });
-
     // ✅ REDIRECCIÓN CORREGIDA
     if (viewerId === "admin") {
       // ✅ Administrador → Métricas del negocio

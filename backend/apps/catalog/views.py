@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -8,7 +9,7 @@ from apps.catalog.filters import (
     SpecificationFilterMixin,
     StaffProductFilter,
 )
-from apps.catalog.models import Category, Product
+from apps.catalog.models import Category, Product, ProductImage
 from apps.catalog.serializers import CategorySerializer, ProductSerializer
 
 
@@ -39,7 +40,15 @@ class PublicProductViewSet(SpecificationFilterMixin, viewsets.ReadOnlyModelViewS
         return (
             Product.objects.filter(active=True, category__active=True)
             .select_related("category")
-            .prefetch_related("images")
+            .prefetch_related(
+                Prefetch(
+                    "images",
+                    queryset=ProductImage.objects.filter(active=True).order_by(
+                        "sort_order",
+                        "id",
+                    ),
+                )
+            )
         )
 
 

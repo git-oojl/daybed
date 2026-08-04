@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status
@@ -12,14 +13,44 @@ from apps.cart.serializers import (
     CartItemWriteSerializer,
     CartSerializer,
 )
+from apps.catalog.models import ProductImage
+
+
+def cart_item_queryset():
+    return CartItem.objects.select_related(
+        "product",
+        "product__category",
+    ).prefetch_related(
+        Prefetch(
+            "product__images",
+            queryset=ProductImage.objects.filter(active=True).order_by(
+                "sort_order",
+                "id",
+            ),
+        )
+    )
 
 
 class CustomerCartMixin:
     permission_classes = (IsCustomer,)
 
+    def get_cart_queryset(self):
+        return Cart.objects.prefetch_related(
+            Prefetch("items", queryset=cart_item_queryset())
+        )
+
     def get_cart(self):
-        cart, _created = Cart.objects.get_or_create(user=self.request.user)
+        cart, _created = self.get_cart_queryset().get_or_create(
+            user=self.request.user
+        )
         return cart
+
+    def get_cart_id(self):
+        cart, _created = Cart.objects.only("id").get_or_create(user=self.request.user)
+        return cart.id
+
+    def get_cart_by_id(self, cart_id):
+        return self.get_cart_queryset().get(id=cart_id)
 
 
 @extend_schema_view(
@@ -43,6 +74,7 @@ class CartDetailView(CustomerCartMixin, APIView):
     def delete(self, request):
         cart = self.get_cart()
         cart.items.all().delete()
+        cart = self.get_cart_by_id(cart.id)
         return Response(CartSerializer(cart).data)
 
 
@@ -70,11 +102,7 @@ class CartItemListView(CustomerCartMixin, generics.ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return CartItem.objects.none()
-        return (
-            self.get_cart()
-            .items.select_related("product", "product__category")
-            .prefetch_related("product__images")
-        )
+        return cart_item_queryset().filter(cart_id=self.get_cart_id())
 
     def create(self, request, *args, **kwargs):
         serializer = CartItemWriteSerializer(data=request.data)
@@ -93,6 +121,7 @@ class CartItemListView(CustomerCartMixin, generics.ListCreateAPIView):
             item.save(update_fields=("quantity", "updated_at"))
 
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        item = cart_item_queryset().get(pk=item.pk)
         return Response(CartItemSerializer(item).data, status=status_code)
 
 
@@ -131,11 +160,7 @@ class CartItemDetailView(CustomerCartMixin, generics.RetrieveUpdateDestroyAPIVie
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return CartItem.objects.none()
-        return (
-            self.get_cart()
-            .items.select_related("product", "product__category")
-            .prefetch_related("product__images")
-        )
+        return cart_item_queryset().filter(cart_id=self.get_cart_id())
 
     def update(self, request, *args, **kwargs):
         item = self.get_object()
@@ -143,6 +168,7 @@ class CartItemDetailView(CustomerCartMixin, generics.RetrieveUpdateDestroyAPIVie
         serializer.is_valid(raise_exception=True)
         item.quantity = serializer.validated_data["quantity"]
         item.save(update_fields=("quantity", "updated_at"))
+        item = cart_item_queryset().get(pk=item.pk)
         return Response(CartItemSerializer(item).data)
 
     def destroy(self, request, *args, **kwargs):
