@@ -16,6 +16,17 @@ class Order(models.Model):
         DELIVERED = "delivered", "Delivered"
         CANCELLED = "cancelled", "Cancelled"
 
+    class PaymentMethod(models.TextChoices):
+        CARD = "card", "Tarjeta"
+        TRANSFER = "transfer", "Transferencia"
+        CASH = "cash", "Efectivo contra entrega"
+
+    class PaymentStatus(models.TextChoices):
+        AUTHORIZED = "authorized", "Autorizado"
+        AWAITING_TRANSFER = "awaiting_transfer", "Pendiente de transferencia"
+        PAY_ON_DELIVERY = "pay_on_delivery", "Pago contra entrega"
+        FAILED = "failed", "Fallido"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -41,6 +52,20 @@ class Order(models.Model):
 
     products_subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.CASH,
+    )
+    payment_status = models.CharField(
+        max_length=30,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PAY_ON_DELIVERY,
+    )
+    payment_reference = models.CharField(max_length=40, blank=True)
+    payment_processed_at = models.DateTimeField(null=True, blank=True)
+    payment_snapshot = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

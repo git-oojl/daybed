@@ -298,7 +298,7 @@ export default function ContactHelpPage() {
       id: 3,
       question: "¿Cuáles son los métodos de pago disponibles?",
       answer:
-        "Aceptamos tarjetas de crédito/débito, transferencias bancarias y pago contra entrega. Todos los pagos son procesados de forma segura.",
+        "Aceptamos tarjetas de crédito/débito, transferencias bancarias y pago contra entrega. En esta versión, el flujo de pago se simula para fines académicos.",
     },
     {
       id: 4,
@@ -588,9 +588,9 @@ export default function ContactHelpPage() {
             <div className="legal-content__item">
               <h4>3. Pedidos y pagos</h4>
               <p>
-                Los pedidos se confirman una vez que se ha procesado el pago.
-                Aceptamos tarjetas de crédito, transferencias bancarias y pago
-                contra entrega.
+                Los pedidos se registran una vez que se completa el flujo de
+                pago simulado. Aceptamos tarjetas de crédito, transferencias
+                bancarias y pago contra entrega.
               </p>
             </div>
             <div className="legal-content__item">

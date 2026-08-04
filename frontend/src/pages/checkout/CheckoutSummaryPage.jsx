@@ -120,6 +120,40 @@ function getCartItemImage(item) {
   return productImage(product);
 }
 
+function normalizeCardDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function formatCardNumber(value) {
+  return normalizeCardDigits(value).slice(0, 19).replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
+function formatCardExpiry(value) {
+  const digits = normalizeCardDigits(value).slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+function isFutureCardExpiry(value) {
+  const match = String(value || "").match(/^(0[1-9]|1[0-2])\/(\d{2}|\d{4})$/);
+  if (!match) return false;
+  const month = Number(match[1]);
+  const year = Number(match[2].length === 2 ? `20${match[2]}` : match[2]);
+  const now = new Date();
+  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
+}
+
+function isSimulatedCardValid(paymentData) {
+  const cardDigits = normalizeCardDigits(paymentData.cardNumber);
+  const cvvDigits = normalizeCardDigits(paymentData.cardCvv);
+  return (
+    cardDigits.length >= 13 &&
+    cardDigits.length <= 19 &&
+    isFutureCardExpiry(paymentData.cardExpiry) &&
+    /^[0-9]{3,4}$/.test(cvvDigits)
+  );
+}
+
 // ============================================
 // COMPONENTE PRINCIPAL
 // ============================================
@@ -160,6 +194,11 @@ export default function CheckoutSummaryPage() {
 
   // Métodos de pago
   const [metodoPago, setMetodoPago] = useState("cash");
+  const [paymentData, setPaymentData] = useState({
+    cardNumber: "",
+    cardExpiry: "",
+    cardCvv: "",
+  });
   const envio = "standard";
 
   // ============================================
@@ -338,8 +377,7 @@ export default function CheckoutSummaryPage() {
   );
 
   const shippingCost = getShippingCost();
-  const impuestos = Math.round(subtotal * 0.05);
-  const total = subtotal + shippingCost + impuestos;
+  const total = subtotal + shippingCost;
 
   // ============================================
   // ✅ VALIDACIÓN
@@ -356,6 +394,10 @@ export default function CheckoutSummaryPage() {
     return touched[name] && !validateField(name, formData[name]) && formData[name] !== "";
   };
 
+  const isPaymentValid = () => {
+    return metodoPago !== "card" || isSimulatedCardValid(paymentData);
+  };
+
   const isFormValid = () => {
     return (
       validateField("nombre", formData.nombre) &&
@@ -368,8 +410,17 @@ export default function CheckoutSummaryPage() {
       validateField("codigoPostal", formData.codigoPostal) &&
       aceptTerms &&
       cartItems.length > 0 &&
-      addressValidated
+      addressValidated &&
+      isPaymentValid()
     );
+  };
+
+  const getConfirmButtonText = () => {
+    if (submitting) return metodoPago === "card" ? "Simulando pago..." : "Procesando...";
+    if (!addressValidated) return "Valida tu dirección primero";
+    if (!aceptTerms) return "Acepta términos para continuar";
+    if (metodoPago === "card" && !isPaymentValid()) return "Completa la tarjeta simulada";
+    return metodoPago === "card" ? "Simular pago y confirmar" : "Confirmar pedido";
   };
 
   // ============================================
@@ -388,6 +439,14 @@ export default function CheckoutSummaryPage() {
   const handleBlur = (e) => {
     const { name } = e.target;
     setTouched({ ...touched, [name]: true });
+  };
+
+  const handlePaymentChange = (name, value) => {
+    let nextValue = value;
+    if (name === "cardNumber") nextValue = formatCardNumber(value);
+    if (name === "cardExpiry") nextValue = formatCardExpiry(value);
+    if (name === "cardCvv") nextValue = normalizeCardDigits(value).slice(0, 4);
+    setPaymentData((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   // ============================================
@@ -414,7 +473,11 @@ export default function CheckoutSummaryPage() {
       const allTouched = {};
       Object.keys(formData).forEach((key) => { allTouched[key] = true; });
       setTouched(allTouched);
-      setError("Por favor, completa todos los campos requeridos");
+      setError(
+        metodoPago === "card" && !isPaymentValid()
+          ? "Completa los datos de la tarjeta simulada."
+          : "Por favor, completa todos los campos requeridos"
+      );
       return;
     }
 
@@ -440,7 +503,14 @@ export default function CheckoutSummaryPage() {
         delivery_zone: envio,
         geocoding_provider: geocodeResult.provider || "nominatim",
         distance_provider: deliveryEstimate.distance_provider,
+        payment_method: metodoPago,
       };
+
+      if (metodoPago === "card") {
+        payload.card_number = paymentData.cardNumber;
+        payload.card_expiry = paymentData.cardExpiry;
+        payload.card_cvv = paymentData.cardCvv;
+      }
 
       const order = await orderService.checkout(payload);
       await cartService.clear();
@@ -863,23 +933,53 @@ export default function CheckoutSummaryPage() {
                     </div>
                   </label>
                 </div>
+                <p className="checkout-payment-note">
+                  Pago simulado para demostración; no se realizan cargos reales.
+                </p>
 
                 {metodoPago === "card" && (
                   <div className="checkout-card-details">
                     <div className="checkout-row">
                       <div className="checkout-field checkout-field--full">
                         <label htmlFor="cardNumber">Número de tarjeta</label>
-                        <input type="text" id="cardNumber" placeholder="**** **** **** 1234" disabled={submitting} />
+                        <input
+                          type="text"
+                          id="cardNumber"
+                          value={paymentData.cardNumber}
+                          onChange={(event) => handlePaymentChange("cardNumber", event.target.value)}
+                          placeholder="4242 4242 4242 4242"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          disabled={submitting}
+                        />
                       </div>
                     </div>
                     <div className="checkout-row">
                       <div className="checkout-field">
                         <label htmlFor="cardExpiry">Vigencia</label>
-                        <input type="text" id="cardExpiry" placeholder="MM/AA" disabled={submitting} />
+                        <input
+                          type="text"
+                          id="cardExpiry"
+                          value={paymentData.cardExpiry}
+                          onChange={(event) => handlePaymentChange("cardExpiry", event.target.value)}
+                          placeholder="MM/AA"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          disabled={submitting}
+                        />
                       </div>
                       <div className="checkout-field">
                         <label htmlFor="cardCvv">CVV</label>
-                        <input type="text" id="cardCvv" placeholder="***" disabled={submitting} />
+                        <input
+                          type="text"
+                          id="cardCvv"
+                          value={paymentData.cardCvv}
+                          onChange={(event) => handlePaymentChange("cardCvv", event.target.value)}
+                          placeholder="123"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          disabled={submitting}
+                        />
                       </div>
                     </div>
                   </div>
@@ -887,13 +987,13 @@ export default function CheckoutSummaryPage() {
 
                 {metodoPago === "transfer" && (
                   <div className="checkout-transfer-info">
-                    <p>Te enviaremos los datos para transferencia por correo electrónico.</p>
+                    <p>Se generará una referencia de transferencia al confirmar el pedido.</p>
                   </div>
                 )}
 
                 {metodoPago === "cash" && (
                   <div className="checkout-cash-info">
-                    <p>Pagas al recibir el producto (solo efectivo).</p>
+                    <p>El pedido quedará registrado para pago contra entrega.</p>
                   </div>
                 )}
               </div>
@@ -938,10 +1038,6 @@ export default function CheckoutSummaryPage() {
                       {deliveryEstimate ? formatPrice(shippingCost) : "Calculado al validar dirección"}
                     </span>
                   </div>
-                  <div className="checkout-totals__row">
-                    <span>Impuestos (5%)</span>
-                    <span>{formatPrice(impuestos)}</span>
-                  </div>
                   <div className="checkout-totals__row checkout-totals__row--total">
                     <span>Total final</span>
                     <span>{formatPrice(total)}</span>
@@ -972,10 +1068,10 @@ export default function CheckoutSummaryPage() {
                   onClick={handleConfirm}
                   disabled={!isFormValid() || submitting}
                 >
-                  {submitting ? "Procesando..." : !addressValidated ? "Valida tu dirección primero" : !aceptTerms ? "Acepta términos para continuar" : "Confirmar pedido"}
+                  {getConfirmButtonText()}
                 </button>
 
-                <p className="checkout-secure">Pago 100% seguro. Tus datos están protegidos.</p>
+                <p className="checkout-secure">Pago simulado para fines académicos. No se realizan cargos reales.</p>
               </div>
             </div>
           </aside>

@@ -6,6 +6,7 @@ from django.core.files import File
 from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.cart.models import Cart, CartItem
 from apps.catalog.models import Category, Product
@@ -509,6 +510,7 @@ class Command(BaseCommand):
                 "distance_km": Decimal("8.400"),
                 "duration": Decimal("22.0"),
                 "delivery_fee": Decimal("147.20"),
+                "payment_method": Order.PaymentMethod.TRANSFER,
             },
             {
                 "key": "confirmed",
@@ -518,6 +520,7 @@ class Command(BaseCommand):
                 "distance_km": Decimal("12.500"),
                 "duration": Decimal("30.0"),
                 "delivery_fee": Decimal("180.00"),
+                "payment_method": Order.PaymentMethod.CARD,
             },
             {
                 "key": "preparing",
@@ -527,6 +530,7 @@ class Command(BaseCommand):
                 "distance_km": Decimal("6.200"),
                 "duration": Decimal("18.0"),
                 "delivery_fee": Decimal("129.60"),
+                "payment_method": Order.PaymentMethod.CASH,
             },
             {
                 "key": "shipped",
@@ -536,6 +540,7 @@ class Command(BaseCommand):
                 "distance_km": Decimal("18.300"),
                 "duration": Decimal("42.0"),
                 "delivery_fee": Decimal("226.40"),
+                "payment_method": Order.PaymentMethod.CARD,
             },
             {
                 "key": "delivered",
@@ -545,6 +550,7 @@ class Command(BaseCommand):
                 "distance_km": Decimal("10.100"),
                 "duration": Decimal("25.0"),
                 "delivery_fee": Decimal("160.80"),
+                "payment_method": Order.PaymentMethod.CARD,
             },
             {
                 "key": "cancelled",
@@ -554,6 +560,7 @@ class Command(BaseCommand):
                 "distance_km": Decimal("5.500"),
                 "duration": Decimal("15.0"),
                 "delivery_fee": Decimal("124.00"),
+                "payment_method": Order.PaymentMethod.CASH,
             },
         ]
 
@@ -603,6 +610,8 @@ class Command(BaseCommand):
         order.distance_provider = "openrouteservice"
         order.products_subtotal = products_subtotal
         order.total = products_subtotal + spec["delivery_fee"]
+        for field, value in self._payment_fields_for_spec(spec).items():
+            setattr(order, field, value)
         order.save()
 
         for product_name, quantity in spec["items"]:
@@ -633,6 +642,54 @@ class Command(BaseCommand):
 
         order.refresh_from_db()
         return order
+
+    def _payment_fields_for_spec(self, spec):
+        method = spec.get("payment_method", Order.PaymentMethod.CASH)
+        reference = f"SIM-DEMO-{spec['key'].upper()}"
+
+        if method == Order.PaymentMethod.CARD:
+            last4_by_key = {
+                "confirmed": "4242",
+                "shipped": "1881",
+                "delivered": "5555",
+            }
+            last4 = last4_by_key.get(spec["key"], "4242")
+            return {
+                "payment_method": Order.PaymentMethod.CARD,
+                "payment_status": Order.PaymentStatus.AUTHORIZED,
+                "payment_reference": reference,
+                "payment_processed_at": timezone.now(),
+                "payment_snapshot": {
+                    "provider": "simulated",
+                    "brand": "Visa",
+                    "last4": last4,
+                    "masked": f"**** **** **** {last4}",
+                    "message": "Pago simulado autorizado.",
+                },
+            }
+
+        if method == Order.PaymentMethod.TRANSFER:
+            return {
+                "payment_method": Order.PaymentMethod.TRANSFER,
+                "payment_status": Order.PaymentStatus.AWAITING_TRANSFER,
+                "payment_reference": reference,
+                "payment_processed_at": timezone.now(),
+                "payment_snapshot": {
+                    "provider": "simulated",
+                    "message": "Transferencia simulada pendiente de confirmación.",
+                },
+            }
+
+        return {
+            "payment_method": Order.PaymentMethod.CASH,
+            "payment_status": Order.PaymentStatus.PAY_ON_DELIVERY,
+            "payment_reference": reference,
+            "payment_processed_at": timezone.now(),
+            "payment_snapshot": {
+                "provider": "simulated",
+                "message": "Pago en efectivo registrado para cobro contra entrega.",
+            },
+        }
 
     def _statuses_after_confirm(self, target_status):
         statuses = []

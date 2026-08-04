@@ -20,6 +20,19 @@ const STATUS_MAP = {
   canceled: "Cancelado",
 };
 
+const PAYMENT_METHOD_MAP = {
+  card: "Tarjeta de crédito/débito",
+  transfer: "Transferencia bancaria",
+  cash: "Efectivo contra entrega",
+};
+
+const PAYMENT_STATUS_MAP = {
+  authorized: "Pago simulado autorizado",
+  awaiting_transfer: "Transferencia simulada pendiente",
+  pay_on_delivery: "Pago contra entrega",
+  failed: "Pago simulado fallido",
+};
+
 function normalizeOrderStatus(status) {
   return String(status || "pending").toLowerCase();
 }
@@ -43,6 +56,14 @@ function getStatusClass(status) {
     default:
       return "orders-status--pending";
   }
+}
+
+function getPaymentMethodLabel(method) {
+  return PAYMENT_METHOD_MAP[method] || method || "No especificado";
+}
+
+function getPaymentStatusLabel(status) {
+  return PAYMENT_STATUS_MAP[status] || status || "No especificado";
 }
 
 function formatOrderDate(value) {
@@ -124,6 +145,12 @@ function normalizeOrder(order) {
     total: Number(order.total || 0),
     distanceKm: order.distance_km,
     durationMinutes: order.estimated_duration_minutes,
+    paymentMethod: order.payment_method,
+    paymentMethodText: getPaymentMethodLabel(order.payment_method),
+    paymentStatus: order.payment_status,
+    paymentStatusText: getPaymentStatusLabel(order.payment_status),
+    paymentReference: order.payment_reference,
+    paymentMasked: order.payment_snapshot?.masked,
     items,
   };
 }
@@ -255,6 +282,30 @@ export default function OrderDetailPage() {
                 <span className="orders-detail__label">Estado</span>
                 <span className={`orders-status ${getStatusClass(order.status)}`}>
                   {order.statusText}
+                </span>
+              </div>
+              <div className="orders-detail__item">
+                <span className="orders-detail__label">Pago</span>
+                <span className="orders-detail__value">
+                  {order.paymentMethodText}
+                  {order.paymentStatus && (
+                    <>
+                      <br />
+                      {order.paymentStatusText}
+                    </>
+                  )}
+                  {order.paymentMasked && (
+                    <>
+                      <br />
+                      {order.paymentMasked}
+                    </>
+                  )}
+                  {order.paymentReference && (
+                    <>
+                      <br />
+                      Referencia: {order.paymentReference}
+                    </>
+                  )}
                 </span>
               </div>
               <div className="orders-detail__item">

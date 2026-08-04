@@ -190,6 +190,16 @@ const OrderConfirmationPage = () => {
     return methods[method] || method || "No especificado";
   };
 
+  const getPaymentStatusLabel = (status) => {
+    const statuses = {
+      authorized: "Pago simulado autorizado",
+      awaiting_transfer: "Transferencia simulada pendiente",
+      pay_on_delivery: "Pago contra entrega",
+      failed: "Pago simulado fallido",
+    };
+    return statuses[status] || status || "No especificado";
+  };
+
   const getStatusLabel = (status) => {
     const statusMap = {
       pending: "Pendiente",
@@ -346,6 +356,18 @@ const OrderConfirmationPage = () => {
               </header>
               <div className="order-card__body">
                 <p>{getPaymentLabel(order.payment_method)}</p>
+                {order.payment_status && (
+                  <p className="order-card__detail">{getPaymentStatusLabel(order.payment_status)}</p>
+                )}
+                {order.payment_snapshot?.masked && (
+                  <p className="order-card__detail">{order.payment_snapshot.masked}</p>
+                )}
+                {order.payment_reference && (
+                  <p className="order-card__detail">Referencia: {order.payment_reference}</p>
+                )}
+                {order.payment_snapshot?.message && (
+                  <p className="order-card__detail">{order.payment_snapshot.message}</p>
+                )}
               </div>
             </article>
 

@@ -84,6 +84,8 @@ export const orderService = {
   manageDetail: (id) => get(apiEndpoints.orders.manageDetail(id)),
   updateStatus: (id, status) =>
     patch(apiEndpoints.orders.manageDetail(id), { status }),
+  updatePaymentStatus: (id, paymentStatus) =>
+    patch(apiEndpoints.orders.manageDetail(id), { payment_status: paymentStatus }),
 };
 
 export const inventoryService = {

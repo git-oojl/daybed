@@ -428,6 +428,14 @@
   color: #4a3520;
 }
 
+.checkout-payment-note {
+  margin: 0.9rem 0 0;
+  color: #7a6b5a;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* ===== CARD DETAILS ===== */
 .checkout-card-details {
   margin-top: 1rem;
@@ -443,6 +451,24 @@
 
 .checkout-card-details .checkout-field-group:last-child {
   margin-bottom: 0;
+}
+
+.checkout-transfer-info,
+.checkout-cash-info {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: #fefcf8;
+  border: 1px solid #e8dccc;
+  border-radius: 8px;
+  color: #5a4a3a;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.checkout-transfer-info p,
+.checkout-cash-info p {
+  margin: 0;
 }
 
 /* ===== INFO BOX ===== */

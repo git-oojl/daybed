@@ -41,6 +41,27 @@ const getStatusInfo = (status) => {
   return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
 };
 
+const PAYMENT_METHOD_MAP = {
+  card: "Tarjeta",
+  transfer: "Transferencia",
+  cash: "Efectivo",
+};
+
+const PAYMENT_STATUS_MAP = {
+  authorized: "Autorizado",
+  awaiting_transfer: "Pendiente",
+  pay_on_delivery: "Contra entrega",
+  failed: "Fallido",
+};
+
+const getPaymentMethodLabel = (method) => {
+  return PAYMENT_METHOD_MAP[method] || method || "No especificado";
+};
+
+const getPaymentStatusLabel = (status) => {
+  return PAYMENT_STATUS_MAP[status] || status || "No especificado";
+};
+
 const formatPrice = (amount) => {
   return `$${Number(amount || 0).toLocaleString("es-MX")} MX`;
 };
@@ -100,7 +121,9 @@ export default function InternalOrdersPage() {
         total: order.total || order.products_subtotal || 0,
         status: order.status || "pending",
         items: order.items || [],
-        payment: order.payment_method || "No especificado",
+        payment: getPaymentMethodLabel(order.payment_method),
+        paymentStatus: getPaymentStatusLabel(order.payment_status),
+        paymentReference: order.payment_reference || "",
         address: order.formatted_address || order.original_address || "Dirección no disponible",
       }));
       
@@ -173,7 +196,9 @@ export default function InternalOrdersPage() {
     const matchesSearch =
       order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.email.toLowerCase().includes(searchQuery.toLowerCase());
+      order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.payment.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.paymentReference.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterStatus === "all" || order.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -412,7 +437,7 @@ export default function InternalOrdersPage() {
             <table style={{
               width: "100%",
               borderCollapse: "collapse",
-              minWidth: "800px",
+              minWidth: "900px",
             }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
@@ -420,6 +445,7 @@ export default function InternalOrdersPage() {
                   <th style={{ textAlign: "left", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Cliente</th>
                   <th style={{ textAlign: "left", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Fecha</th>
                   <th style={{ textAlign: "center", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Total</th>
+                  <th style={{ textAlign: "center", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Pago</th>
                   <th style={{ textAlign: "center", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Estado</th>
                   <th style={{ textAlign: "center", padding: "12px 10px", color: "#6B4A2B", fontWeight: 700, fontSize: "clamp(0.8rem, 1vw, 0.9rem)" }}>Acciones</th>
                 </tr>
@@ -427,7 +453,7 @@ export default function InternalOrdersPage() {
               <tbody>
                 {currentOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "40px 20px" }}>
+                    <td colSpan="7" style={{ textAlign: "center", padding: "40px 20px" }}>
                       <div style={{ color: "#D28B00", fontSize: "32px" }}>
                         <FaExclamationTriangle />
                       </div>
@@ -453,6 +479,14 @@ export default function InternalOrdersPage() {
                         </td>
                         <td style={{ padding: "12px 10px", textAlign: "center", fontWeight: 600, color: "#5C2E0B", fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
                           {formatPrice(order.total)}
+                        </td>
+                        <td style={{ padding: "12px 10px", textAlign: "center", fontSize: "clamp(0.8rem, 0.95vw, 0.9rem)" }}>
+                          <span style={{ display: "block", fontWeight: 600, color: "#4A3520" }}>
+                            {order.payment}
+                          </span>
+                          <span style={{ display: "block", color: "#7A6B5A", fontSize: "0.75rem", marginTop: "2px" }}>
+                            {order.paymentStatus}
+                          </span>
                         </td>
                         <td style={{ padding: "12px 10px", textAlign: "center" }}>
                           <span style={{

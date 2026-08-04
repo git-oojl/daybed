@@ -22,6 +22,7 @@ import {
   FaPhone,
   FaEnvelope,
   FaUserCircle,
+  FaCreditCard,
 } from "react-icons/fa";
 
 // ============================================
@@ -38,6 +39,27 @@ const STATUS_MAP = {
 
 function getStatusInfo(status) {
   return STATUS_MAP[status] || STATUS_MAP.pending;
+}
+
+const PAYMENT_METHOD_MAP = {
+  card: "Tarjeta de crédito/débito",
+  transfer: "Transferencia bancaria",
+  cash: "Efectivo contra entrega",
+};
+
+const PAYMENT_STATUS_MAP = {
+  authorized: "Pago simulado autorizado",
+  awaiting_transfer: "Transferencia simulada pendiente",
+  pay_on_delivery: "Pago contra entrega",
+  failed: "Pago simulado fallido",
+};
+
+function getPaymentMethodLabel(method) {
+  return PAYMENT_METHOD_MAP[method] || method || "No especificado";
+}
+
+function getPaymentStatusLabel(status) {
+  return PAYMENT_STATUS_MAP[status] || status || "No especificado";
 }
 
 // ============================================
@@ -59,10 +81,16 @@ export default function InternalOrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const viewerId = getViewerIdForUser(user);
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  const canUpdatePayment =
+    viewerId === "admin" ||
+    effectivePermissionCodes.includes("orders.status.update");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [order, setOrder] = useState(null);
+  const [updatingPayment, setUpdatingPayment] = useState(false);
 
   // ============================================
   // ✅ CARGAR PEDIDO
@@ -137,6 +165,20 @@ export default function InternalOrderDetailPage() {
   const getCustomerPhone = () => {
     if (order?.customer_phone) return order.customer_phone;
     return "No disponible";
+  };
+
+  const handleMarkPaymentReceived = async () => {
+    setUpdatingPayment(true);
+    setError(null);
+    try {
+      const updatedOrder = await orderService.updatePaymentStatus(order.id, "authorized");
+      setOrder(updatedOrder);
+    } catch (err) {
+      console.error("Error al actualizar pago:", err);
+      setError(err.message || "No se pudo actualizar el pago simulado");
+    } finally {
+      setUpdatingPayment(false);
+    }
   };
 
   // ============================================
@@ -280,6 +322,10 @@ export default function InternalOrderDetailPage() {
   const customerName = getCustomerName();
   const customerEmail = getCustomerEmail();
   const customerPhone = getCustomerPhone();
+  const paymentSnapshot = order.payment_snapshot || {};
+  const canMarkPaymentReceived =
+    canUpdatePayment &&
+    ["awaiting_transfer", "pay_on_delivery"].includes(order.payment_status);
 
   // ============================================
   // ✅ RENDER PRINCIPAL
@@ -523,6 +569,106 @@ export default function InternalOrderDetailPage() {
                     {order.delivery_zone}
                   </p>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Pago simulado */}
+          <div className="dashboard-card" style={{
+            padding: "24px",
+            background: "#FDF8F0",
+            border: "1px solid #E8DCCC",
+            borderRadius: "16px",
+          }}>
+            <h3 style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              fontSize: "clamp(1.1rem, 1.5vw, 1.2rem)",
+              color: "#8B5E3C",
+              margin: "0 0 16px 0",
+            }}>
+              <FaCreditCard /> Pago
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{
+                padding: "12px 16px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #F0EBE3",
+              }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Método</span>
+                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                  {getPaymentMethodLabel(order.payment_method)}
+                </p>
+              </div>
+              <div style={{
+                padding: "12px 16px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #F0EBE3",
+              }}>
+                <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Estado</span>
+                <p style={{ margin: "4px 0 0 0", fontWeight: 500, fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                  {getPaymentStatusLabel(order.payment_status)}
+                </p>
+              </div>
+              {paymentSnapshot.masked && (
+                <div style={{
+                  padding: "12px 16px",
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #F0EBE3",
+                }}>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Tarjeta</span>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                    {paymentSnapshot.masked}
+                  </p>
+                </div>
+              )}
+              {order.payment_reference && (
+                <div style={{
+                  padding: "12px 16px",
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #F0EBE3",
+                }}>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Referencia</span>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                    {order.payment_reference}
+                  </p>
+                </div>
+              )}
+              {paymentSnapshot.message && (
+                <div style={{
+                  padding: "12px 16px",
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #F0EBE3",
+                }}>
+                  <span style={{ color: "#7A6B5A", fontSize: "0.75rem", display: "block" }}>Nota</span>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "clamp(0.9rem, 1vw, 1rem)" }}>
+                    {paymentSnapshot.message}
+                  </p>
+                </div>
+              )}
+              {canMarkPaymentReceived && (
+                <button
+                  type="button"
+                  onClick={handleMarkPaymentReceived}
+                  disabled={updatingPayment}
+                  style={{
+                    padding: "10px 16px",
+                    background: updatingPayment ? "#D4C5B2" : "#8B5E3C",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: updatingPayment ? "not-allowed" : "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  {updatingPayment ? "Actualizando..." : "Marcar pago simulado recibido"}
+                </button>
               )}
             </div>
           </div>

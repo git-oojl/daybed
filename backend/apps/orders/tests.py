@@ -112,6 +112,11 @@ def test_checkout_creates_pending_order_and_clears_cart_without_stock_decrement(
 
     assert response.status_code == 201
     assert response.data["status"] == Order.Status.PENDING
+    assert response.data["payment_method"] == Order.PaymentMethod.CASH
+    assert response.data["payment_status"] == Order.PaymentStatus.PAY_ON_DELIVERY
+    assert response.data["payment_reference"].startswith("SIM-CASH-")
+    assert response.data["payment_processed_at"]
+    assert response.data["payment_snapshot"]["provider"] == "simulated"
     assert response.data["products_subtotal"] == "300.00"
     assert response.data["delivery_fee"] == "180.00"
     assert response.data["total"] == "480.00"
@@ -139,6 +144,70 @@ def test_checkout_creates_pending_order_and_clears_cart_without_stock_decrement(
     product.refresh_from_db()
     assert product.stock == 9
     assert CartItem.objects.filter(cart__user=customer).count() == 0
+
+
+def test_checkout_records_simulated_card_payment_without_sensitive_fields():
+    customer = create_user("cliente_card_checkout")
+    product = create_product(stock=9, price=Decimal("150.00"))
+    add_cart_item(customer, product, quantity=1)
+
+    response = checkout(
+        customer,
+        delivery_payload(
+            payment_method=Order.PaymentMethod.CARD,
+            card_number="4242 4242 4242 4242",
+            card_expiry="12/30",
+            card_cvv="123",
+        ),
+    )
+
+    assert response.status_code == 201
+    assert response.data["payment_method"] == Order.PaymentMethod.CARD
+    assert response.data["payment_status"] == Order.PaymentStatus.AUTHORIZED
+    assert response.data["payment_reference"].startswith("SIM-CARD-")
+    assert response.data["payment_processed_at"]
+    assert response.data["payment_snapshot"]["brand"] == "Visa"
+    assert response.data["payment_snapshot"]["last4"] == "4242"
+    assert "4242424242424242" not in str(response.data["payment_snapshot"])
+    assert "123" not in str(response.data["payment_snapshot"])
+
+
+def test_checkout_records_simulated_transfer_payment():
+    customer = create_user("cliente_transfer_checkout")
+    product = create_product(stock=9, price=Decimal("150.00"))
+    add_cart_item(customer, product, quantity=1)
+
+    response = checkout(
+        customer,
+        delivery_payload(payment_method=Order.PaymentMethod.TRANSFER),
+    )
+
+    assert response.status_code == 201
+    assert response.data["payment_method"] == Order.PaymentMethod.TRANSFER
+    assert response.data["payment_status"] == Order.PaymentStatus.AWAITING_TRANSFER
+    assert response.data["payment_reference"].startswith("SIM-TRANSFER-")
+    assert "pendiente" in response.data["payment_snapshot"]["message"].lower()
+
+
+def test_checkout_rejects_declined_simulated_card_without_clearing_cart():
+    customer = create_user("cliente_declined_card")
+    product = create_product(stock=9, price=Decimal("150.00"))
+    add_cart_item(customer, product, quantity=1)
+
+    response = checkout(
+        customer,
+        delivery_payload(
+            payment_method=Order.PaymentMethod.CARD,
+            card_number="4000 0000 0000 0000",
+            card_expiry="12/30",
+            card_cvv="123",
+        ),
+    )
+
+    assert response.status_code == 400
+    assert "payment" in response.data
+    assert Order.objects.filter(user=customer).count() == 0
+    assert CartItem.objects.filter(cart__user=customer).count() == 1
 
 
 def test_checkout_rejects_invalid_delivery_numbers():
@@ -242,6 +311,47 @@ def test_staff_can_list_and_advance_order_status():
 
     product.refresh_from_db()
     assert product.stock == 4
+
+
+def test_staff_can_mark_simulated_transfer_payment_received():
+    customer = create_user("cliente_transfer_received")
+    employee = create_user("empleado_transfer_received", User.Roles.EMPLOYEE)
+    product = create_product(stock=5)
+    add_cart_item(customer, product, quantity=1)
+    order_id = checkout(
+        customer,
+        delivery_payload(payment_method=Order.PaymentMethod.TRANSFER),
+    ).data["id"]
+
+    response = api_client(employee).patch(
+        reverse("staff-order-detail", args=[order_id]),
+        {"payment_status": Order.PaymentStatus.AUTHORIZED},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["payment_method"] == Order.PaymentMethod.TRANSFER
+    assert response.data["payment_status"] == Order.PaymentStatus.AUTHORIZED
+    assert response.data["payment_snapshot"]["message"] == "Pago simulado recibido."
+
+
+def test_staff_can_mark_simulated_cash_payment_received():
+    customer = create_user("cliente_cash_received")
+    employee = create_user("empleado_cash_received", User.Roles.EMPLOYEE)
+    product = create_product(stock=5)
+    add_cart_item(customer, product, quantity=1)
+    order_id = checkout(customer).data["id"]
+
+    response = api_client(employee).patch(
+        reverse("staff-order-detail", args=[order_id]),
+        {"payment_status": Order.PaymentStatus.AUTHORIZED},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["payment_method"] == Order.PaymentMethod.CASH
+    assert response.data["payment_status"] == Order.PaymentStatus.AUTHORIZED
+    assert response.data["payment_snapshot"]["message"] == "Pago simulado recibido."
 
 
 def test_stock_decreases_only_when_order_is_confirmed_and_not_twice():

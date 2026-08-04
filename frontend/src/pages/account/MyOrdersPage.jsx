@@ -79,6 +79,27 @@ const getStatusClass = (status) => {
   }
 };
 
+const PAYMENT_METHOD_MAP = {
+  card: "Tarjeta de crédito/débito",
+  transfer: "Transferencia bancaria",
+  cash: "Efectivo contra entrega",
+};
+
+const PAYMENT_STATUS_MAP = {
+  authorized: "Pago simulado autorizado",
+  awaiting_transfer: "Transferencia simulada pendiente",
+  pay_on_delivery: "Pago contra entrega",
+  failed: "Pago simulado fallido",
+};
+
+const getPaymentMethodLabel = (method) => {
+  return PAYMENT_METHOD_MAP[method] || method || "No especificado";
+};
+
+const getPaymentStatusLabel = (status) => {
+  return PAYMENT_STATUS_MAP[status] || status || "No especificado";
+};
+
 const normalizeOrderStatus = (status) => {
   const statusMap = {
     pending: "pending",
@@ -190,6 +211,12 @@ function MyOrdersPage() {
           total: Number(order.total || order.products_subtotal || order.amount || 0),
           subtotal: Number(order.products_subtotal || order.subtotal || order.total || 0),
           shipping: Number(order.delivery_fee || order.shipping || 0),
+          paymentMethod: order.payment_method,
+          paymentMethodText: getPaymentMethodLabel(order.payment_method),
+          paymentStatus: order.payment_status,
+          paymentStatusText: getPaymentStatusLabel(order.payment_status),
+          paymentReference: order.payment_reference,
+          paymentMasked: order.payment_snapshot?.masked,
           items: Array.isArray(order.items)
             ? order.items.map((item) => ({
                 id: item.id || item.product || item.product_snapshot?.id,
@@ -544,6 +571,32 @@ function MyOrdersPage() {
                                         }}
                                       >
                                         {order.statusText}
+                                      </span>
+                                    </div>
+                                    <div className="orders-detail__item">
+                                      <span className="orders-detail__label">
+                                        Pago
+                                      </span>
+                                      <span className="orders-detail__value">
+                                        {order.paymentMethodText}
+                                        {order.paymentStatus && (
+                                          <>
+                                            <br />
+                                            {order.paymentStatusText}
+                                          </>
+                                        )}
+                                        {order.paymentMasked && (
+                                          <>
+                                            <br />
+                                            {order.paymentMasked}
+                                          </>
+                                        )}
+                                        {order.paymentReference && (
+                                          <>
+                                            <br />
+                                            Ref: {order.paymentReference}
+                                          </>
+                                        )}
                                       </span>
                                     </div>
                                     <div className="orders-detail__item">
