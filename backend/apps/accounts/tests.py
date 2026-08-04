@@ -14,9 +14,10 @@ from apps.access_control.services import get_effective_permission_codes
 from apps.accounts.permissions import is_admin, is_customer, is_employee_or_admin
 from apps.accounts.serializers import PASSWORD_RESET_SENT_MESSAGE
 from apps.cart.models import CartItem
-from apps.catalog.models import Category, Product
+from apps.catalog.models import Category, Product, ProductImage
 from apps.inventory.models import InventoryMovement
 from apps.orders.models import Order
+from apps.store.models import StoreSettings
 
 pytestmark = pytest.mark.django_db
 
@@ -558,24 +559,38 @@ def test_seed_demo_command_creates_repeatable_local_dataset(settings, tmp_path):
     assert customer.check_password("DemoPassword123!")
     assert employee.role == User.Roles.EMPLOYEE
     assert get_effective_permission_codes(employee)
+    assert (
+        User.objects.get(email="cliente.plus@example.com").role == User.Roles.CUSTOMER
+    )
     assert User.objects.get(email="admin@example.com").role == User.Roles.ADMIN
 
-    assert Category.objects.count() == 5
-    assert Product.objects.count() == 7
+    assert Category.objects.count() == 9
+    assert Product.objects.count() == 27
     seeded_product = Product.objects.get(sku="DAY-SOFA-ROB-001")
     assert seeded_product.width_cm == 200
     assert seeded_product.specifications["assembly_required"] is False
-    assert seeded_product.main_image.name.startswith(
-        "products/demo/day-sofa-rob-001"
-    )
+    assert seeded_product.main_image.name.startswith("products/demo/day-sofa-rob-001")
+    assert Product.objects.filter(category__slug="oficina", active=True).count() == 3
     assert Product.objects.filter(main_image="").count() == 0
-    assert CartItem.objects.filter(cart__user=customer).count() == 2
+    assert ProductImage.objects.filter(active=True).count() >= 20
+    assert CartItem.objects.filter(cart__user=customer).count() == 3
+    assert (
+        CartItem.objects.filter(cart__user__email="cliente.plus@example.com").count()
+        == 2
+    )
     assert Order.objects.filter(user=customer).count() == 6
+    assert Order.objects.count() == 12
+    assert Order.objects.filter(payment_status=Order.PaymentStatus.FAILED).exists()
+    assert Order.objects.filter(
+        payment_method=Order.PaymentMethod.TRANSFER,
+        payment_status=Order.PaymentStatus.AUTHORIZED,
+    ).exists()
     assert Order.objects.filter(
         user=customer,
         items__product_snapshot__sku="DAY-SOFA-LIN-002",
     ).exists()
-    assert InventoryMovement.objects.count() == 6
+    assert InventoryMovement.objects.count() == 14
+    assert StoreSettings.get_active().free_shipping_threshold == 15000
 
     first_counts = {
         "users": User.objects.count(),
@@ -600,5 +615,5 @@ def test_seed_demo_command_creates_repeatable_local_dataset(settings, tmp_path):
 
     call_command("seed_demo", reset=True)
 
-    assert User.objects.filter(email__endswith="@example.com").count() == 3
+    assert User.objects.filter(email__endswith="@example.com").count() == 4
     assert Order.objects.filter(user__email="cliente@example.com").count() == 6

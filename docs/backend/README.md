@@ -8,7 +8,7 @@ Esta carpeta contiene documentación técnica del backend de Daybed, incluyendo 
 
 El backend está organizado en módulos funcionales: autenticación, cuentas de usuario, catálogo, carrito, pedidos, inventario, entregas, configuración de tienda y dashboard administrativo. Esta separación permite mantener responsabilidades claras entre las partes principales del sistema.
 
-La autenticación pública está preparada para las vistas actuales del frontend: login con `email` y `password`, registro de cliente con los campos `nombre`, `apellido`, `telefono`, `estado`, `ciudad`, `password` y `confirmPassword`, perfil propio en `/api/accounts/me/`, refresh de tokens y logout con blacklist del refresh token.
+La autenticación pública está preparada para las vistas actuales del frontend: login con `email` y `password`, registro de cliente con los campos `nombre`, `apellido`, `telefono`, `estado`, `ciudad`, `password` y `confirmPassword`, perfil propio en `/api/accounts/me/`, refresh de tokens y logout con blacklist del refresh token. El registro público crea únicamente cuentas `cliente`; empleados y administradores se crean desde gestión interna por un administrador o desde Django Admin en desarrollo.
 
 El catálogo mantiene `Product` como item comprable/SKU del MVP. Para evitar rigidez sin sobrediseñar, producto incluye `sku`, dimensiones estructuradas opcionales y `specifications` JSON; las categorías pueden declarar `specification_schema` para documentar qué specs existen y cuáles son filtrables. No hay campo libre `dimensions`, `ProductVariant` ni EAV en esta etapa.
 
@@ -22,7 +22,9 @@ El diagrama entidad-relación fue generado a partir de los modelos definidos en 
 
 ![Flujo del pedido](./diagrams/flujo_pedido.png)
 
-Este flujo representa el proceso principal de negocio: el cliente agrega productos al carrito, confirma el pedido, el sistema valida el stock, crea el pedido y actualiza el inventario.
+Este flujo representa el proceso principal de negocio: el cliente agrega productos al carrito, confirma el pedido, el sistema valida el stock, crea el pedido, registra el pago simulado y actualiza el inventario cuando corresponde.
+
+El pago del MVP es simulado. El checkout acepta tarjeta, transferencia y efectivo; no realiza cobros reales ni guarda datos crudos de tarjeta. Transferencia y efectivo pueden quedar pendientes hasta que staff/admin marque el pago simulado como recibido en la vista interna del pedido.
 
 ## Contrato OpenAPI
 
@@ -40,6 +42,14 @@ uv run python manage.py migrate
 uv run python manage.py seed_demo
 ```
 
+Para probar estimaciones reales de distancia/duración en checkout, agregar la key de OpenRouteService en `backend/.env`:
+
+```env
+OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
+```
+
+La key no se versiona y no pertenece al frontend.
+
 Para limpiar y recrear solo los datos demo conocidos:
 
 ```bash
@@ -51,10 +61,11 @@ Credenciales incluidas:
 | Rol | Email | Password |
 | --- | --- | --- |
 | Cliente | `cliente@example.com` | `DemoPassword123!` |
+| Cliente secundario | `cliente.plus@example.com` | `DemoPassword123!` |
 | Empleado | `empleado@example.com` | `DemoPassword123!` |
 | Administrador | `admin@example.com` | `DemoPassword123!` |
 
-La semilla cubre catálogo con SKUs y dimensiones estructuradas, carrito, pedidos en todos los estados e inventario. El detalle de entidades está en [`MODELO_DATOS.md`](./MODELO_DATOS.md).
+La semilla cubre configuración de tienda, catálogo amplio con SKUs, dimensiones estructuradas e imágenes, carritos de clientes, pedidos en todos los estados, pagos simulados e inventario. El detalle de entidades está en [`MODELO_DATOS.md`](./MODELO_DATOS.md).
 
 Estos usuarios sirven para probar API y frontend. Para entrar a `/admin/` y editar datos manualmente desde Django Admin, crear un superusuario local:
 

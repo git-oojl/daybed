@@ -110,6 +110,8 @@ Registro de cliente compatible con las vistas actuales del frontend:
 
 El backend genera `username` cuando no se envía. También acepta los nombres internos `first_name`, `last_name`, `phone`, `state` y `city`.
 
+El registro público siempre crea cuentas `cliente`. Las cuentas `empleado` y `administrador` se crean desde la gestión interna de usuarios por un administrador o desde Django Admin/superuser en desarrollo; no deben exponerse en el formulario público.
+
 El correo se normaliza a minúsculas y se valida de forma única sin distinguir mayúsculas/minúsculas.
 
 Perfil propio:
@@ -421,7 +423,7 @@ si todavía no existe configuración persistente.
 | GET | `/api/orders/{id}/` | Cliente | Detalle de pedido propio. |
 | GET | `/api/manage/orders/` | `orders.view` | Listar pedidos. |
 | GET | `/api/manage/orders/{id}/` | `orders.view` | Detalle interno. |
-| PATCH/PUT | `/api/manage/orders/{id}/` | `orders.status.update` | Actualizar estado. |
+| PATCH/PUT | `/api/manage/orders/{id}/` | `orders.status.update` | Actualizar estado del pedido o pago simulado. |
 
 Checkout espera datos de entrega ya calculados/validados, pero recalcula
 `delivery_fee` en el backend con la misma regla de `/api/delivery/estimate/`:
@@ -437,9 +439,24 @@ Checkout espera datos de entrega ya calculados/validados, pero recalcula
   "delivery_fee": "180.00",
   "delivery_zone": "standard",
   "geocoding_provider": "nominatim",
-  "distance_provider": "openrouteservice"
+  "distance_provider": "openrouteservice",
+  "payment_method": "card",
+  "card_number": "4111111111111111",
+  "card_expiry": "12/30",
+  "card_cvv": "123"
 }
 ```
+
+Campos de pago en checkout:
+
+- `payment_method`: `card`, `transfer` o `cash`. Si no se envía, el backend usa `cash`.
+- `card_number`, `card_expiry`, `card_cvv`: requeridos solo para `card`; son write-only y no se guardan crudos.
+
+Simulación:
+
+- `card` queda `authorized` si pasa validación básica. Tarjetas terminadas en `0000` simulan rechazo.
+- `transfer` queda `awaiting_transfer`.
+- `cash` queda `pay_on_delivery`.
 
 Validaciones de checkout:
 
@@ -448,6 +465,23 @@ Validaciones de checkout:
 - `distance_km`, `estimated_duration_minutes` y, si se envía, `delivery_fee` no pueden ser negativos.
 - El carrito no puede contener productos inactivos ni productos de categorías inactivas.
 - El envío gratis se aplica si `products_subtotal` alcanza `free_shipping_threshold`.
+- Los datos crudos de tarjeta no se persisten en `Order`.
+
+Campos de pago devueltos en pedidos:
+
+```json
+{
+  "payment_method": "card",
+  "payment_status": "authorized",
+  "payment_reference": "SIM-CARD-AB12CD34",
+  "payment_processed_at": "2026-08-04T12:30:00Z",
+  "payment_snapshot": {
+    "provider": "simulated",
+    "last4": "1111",
+    "brand": "Visa"
+  }
+}
+```
 
 Los items del pedido incluyen snapshot del producto para conservar historial aunque el catálogo cambie:
 
@@ -490,6 +524,16 @@ Actualizar estado:
 }
 ```
 
+Marcar pago simulado de transferencia/efectivo como recibido o fallido:
+
+```json
+{
+  "payment_status": "authorized"
+}
+```
+
+`payment_status` editable por staff/admin acepta `authorized` o `failed` cuando el pedido está pendiente por transferencia o efectivo.
+
 Estados válidos:
 
 - `pending`
@@ -498,6 +542,13 @@ Estados válidos:
 - `shipped`
 - `delivered`
 - `cancelled`
+
+Estados de pago:
+
+- `authorized`
+- `awaiting_transfer`
+- `pay_on_delivery`
+- `failed`
 
 ## Inventory
 

@@ -1916,6 +1916,22 @@ components:
         distance_provider:
           type: string
           maxLength: 80
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          default: cash
+        card_number:
+          type: string
+          writeOnly: true
+          maxLength: 32
+        card_expiry:
+          type: string
+          writeOnly: true
+          maxLength: 7
+        card_cvv:
+          type: string
+          writeOnly: true
+          maxLength: 4
       required:
       - distance_km
       - estimated_duration_minutes
@@ -1991,7 +2007,13 @@ components:
       properties:
         total_orders:
           type: integer
+        total_products:
+          type: integer
         total_simulated_sales:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total_sales:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
@@ -2001,6 +2023,14 @@ components:
             $ref: '#/components/schemas/OrdersByStatus'
         low_stock_count:
           type: integer
+        low_stock:
+          type: array
+          items:
+            $ref: '#/components/schemas/LowStockProduct'
+        sales_by_month:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesByMonth'
         recent_orders:
           type: array
           items:
@@ -2016,10 +2046,14 @@ components:
       required:
       - average_delivery_distance
       - average_delivery_fee
+      - low_stock
       - low_stock_count
       - orders_by_status
       - recent_orders
+      - sales_by_month
       - total_orders
+      - total_products
+      - total_sales
       - total_simulated_sales
     DeliveryEstimateRequest:
       type: object
@@ -2296,6 +2330,10 @@ components:
         low_stock:
           type: boolean
           readOnly: true
+        main_image:
+          type: string
+          format: uri
+          readOnly: true
         active:
           type: boolean
           readOnly: true
@@ -2309,6 +2347,7 @@ components:
       - category_detail
       - id
       - low_stock
+      - main_image
       - minimum_stock
       - name
       - sku
@@ -2337,6 +2376,26 @@ components:
           writeOnly: true
       required:
       - refresh
+    LowStockProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        sku:
+          type: string
+          nullable: true
+        stock:
+          type: integer
+        minimum_stock:
+          type: integer
+      required:
+      - id
+      - minimum_stock
+      - name
+      - sku
+      - stock
     MovementTypeEnum:
       enum:
       - manual_adjustment
@@ -2350,6 +2409,19 @@ components:
       properties:
         id:
           type: integer
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_email:
+          type: string
+          format: email
+          readOnly: true
+        customer_phone:
+          type: string
           readOnly: true
         status:
           allOf:
@@ -2410,6 +2482,24 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           readOnly: true
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          readOnly: true
+        payment_status:
+          allOf:
+          - $ref: '#/components/schemas/PaymentStatusEnum'
+          readOnly: true
+        payment_reference:
+          type: string
+          readOnly: true
+        payment_processed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        payment_snapshot:
+          readOnly: true
         stock_decremented_at:
           type: string
           format: date-time
@@ -2425,6 +2515,9 @@ components:
           readOnly: true
       required:
       - created_at
+      - customer_email
+      - customer_name
+      - customer_phone
       - delivery_fee
       - delivery_zone
       - distance_km
@@ -2437,11 +2530,17 @@ components:
       - latitude
       - longitude
       - original_address
+      - payment_method
+      - payment_processed_at
+      - payment_reference
+      - payment_snapshot
+      - payment_status
       - products_subtotal
       - status
       - stock_decremented_at
       - total
       - updated_at
+      - user_id
     OrderItem:
       type: object
       properties:
@@ -2486,6 +2585,8 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
     OrdersByStatus:
       type: object
       properties:
@@ -2812,6 +2913,8 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/StatusEnum'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
     PatchedProduct:
       type: object
       properties:
@@ -2884,6 +2987,14 @@ components:
         main_image:
           type: string
           format: uri
+        image:
+          type: string
+          format: uri
+          writeOnly: true
+        image_url:
+          type: string
+          format: uri
+          writeOnly: true
         stock:
           type: integer
           maximum: 9223372036854775807
@@ -3029,6 +3140,28 @@ components:
           items:
             type: string
           readOnly: true
+    PaymentMethodEnum:
+      enum:
+      - card
+      - transfer
+      - cash
+      type: string
+      description: |-
+        * `card` - Tarjeta
+        * `transfer` - Transferencia
+        * `cash` - Efectivo contra entrega
+    PaymentStatusEnum:
+      enum:
+      - authorized
+      - awaiting_transfer
+      - pay_on_delivery
+      - failed
+      type: string
+      description: |-
+        * `authorized` - Autorizado
+        * `awaiting_transfer` - Pendiente de transferencia
+        * `pay_on_delivery` - Pago contra entrega
+        * `failed` - Fallido
     Product:
       type: object
       properties:
@@ -3101,6 +3234,14 @@ components:
         main_image:
           type: string
           format: uri
+        image:
+          type: string
+          format: uri
+          writeOnly: true
+        image_url:
+          type: string
+          format: uri
+          writeOnly: true
         stock:
           type: integer
           maximum: 9223372036854775807
@@ -3173,6 +3314,11 @@ components:
       properties:
         id:
           type: integer
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
         status:
           type: string
         total:
@@ -3184,6 +3330,8 @@ components:
           format: date-time
       required:
       - created_at
+      - customer_email
+      - customer_name
       - id
       - status
       - total
@@ -3197,6 +3345,18 @@ components:
         * `cliente` - Cliente
         * `empleado` - Empleado
         * `administrador` - Administrador
+    SalesByMonth:
+      type: object
+      properties:
+        month:
+          type: string
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - month
+      - total
     StatusEnum:
       enum:
       - pending

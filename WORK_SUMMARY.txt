@@ -50,20 +50,40 @@ Scope handled
 5. Seed/data notes
 
 - Checked the existing seed_demo command.
-- Kept the three supported demo roles only:
+- Kept the three supported demo roles only while adding a second customer account:
   - cliente@example.com
+  - cliente.plus@example.com
   - empleado@example.com
   - admin@example.com
 - Added test coverage that the seeded employee has effective permissions after RBAC bootstrap.
 - Did not add invitado/editor seed users.
 
+Seed expansion after payment work:
+
+- Expanded seed_demo to 9 categories and 27 products.
+- Added product gallery images in addition to main images.
+- Added active store settings for delivery/free-shipping tests.
+- Added a second customer cart and 12 total demo orders.
+- Included pending transfer, pay-on-delivery, authorized transfer/cash, card, and failed card payment examples.
+
+6. Checkout and simulated payment flow
+
+- Added simulated payment fields to orders.
+- Supported card, transfer, and cash payment methods without real provider integration.
+- Kept card fields write-only and persisted only masked/safe metadata.
+- Simulated card rejection for card numbers ending in 0000.
+- Left transfer and cash orders pending until staff/admin marks the simulated payment as received or failed.
+- Exposed payment details in customer confirmation/order views and internal order views.
+- Documented that public registration creates only cliente accounts; empleado/admin accounts are admin-created.
+- Documented OpenRouteService setup through backend/.env only.
+
 Verification run
 ----------------
 
-Latest verification after the password/account work:
+Latest verification after checkout/payment work:
 
-- Backend lint: uv run ruff check . passed.
-- Backend tests: uv run pytest -q passed, 119 passed.
+- Backend lint: uv run ruff check apps/orders passed.
+- Backend tests: uv run pytest apps/orders/tests.py passed, 20 passed.
 - Frontend lint: npm run lint passed.
 - Frontend build: npm run build passed.
 
@@ -77,4 +97,3 @@ Intentional limitations / deferred work
 - Email delivery defaults to Django console email backend in development. Production needs real SMTP or a transactional email provider configured through environment variables.
 - Existing access tokens can remain valid until their normal expiration after password change/reset; refresh tokens are invalidated.
 - Some older back-office screens still contain demo/static data. Security enforcement for RBAC is backend-side and tested through direct API calls.
-

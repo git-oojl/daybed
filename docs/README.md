@@ -33,8 +33,10 @@ Después de migrar la base local del backend, cargar semillas:
 
 ```bash
 cd backend
+cp .env.example .env
+# editar .env y agregar OPENROUTESERVICE_API_KEY para estimaciones reales de entrega
 uv run python manage.py migrate
 uv run python manage.py seed_demo
 ```
 
-Las semillas son la fuente compartida para datos de prueba locales. No se versiona ni se sincroniza `db.sqlite3`.
+La key de OpenRouteService va solo en `backend/.env`; no se versiona y no pertenece al frontend. Las semillas son la fuente compartida para datos de prueba locales. No se versiona ni se sincroniza `db.sqlite3`.

@@ -122,7 +122,19 @@ El payload esperado puede usar los nombres actuales de la vista:
 }
 ```
 
-## 12. Cómo muestro errores del backend?
+Ese registro publico crea siempre cuentas `cliente`. Las cuentas `empleado` y `administrador` no se crean desde el registro publico; se crean por un administrador desde gestion interna o desde Django Admin en desarrollo.
+
+## 12. Cómo conecto el pago del checkout?
+
+Usar `/api/checkout/` a través de los servicios existentes. El checkout es simulado y acepta:
+
+- `payment_method: "card"`
+- `payment_method: "transfer"`
+- `payment_method: "cash"`
+
+Para tarjeta, enviar también `card_number`, `card_expiry` y `card_cvv`. Esos campos son solo de entrada y no deben guardarse en estado persistente del frontend. Para transferencia y efectivo, el pedido queda pendiente hasta que una pantalla interna marque el pago simulado como recibido con `orderService.updatePaymentStatus(...)`.
+
+## 13. Cómo muestro errores del backend?
 
 Las llamadas pasan por `apiClient.js` y normalizan errores con `apiErrors.js`.
 
@@ -131,7 +143,7 @@ En un `catch`, normalmente puedes usar:
 - `error.message` para mensaje general.
 - `error.fieldErrors` para errores por campo.
 
-## 13. Dónde están los endpoints listos?
+## 14. Dónde están los endpoints listos?
 
 `frontend/src/services/apiEndpoints.js` tiene las rutas.
 
@@ -147,7 +159,7 @@ En un `catch`, normalmente puedes usar:
 - `dashboardService`
 - `accessService`
 
-## 14. El frontend debe llamar Nominatim u OpenRouteService?
+## 15. El frontend debe llamar Nominatim u OpenRouteService?
 
 No. El frontend debe llamar al backend:
 
@@ -158,13 +170,13 @@ La configuración de tienda se consulta y actualiza por backend:
 
 - `/api/store/settings/`
 
-No guardes API keys, proveedores externos ni credenciales en estado frontend.
+No guardes API keys, proveedores externos ni credenciales en estado frontend. La key de OpenRouteService se configura solo en `backend/.env` como `OPENROUTESERVICE_API_KEY`.
 
-## 15. Hay datos mock para trabajar antes de conectar una vista?
+## 16. Hay datos mock para trabajar antes de conectar una vista?
 
 Sí. `frontend/src/services/apiFixtures.js` tiene respuestas con forma parecida al backend real.
 
-## 16. Qué le paso a una IA si necesito ayuda y no puede abrir todo el repo?
+## 17. Qué le paso a una IA si necesito ayuda y no puede abrir todo el repo?
 
 Pásale:
 

@@ -1,11 +1,19 @@
 flowchart TD
     A[Cliente agrega productos al carrito] --> B[Confirma pedido]
-    B --> C[Validar stock]
-    C -->|Stock disponible| D[Crear pedido]
-    C -->|Sin stock| E[Rechazar operación]
-    D --> F[Descontar inventario]
-    F --> G[Calcular entrega estimada]
-    G --> H[Estado: pendiente]
-    H --> I[Estado: pagado]
-    I --> J[Estado: enviado]
-    J --> K[Estado: entregado]
+    B --> C[Validar entrega y pago simulado]
+    C --> D[Validar stock]
+    D -->|Stock disponible| E[Crear pedido]
+    D -->|Sin stock| F[Rechazar operación]
+    E --> G{Método de pago}
+    G -->|Tarjeta autorizada| H[Pago simulado autorizado]
+    G -->|Transferencia| I[Pendiente de transferencia]
+    G -->|Efectivo| J[Pago contra entrega]
+    G -->|Tarjeta rechazada| F
+    H --> K[Confirmar pedido]
+    I --> L[Staff marca pago recibido]
+    J --> L
+    L --> K
+    K --> M[Descontar inventario]
+    M --> N[Estado: preparando]
+    N --> O[Estado: enviado]
+    O --> P[Estado: entregado]

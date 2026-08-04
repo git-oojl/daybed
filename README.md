@@ -116,7 +116,13 @@ uv sync
 Copy-Item .env.example .env
 ```
 
-Si vas a trabajar con la estimación de entregas, agrega tu API key de OpenRouteService en `backend/.env`.
+Para que el checkout calcule distancia y duración reales de entrega, agrega una API key de OpenRouteService en `backend/.env`:
+
+```env
+OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
+```
+
+No subas la key real al repositorio. La geocodificación usa Nominatim/OpenStreetMap sin key; OpenRouteService se usa desde el backend para rutas y estimaciones de entrega.
 
 ### Ejecutar migraciones
 
@@ -132,13 +138,14 @@ Este paso es parte del setup normal del backend. Cada integrante debe trabajar c
 uv run python manage.py seed_demo
 ```
 
-Esto crea usuarios demo, catálogo, productos con SKUs y dimensiones estructuradas, carrito, pedidos en distintos estados e inventario. No compartas ni subas `db.sqlite3`; comparte cambios mediante migraciones, semillas y documentación.
+Esto crea usuarios demo, configuración de tienda, categorías, catálogo amplio con imágenes, carritos, pedidos en distintos estados, pagos simulados e inventario. No compartas ni subas `db.sqlite3`; comparte cambios mediante migraciones, semillas y documentación.
 
 Usuarios demo para probar API y frontend:
 
 | Rol | Email | Password |
 | --- | --- | --- |
 | Cliente | `cliente@example.com` | `DemoPassword123!` |
+| Cliente secundario | `cliente.plus@example.com` | `DemoPassword123!` |
 | Empleado | `empleado@example.com` | `DemoPassword123!` |
 | Administrador de la app | `admin@example.com` | `DemoPassword123!` |
 
@@ -149,6 +156,8 @@ uv run python manage.py createsuperuser
 ```
 
 El superusuario es opcional para integración frontend/API, pero útil para revisar o crear datos manuales desde el admin de Django.
+
+El registro público del sitio crea únicamente cuentas `cliente`. Las cuentas `empleado` y `administrador` se crean desde la gestión interna de usuarios por un administrador o, en desarrollo local, desde Django Admin/superuser.
 
 ### Verificar configuración de Django
 
@@ -175,7 +184,7 @@ El backend expone una API REST para las funciones principales del MVP:
 * autenticación y usuarios con roles;
 * catálogo de productos y categorías;
 * carrito de compras;
-* órdenes y checkout simulado;
+* órdenes, checkout y pago simulado;
 * inventario;
 * estimación de entrega;
 * métricas básicas del dashboard.

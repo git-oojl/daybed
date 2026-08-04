@@ -2,6 +2,16 @@
 
 Daybed usa APIs externas únicamente para mejorar el flujo de checkout y entrega. El frontend no debe comunicarse directamente con estos proveedores; el backend actúa como capa de integración.
 
+## Configuración local
+
+Nominatim/OpenStreetMap no requiere API key para el uso previsto del MVP. OpenRouteService sí requiere key para calcular rutas reales:
+
+```env
+OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
+```
+
+La key debe guardarse únicamente en `backend/.env`. No debe subirse al repositorio, ponerse en `frontend/.env` ni enviarse al navegador. Sin esta variable, el backend puede arrancar, pero la estimación real de distancia/duración devuelve un error controlado.
+
 ## Geocodificación: Nominatim / OpenStreetMap
 
 Propósito:
@@ -106,7 +116,7 @@ alcanza ese monto, `delivery_fee` es `0.00`.
 NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
 NOMINATIM_USER_AGENT=daybed-student-project/1.0
 OPENROUTESERVICE_BASE_URL=https://api.openrouteservice.org
-OPENROUTESERVICE_API_KEY=
+OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
 STORE_LATITUDE=32.5149
 STORE_LONGITUDE=-117.0382
 DELIVERY_BASE_FEE=80.00
