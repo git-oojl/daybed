@@ -1,6 +1,6 @@
 // InternalOrdersPage.jsx
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -59,7 +59,13 @@ const formatDate = (dateString) => {
 // ✅ COMPONENTE PRINCIPAL
 // ============================================
 export default function InternalOrdersPage() {
+  const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const viewerId = getViewerIdForUser(user);
+  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
+  const canUpdateStatus =
+    viewerId === "admin" ||
+    effectivePermissionCodes.includes("orders.status.update");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,7 +82,7 @@ export default function InternalOrdersPage() {
   // ============================================
   // ✅ CARGAR PEDIDOS
   // ============================================
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -88,8 +94,8 @@ export default function InternalOrdersPage() {
       const normalizedOrders = ordersList.map((order) => ({
         id: order.id,
         orderNumber: `#DAY-${String(order.id).padStart(4, '0')}`,
-        customer: order.user?.name || order.customer_name || "Cliente",
-        email: order.user?.email || order.email || "No disponible",
+        customer: order.customer_name || order.user?.name || "Cliente",
+        email: order.customer_email || order.user?.email || order.email || "No disponible",
         date: order.created_at,
         total: order.total || order.products_subtotal || 0,
         status: order.status || "pending",
@@ -105,33 +111,29 @@ export default function InternalOrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // ============================================
   // ✅ VERIFICAR AUTENTICACIÓN Y ROL
   // ============================================
   useEffect(() => {
-    const initializeOrders = async () => {
-      if (!authLoading && !isAuthenticated) {
-        // eslint-disable-next-line no-undef
-        navigate(routePaths.account.login);
+    if (!authLoading && !isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
+    }
+
+    if (!authLoading && isAuthenticated) {
+      if (viewerId !== "admin" && viewerId !== "employee") {
+        navigate(routePaths.support.unauthorized || "/no-autorizado");
         return;
       }
 
-      if (!authLoading && isAuthenticated) {
-        const viewerId = getViewerIdForUser(user);
-        if (viewerId !== "admin" && viewerId !== "employee") {
-          // eslint-disable-next-line no-undef
-          navigate(routePaths.support.unauthorized || "/no-autorizado");
-          return;
-        }
-        await loadOrders();
-      }
-    };
-
-    initializeOrders();
-     
-  }, [isAuthenticated, authLoading, user]);
+      const timeoutId = window.setTimeout(loadOrders, 0);
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+  }, [isAuthenticated, authLoading, viewerId, navigate, loadOrders]);
 
   // ============================================
   // ✅ ACTUALIZAR ESTADO DEL PEDIDO
@@ -179,7 +181,7 @@ export default function InternalOrdersPage() {
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ordersPerPage));
 
   // Estadísticas
   const stats = {
@@ -269,7 +271,7 @@ export default function InternalOrdersPage() {
             color: "#D32F2F",
             marginBottom: "20px",
           }}>
-            ⚠️ {error}
+            {error}
           </div>
         )}
 
@@ -310,7 +312,10 @@ export default function InternalOrdersPage() {
                 type="text"
                 placeholder="Buscar por cliente o pedido..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 style={{
                   border: "none",
                   padding: "10px 0",
@@ -349,7 +354,10 @@ export default function InternalOrdersPage() {
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             <button
-              onClick={() => setFilterStatus("all")}
+              onClick={() => {
+                setFilterStatus("all");
+                setCurrentPage(1);
+              }}
               style={{
                 padding: "4px 14px",
                 border: `1px solid ${filterStatus === "all" ? "#8B5E3C" : "#E8DCCC"}`,
@@ -369,7 +377,10 @@ export default function InternalOrdersPage() {
               return (
                 <button
                   key={status.value}
-                  onClick={() => setFilterStatus(status.value)}
+                  onClick={() => {
+                    setFilterStatus(status.value);
+                    setCurrentPage(1);
+                  }}
                   style={{
                     padding: "4px 14px",
                     border: `1px solid ${filterStatus === status.value ? status.color : "#E8DCCC"}`,
@@ -482,33 +493,35 @@ export default function InternalOrdersPage() {
                             >
                               <FaEye size={14} /> Ver
                             </Link>
-                            <button
-                              onClick={() => openStatusModal(order)}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                padding: "6px 14px",
-                                borderRadius: "6px",
-                                border: "1px solid #8B5E3C",
-                                background: "transparent",
-                                color: "#8B5E3C",
-                                fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                                cursor: "pointer",
-                                fontWeight: 500,
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#8B5E3C";
-                                e.currentTarget.style.color = "#FFFFFF";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "transparent";
-                                e.currentTarget.style.color = "#8B5E3C";
-                              }}
-                            >
-                              <FaSpinner size={14} /> Estado
-                            </button>
+                            {canUpdateStatus && (
+                              <button
+                                onClick={() => openStatusModal(order)}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "6px 14px",
+                                  borderRadius: "6px",
+                                  border: "1px solid #8B5E3C",
+                                  background: "transparent",
+                                  color: "#8B5E3C",
+                                  fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                  transition: "all 0.2s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = "#8B5E3C";
+                                  e.currentTarget.style.color = "#FFFFFF";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = "transparent";
+                                  e.currentTarget.style.color = "#8B5E3C";
+                                }}
+                              >
+                                <FaSpinner size={14} /> Estado
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

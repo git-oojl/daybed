@@ -73,7 +73,32 @@ function IconLoading() {
 // FORMATO DE PRECIOS
 // ============================================
 function formatPrice(amount) {
-  return `$${amount.toLocaleString("es-MX")} MX`;
+  return `$${Number(amount || 0).toLocaleString("es-MX")} MX`;
+}
+
+function formatDistance(distanceKm) {
+  const distance = Number(distanceKm || 0);
+  if (!distance) return "Pendiente";
+  return `${distance.toLocaleString("es-MX", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: distance < 10 ? 1 : 0,
+  })} km`;
+}
+
+function formatRouteDuration(minutes) {
+  const totalMinutes = Math.max(1, Math.round(Number(minutes || 0)));
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  return remainingMinutes ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
+}
+
+function deliveryCalculationLabel(estimate) {
+  if (!estimate) return "Pendiente de validar";
+  return estimate.distance_provider === "openrouteservice"
+    ? "Ruta de manejo calculada"
+    : "Estimación aproximada";
 }
 
 function getCartItemProduct(item) {
@@ -248,8 +273,6 @@ export default function CheckoutSummaryPage() {
     // ✅ 3. INTENTAR CADA VARIACIÓN
     for (const address of addressVariations) {
       try {
-        console.log(`🔍 Intentando: "${address}"`);
-        
         const geocode = await deliveryService.geocode({ address });
         
         const orderSubtotal = cartItems.reduce(
@@ -266,15 +289,12 @@ export default function CheckoutSummaryPage() {
         setDeliveryEstimate(estimate);
         geocodeSuccess = true;
 
-        console.log('✅ Éxito con formato:', address);
-
         setAddressValidated(true);
         setError(null);
         
         break;
         
       } catch (err) {
-        console.warn(`❌ Falló formato: "${address}"`, err.message);
         lastError = err;
       }
     }
@@ -467,12 +487,12 @@ export default function CheckoutSummaryPage() {
     );
   }
 
-  if (error && !submitting && !geocoding) {
+  if (error && !submitting && !geocoding && cartItems.length === 0) {
     return (
       <div className="home-page checkout-page">
         <HomeHeader />
         <div className="checkout-error">
-          <p>❌ {error}</p>
+          <p>{error}</p>
           <button onClick={loadCheckoutData}>Reintentar</button>
         </div>
         <HomeFooter />
@@ -525,7 +545,7 @@ export default function CheckoutSummaryPage() {
       <main className="checkout-container">
         {error && (
           <div className="checkout__alert checkout__alert--error">
-            <span>⚠️ {error}</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -722,8 +742,9 @@ export default function CheckoutSummaryPage() {
                         {geocodeResult.formatted_address || `${formData.calle}, ${formData.colonia}, ${formData.ciudad}, ${formData.estado} - CP ${formData.codigoPostal}`}
                       </p>
                       <div className="checkout-address-validation__details">
-                        <span>✅ Dirección verificada</span>
-                        <span>📦 Envío estimado: {formatPrice(shippingCost)}</span>
+                        <span>Dirección verificada</span>
+                        <span>{deliveryCalculationLabel(deliveryEstimate)}</span>
+                        <span>Envío: {formatPrice(shippingCost)}</span>
                       </div>
                     </div>
                   </div>
@@ -757,7 +778,11 @@ export default function CheckoutSummaryPage() {
                     />
                     <div className="checkout-shipping-option__info">
                       <span className="checkout-shipping-option__title">Envío estándar</span>
-                      <span className="checkout-shipping-option__desc">3-5 días hábiles</span>
+                      <span className="checkout-shipping-option__desc">
+                        {deliveryEstimate
+                          ? `${formatDistance(deliveryEstimate.distance_km)} · ruta ${formatRouteDuration(deliveryEstimate.estimated_duration_minutes)}`
+                          : "Valida tu dirección para calcular distancia y costo"}
+                      </span>
                       <span className="checkout-shipping-option__price">
                         {deliveryEstimate ? formatPrice(shippingCost) : "Valida tu dirección"}
                       </span>
@@ -769,6 +794,22 @@ export default function CheckoutSummaryPage() {
                   <p className="checkout-estimated-date__label">Fecha estimada de entrega:</p>
                   <p className="checkout-estimated-date__value">{getEstimatedDate()}</p>
                 </div>
+                {deliveryEstimate && (
+                  <div className="checkout-route-summary">
+                    <div className="checkout-route-summary__item">
+                      <span>Distancia</span>
+                      <strong>{formatDistance(deliveryEstimate.distance_km)}</strong>
+                    </div>
+                    <div className="checkout-route-summary__item">
+                      <span>Tiempo de ruta</span>
+                      <strong>{formatRouteDuration(deliveryEstimate.estimated_duration_minutes)}</strong>
+                    </div>
+                    <div className="checkout-route-summary__item">
+                      <span>Cálculo</span>
+                      <strong>{deliveryCalculationLabel(deliveryEstimate)}</strong>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -872,7 +913,8 @@ export default function CheckoutSummaryPage() {
                       alt={getCartItemName(item)} 
                       loading="lazy"
                       onError={(e) => {
-                        e.target.src = productImage({});
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = productImage({});
                       }}
                     />
                     <div className="checkout-item__info">

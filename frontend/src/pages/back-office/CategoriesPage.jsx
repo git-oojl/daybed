@@ -1,6 +1,6 @@
 // CategoriesPage.jsx
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -25,9 +25,6 @@ import {
 import { catalogService } from "../../services/backendServices.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
-
-// eslint-disable-next-line no-unused-vars
-const API_URL = "http://localhost:8000";
 
 // ============================================
 // ✅ MAPA DE ICONOS POR CATEGORÍA
@@ -57,9 +54,12 @@ const normalizeString = (str) => {
     .toLowerCase();
 };
 
-const getStatusValue = (status) => {
-  if (typeof status === "boolean") return status;
-  return status === "active" || status === "Activo";
+const getStatusValue = (categoryOrStatus) => {
+  if (typeof categoryOrStatus === "boolean") return categoryOrStatus;
+  if (typeof categoryOrStatus === "object" && categoryOrStatus !== null) {
+    return categoryOrStatus.active !== false;
+  }
+  return categoryOrStatus === "active" || categoryOrStatus === "Activo";
 };
 
 const getStatusLabel = (status) => {
@@ -70,6 +70,7 @@ const getStatusLabel = (status) => {
 // ✅ COMPONENTE PRINCIPAL
 // ============================================
 export default function CategoriesPage() {
+  const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
@@ -77,11 +78,11 @@ export default function CategoriesPage() {
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
   
   // ✅ PERMISOS
-  const canCreate = isAdmin || effectivePermissionCodes.includes("categories.create");
-  const canUpdate = isAdmin || effectivePermissionCodes.includes("categories.update");
-  const canDeactivate = isAdmin;
-  // eslint-disable-next-line no-unused-vars
-  const canView = isAdmin || effectivePermissionCodes.includes("categories.view");
+  const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
+  const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
+  const canDeactivate =
+    isAdmin || effectivePermissionCodes.includes("products.deactivate");
+  const canView = isAdmin || effectivePermissionCodes.includes("products.view");
 
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -101,18 +102,18 @@ export default function CategoriesPage() {
   // ============================================
   // ✅ CARGAR CATEGORÍAS Y CONTAR PRODUCTOS
   // ============================================
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       // Obtener categorías
-      const response = await catalogService.manageCategories();
+      const response = await catalogService.manageCategories({ page_size: 100 });
       let categoriesData = response.results || response || [];
       
       // Obtener productos para contar por categoría
       try {
-        const productsResponse = await catalogService.manageProducts();
+        const productsResponse = await catalogService.manageProducts({ page_size: 1000 });
         const products = productsResponse.results || productsResponse || [];
         
         // Contar productos por categoría
@@ -130,30 +131,53 @@ export default function CategoriesPage() {
           product_count: productCounts[category.id] || 0,
         }));
         
-        console.log(`✅ ${categoriesData.length} categorías cargadas con conteo de productos`);
-      } catch (err) {
-        console.warn("⚠️ No se pudo obtener el conteo de productos:", err);
+      } catch {
+        categoriesData = categoriesData.map(category => ({
+          ...category,
+          product_count: category.product_count || 0,
+        }));
       }
       
       setCategories(categoriesData);
     } catch (err) {
-      console.error("❌ Error al cargar categorías:", err);
+      console.error("Error al cargar categorías:", err);
       setError(err.message || "Error al cargar categorías");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      if (!isAdmin && !isEmployee) {
-        // Redirigir si no es admin ni empleado
-        return;
-      }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchCategories();
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      navigate(routePaths.account.login);
+      return;
     }
-  }, [authLoading, isAuthenticated, isAdmin, isEmployee]);
+
+    if (!isAdmin && !isEmployee) {
+      navigate(routePaths.support.unauthorized || "/no-autorizado");
+      return;
+    }
+
+    if (!canView) {
+      navigate(routePaths.support.unauthorized || "/no-autorizado");
+      return;
+    }
+
+    const timeoutId = window.setTimeout(fetchCategories, 0);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    authLoading,
+    isAuthenticated,
+    isAdmin,
+    isEmployee,
+    canView,
+    navigate,
+    fetchCategories,
+  ]);
 
   // ============================================
   // ✅ FILTRAR CATEGORÍAS
@@ -162,7 +186,7 @@ export default function CategoriesPage() {
     const normalizedSearch = normalizeString(searchTerm);
     const normalizedName = normalizeString(category.name);
     const matchesSearch = normalizedName.includes(normalizedSearch);
-    const categoryStatus = getStatusLabel(category.status);
+    const categoryStatus = getStatusLabel(category);
     const matchesStatus =
       filterStatus === "Todos" || categoryStatus === filterStatus;
     return matchesSearch && matchesStatus;
@@ -176,7 +200,7 @@ export default function CategoriesPage() {
       setEditingCategory(category);
       setFormData({
         name: category.name,
-        status: getStatusValue(category.status) ? "active" : "inactive",
+        status: getStatusValue(category) ? "active" : "inactive",
       });
     } else {
       setEditingCategory(null);
@@ -219,7 +243,7 @@ export default function CategoriesPage() {
       handleCloseModal();
       await fetchCategories();
     } catch (err) {
-      console.error("❌ Error al guardar categoría:", err);
+      console.error("Error al guardar categoría:", err);
       setError(err.message || "Error al guardar categoría");
     } finally {
       setUpdating(false);
@@ -230,7 +254,7 @@ export default function CategoriesPage() {
   // ✅ CAMBIAR ESTADO
   // ============================================
   const handleToggleStatus = async (category) => {
-    const newActive = !getStatusValue(category.status);
+    const newActive = !getStatusValue(category);
     const newStatus = newActive ? "Activo" : "Inactivo";
     
     if (!window.confirm(`¿Cambiar estado de "${category.name}" a "${newStatus}"?`)) {
@@ -241,10 +265,10 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      await catalogService.updateCategory(category.slug, { active: newActive });
+      await catalogService.updateCategory(category.slug || category.id, { active: newActive });
       await fetchCategories();
     } catch (err) {
-      console.error("❌ Error al cambiar estado:", err);
+      console.error("Error al cambiar estado:", err);
       setError(err.message || "Error al cambiar estado");
     } finally {
       setUpdating(false);
@@ -252,7 +276,7 @@ export default function CategoriesPage() {
   };
 
   // ============================================
-  // ✅ DESACTIVAR CATEGORÍA (SOLO ADMIN)
+  // ✅ DESACTIVAR CATEGORÍA
   // ============================================
   const handleDelete = async (category) => {
     if (!isAdmin) {
@@ -268,10 +292,10 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      await catalogService.updateCategory(category.slug, { active: false });
+      await catalogService.updateCategory(category.slug || category.id, { active: false });
       await fetchCategories();
     } catch (err) {
-      console.error("❌ Error al desactivar categoría:", err);
+      console.error("Error al desactivar categoría:", err);
       setError(err.message || "Error al desactivar categoría");
     } finally {
       setUpdating(false);
@@ -621,31 +645,32 @@ export default function CategoriesPage() {
                     </button>
                   )}
                   
-                  {/* BOTÓN DE ESTADO */}
-                  <button
-                    onClick={() => handleToggleStatus(category)}
-                    disabled={updating}
-                    style={{
-                      backgroundColor: getStatusValue(category.status) ? "#E8F5E9" : "#FFF3E0",
-                      color: getStatusValue(category.status) ? "#2E7D32" : "#EF6C00",
-                      border: "1px solid",
-                      borderColor: getStatusValue(category.status) ? "#A5D6A7" : "#FFCC80",
-                      padding: "8px 18px",
-                      borderRadius: "25px",
-                      fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                      fontWeight: 600,
-                      cursor: updating ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.2s ease",
-                      flex: 1,
-                      justifyContent: "center",
-                      opacity: updating ? 0.5 : 1,
-                    }}
-                  >
-                    {updating ? <FaSpinner className="spinner" /> : getStatusLabel(category.status)}
-                  </button>
+                  {canUpdate && (
+                    <button
+                      onClick={() => handleToggleStatus(category)}
+                      disabled={updating}
+                      style={{
+                        backgroundColor: getStatusValue(category) ? "#E8F5E9" : "#FFF3E0",
+                        color: getStatusValue(category) ? "#2E7D32" : "#EF6C00",
+                        border: "1px solid",
+                        borderColor: getStatusValue(category) ? "#A5D6A7" : "#FFCC80",
+                        padding: "8px 18px",
+                        borderRadius: "25px",
+                        fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
+                        fontWeight: 600,
+                        cursor: updating ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.2s ease",
+                        flex: 1,
+                        justifyContent: "center",
+                        opacity: updating ? 0.5 : 1,
+                      }}
+                    >
+                      {updating ? <FaSpinner className="spinner" /> : getStatusLabel(category)}
+                    </button>
+                  )}
 
                   {/* DESACTIVAR - SOLO ADMIN */}
                   {canDeactivate && (
@@ -691,15 +716,15 @@ export default function CategoriesPage() {
                 >
                   <span
                     style={{
-                      backgroundColor: getStatusValue(category.status) ? "#E8F5E9" : "#FDECEA",
-                      color: getStatusValue(category.status) ? "#2E7D32" : "#D32F2F",
+                      backgroundColor: getStatusValue(category) ? "#E8F5E9" : "#FDECEA",
+                      color: getStatusValue(category) ? "#2E7D32" : "#D32F2F",
                       padding: "4px 16px",
                       borderRadius: "20px",
                       fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
                       fontWeight: 600,
                     }}
                   >
-                    {getStatusLabel(category.status)}
+                    {getStatusLabel(category)}
                   </span>
                   <Link
                     to={`${routePaths.backOffice.products}?categoria=${category.id}`}

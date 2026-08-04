@@ -135,13 +135,11 @@ def test_successful_estimate_mocks_openrouteservice(monkeypatch):
         return response(
             200,
             {
-                "features": [
+                "routes": [
                     {
-                        "properties": {
-                            "summary": {
-                                "distance": 12500,
-                                "duration": 1800,
-                            }
+                        "summary": {
+                            "distance": 12500,
+                            "duration": 1800,
                         }
                     }
                 ]

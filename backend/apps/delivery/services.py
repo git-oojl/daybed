@@ -168,7 +168,7 @@ def estimate_delivery(latitude, longitude, order_subtotal=None):
         raise DeliveryServiceError("Distance provider failed.") from exc
 
     try:
-        summary = response.json()["features"][0]["properties"]["summary"]
+        summary = _openrouteservice_summary(response.json())
         distance_km = _distance(_decimal(summary["distance"]) / Decimal("1000"))
         duration_minutes = _duration(_decimal(summary["duration"]) / Decimal("60"))
     except (KeyError, IndexError, TypeError) as exc:
@@ -196,6 +196,18 @@ def estimate_delivery(latitude, longitude, order_subtotal=None):
         ),
         free_shipping_threshold=store_settings.free_shipping_threshold,
     )
+
+
+def _openrouteservice_summary(payload):
+    routes = payload.get("routes")
+    if routes:
+        return routes[0]["summary"]
+
+    features = payload.get("features")
+    if features:
+        return features[0]["properties"]["summary"]
+
+    raise KeyError("summary")
 
 
 def _fallback_distance_km(

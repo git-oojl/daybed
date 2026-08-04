@@ -1,6 +1,6 @@
 // ProductsPage.jsx - CON VALIDACIÓN DE ACCESO
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -26,28 +26,27 @@ import {
   FaLink,
 } from "react-icons/fa";
 import { catalogService } from "../../services/backendServices.js";
-import { getAccessToken } from "../../auth/tokenStorage.js";
 import { productImage } from "../../services/viewMappers.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
 
-const API_URL = "http://localhost:8000";
-const DELETED_PRODUCTS_KEY = 'daybed_deleted_products';
 const PAGE_SIZE = 10;
 
 export default function ProductsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get("categoria") || "";
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const isEmployee = viewerId === "employee";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
   
-  // ✅ PERMISOS: Empleado puede CREAR y EDITAR, pero NO ELIMINAR
+  // Permisos de catálogo alineados con el backend.
   const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
   const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
-  const canDelete = isAdmin; // ✅ SOLO ADMIN
+  const canDelete = isAdmin || effectivePermissionCodes.includes("products.deactivate");
   const canView = isAdmin || effectivePermissionCodes.includes("products.view");
 
   // ============================================
@@ -78,21 +77,9 @@ export default function ProductsPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
+  const [filterCategory, setFilterCategory] = useState(categoryParam);
   const [filterStatus, setFilterStatus] = useState("");
   const [deletingId, setDeletingId] = useState(null);
-  const [deletedIds, setDeletedIds] = useState(() => {
-    if (typeof window === "undefined") return [];
-
-    const saved = window.localStorage.getItem(DELETED_PRODUCTS_KEY);
-    if (!saved) return [];
-
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return [];
-    }
-  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -116,14 +103,6 @@ export default function ProductsPage() {
   const initialLoad = useRef(true);
   const isFetching = useRef(false);
 
-  const getToken = useCallback(() => {
-    return getAccessToken() || localStorage.getItem('access_token');
-  }, []);
-
-// ProductsPage.jsx - fetchProducts CORREGIDO
-
-// ProductsPage.jsx - fetchProducts CORREGIDO PARA ADMIN Y EMPLEADO
-
 const fetchProducts = useCallback(async () => {
   if (isFetching.current) return;
   isFetching.current = true;
@@ -146,35 +125,20 @@ const fetchProducts = useCallback(async () => {
     const response = await catalogService.manageProducts(params);
     let productsData = response.results || response || [];
     
-    // ✅ 1. FILTRAR POR ESTADO (si el filtro está activo)
     if (filterStatus === "active") {
       productsData = productsData.filter(p => p.active === true);
     } else if (filterStatus === "inactive") {
       productsData = productsData.filter(p => p.active === false);
     }
-    
-    // ✅ 2. FILTRAR PRODUCTOS ELIMINADOS (USANDO deletedIds)
-    // Esto aplica para TODOS los usuarios (admin y empleado)
-    if (deletedIds.length > 0) {
-      productsData = productsData.filter(p => !deletedIds.includes(p.id));
-      console.log(`🗑️ Filtrados ${deletedIds.length} productos eliminados`);
-    }
-    
-    // ✅ 3. FILTRAR POR ESTADO REAL (active: false) - SOLO para admin
-    // Los admin pueden ver productos inactivos, pero los eliminados lógicamente
-    // deberían tener active: false y no mostrarse como activos
-    if (filterStatus === "active") {
-      productsData = productsData.filter(p => p.active === true);
-    } else if (filterStatus === "inactive") {
-      productsData = productsData.filter(p => p.active === false);
-    }
+
+    const total = typeof response.count === "number"
+      ? response.count
+      : productsData.length;
     
     setProducts(productsData);
-    setTotalCount(productsData.length || 0);
-    setTotalPages(Math.ceil((productsData.length || 0) / PAGE_SIZE));
+    setTotalCount(total);
+    setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
     setError(null);
-    
-    console.log(`✅ ${productsData.length} productos cargados`);
     
   } catch (err) {
     console.error("Error al cargar productos:", err);
@@ -183,17 +147,11 @@ const fetchProducts = useCallback(async () => {
     setLoading(false);
     isFetching.current = false;
   }
-}, [currentPage, deletedIds, filterCategory, filterStatus, searchTerm]);
+}, [currentPage, filterCategory, filterStatus, searchTerm]);
 
   const fetchCategories = useCallback(async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        console.warn("No hay token para cargar categorías");
-        return;
-      }
-      
-      const response = await catalogService.manageCategories();
+      const response = await catalogService.manageCategories({ page_size: 100 });
       let categoriesData = [];
       if (Array.isArray(response)) {
         categoriesData = response;
@@ -205,23 +163,9 @@ const fetchProducts = useCallback(async () => {
       setCategories(categoriesData);
     } catch (err) {
       console.error("Error al cargar categorías:", err);
-      try {
-        const token = getToken();
-        const response = await fetch(`${API_URL}/api/catalog/manage/categories/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data.results || data || []);
-        }
-      } catch (e) {
-        console.error("Error en fetch directo:", e);
-      }
+      setCategories([]);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => {
     if (initialLoad.current) {
@@ -414,50 +358,21 @@ const fetchProducts = useCallback(async () => {
     }
   };
 
-// ProductsPage.jsx - handleDelete CORREGIDO
-
 const handleDelete = async (id) => {
-  if (!isAdmin) {
-    setError("No tienes permisos para eliminar productos");
+  if (!canDelete) {
+    setError("No tienes permisos para desactivar productos");
     return;
   }
   
   if (window.confirm("¿Desactivar este producto? (Se ocultará del catálogo)")) {
     try {
       setDeletingId(id);
-      const token = getToken();
-      
-      if (!token) {
-        setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
-        setDeletingId(null);
-        return;
-      }
+      await catalogService.updateProduct(id, { active: false });
+      setError(null);
 
-      // ✅ USAR PATCH para desactivar lógicamente
-      const response = await fetch(`${API_URL}/api/catalog/manage/products/${id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ active: false })
-      });
-
-      if (response.ok) {
-        // ✅ Actualizar estado local
-        setProducts(prev => prev.filter(p => p.id !== id));
-        setTotalCount(prev => prev - 1);
-        
-        // ✅ Guardar en localStorage para ocultar en futuras cargas
-        const newDeletedIds = [...deletedIds, id];
-        setDeletedIds(newDeletedIds);
-        localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(newDeletedIds));
-        
-        setError(null);
-        console.log(`🗑️ Producto ${id} desactivado correctamente`);
+      if (products.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(errorData.detail || "Error al desactivar producto");
         await fetchProducts();
       }
     } catch (err) {
@@ -476,7 +391,7 @@ const handleDelete = async (id) => {
       <div className="home-page dashboard-page">
         <HomeHeader />
         <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <h2>🔒 Acceso no autorizado</h2>
+          <h2>Acceso no autorizado</h2>
           <p style={{ color: "#7A6B5A" }}>No tienes permisos para ver esta página.</p>
           <Link to={routePaths.public.home} style={{
             display: "inline-block",
@@ -618,7 +533,6 @@ const handleDelete = async (id) => {
             }}
           >
             Lista de productos {totalCount > 0 && `(${totalCount})`}
-            {deletedIds.length > 0 && ` (${deletedIds.length} eliminados)`}
           </h2>
           {canCreate && (
             <button
@@ -901,7 +815,7 @@ const handleDelete = async (id) => {
                               fontSize: "0.85rem",
                             }}
                           >
-                            ${product.price?.toLocaleString()}
+                            ${Number(product.price || 0).toLocaleString("es-MX")}
                           </td>
                           <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <span
@@ -924,21 +838,37 @@ const handleDelete = async (id) => {
                             </span>
                           </td>
                           <td style={{ textAlign: "center", padding: "10px 8px" }}>
-                            <button
-                              onClick={() => handleToggleStatus(product.id)}
-                              style={{
-                                padding: "3px 12px",
-                                borderRadius: "20px",
-                                border: "none",
-                                fontWeight: 600,
-                                fontSize: "0.7rem",
-                                cursor: "pointer",
-                                background: getStatusBg(product.active),
-                                color: getStatusColor(product.active),
-                              }}
-                            >
-                              {getStatusLabel(product.active)}
-                            </button>
+                            {canUpdate ? (
+                              <button
+                                onClick={() => handleToggleStatus(product.id)}
+                                style={{
+                                  padding: "3px 12px",
+                                  borderRadius: "20px",
+                                  border: "none",
+                                  fontWeight: 600,
+                                  fontSize: "0.7rem",
+                                  cursor: "pointer",
+                                  background: getStatusBg(product.active),
+                                  color: getStatusColor(product.active),
+                                }}
+                              >
+                                {getStatusLabel(product.active)}
+                              </button>
+                            ) : (
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "3px 12px",
+                                  borderRadius: "20px",
+                                  fontWeight: 600,
+                                  fontSize: "0.7rem",
+                                  background: getStatusBg(product.active),
+                                  color: getStatusColor(product.active),
+                                }}
+                              >
+                                {getStatusLabel(product.active)}
+                              </span>
+                            )}
                           </td>
                           <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <div
@@ -992,7 +922,7 @@ const handleDelete = async (id) => {
                                   disabled={deletingId === product.id}
                                 >
                                   <FaTrash size={11} />{" "}
-                                  {deletingId === product.id ? "Eliminando..." : "Eliminar"}
+                                  {deletingId === product.id ? "Desactivando..." : "Desactivar"}
                                 </button>
                               )}
                             </div>

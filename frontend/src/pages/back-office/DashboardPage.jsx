@@ -130,8 +130,9 @@ export default function DashboardPage() {
       if (Array.isArray(data.recent_orders)) {
         setPedidos(data.recent_orders.map(order => {
           const estadoTraducido = traducirEstado(order.status || order.estado);
+          const orderId = order.id || order.order_id;
           return {
-            id: order.id || order.order_id || `#${String(Math.random()).slice(2, 8)}`,
+            id: orderId ? `#DAY-${String(orderId).padStart(4, "0")}` : "-",
             cliente: order.customer_name || order.cliente || order.customer || "Cliente",
             total: order.total ? `$${Number(order.total).toLocaleString()}` : "$0",
             estado: estadoTraducido,
@@ -159,7 +160,6 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Error al cargar dashboard:", err);
       setError(err.message || "Error al cargar los datos del dashboard");
-      // Si falla, mantener los datos de ejemplo
     } finally {
       setLoading(false);
     }

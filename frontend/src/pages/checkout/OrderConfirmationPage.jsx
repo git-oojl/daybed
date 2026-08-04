@@ -1,6 +1,6 @@
 // OrderConfirmationPage.jsx
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -8,6 +8,7 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { orderService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
+import { productImage } from "../../services/viewMappers.js";
 
 // ============================================
 // ✅ ICONOS SVG
@@ -73,9 +74,35 @@ function IconLoading() {
 // ✅ FORMATO DE PRECIOS
 // ============================================
 function formatPrice(amount) {
-  if (!amount && amount !== 0) return "$0 MX";
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const numAmount = Number(amount || 0);
   return `$${numAmount.toLocaleString("es-MX")} MX`;
+}
+
+function formatOrderNumber(id) {
+  if (!id) return "-";
+  const value = String(id);
+  if (value.startsWith("#")) return value;
+  return /^\d+$/.test(value) ? `#DAY-${value.padStart(4, "0")}` : value;
+}
+
+function formatDistance(distanceKm) {
+  const distance = Number(distanceKm);
+  if (!Number.isFinite(distance) || distance <= 0) return null;
+  return `${distance.toFixed(1)} km`;
+}
+
+function formatRouteDuration(minutes) {
+  const duration = Number(minutes);
+  if (!Number.isFinite(duration) || duration <= 0) return null;
+  return duration < 60
+    ? `${Math.round(duration)} min`
+    : `${Math.floor(duration / 60)} h ${Math.round(duration % 60)} min`;
+}
+
+function deliveryCalculationLabel(order) {
+  return order?.distance_provider === "openrouteservice"
+    ? "Ruta de manejo calculada"
+    : "Estimación aproximada";
 }
 
 // ============================================
@@ -84,6 +111,7 @@ function formatPrice(amount) {
 const OrderConfirmationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { orderId: routeOrderId } = useParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   
   const [loading, setLoading] = useState(true);
@@ -107,53 +135,30 @@ const OrderConfirmationPage = () => {
 
         // ✅ 1. Intentar obtener datos del estado de navegación (desde checkout)
         const stateOrder = location.state?.orderData;
-        const stateOrderId = location.state?.orderId;
+        const stateOrderId = location.state?.orderId || routeOrderId;
 
         if (stateOrder) {
-          console.log("📦 Pedido desde estado:", stateOrder);
           setOrder(stateOrder);
-          setLoading(false);
           return;
         }
 
         // ✅ 2. Si no hay datos en estado, intentar obtener desde el backend
         if (stateOrderId) {
-          console.log("📦 Buscando pedido por ID:", stateOrderId);
           try {
             const orderData = await orderService.detail(stateOrderId);
-            console.log("📦 Pedido desde backend:", orderData);
             setOrder(orderData);
-            setLoading(false);
             return;
           } catch (err) {
-            console.warn("⚠️ No se pudo obtener el pedido del backend:", err.message);
+            setOrder(null);
+            setError(err.message || "No se pudo cargar el pedido.");
+            return;
           }
         }
 
-        // ✅ 3. Si no hay datos, usar datos de ejemplo para demostración
-        console.warn("⚠️ No hay datos de pedido, usando datos de ejemplo");
-        const demoOrder = {
-          id: `#DAY-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-          status: "pending",
-          created_at: new Date().toISOString(),
-          total: 12105,
-          products_subtotal: 11100,
-          delivery_fee: 450,
-          estimated_delivery_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          items: [
-            { product_name: "Sofa Esquinero", quantity: 1, unit_price: 8999, line_total: 8999 },
-            { product_name: "Mesa de Centro", quantity: 2, unit_price: 2499, line_total: 4998 },
-          ],
-          formatted_address: "Av. Reforma 456, Col. Juárez, Ciudad de México, CDMX - CP 06600",
-          payment_method: "Efectivo contra entrega",
-          shipping_method: "Envío estándar",
-          // ✅ Agregar nombre del cliente
-          customer_name: user?.name || user?.first_name || "Cliente",
-        };
-        setOrder(demoOrder);
+        setOrder(null);
 
       } catch (err) {
-        console.error("❌ Error al cargar confirmación:", err);
+        console.error("Error al cargar confirmación:", err);
         setError(err.message || "Error al cargar los datos del pedido");
       } finally {
         setLoading(false);
@@ -161,7 +166,7 @@ const OrderConfirmationPage = () => {
     };
 
     loadOrder();
-  }, [location.state, isAuthenticated, authLoading, navigate, user]);
+  }, [location.state, routeOrderId, isAuthenticated, authLoading, navigate]);
 
   // ============================================
   // ✅ FUNCIONES AUXILIARES
@@ -238,7 +243,7 @@ const OrderConfirmationPage = () => {
       <div className="home-page order-page">
         <HomeHeader />
         <div className="order-confirmation-error">
-          <p>❌ {error}</p>
+          <p>{error}</p>
           <button onClick={() => navigate(routePaths.public.home)}>
             Volver al inicio
           </button>
@@ -272,6 +277,8 @@ const OrderConfirmationPage = () => {
   const total = order.total || (subtotal + shipping);
   const estimatedDate = order.estimated_delivery_date || order.estimatedDate;
   const customerName = getCustomerName();
+  const routeDistance = formatDistance(order.distance_km);
+  const routeDuration = formatRouteDuration(order.estimated_duration_minutes);
 
   // ============================================
   // ✅ RENDER PRINCIPAL
@@ -310,7 +317,7 @@ const OrderConfirmationPage = () => {
         <div className="order-summary-header">
           <div className="order-summary-header__item">
             <span className="order-summary-header__label">Número de pedido</span>
-            <span className="order-summary-header__value">{order.id}</span>
+            <span className="order-summary-header__value">{formatOrderNumber(order.id)}</span>
           </div>
           <div className="order-summary-header__item">
             <span className="order-summary-header__label">Fecha</span>
@@ -349,7 +356,7 @@ const OrderConfirmationPage = () => {
                 Dirección de envío
               </header>
               <div className="order-card__body">
-                <p>{order.formatted_address || "Dirección no especificada"}</p>
+                <p>{order.formatted_address || order.original_address || "Dirección no especificada"}</p>
               </div>
             </article>
           </div>
@@ -361,13 +368,28 @@ const OrderConfirmationPage = () => {
               Resumen del pedido
             </header>
             <div className="order-card__body">
-              {orderItems.map((item, index) => (
+              {orderItems.map((item, index) => {
+                const itemName = item.product_name || item.name || "Producto";
+                const itemImage = productImage(item);
+                return (
                 <div className="order-item" key={index}>
-                  <span className="order-item__name">{item.product_name || item.name || "Producto"}</span>
+                  <span className="order-item__product">
+                    <img
+                      src={itemImage}
+                      alt={itemName}
+                      className="order-item__image"
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <span className="order-item__name">{itemName}</span>
+                  </span>
                   <span className="order-item__qty">{item.quantity || 1}</span>
                   <span className="order-item__price">{formatPrice(item.unit_price || item.price || 0)}</span>
                 </div>
-              ))}
+              );
+              })}
 
               <div className="order-totals">
                 <div className="order-totals__row">
@@ -396,7 +418,16 @@ const OrderConfirmationPage = () => {
               </header>
               <div className="order-card__body">
                 <p className="order-card__value">{estimatedDate ? formatDate(estimatedDate) : "3-5 días hábiles"}</p>
-                <p className="order-card__detail">Envío estándar</p>
+                <p className="order-card__detail">{order.shipping_method || "Envío estándar"}</p>
+                {routeDistance && (
+                  <p className="order-card__detail">{routeDistance} de ruta</p>
+                )}
+                {routeDuration && (
+                  <p className="order-card__detail">Tiempo estimado: {routeDuration}</p>
+                )}
+                {order.distance_provider && (
+                  <p className="order-card__detail">{deliveryCalculationLabel(order)}</p>
+                )}
               </div>
             </article>
 

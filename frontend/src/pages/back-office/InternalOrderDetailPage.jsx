@@ -234,7 +234,7 @@ export default function InternalOrderDetailPage() {
           </div>
         </section>
         <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p style={{ color: "#D32F2F" }}>❌ {error}</p>
+          <p style={{ color: "#D32F2F" }}>{error}</p>
           <button onClick={loadOrder} style={{
             marginTop: "1rem",
             padding: "0.5rem 2rem",

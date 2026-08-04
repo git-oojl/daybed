@@ -20,59 +20,6 @@ import {
   FaEdit,
 } from "react-icons/fa";
 
-/* const INITIAL_PRODUCTS = [
-  {
-    id: 1,
-    name: "Sofá Daybed",
-    sku: "DD37473",
-    stock: 30,
-    minStock: 30,
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=200&q=80",
-  },
-  {
-    id: 2,
-    name: "Sofá Esquinero",
-    sku: "DD73844",
-    stock: 39,
-    minStock: 20,
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=80",
-  },
-  {
-    id: 3,
-    name: "Mesa de Centro",
-    sku: "DD83482",
-    stock: 20,
-    minStock: 30,
-    status: "low",
-    image:
-      "https://images.unsplash.com/photo-1499933374294-4584851497cc?w=200&q=80",
-  },
-  {
-    id: 4,
-    name: "Black Chair",
-    sku: "DD38418",
-    stock: 6,
-    minStock: 30,
-    status: "low",
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=200&q=80",
-  },
-  {
-    id: 5,
-    name: "Lámpara Grifo",
-    sku: "LG005",
-    stock: 12,
-    minStock: 3,
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=200&q=80",
-  },
-]; */
-
 export default function InventoryPage() {
   const user = useAuthStore((state) => state.user);
   const viewerId = getViewerIdForUser(user);
