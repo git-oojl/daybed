@@ -3,7 +3,9 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./DevViewSwitcher.css";
 import {
   getDefaultModeFromBackendStatus,
+  readDevViewSwitcherOpenState,
   readDevViewSwitcherSelection,
+  saveDevViewSwitcherOpenState,
   saveDevViewSwitcherSelection,
 } from "./devViewSwitcherSelection.js";
 import { useBackendStatus } from "./useBackendStatus.js";
@@ -22,7 +24,7 @@ import {
 } from "./viewPreviewRegistry.jsx";
 
 function DevViewSwitcher() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(readDevViewSwitcherOpenState);
   const [selectedMode, setSelectedMode] = useState(getInitialSelectedMode);
   const [previewControls, setPreviewControls] = useState(
     getInitialPreviewControls,
@@ -170,7 +172,10 @@ function DevViewSwitcher() {
         aria-label="Abrir navegador de vistas"
         className="dev-view-switcher__toggle"
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          saveDevViewSwitcherOpenState(true);
+          setIsOpen(true);
+        }}
       >
         Dev views
       </button>
@@ -190,7 +195,10 @@ function DevViewSwitcher() {
         <button
           aria-label="Cerrar navegador de vistas"
           type="button"
-          onClick={() => setIsOpen(false)}
+          onClick={() => {
+            saveDevViewSwitcherOpenState(false);
+            setIsOpen(false);
+          }}
         >
           ×
         </button>

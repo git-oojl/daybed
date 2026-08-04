@@ -32,6 +32,7 @@ import CatalogPage from "../pages/public/CatalogPage.jsx";
 import ContactHelpPage from "../pages/public/ContactHelpPage.jsx";
 import HomePage from "../pages/public/HomePage.jsx";
 import ProductDetailPage from "../pages/public/ProductDetailPage.jsx";
+import SavedItemsPage from "../pages/public/SavedItemsPage.jsx";
 import EmptyStatesPage from "../pages/support/EmptyStatesPage.jsx";
 import FeedbackMessagesPage from "../pages/support/FeedbackMessagesPage.jsx";
 import LoadingStatesPage from "../pages/support/LoadingStatesPage.jsx";
@@ -106,6 +107,17 @@ export const previewViews = [
     Component: ProductDetailPage,
   },
   {
+    id: "savedItems",
+    label: "Guardados",
+    group: "Sitio público",
+    path: "/guardados",
+    defaultLayout: "public",
+    allowedLayouts: ["public"],
+    allowedViewers: accessGroups.publicStore,
+    filePath: "frontend/src/pages/public/SavedItemsPage.jsx",
+    Component: SavedItemsPage,
+  },
+  {
     id: "contactHelp",
     label: "Contacto / Ayuda",
     group: "Sitio público",
@@ -123,7 +135,7 @@ export const previewViews = [
     path: "/login",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
-    allowedViewers: accessGroups.guestOnly,
+    allowedViewers: accessGroups.all,
     filePath: "frontend/src/pages/account/LoginPage.jsx",
     Component: LoginPage,
   },
@@ -145,7 +157,7 @@ export const previewViews = [
     path: "/cuenta/perfil",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
-    allowedViewers: accessGroups.customerAccount,
+    allowedViewers: accessGroups.authenticated,
     filePath: "frontend/src/pages/account/ProfilePage.jsx",
     Component: ProfilePage,
   },

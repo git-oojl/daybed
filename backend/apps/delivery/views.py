@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsCustomer
+from apps.accounts.permissions import IsCustomerOrAdmin
 from apps.delivery.serializers import (
     DeliveryEstimateRequestSerializer,
     DeliveryEstimateResponseSerializer,
@@ -35,7 +35,7 @@ def _error_response(exc):
     tags=["Entregas"],
 )
 class GeocodeView(APIView):
-    permission_classes = (IsCustomer,)
+    permission_classes = (IsCustomerOrAdmin,)
 
     def post(self, request):
         serializer = GeocodeRequestSerializer(data=request.data)
@@ -61,7 +61,7 @@ class GeocodeView(APIView):
     tags=["Entregas"],
 )
 class DeliveryEstimateView(APIView):
-    permission_classes = (IsCustomer,)
+    permission_classes = (IsCustomerOrAdmin,)
 
     def post(self, request):
         serializer = DeliveryEstimateRequestSerializer(data=request.data)

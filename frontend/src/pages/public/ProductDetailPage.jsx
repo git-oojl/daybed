@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { generatePath, Link, useParams } from "react-router-dom";
+import { FaHeart, FaStar } from "react-icons/fa";
 import "../../assets/home-page.css";
 import "../../assets/product-detail-page.css";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
+import {
+  getSavedProductIds,
+  subscribeToSavedItems,
+  toggleSavedProduct,
+} from "../../services/savedItems.js";
 import {
   assetUrl,
   productCategoryName,
@@ -122,6 +128,20 @@ function stockLabel(product) {
   return `Disponible: ${product.stock}`;
 }
 
+function normalizeReviews(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((review, index) => ({
+      author: review?.author || `Cliente ${index + 1}`,
+      rating: Number(review?.rating || 5),
+      title: review?.title || "Buena experiencia",
+      body: review?.body || review?.text || "Producto recomendado.",
+      date: review?.date || "",
+    }))
+    .filter((review) => review.body);
+}
+
 function IconFacebook() {
   return (
     <svg
@@ -178,6 +198,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cartMessage, setCartMessage] = useState("");
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
 
   useEffect(() => {
     let active = true;
@@ -228,6 +249,8 @@ export default function ProductDetailPage() {
     return () => { active = false; };
   }, [productId]);
 
+  useEffect(() => subscribeToSavedItems(setSavedIds), []);
+
   const handleAddToCart = async () => {
     try {
       await cartService.addItem({ product_id: PRODUCT.id, quantity });
@@ -237,11 +260,26 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleToggleSaved = () => {
+    const nextIds = toggleSavedProduct(PRODUCT.id);
+    setCartMessage(
+      nextIds.includes(String(PRODUCT.id))
+        ? "Producto guardado."
+        : "Producto eliminado de guardados.",
+    );
+  };
+
   const PRODUCT = product || DEFAULT_PRODUCT;
 
   const fullTitle = PRODUCT.name;
   const dimensions = PRODUCT.structured_dimensions || {};
   const specs = PRODUCT.specifications || {};
+  const reviews = normalizeReviews(specs.reviews);
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) /
+      reviews.length
+    : 0;
+  const isSaved = savedIds.includes(String(PRODUCT.id));
   const additionalInfo = [
     ["Material", PRODUCT.material],
     ["Color", PRODUCT.color],
@@ -252,7 +290,9 @@ export default function ProductDetailPage() {
     ["Largo", formatMeasure(dimensions.length_cm, "cm")],
     ["Diámetro", formatMeasure(dimensions.diameter_cm, "cm")],
     ["Peso", formatMeasure(dimensions.weight_kg, "kg")],
-    ...Object.entries(specs).map(([key, value]) => [formatSpecLabel(key), formatSpecValue(value)]),
+    ...Object.entries(specs)
+      .filter(([key]) => key !== "reviews")
+      .map(([key, value]) => [formatSpecLabel(key), formatSpecValue(value)]),
   ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
 
   if (loading) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">Cargando producto...</p><HomeFooter /></div>;
@@ -327,6 +367,15 @@ export default function ProductDetailPage() {
             <span>{PRODUCT.category}</span>
             <span className="product-detail__rating-divider" aria-hidden="true" />
             <span>{stockLabel(PRODUCT)}</span>
+            {reviews.length ? (
+              <>
+                <span className="product-detail__rating-divider" aria-hidden="true" />
+                <span className="product-detail__stars">
+                  <FaStar aria-hidden="true" />
+                  {averageRating.toFixed(1)} ({reviews.length})
+                </span>
+              </>
+            ) : null}
           </div>
 
           <p className="product-detail__desc">{PRODUCT.description}</p>
@@ -392,6 +441,17 @@ export default function ProductDetailPage() {
             >
               Agregar al carrito
             </button>
+            <button
+              type="button"
+              className={`product-detail__btn product-detail__btn--save ${
+                isSaved ? "product-detail__btn--save-active" : ""
+              }`}
+              onClick={handleToggleSaved}
+              aria-pressed={isSaved}
+            >
+              <FaHeart aria-hidden="true" />
+              {isSaved ? "Guardado" : "Guardar"}
+            </button>
           </div>
           {cartMessage ? <p className="product-detail__cart-message">{cartMessage}</p> : null}
 
@@ -435,7 +495,7 @@ export default function ProductDetailPage() {
           {[
             { id: "descripcion", label: "Descripción" },
             { id: "info", label: "Información Adicional" },
-            { id: "reviews", label: `Reviews [${PRODUCT.reviews}]` },
+            { id: "reviews", label: `Reseñas [${reviews.length}]` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -462,10 +522,22 @@ export default function ProductDetailPage() {
             </dl>
           )}
           {activeTab === "reviews" && (
-            <p>
-              Este MVP no incluye reseñas reales todavía. El producto ya está
-              conectado al catálogo, carrito y checkout.
-            </p>
+            <div className="product-reviews">
+              {reviews.map((review) => (
+                <article className="product-review" key={`${review.author}-${review.date}`}>
+                  <div className="product-review__header">
+                    <strong>{review.author}</strong>
+                    <span>
+                      <FaStar aria-hidden="true" />
+                      {Number(review.rating || 0).toFixed(1)}
+                    </span>
+                  </div>
+                  <h3>{review.title}</h3>
+                  <p>{review.body}</p>
+                  <time>{review.date}</time>
+                </article>
+              ))}
+            </div>
           )}
         </div>
       </section>

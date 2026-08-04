@@ -1,31 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import HomeHeader from "../../components/HomeHeader.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
+import {
+  getSavedProductIds,
+  subscribeToSavedItems,
+  toggleSavedProduct,
+} from "../../services/savedItems.js";
 import { productImage, readCollection } from "../../services/viewMappers.js";
 
 const INITIAL_VISIBLE = 4;
-
-const NAV_LINKS = [
-  { label: "Inicio", path: routePaths.public.home },
-  { label: "Tienda", path: routePaths.public.catalog },
-  { label: "Sobre Nosotros", path: routePaths.public.contactHelp },
-  { label: "Contacto", path: routePaths.public.contactHelp },
-];
-
-const FOOTER_LINKS = [
-  { label: "Inicio", path: routePaths.public.home },
-  { label: "Tienda", path: routePaths.public.catalog },
-  { label: "Sobre Nosotros", path: routePaths.public.contactHelp },
-  { label: "Contacto", path: routePaths.public.contactHelp },
-];
-
-const HELP_LINKS = [
-  { label: "Opciones de Pago", path: routePaths.public.contactHelp },
-  { label: "Devoluciones", path: routePaths.public.contactHelp },
-  { label: "Políticas de privacidad", path: routePaths.public.contactHelp },
-];
 
 const CATEGORIES = [
   {
@@ -101,45 +88,6 @@ function formatPrice(amount) {
   return `$${(Number(amount) || 0).toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
 }
 
-function IconUser() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconSearch() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M20 20l-3-3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function IconHeart({ filled }) {
   return (
     <svg
@@ -159,28 +107,6 @@ function IconHeart({ filled }) {
   );
 }
 
-function IconCart() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M3 3h2l1.5 9h11L19 6H7"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="10" cy="19" r="1.5" fill="currentColor" />
-      <circle cx="17" cy="19" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
 function IconShare() {
   return (
     <svg
@@ -196,63 +122,6 @@ function IconShare() {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconCompare() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M8 6v12M16 6v12M4 10h8M12 14h8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconMenu() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconClose() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M6 6l12 12M18 6L6 18"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
       />
     </svg>
   );
@@ -305,10 +174,6 @@ function ProductCard({
               <IconShare />
               Compartir
             </button>
-            <button type="button" className="home-product__action-btn">
-              <IconCompare />
-              Comparar
-            </button>
             <button
               type="button"
               className={`home-product__action-btn${isWishlisted ? " home-product__action-btn--active" : ""}`}
@@ -316,7 +181,7 @@ function ProductCard({
               aria-pressed={isWishlisted}
             >
               <IconHeart filled={isWishlisted} />
-              Like
+              Guardar
             </button>
           </div>
         </div>
@@ -345,16 +210,10 @@ function ProductCard({
 
 function HomePage() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
-  const [cartCount, setCartCount] = useState(0);
   const [products, setProducts] = useState([]);
   const [productsError, setProductsError] = useState("");
-  const [wishlist, setWishlist] = useState([]);
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [newsletterMsg, setNewsletterMsg] = useState("");
+  const [wishlist, setWishlist] = useState(() => getSavedProductIds());
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -372,19 +231,14 @@ function HomePage() {
     };
   }, []);
 
+  useEffect(() => subscribeToSavedItems(setWishlist), []);
+
   const productsToShow = products;
   const visibleProducts = useMemo(() => {
-    const filtered = searchQuery.trim()
-      ? productsToShow.filter(
-          (p) =>
-            String(p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-            String(p.description || "").toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-      : productsToShow;
-    return filtered.slice(0, visibleCount);
-  }, [productsToShow, searchQuery, visibleCount]);
+    return productsToShow.slice(0, visibleCount);
+  }, [productsToShow, visibleCount]);
 
-  const hasMore = visibleCount < productsToShow.length && !searchQuery.trim();
+  const hasMore = visibleCount < productsToShow.length;
 
   const showToast = useCallback((message) => {
     setToast(message);
@@ -395,7 +249,6 @@ function HomePage() {
     async (product) => {
       try {
         await cartService.addItem({ product_id: product.id, quantity: 1 });
-        setCartCount((prev) => prev + 1);
         showToast(`${product.name} agregado al carrito`);
       } catch (error) {
         showToast(error.status === 401 ? "Inicia sesión para agregar productos" : "No se pudo agregar el producto");
@@ -404,13 +257,17 @@ function HomePage() {
     [showToast],
   );
 
-  const handleToggleWishlist = useCallback((productId) => {
-    setWishlist((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
-    );
-  }, []);
+  const handleToggleWishlist = useCallback(
+    (productId) => {
+      const nextIds = toggleSavedProduct(productId);
+      showToast(
+        nextIds.includes(String(productId))
+          ? "Producto guardado"
+          : "Producto eliminado de guardados",
+      );
+    },
+    [showToast],
+  );
 
   const handleShare = useCallback(
     async (product) => {
@@ -435,115 +292,9 @@ function HomePage() {
     [showToast],
   );
 
-  const handleNewsletter = (e) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim() || !newsletterEmail.includes("@")) {
-      setNewsletterMsg("Ingresa un correo válido");
-      return;
-    }
-    setNewsletterMsg("¡Gracias por suscribirte!");
-    setNewsletterEmail("");
-    showToast("Suscripción exitosa");
-  };
-
-  const closeMenu = () => setMenuOpen(false);
-
   return (
     <div className="home-page">
-      <header className="home-header">
-        <div className="home-header__inner">
-          <Link
-            to={routePaths.public.home}
-            className="home-header__logo"
-            onClick={closeMenu}
-          >
-            DayBed
-          </Link>
-
-          <nav
-            className={`home-nav${menuOpen ? " home-nav--open" : ""}`}
-            aria-label="Navegación principal"
-          >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                to={link.path}
-                className={`home-nav__link${link.path === routePaths.public.home ? " home-nav__link--active" : ""}`}
-                onClick={closeMenu}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="home-header__actions">
-            <button
-              type="button"
-              className="home-header__icon-btn"
-              aria-label="Mi cuenta"
-              onClick={() => navigate(routePaths.account.login)}
-            >
-              <IconUser />
-            </button>
-            <button
-              type="button"
-              className="home-header__icon-btn"
-              aria-label="Buscar"
-              aria-expanded={searchOpen}
-              onClick={() => setSearchOpen((prev) => !prev)}
-            >
-              <IconSearch />
-            </button>
-            <button
-              type="button"
-              className="home-header__icon-btn"
-              aria-label="Lista de deseos"
-              onClick={() => navigate(routePaths.public.catalog)}
-            >
-              <IconHeart filled={wishlist.length > 0} />
-              {wishlist.length > 0 && (
-                <span className="home-header__badge">{wishlist.length}</span>
-              )}
-            </button>
-            <button
-              type="button"
-              className="home-header__icon-btn"
-              aria-label="Carrito"
-              onClick={() => navigate(routePaths.checkout.cart)}
-            >
-              <IconCart />
-              {cartCount > 0 && (
-                <span className="home-header__badge">{cartCount}</span>
-              )}
-            </button>
-            <button
-              type="button"
-              className="home-header__menu-btn"
-              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              {menuOpen ? <IconClose /> : <IconMenu />}
-            </button>
-          </div>
-        </div>
-
-        {searchOpen && (
-          <div className="home-search">
-            <input
-              type="search"
-              className="home-search__input"
-              placeholder="Buscar productos..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setVisibleCount(productsToShow.length);
-              }}
-              autoFocus
-            />
-          </div>
-        )}
-      </header>
+      <HomeHeader />
 
       <main>
         <section className="home-hero" aria-label="Colección destacada">
@@ -602,7 +353,7 @@ function HomePage() {
               <ProductCard
                 key={product.id}
                 product={product}
-                isWishlisted={wishlist.includes(product.id)}
+                isWishlisted={wishlist.includes(String(product.id))}
                 onAddToCart={handleAddToCart}
                 onToggleWishlist={handleToggleWishlist}
                 onShare={handleShare}
@@ -647,64 +398,7 @@ function HomePage() {
         </section>
       </main>
 
-      <footer className="home-footer">
-        <div className="home-footer__inner">
-          <div>
-            <p className="home-footer__logo">Daybed.</p>
-            <p className="home-footer__address">
-              Blvd. Cucapah 20100-Sur, El Lago, 22210 Tijuana, B.C., Mexico
-            </p>
-          </div>
-
-          <div>
-            <p className="home-footer__heading">Links</p>
-            <ul className="home-footer__links">
-              {FOOTER_LINKS.map((link) => (
-                <li key={link.label}>
-                  <Link to={link.path}>{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="home-footer__heading">Ayuda</p>
-            <ul className="home-footer__links">
-              {HELP_LINKS.map((link) => (
-                <li key={link.label}>
-                  <Link to={link.path}>{link.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="home-footer__heading">Noticias</p>
-            <form className="home-newsletter" onSubmit={handleNewsletter}>
-              <input
-                type="email"
-                className="home-newsletter__input"
-                placeholder="Ingresa tu correo electrónico"
-                value={newsletterEmail}
-                onChange={(e) => {
-                  setNewsletterEmail(e.target.value);
-                  setNewsletterMsg("");
-                }}
-              />
-              <button type="submit" className="home-newsletter__btn">
-                Suscribirse
-              </button>
-            </form>
-            {newsletterMsg && (
-              <p className="home-newsletter__msg">{newsletterMsg}</p>
-            )}
-          </div>
-        </div>
-
-        <p className="home-footer__copy">
-          2023 DayBed. Todos los derechos reservados
-        </p>
-      </footer>
+      <HomeFooter />
 
       {toast && (
         <div className="home-toast" role="status">

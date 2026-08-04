@@ -10,7 +10,7 @@
 /* Hero Section */
 .catalog-hero {
   position: relative;
-  min-height: 300px;
+  min-height: 180px;
   width: 100%;
   background-size: cover;
   background-position: center;
@@ -18,54 +18,59 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  color: #2f2a25;
+  color: #ffffff;
   margin: 0;
 }
 
 .catalog-hero__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(62, 42, 27, 0.72);
 }
 
 .catalog-hero__content {
   position: relative;
   z-index: 1;
-  padding: 3rem 1.5rem;
+  width: min(1280px, calc(100% - 3rem));
+  padding: 2rem 0;
+  text-align: left;
 }
 
 .catalog-hero__content h1 {
-  font-size: 3rem;
+  font-size: 38px;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: #2f2a25;
+  margin: 0 0 0.25rem 0;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .catalog-hero__content p {
-  font-size: 1rem;
-  color: #4a453f;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
 .catalog-hero__content p a {
-  color: #4a453f;
+  color: #fce5c7;
   text-decoration: none;
 }
 
 .catalog-hero__content p a:hover {
+  color: #ffffff;
   text-decoration: underline;
 }
 
 .catalog-hero__content p span {
   margin: 0 0.5rem;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 /* Layout principal - Filtros a la izquierda */
 .catalog-main {
-  max-width: 1200px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 2.25rem 1.5rem;
 }
 
 .catalog-layout {
@@ -78,10 +83,10 @@
 /* SIDEBAR - FILTROS A LA IZQUIERDA */
 /* ============================================ */
 .catalog-filters-sidebar {
-  width: 280px;
+  width: 292px;
   flex-shrink: 0;
   background: white;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   position: sticky;
@@ -238,7 +243,7 @@
 /* Toolbar */
 .catalog-toolbar {
   background: white;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   padding: 1rem 1.25rem;
   border: 1px solid #e7dfd4;
   display: flex;
@@ -296,7 +301,7 @@
 /* Grid de productos */
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
 }
 
@@ -304,7 +309,7 @@
 .product-card {
   background: white;
   border: 1px solid #e7dfd4;
-  border-radius: 1.5rem;
+  border-radius: 0.5rem;
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   display: flex;
@@ -346,6 +351,31 @@
   font-size: 0.75rem;
   font-weight: 700;
   z-index: 2;
+}
+
+.product-card__save {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 250, 244, 0.78);
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.92);
+  color: #7b6f5d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.product-card__save:hover,
+.product-card__save--active {
+  color: #b88e2f;
+  background: #fffaf4;
+  transform: translateY(-1px);
 }
 
 .product-card__badge--new {
@@ -454,7 +484,7 @@
 
 @media (max-width: 1200px) {
   .catalog-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

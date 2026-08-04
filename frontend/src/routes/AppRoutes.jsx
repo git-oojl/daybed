@@ -68,6 +68,9 @@ const HomePage = lazy(() => import("../pages/public/HomePage.jsx"));
 const ProductDetailPage = lazy(
   () => import("../pages/public/ProductDetailPage.jsx"),
 );
+const SavedItemsPage = lazy(
+  () => import("../pages/public/SavedItemsPage.jsx"),
+);
 const EmptyStatesPage = lazy(
   () => import("../pages/support/EmptyStatesPage.jsx"),
 );
@@ -127,6 +130,10 @@ function AppRoutes() {
         <Route
           path={routePaths.public.productDetail}
           element={<ProductDetailPage />}
+        />
+        <Route
+          path={routePaths.public.savedItems}
+          element={<SavedItemsPage />}
         />
         <Route
           path={routePaths.public.contactHelp}

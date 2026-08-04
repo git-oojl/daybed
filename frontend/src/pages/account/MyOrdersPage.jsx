@@ -217,6 +217,10 @@ function MyOrdersPage() {
           paymentStatusText: getPaymentStatusLabel(order.payment_status),
           paymentReference: order.payment_reference,
           paymentMasked: order.payment_snapshot?.masked,
+          distanceKm: order.distance_km,
+          durationMinutes: order.estimated_duration_minutes,
+          geocodingProvider: order.geocoding_provider,
+          distanceProvider: order.distance_provider,
           items: Array.isArray(order.items)
             ? order.items.map((item) => ({
                 id: item.id || item.product || item.product_snapshot?.id,
@@ -610,6 +614,36 @@ function MyOrdersPage() {
                                         {order.address.state}
                                         <br />
                                         CP {order.address.zip}
+                                      </span>
+                                    </div>
+                                    <div className="orders-detail__item">
+                                      <span className="orders-detail__label">
+                                        Ruta de entrega
+                                      </span>
+                                      <span className="orders-detail__value">
+                                        {order.distanceKm
+                                          ? `${Number(order.distanceKm).toLocaleString("es-MX", {
+                                              maximumFractionDigits: 1,
+                                            })} km`
+                                          : "Sin distancia"}
+                                        {order.durationMinutes && (
+                                          <>
+                                            <br />
+                                            {Math.round(Number(order.durationMinutes))} min aprox.
+                                          </>
+                                        )}
+                                        {(order.geocodingProvider ||
+                                          order.distanceProvider) && (
+                                          <>
+                                            <br />
+                                            {[
+                                              order.geocodingProvider,
+                                              order.distanceProvider,
+                                            ]
+                                              .filter(Boolean)
+                                              .join(" + ")}
+                                          </>
+                                        )}
                                       </span>
                                     </div>
                                   </div>

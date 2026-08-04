@@ -4,11 +4,16 @@ import "../../assets/home-page.css";
 import { useState, useEffect, useCallback } from "react";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { generatePath, Link } from "react-router-dom";
-import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import { generatePath, Link, useSearchParams } from "react-router-dom";
+import { FaCheckCircle, FaExclamationTriangle, FaHeart } from "react-icons/fa";
 import { routePaths } from "../../routes/routePaths.js";
 import { catalogService, cartService } from "../../services/backendServices.js";
 import { productImage as resolveProductImage } from "../../services/viewMappers.js";
+import {
+  getSavedProductIds,
+  subscribeToSavedItems,
+  toggleSavedProduct,
+} from "../../services/savedItems.js";
 
 const normalizeCategoryDisplayName = (value = "") => {
   const text = String(value)
@@ -52,8 +57,10 @@ const getProductDetailPath = (product) =>
   generatePath(routePaths.public.productDetail, { productId: product.id });
 
 function CatalogPage() {
+  const [searchParams] = useSearchParams();
   const [sortBy, setSortBy] = useState("default");
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
@@ -121,6 +128,8 @@ function CatalogPage() {
     fetchProducts();
   }, [fetchProducts]);
 
+  useEffect(() => subscribeToSavedItems(setSavedIds), []);
+
   // ✅ Obtener categorías únicas de los productos reales
   const getProductCategories = () => {
     const categories = new Set();
@@ -163,16 +172,22 @@ function CatalogPage() {
 
   // Filtrar productos por precio y categoría
   const filteredProducts = products.filter((product) => {
+    const searchTerm = (searchParams.get("search") || "").trim().toLowerCase();
+    const matchesSearch =
+      !searchTerm ||
+      `${product.name || ""} ${product.description || ""} ${product.sku || ""} ${getProductCategoryName(product)}`
+        .toLowerCase()
+        .includes(searchTerm);
     const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
     const inPriceRange = price >= priceRange.min && price <= priceRange.max;
 
     const categoryName = getProductCategoryName(product);
 
     if (selectedCategories.length === 0) {
-      return inPriceRange;
+      return inPriceRange && matchesSearch;
     }
 
-    return inPriceRange && selectedCategories.includes(categoryName);
+    return inPriceRange && matchesSearch && selectedCategories.includes(categoryName);
   });
 
   // Ordenar productos
@@ -213,6 +228,18 @@ function CatalogPage() {
     } else {
       setSelectedCategories([...selectedCategories, category]);
     }
+  };
+
+  const handleToggleSaved = (product) => {
+    const nextIds = toggleSavedProduct(product.id);
+    const isSaved = nextIds.includes(String(product.id));
+    setNotification({
+      type: "success",
+      message: isSaved
+        ? `${product.name} agregado a guardados`
+        : `${product.name} eliminado de guardados`,
+    });
+    setTimeout(() => setNotification(null), 2500);
   };
 
   // ✅ handleAddToCart usando cartService
@@ -295,7 +322,7 @@ function CatalogPage() {
       {notification && (
         <div className="cart-notification" style={{
           position: "fixed",
-          top: "1rem",
+          top: "5.75rem",
           right: "1rem",
           background: notification.type === "error" ? '#D32F2F' : '#2f2a25',
           color: "white",
@@ -475,6 +502,22 @@ function CatalogPage() {
                             }}
                           />
                         </Link>
+                        <button
+                          type="button"
+                          className={`product-card__save ${
+                            savedIds.includes(String(product.id))
+                              ? "product-card__save--active"
+                              : ""
+                          }`}
+                          aria-label={
+                            savedIds.includes(String(product.id))
+                              ? `Quitar ${product.name} de guardados`
+                              : `Guardar ${product.name}`
+                          }
+                          onClick={() => handleToggleSaved(product)}
+                        >
+                          <FaHeart aria-hidden="true" />
+                        </button>
                         {product.badge ? (
                           <span
                             className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}

@@ -48,12 +48,21 @@ def test_cart_requires_authentication():
     assert response.status_code == 401
 
 
-def test_cart_requires_customer_role():
+def test_cart_blocks_employee_role():
     employee = create_user("empleado_cart", User.Roles.EMPLOYEE)
 
     response = api_client(employee).get(reverse("cart-detail"))
 
     assert response.status_code == 403
+
+
+def test_admin_can_use_cart_for_buyer_flow_preview():
+    admin = create_user("admin_cart", User.Roles.ADMIN)
+
+    response = api_client(admin).get(reverse("cart-detail"))
+
+    assert response.status_code == 200
+    assert response.data["items"] == []
 
 
 def test_customer_can_add_item_and_view_subtotal_without_stock_decrement():

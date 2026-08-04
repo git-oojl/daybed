@@ -25,6 +25,7 @@ import "../../assets/CSS/account/login-page.css";
 import loginBackground from "../../assets/LoginPage.jpg";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { usePreviewSession } from "../../dev-preview/usePreviewSession.js";
 import { routePaths } from "../../routes/routePaths.js";
 
 // ============================================
@@ -201,6 +202,9 @@ const DividerStyled = styled(Divider)(({ theme }) => ({
 function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading, error: authError } = useAuthStore();
+  const previewSession = usePreviewSession();
+  const previewAuthenticated =
+    previewSession.isPreview && previewSession.isAuthenticated;
 
   const [formData, setFormData] = useState({
     email: "",
@@ -224,7 +228,8 @@ function LoginPage() {
 
   const isEmailValid = validateEmail(formData.email);
   const isPasswordValid = validatePassword(formData.password);
-  const isFormValid = isEmailValid && isPasswordValid && !isLoading;
+  const isFormDisabled = isLoading || previewAuthenticated;
+  const isFormValid = isEmailValid && isPasswordValid && !isFormDisabled;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -308,6 +313,25 @@ const handleSubmit = async (e) => {
           Iniciar sesión
         </Typography>
 
+        {previewAuthenticated && (
+          <Alert
+            severity="info"
+            sx={{
+              mb: 3,
+              borderRadius: 12,
+              backgroundColor: "#F7EFE5",
+              border: "1px solid #E8DCCC",
+              "& .MuiAlert-message": {
+                color: "#4A3520",
+                fontFamily: '"Poppins", montserrat, sans-serif',
+              },
+            }}
+          >
+            Ya estas viendo el sitio como {previewSession.viewer.label}. El
+            formulario se mantiene visible solo para revisar la pantalla.
+          </Alert>
+        )}
+
         {displayError && (
           <Alert
             severity="error"
@@ -350,6 +374,7 @@ const handleSubmit = async (e) => {
               ),
             }}
             required
+            disabled={isFormDisabled}
             autoComplete="email"
           />
 
@@ -395,11 +420,16 @@ const handleSubmit = async (e) => {
               ),
             }}
             required
+            disabled={isFormDisabled}
             autoComplete="current-password"
           />
 
           <LoginButton type="submit" disabled={!isFormValid}>
-            {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
+            {previewAuthenticated
+              ? "Sesion preview activa"
+              : isLoading
+                ? "Iniciando sesión..."
+                : "Iniciar sesión"}
           </LoginButton>
         </form>
 

@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { getAccessToken } from "../auth/tokenStorage.js";
 import { normalizeApiError } from "./apiErrors.js";
+import { getPreviewFixtureResponse } from "./apiFixtures.js";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
@@ -25,13 +26,6 @@ apiClient.interceptors.request.use((config) => {
 
   if (isDevPreviewRoute()) {
     delete config.headers.Authorization;
-    if (!isReadOnlyRequest(config.method)) {
-      return Promise.reject(
-        new Error(
-          "Dev preview blocks write requests. Use real routes to test backend mutations.",
-        ),
-      );
-    }
     return config;
   }
 
@@ -49,6 +43,21 @@ apiClient.interceptors.response.use(
 );
 
 export async function apiRequest(config) {
+  const previewFixture = getPreviewFixtureResponse(config);
+  if (previewFixture !== undefined) {
+    return previewFixture;
+  }
+
+  if (
+    isDevPreviewRoute() &&
+    !isReadOnlyRequest(config.method) &&
+    previewFixture === undefined
+  ) {
+    throw new Error(
+      "Dev preview blocks this write request. Use real routes to test backend mutations.",
+    );
+  }
+
   const response = await apiClient.request(config);
   return response.data;
 }

@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsCustomer
+from apps.accounts.permissions import IsCustomerOrAdmin
 from apps.cart.models import Cart, CartItem
 from apps.cart.serializers import (
     CartItemQuantitySerializer,
@@ -32,7 +32,7 @@ def cart_item_queryset():
 
 
 class CustomerCartMixin:
-    permission_classes = (IsCustomer,)
+    permission_classes = (IsCustomerOrAdmin,)
 
     def get_cart_queryset(self):
         return Cart.objects.prefetch_related(

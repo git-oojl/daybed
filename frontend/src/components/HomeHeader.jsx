@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaSignInAlt,
+  FaUserPlus,
   FaUserCircle,
   FaSearch,
   FaHeart,
@@ -25,12 +26,20 @@ import "../assets/home-page.css";
 import { routePaths } from "../routes/routePaths.js";
 import { useAuthStore } from "../auth/authStore.js";
 import { getViewerIdForUser } from "../auth/roleMapping.js";
+import {
+  getSavedProductIds,
+  subscribeToSavedItems,
+} from "../services/savedItems.js";
 
 // ============================================
 // ICONOS
 // ============================================
 function IconUserLogin() {
   return <FaSignInAlt size={18} />;
+}
+
+function IconRegister() {
+  return <FaUserPlus size={16} />;
 }
 
 function IconUserProfile() {
@@ -107,8 +116,7 @@ function IconInventory() {
 const NAV_LINKS = [
   { label: "Inicio", path: routePaths.public.home },
   { label: "Tienda", path: routePaths.public.catalog },
-  { label: "Sobre Nosotros", path: routePaths.public.contactHelp },
-  { label: "Contacto", path: routePaths.public.contactHelp },
+  { label: "Contacto y ayuda", path: routePaths.public.contactHelp },
 ];
 
 // ============================================
@@ -116,9 +124,9 @@ const NAV_LINKS = [
 // ============================================
 export default function HomeHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
   const userMenuRef = useRef(null);
 
   const navigate = useNavigate();
@@ -133,6 +141,7 @@ export default function HomeHeader() {
   const isEmployee = viewerId === "employee";
   const isCustomer = viewerId === "customer";
   const isGuest = !isAuthenticated;
+  const canUseBuyerTools = !isEmployee;
 
   // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
@@ -144,6 +153,8 @@ export default function HomeHeader() {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  useEffect(() => subscribeToSavedItems(setSavedIds), []);
 
   const closeMenu = () => setMenuOpen(false);
   const toggleUserMenu = () => setUserMenuOpen((prev) => !prev);
@@ -165,6 +176,14 @@ export default function HomeHeader() {
     navigate(path);
   };
 
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    setMenuOpen(false);
+    navigate(`${routePaths.public.catalog}?search=${encodeURIComponent(query)}`);
+  };
+
   // ============================================
   // OBTENER ENLACES DE NAVEGACIÓN
   // ============================================
@@ -177,9 +196,9 @@ export default function HomeHeader() {
   // ============================================
   const getUserButtonLabel = () => {
     if (isAuthenticated) {
-      return user?.name || "Mi cuenta";
+      return getUserDisplayName(user) || "Mi cuenta";
     }
-    return "Iniciar sesión";
+    return "Cuenta";
   };
 
   // ============================================
@@ -198,6 +217,27 @@ export default function HomeHeader() {
   const getUserMenuItems = () => {
     const items = [];
 
+    if (isGuest) {
+      return [
+        {
+          label: "Iniciar sesión",
+          icon: <IconUserLogin />,
+          action: () => navigateTo(routePaths.account.login),
+        },
+        {
+          label: "Crear cuenta",
+          icon: <IconRegister />,
+          action: () => navigateTo(routePaths.account.register),
+        },
+        { isDivider: true },
+        {
+          label: "Guardados",
+          icon: <IconHeart filled={savedIds.length > 0} />,
+          action: () => navigateTo(routePaths.public.savedItems),
+        },
+      ];
+    }
+
     // ============================================
     // 🛡️ ADMINISTRADOR
     // ============================================
@@ -207,6 +247,27 @@ export default function HomeHeader() {
         label: "Perfil",
         icon: <IconProfile />,
         action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
+        isAdmin: false,
+      });
+
+      items.push({
+        label: "Mis pedidos",
+        icon: <IconOrders />,
+        action: () => navigateTo(routePaths.account.orders || "/cuenta/pedidos"),
+        isAdmin: false,
+      });
+
+      items.push({
+        label: "Carrito",
+        icon: <IconCart />,
+        action: () => navigateTo(routePaths.checkout.cart || "/carrito"),
+        isAdmin: false,
+      });
+
+      items.push({
+        label: "Guardados",
+        icon: <IconHeart filled={savedIds.length > 0} />,
+        action: () => navigateTo(routePaths.public.savedItems),
         isAdmin: false,
       });
 
@@ -348,6 +409,20 @@ export default function HomeHeader() {
         isAdmin: false,
       });
 
+      items.push({
+        label: "Carrito",
+        icon: <IconCart />,
+        action: () => navigateTo(routePaths.checkout.cart || "/carrito"),
+        isAdmin: false,
+      });
+
+      items.push({
+        label: "Guardados",
+        icon: <IconHeart filled={savedIds.length > 0} />,
+        action: () => navigateTo(routePaths.public.savedItems),
+        isAdmin: false,
+      });
+
       // Separador antes de cerrar sesión
       items.push({ isDivider: true });
 
@@ -402,30 +477,37 @@ export default function HomeHeader() {
 
         <div className="home-header__actions">
           {/* Búsqueda */}
-          <button
-            type="button"
-            className="home-header__icon-btn"
-            aria-label="Buscar"
-            aria-expanded={searchOpen}
-            onClick={() => setSearchOpen((prev) => !prev)}
-          >
-            <IconSearch />
-          </button>
+          <form className="home-header__search" onSubmit={handleSearchSubmit}>
+            <input
+              type="search"
+              className="home-header__search-input"
+              placeholder="Buscar"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label="Buscar productos"
+            />
+            <button type="submit" className="home-header__icon-btn" aria-label="Buscar">
+              <IconSearch />
+            </button>
+          </form>
 
-          {/* Favoritos - Solo clientes o invitados */}
-          {(isCustomer || isGuest) && (
+          {/* Guardados */}
+          {canUseBuyerTools && (
             <button
               type="button"
               className="home-header__icon-btn"
-              aria-label="Lista de deseos"
-              onClick={() => navigate(routePaths.public.catalog)}
+              aria-label="Productos guardados"
+              onClick={() => navigate(routePaths.public.savedItems)}
             >
-              <IconHeart filled={false} />
+              <IconHeart filled={savedIds.length > 0} />
+              {savedIds.length > 0 && (
+                <span className="home-header__badge">{savedIds.length}</span>
+              )}
             </button>
           )}
 
-          {/* Carrito - Solo clientes o invitados */}
-          {(isCustomer || isGuest) && (
+          {/* Carrito */}
+          {canUseBuyerTools && (
             <button
               type="button"
               className="home-header__icon-btn"
@@ -440,47 +522,42 @@ export default function HomeHeader() {
               MENÚ DE USUARIO CON DROPDOWN
               ============================================= */}
           <div className="home-header__user-wrapper" ref={userMenuRef}>
-            {isAuthenticated ? (
-              // USUARIO AUTENTICADO
-              <button
-                type="button"
-                className={`home-header__icon-btn home-header__user-btn home-header__user-btn--logged`}
-                aria-label={getUserButtonLabel()}
-                aria-expanded={userMenuOpen}
-                onClick={toggleUserMenu}
-              >
-                <IconUserProfile />
-                <span className="home-header__user-chevron">
-                  <IconChevronDown />
-                </span>
-              </button>
-            ) : (
-              // USUARIO NO AUTENTICADO
-              <button
-                type="button"
-                className="home-header__icon-btn home-header__user-btn home-header__user-btn--login"
-                aria-label="Iniciar sesión"
-                onClick={() => navigate(routePaths.account.login)}
-              >
-                <IconUserLogin />
-                <span className="home-header__user-login-label">Acceder</span>
-              </button>
-            )}
+            <button
+              type="button"
+              className={`home-header__icon-btn home-header__user-btn ${
+                isAuthenticated
+                  ? "home-header__user-btn--logged"
+                  : "home-header__user-btn--login"
+              }`}
+              aria-label={getUserButtonLabel()}
+              aria-expanded={userMenuOpen}
+              onClick={toggleUserMenu}
+            >
+              {isAuthenticated ? <IconUserProfile /> : <IconUserLogin />}
+              {!isAuthenticated && (
+                <span className="home-header__user-login-label">Cuenta</span>
+              )}
+              <span className="home-header__user-chevron">
+                <IconChevronDown />
+              </span>
+            </button>
 
-            {/* DROPDOWN DE USUARIO (solo autenticado) */}
-            {isAuthenticated && userMenuOpen && (
+            {/* DROPDOWN DE USUARIO */}
+            {userMenuOpen && (
               <div className="home-header__user-dropdown">
                 {/* Header con info del usuario */}
                 <div className="home-header__user-header">
                   <div className="home-header__user-avatar">
-                    {user?.name?.charAt(0) || "U"}
+                    {isAuthenticated
+                      ? getUserDisplayName(user).charAt(0)
+                      : "D"}
                   </div>
                   <div className="home-header__user-info">
                     <div className="home-header__user-name">
-                      {user?.name || "Usuario"}
+                      {isAuthenticated ? getUserDisplayName(user) : "Invitado"}
                     </div>
                     <div className="home-header__user-email">
-                      {user?.email || "usuario@email.com"}
+                      {user?.email || "Accede para comprar y ver pedidos"}
                     </div>
                     <div className="home-header__user-role">
                       {getRoleLabel()}
@@ -528,30 +605,16 @@ export default function HomeHeader() {
           </button>
         </div>
       </div>
-
-      {/* Búsqueda */}
-      {searchOpen && (
-        <div className="home-search">
-          <input
-            type="search"
-            className="home-search__input"
-            placeholder="Buscar productos..."
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && searchQuery.trim()) {
-                navigate(
-                  `${routePaths.public.catalog}?search=${encodeURIComponent(
-                    searchQuery
-                  )}`
-                );
-                setSearchOpen(false);
-              }
-            }}
-            autoFocus
-          />
-        </div>
-      )}
     </header>
+  );
+}
+
+function getUserDisplayName(user) {
+  return (
+    user?.name ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+    user?.username ||
+    user?.email ||
+    "Usuario"
   );
 }

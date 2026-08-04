@@ -14,7 +14,7 @@
 /* Hero Section - Full width */
 .orders-hero {
   position: relative;
-  min-height: 300px;
+  min-height: 180px;
   width: 100%;
   background-size: cover;
   background-position: center;
@@ -22,46 +22,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  color: #2f2a25;
+  color: #ffffff;
   margin: 0;
 }
 
 .orders-hero__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(62, 42, 27, 0.72);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  padding: 3rem 1.5rem;
+  align-items: flex-start;
+  padding: 2rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  text-align: left;
 }
 
 .orders-hero__title {
-  margin: 0 0 0.5rem 0;
-  font-size: 3rem;
+  margin: 0 0 0.25rem 0;
+  font-size: 38px;
   font-weight: 700;
-  color: #2f2a25;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .orders-hero__breadcrumb {
   margin: 0;
-  font-size: 1rem;
-  color: #4a453f;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .orders-hero__breadcrumb a {
-  color: #4a453f;
+  color: #fce5c7;
   text-decoration: none;
 }
 
 .orders-hero__breadcrumb a:hover {
+  color: #ffffff;
   text-decoration: underline;
 }
 
 .orders-hero__breadcrumb span {
   margin: 0 0.5rem;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 /* Main Content */

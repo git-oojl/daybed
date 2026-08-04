@@ -238,18 +238,33 @@
 }
 
 .dashboard-page .dashboard-hero__overlay {
-  padding: 24px 20px !important;
+  align-items: flex-start !important;
+  background: rgba(62, 42, 27, 0.72) !important;
+  padding: 2rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem)) !important;
+  text-align: left !important;
 }
 
 .dashboard-page .dashboard-hero h1,
 .dashboard-page .dashboard-hero__title {
   font-family: "Montserrat", sans-serif !important;
-  font-size: clamp(1.65rem, 3vw, 2.2rem) !important;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.65rem, 3vw, 2.35rem) !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
 }
 
 .dashboard-page .dashboard-hero__breadcrumb {
-  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 15px !important;
+  text-align: left !important;
+}
+
+.dashboard-page .dashboard-hero__breadcrumb a {
+  color: #fce5c7 !important;
+}
+
+.dashboard-page .dashboard-hero__breadcrumb a:hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
 }
 
 .dashboard-page .dashboard-container {

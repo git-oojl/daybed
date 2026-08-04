@@ -1,5 +1,16 @@
 import { PreviewSessionContext } from "../auth/previewSessionContext.js";
 
+const OPERATIONAL_PERMISSION_CODES = [
+  "dashboard.view",
+  "products.view",
+  "products.create",
+  "products.update",
+  "inventory.view",
+  "inventory.adjust",
+  "orders.view",
+  "orders.status.update",
+];
+
 function PreviewSessionProvider({ viewer, children }) {
   const user = viewer.isAuthenticated
     ? {
@@ -12,6 +23,10 @@ function PreviewSessionProvider({ viewer, children }) {
         state: "",
         city: "",
         role: viewer.backendRole,
+        effective_permission_codes:
+          viewer.id === "employee" || viewer.id === "admin"
+            ? OPERATIONAL_PERMISSION_CODES
+            : [],
       }
     : null;
 

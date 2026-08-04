@@ -176,6 +176,21 @@ const EMPLOYEE_SHORTCUTS = [
 
 const ADMIN_SHORTCUTS = [
   {
+    title: "Mis pedidos",
+    description: "Vista de cliente para validar compras",
+    path: routePaths.account.orders,
+  },
+  {
+    title: "Carrito",
+    description: "Probar flujo de compra como administrador",
+    path: routePaths.checkout.cart,
+  },
+  {
+    title: "Guardados",
+    description: "Lista local de productos guardados",
+    path: routePaths.public.savedItems,
+  },
+  {
     title: "Métricas del negocio",
     description: "Panel administrativo",
     path: routePaths.admin.businessMetrics,
@@ -667,6 +682,21 @@ export default function ProfilePage() {
                 <div className="profile-employee-options">
                   <button
                     className="profile-employee-option"
+                    onClick={() => navigate(routePaths.public.catalog)}
+                    type="button"
+                  >
+                    <IconUser />
+                    <span>
+                      <span className="profile-employee-option__title">
+                        Tienda
+                      </span>
+                      <span className="profile-employee-option__desc">
+                        Explora el catálogo activo
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    className="profile-employee-option"
                     onClick={() => navigate(routePaths.account.orders)}
                     type="button"
                   >
@@ -677,6 +707,36 @@ export default function ProfilePage() {
                       </span>
                       <span className="profile-employee-option__desc">
                         Historial y seguimiento de compras
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    className="profile-employee-option"
+                    onClick={() => navigate(routePaths.checkout.cart)}
+                    type="button"
+                  >
+                    <IconUser />
+                    <span>
+                      <span className="profile-employee-option__title">
+                        Carrito
+                      </span>
+                      <span className="profile-employee-option__desc">
+                        Revisa productos antes de pagar
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    className="profile-employee-option"
+                    onClick={() => navigate(routePaths.public.savedItems)}
+                    type="button"
+                  >
+                    <IconUser />
+                    <span>
+                      <span className="profile-employee-option__title">
+                        Guardados
+                      </span>
+                      <span className="profile-employee-option__desc">
+                        Productos marcados para revisar después
                       </span>
                     </span>
                   </button>

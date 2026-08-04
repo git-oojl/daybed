@@ -229,6 +229,7 @@ export default function DashboardPage() {
         }}
       >
         <div
+          className="dashboard-hero__overlay"
           style={{
             position: "absolute",
             inset: 0,
@@ -236,25 +237,28 @@ export default function DashboardPage() {
           }}
         />
         <div
+          className="dashboard-hero__content"
           style={{
             position: "relative",
             zIndex: 2,
-            textAlign: "center",
-            padding: "40px 20px",
+            textAlign: "left",
+            width: "min(1280px, calc(100% - 3rem))",
+            padding: "2rem 0",
           }}
         >
           <h1
+            className="dashboard-hero__title"
             style={{
               color: "#fff",
               fontSize: "3rem",
               marginBottom: "10px",
               fontWeight: "700",
-              fontFamily: '"Playfair Display", serif',
+              fontFamily: '"Montserrat", sans-serif',
             }}
           >
             Dashboard Interno
           </h1>
-          <p style={{ color: "#F5EDE5", fontSize: "18px" }}>
+          <p className="dashboard-hero__breadcrumb" style={{ color: "#F5EDE5", fontSize: "18px" }}>
             <Link
               to={routePaths.public.home}
               style={{ color: "#FFD36A", textDecoration: "none" }}

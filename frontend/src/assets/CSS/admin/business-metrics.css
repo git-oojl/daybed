@@ -30,11 +30,13 @@
 .business-metrics__hero-overlay {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   width: 100%;
-  text-align: center;
-  padding: 32px 20px;
+  text-align: left;
+  padding: 2rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
   background: rgba(67, 42, 3, 0.75);
 }
 .business-metrics__eyebrow,
@@ -54,11 +56,11 @@
   margin: 7px 0 10px;
   color: #fff;
   font-size: clamp(1.85rem, 4vw, 2.7rem);
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 .business-metrics__breadcrumb {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 9px;
   color: rgba(255, 255, 255, 0.86);
   font-size: 0.78rem;
@@ -114,7 +116,7 @@
 .business-metrics__heading h2 {
   margin: 5px 0 7px;
   font-size: clamp(1.4rem, 3vw, 2rem);
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 .business-metrics__heading > div > p:last-child {
   margin: 0;
@@ -188,7 +190,7 @@
 .business-metric-card__value {
   display: block;
   font-size: clamp(1.1rem, 1.8vw, 1.35rem);
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 .business-metric-card__detail {
@@ -223,7 +225,7 @@
 .business-panel__heading h3 {
   margin: 6px 0 0;
   font-size: 1rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .business-panel__heading > a {
   color: #8a6332;

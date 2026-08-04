@@ -60,6 +60,29 @@ def test_delivery_endpoints_require_authenticated_customer():
     assert estimate_response.status_code == 401
 
 
+def test_delivery_endpoints_block_employee_role():
+    employee = User.objects.create_user(
+        username="empleado_delivery",
+        email="empleado_delivery@example.com",
+        password="StrongPass123!",
+        role=User.Roles.EMPLOYEE,
+    )
+
+    geocode_response = api_client(employee).post(
+        reverse("delivery-geocode"),
+        {"address": "123 Main St"},
+        format="json",
+    )
+    estimate_response = api_client(employee).post(
+        reverse("delivery-estimate"),
+        {"latitude": "32.50000000", "longitude": "-117.00000000"},
+        format="json",
+    )
+
+    assert geocode_response.status_code == 403
+    assert estimate_response.status_code == 403
+
+
 def test_successful_geocode_mocks_nominatim(monkeypatch):
     customer = create_customer()
     calls = {}

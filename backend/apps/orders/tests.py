@@ -94,6 +94,23 @@ def test_checkout_requires_authenticated_customer():
     assert response.status_code == 401
 
 
+def test_checkout_allows_admin_buyer_flow_preview():
+    admin = create_user("admin_checkout", User.Roles.ADMIN)
+
+    response = checkout(admin)
+
+    assert response.status_code == 400
+    assert "Cart is empty" in str(response.data)
+
+
+def test_checkout_blocks_employee_role():
+    employee = create_user("empleado_checkout", User.Roles.EMPLOYEE)
+
+    response = checkout(employee)
+
+    assert response.status_code == 403
+
+
 def test_checkout_requires_non_empty_cart():
     customer = create_user("cliente_empty")
 

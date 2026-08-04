@@ -22,6 +22,37 @@ SEED_PRODUCT_IMAGE_DIR = (
     Path(__file__).resolve().parents[2] / "seed_assets" / "products"
 )
 
+DEMO_REVIEW_POOL = [
+    {
+        "author": "Mariana Lopez",
+        "rating": 5,
+        "title": "Muy buena calidad",
+        "body": "El mueble llego bien protegido y se ve igual que en el catalogo.",
+        "date": "2026-07-18",
+    },
+    {
+        "author": "Carlos Rivera",
+        "rating": 4,
+        "title": "Buena compra",
+        "body": "La entrega fue clara y el producto funciona bien para un espacio pequeno.",
+        "date": "2026-07-09",
+    },
+    {
+        "author": "Ana Martinez",
+        "rating": 5,
+        "title": "Se siente firme",
+        "body": "Los acabados se sienten cuidados y el color combina facil con la sala.",
+        "date": "2026-06-30",
+    },
+    {
+        "author": "Daniel Torres",
+        "rating": 4,
+        "title": "Practico para uso diario",
+        "body": "Lo compre para visitas y ha sido comodo sin ocupar demasiado espacio.",
+        "date": "2026-06-21",
+    },
+]
+
 
 class Command(BaseCommand):
     help = "Carga datos demo repetibles para desarrollo local con SQLite."
@@ -1152,6 +1183,15 @@ class Command(BaseCommand):
                 "gallery_assets": ["LeviosaDaybed.jpg"],
             },
         ]
+
+        for index, item in enumerate(product_data):
+            item["specifications"] = {
+                **item.get("specifications", {}),
+                "reviews": [
+                    DEMO_REVIEW_POOL[index % len(DEMO_REVIEW_POOL)],
+                    DEMO_REVIEW_POOL[(index + 1) % len(DEMO_REVIEW_POOL)],
+                ],
+            }
 
         self._validate_product_images(product_data)
         products = {}

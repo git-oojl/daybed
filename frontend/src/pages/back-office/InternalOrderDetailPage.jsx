@@ -221,7 +221,7 @@ export default function InternalOrderDetailPage() {
               fontWeight: 700,
               textShadow: "0 2px 8px rgba(0,0,0,0.6)",
               margin: 0,
-              fontFamily: '"Playfair Display", serif',
+              fontFamily: '"Montserrat", sans-serif',
             }}>Detalle de Pedido</h1>
           </div>
         </section>
@@ -271,7 +271,7 @@ export default function InternalOrderDetailPage() {
               fontWeight: 700,
               textShadow: "0 2px 8px rgba(0,0,0,0.6)",
               margin: 0,
-              fontFamily: '"Playfair Display", serif',
+              fontFamily: '"Montserrat", sans-serif',
             }}>Detalle de Pedido</h1>
           </div>
         </section>
@@ -367,7 +367,7 @@ export default function InternalOrderDetailPage() {
             fontWeight: 700,
             textShadow: "0 2px 8px rgba(0,0,0,0.6)",
             margin: 0,
-            fontFamily: '"Playfair Display", serif',
+            fontFamily: '"Montserrat", sans-serif',
           }}>Detalle de Pedido</h1>
           <p className="dashboard-hero__breadcrumb" style={{
             color: "#F5EDE5",

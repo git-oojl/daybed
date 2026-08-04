@@ -50,8 +50,8 @@ export const accessGroups = {
     viewerRoles.admin,
   ],
   authenticated: [viewerRoles.customer, viewerRoles.employee, viewerRoles.admin],
-  customerAccount: [viewerRoles.customer],
-  checkout: [viewerRoles.customer],
+  customerAccount: [viewerRoles.customer, viewerRoles.admin],
+  checkout: [viewerRoles.customer, viewerRoles.admin],
   backOffice: [viewerRoles.employee, viewerRoles.admin],
   adminOnly: [viewerRoles.admin],
   support: [
