@@ -4,7 +4,7 @@ import "../../assets/home-page.css";
 import { useState, useEffect, useCallback } from "react";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { Link } from "react-router-dom";
+import { generatePath, Link } from "react-router-dom";
 import { FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import { routePaths } from "../../routes/routePaths.js";
 import { catalogService, cartService } from "../../services/backendServices.js";
@@ -47,6 +47,9 @@ const getProductCategoryName = (product) => {
 const getProductImage = (product) => {
   return resolveProductImage(product);
 };
+
+const getProductDetailPath = (product) =>
+  generatePath(routePaths.public.productDetail, { productId: product.id });
 
 function CatalogPage() {
   const [sortBy, setSortBy] = useState("default");
@@ -457,16 +460,21 @@ function CatalogPage() {
                   return (
                     <article className="product-card" key={product.id}>
                       <div className="product-card__image">
-                        <img
-                          className="product-card__img"
-                          src={productImageUrl}
-                          alt={product.name}
-                          loading="lazy"
-                          onError={(event) => {
-                            event.currentTarget.onerror = null;
-                            event.currentTarget.src = resolveProductImage({});
-                          }}
-                        />
+                        <Link
+                          to={getProductDetailPath(product)}
+                          aria-label={`Ver detalle de ${product.name}`}
+                        >
+                          <img
+                            className="product-card__img"
+                            src={productImageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = resolveProductImage({});
+                            }}
+                          />
+                        </Link>
                         {product.badge ? (
                           <span
                             className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
@@ -475,13 +483,23 @@ function CatalogPage() {
                           </span>
                         ) : null}
                         <div className="product-card__overlay">
+                          <Link
+                            className="product-card__detail-link"
+                            to={getProductDetailPath(product)}
+                          >
+                            Ver detalle
+                          </Link>
                           <button type="button" onClick={() => handleAddToCart(product)}>
                             Agregar a carrito
                           </button>
                         </div>
                       </div>
                       <div className="product-card__body">
-                        <h3>{product.name}</h3>
+                        <h3>
+                          <Link to={getProductDetailPath(product)}>
+                            {product.name}
+                          </Link>
+                        </h3>
                         <p>{product.description || categoryName || "Mueble de calidad"}</p>
                         <span className="product-card__price">
                           {formatPrice(product.price)}

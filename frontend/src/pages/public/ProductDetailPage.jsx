@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { generatePath, Link, useParams } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/product-detail-page.css";
 import HomeFooter from "../../components/HomeFooter.jsx";
@@ -95,24 +95,31 @@ const RELATED_PRODUCTS = [
 ];
 
 function formatPrice(amount) {
-  return `$${amount.toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
+  return `$${(Number(amount) || 0).toLocaleString("es-MX")} mxn`;
 }
 
-function IconStar({ filled }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      aria-hidden="true"
-    >
-      <path
-        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+function formatMeasure(value, unit) {
+  if (value === null || value === undefined || value === "") return "";
+  return `${Number(value).toLocaleString("es-MX")} ${unit}`;
+}
+
+function formatSpecLabel(key) {
+  return String(key)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatSpecValue(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (value === null || value === undefined) return "";
+  return String(value);
+}
+
+function stockLabel(product) {
+  if (Number(product.stock) <= 0) return "Agotado";
+  if (product.low_stock) return `Últimas piezas: ${product.stock}`;
+  return `Disponible: ${product.stock}`;
 }
 
 function IconFacebook() {
@@ -187,21 +194,31 @@ export default function ProductDetailPage() {
           .filter((image) => image?.active !== false)
           .map((image) => assetUrl(image))
           .filter(Boolean);
-        const displayImages = galleryImages.length ? galleryImages : [productImage(detail)];
+        const displayImages = [
+          productImage(detail),
+          ...galleryImages,
+        ].filter((image, index, images) => image && images.indexOf(image) === index);
+        const detailTags = [
+          productCategoryName(detail),
+          detail.material,
+          detail.color,
+          detail.style,
+        ].filter(Boolean);
         const normalized = {
           ...detail,
-          subtitle: detail.description || detail.name,
+          subtitle: productCategoryName(detail),
           category: productCategoryName(detail),
-          tags: [detail.material, detail.color, detail.style].filter(Boolean),
+          tags: detailTags,
           rating: 0,
           reviews: 0,
           images: displayImages,
           galleryImages: displayImages,
           sizes: ["Único"],
-          colors: detail.color ? [{ id: detail.color, value: detail.color }] : [],
+          colors: [],
           longDescription: detail.description || "Sin descripción disponible.",
         };
         setProduct(normalized);
+        setActiveImage(0);
         setRelatedProducts(readCollection(list).filter((item) => item.id !== detail.id).slice(0, 4));
       })
       .catch((requestError) => {
@@ -222,7 +239,21 @@ export default function ProductDetailPage() {
 
   const PRODUCT = product || DEFAULT_PRODUCT;
 
-  const fullTitle = `${PRODUCT.name} ${PRODUCT.subtitle}`;
+  const fullTitle = PRODUCT.name;
+  const dimensions = PRODUCT.structured_dimensions || {};
+  const specs = PRODUCT.specifications || {};
+  const additionalInfo = [
+    ["Material", PRODUCT.material],
+    ["Color", PRODUCT.color],
+    ["Estilo", PRODUCT.style],
+    ["Ancho", formatMeasure(dimensions.width_cm, "cm")],
+    ["Alto", formatMeasure(dimensions.height_cm, "cm")],
+    ["Fondo", formatMeasure(dimensions.depth_cm, "cm")],
+    ["Largo", formatMeasure(dimensions.length_cm, "cm")],
+    ["Diámetro", formatMeasure(dimensions.diameter_cm, "cm")],
+    ["Peso", formatMeasure(dimensions.weight_kg, "kg")],
+    ...Object.entries(specs).map(([key, value]) => [formatSpecLabel(key), formatSpecValue(value)]),
+  ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
 
   if (loading) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">Cargando producto...</p><HomeFooter /></div>;
   if (error) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">{error}</p><HomeFooter /></div>;
@@ -242,7 +273,7 @@ export default function ProductDetailPage() {
             &gt;
           </span>
           <span className="product-breadcrumb__current">
-            {PRODUCT.subtitle}
+            {PRODUCT.name}
           </span>
         </div>
       </nav>
@@ -289,26 +320,13 @@ export default function ProductDetailPage() {
           className="product-detail__info"
           aria-label="Información del producto"
         >
-          <h1 className="product-detail__title">{fullTitle}</h1>
+          <h1 className="product-detail__title">{PRODUCT.name}</h1>
           <p className="product-detail__price">{formatPrice(PRODUCT.price)}</p>
 
-          <div className="product-detail__rating">
-            <div
-              className="product-detail__stars"
-              aria-label={`${PRODUCT.rating} de 5 estrellas`}
-            >
-              {[1, 2, 3, 4, 5].map((star) => (
-                <IconStar
-                  key={star}
-                  filled={star <= Math.floor(PRODUCT.rating)}
-                />
-              ))}
-            </div>
-            <span
-              className="product-detail__rating-divider"
-              aria-hidden="true"
-            />
-            <span>({PRODUCT.reviews} customer reviews)</span>
+          <div className="product-detail__rating" aria-label="Estado de inventario">
+            <span>{PRODUCT.category}</span>
+            <span className="product-detail__rating-divider" aria-hidden="true" />
+            <span>{stockLabel(PRODUCT)}</span>
           </div>
 
           <p className="product-detail__desc">{PRODUCT.description}</p>
@@ -330,22 +348,24 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="product-detail__option">
-            <span className="product-detail__option-label">Color</span>
-            <div className="product-detail__colors">
-              {PRODUCT.colors.map((color) => (
-                <button
-                  key={color.id}
-                  type="button"
-                  className={`product-detail__color-swatch${selectedColor === color.id ? " product-detail__color-swatch--active" : ""}`}
-                  style={{ backgroundColor: color.value }}
-                  onClick={() => setSelectedColor(color.id)}
-                  aria-label={`Color ${color.id}`}
-                  aria-pressed={selectedColor === color.id}
-                />
-              ))}
+          {PRODUCT.colors.length ? (
+            <div className="product-detail__option">
+              <span className="product-detail__option-label">Color</span>
+              <div className="product-detail__colors">
+                {PRODUCT.colors.map((color) => (
+                  <button
+                    key={color.id}
+                    type="button"
+                    className={`product-detail__color-swatch${selectedColor === color.id ? " product-detail__color-swatch--active" : ""}`}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setSelectedColor(color.id)}
+                    aria-label={`Color ${color.id}`}
+                    aria-pressed={selectedColor === color.id}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="product-detail__actions">
             <div className="product-detail__quantity">
@@ -371,9 +391,6 @@ export default function ProductDetailPage() {
               onClick={handleAddToCart}
             >
               Agregar al carrito
-            </button>
-            <button type="button" className="product-detail__btn">
-              + Comparar
             </button>
           </div>
           {cartMessage ? <p className="product-detail__cart-message">{cartMessage}</p> : null}
@@ -435,16 +452,19 @@ export default function ProductDetailPage() {
         <div className="product-tabs__content" role="tabpanel">
           {activeTab === "descripcion" && <p>{PRODUCT.longDescription}</p>}
           {activeTab === "info" && (
-            <p>
-              Material: Madera natural. Dimensiones: 13 cm / 15 cm de diámetro.
-              Peso: 0.8 kg. Incluye drenaje interno. Recomendado para uso
-              interior y exterior protegido.
-            </p>
+            <dl className="product-tabs__specs">
+              {additionalInfo.map(([label, value]) => (
+                <div key={label} className="product-tabs__spec-row">
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
           )}
           {activeTab === "reviews" && (
             <p>
-              {PRODUCT.reviews} reseñas de clientes satisfechos con la calidad y
-              el diseño de Potty.
+              Este MVP no incluye reseñas reales todavía. El producto ya está
+              conectado al catálogo, carrito y checkout.
             </p>
           )}
         </div>
@@ -468,15 +488,20 @@ export default function ProductDetailPage() {
 
       <section
         className="home-section product-related"
-        aria-labelledby="productos-revelantes"
+        aria-labelledby="productos-relevantes"
       >
-        <h2 id="productos-revelantes" className="home-section__title">
-          Productos revelantes
+        <h2 id="productos-relevantes" className="home-section__title">
+          Productos relevantes
         </h2>
         <div className="home-products">
           {(relatedProducts.length ? relatedProducts : RELATED_PRODUCTS).map((product) => (
             <article className="home-product" key={product.id}>
-              <div className="home-product__img-wrap">
+              <Link
+                className="home-product__img-wrap"
+                to={generatePath(routePaths.public.productDetail, {
+                  productId: product.id,
+                })}
+              >
                 <img
                   className="home-product__img"
                   src={productImage(product)}
@@ -497,9 +522,17 @@ export default function ProductDetailPage() {
                     New
                   </span>
                 )}
-              </div>
+              </Link>
               <div className="home-product__info">
-                <h3 className="home-product__name">{product.name}</h3>
+                <h3 className="home-product__name">
+                  <Link
+                    to={generatePath(routePaths.public.productDetail, {
+                      productId: product.id,
+                    })}
+                  >
+                    {product.name}
+                  </Link>
+                </h3>
                 <p className="home-product__desc">{product.description}</p>
                 <div className="home-product__prices">
                   <span className="home-product__price">
