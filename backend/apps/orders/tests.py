@@ -234,6 +234,9 @@ def test_staff_can_list_and_advance_order_status():
 
     assert list_response.status_code == 200
     assert list_response.data["results"][0]["id"] == order_id
+    assert list_response.data["results"][0]["user_id"] == customer.id
+    assert list_response.data["results"][0]["customer_email"] == customer.email
+    assert list_response.data["results"][0]["customer_phone"] == customer.phone
     assert update_response.status_code == 200
     assert update_response.data["status"] == Order.Status.CONFIRMED
 

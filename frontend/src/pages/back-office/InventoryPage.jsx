@@ -8,7 +8,7 @@ import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import { inventoryService } from "../../services/backendServices.js";
-import { readCollection } from "../../services/viewMappers.js";
+import { productImage, readCollection } from "../../services/viewMappers.js";
 import {
   FaSearch,
   FaBoxes,
@@ -95,7 +95,7 @@ export default function InventoryPage() {
     ...product,
     minStock: product.minimum_stock,
     status: product.low_stock ? "low" : "active",
-    image: product.image || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=80",
+    image: productImage(product),
   });
 
   const loadInventory = async () => {

@@ -6,7 +6,12 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
-import { productCategoryName, productImage, readCollection } from "../../services/viewMappers.js";
+import {
+  assetUrl,
+  productCategoryName,
+  productImage,
+  readCollection,
+} from "../../services/viewMappers.js";
 
 const DEFAULT_PRODUCT = {
   id: 8,
@@ -185,8 +190,12 @@ export default function ProductDetailPage() {
           tags: [detail.material, detail.color, detail.style].filter(Boolean),
           rating: 0,
           reviews: 0,
-          images: detail.images?.length ? detail.images.map((image) => typeof image === "string" ? image : image.image) : [productImage(detail)],
-          galleryImages: detail.images?.length ? detail.images.map((image) => typeof image === "string" ? image : image.image) : [productImage(detail)],
+          images: detail.images?.length
+            ? detail.images.map((image) => assetUrl(image))
+            : [productImage(detail)],
+          galleryImages: detail.images?.length
+            ? detail.images.map((image) => assetUrl(image))
+            : [productImage(detail)],
           sizes: ["Único"],
           colors: detail.color ? [{ id: detail.color, value: detail.color }] : [],
           longDescription: detail.description || "Sin descripción disponible.",

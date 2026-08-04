@@ -11,78 +11,16 @@ import { orderService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 // eslint-disable-next-line no-unused-vars
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
-
-// Importar imágenes de la tienda (fallback)
-import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
-
-// ============================================
-// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
-// ============================================
-const productImages = {
-  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop",
-  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=100&h=100&fit=crop",
-  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
-  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
-  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=100&h=100&fit=crop",
-  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=100&h=100&fit=crop",
-  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=100&h=100&fit=crop",
-  "Sillón": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=100&h=100&fit=crop",
-  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=100&h=100&fit=crop",
-  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop",
-  "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop",
-  "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop",
-  "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
-  "Daybed Roble": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Syltherine": "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=100&h=100&fit=crop",
-  "Leviosa": "https://images.unsplash.com/photo-1683793837504-318275ff665d?w=100&h=100&fit=crop",
-  "Lolito": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=100&h=100&fit=crop",
-  "Respira": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-};
+import { productImage } from "../../services/viewMappers.js";
 
 // ============================================
 // ✅ FUNCIÓN PARA OBTENER IMAGEN DEL PRODUCTO
 // ============================================
 const getProductImage = (item) => {
-  if (item.product_snapshot?.main_image) {
-    return item.product_snapshot.main_image;
-  }
-  if (item.product_snapshot?.images?.length > 0) {
-    return item.product_snapshot.images[0];
-  }
-  
-  if (item.image) return item.image;
-  if (item.main_image) return item.main_image;
-  if (item.images?.length > 0) return item.images[0];
-  
-  if (item.product?.main_image) return item.product.main_image;
-  if (item.product?.images?.length > 0) return item.product.images[0];
-  if (item.product?.image) return item.product.image;
-  
-  const name = item.name || item.product_name || item.product_snapshot?.name || "";
-  
-  for (const [key, value] of Object.entries(productImages)) {
-    if (name.toLowerCase().includes(key.toLowerCase()) || 
-        key.toLowerCase().includes(name.toLowerCase())) {
-      return value;
-    }
-  }
-  
-  const category = item.category?.name || item.category || item.product_snapshot?.category?.name || "";
-  const categoryLower = category.toLowerCase();
-  
-  if (categoryLower.includes("sofá") || categoryLower.includes("sillón") || categoryLower.includes("sofa")) {
-    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop";
-  }
-  if (categoryLower.includes("mesa")) {
-    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop";
-  }
-  if (categoryLower.includes("silla")) {
-    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop";
-  }
-  
-  return SyltherineDaybed;
+  return productImage({
+    ...item,
+    name: item.name || item.product_name || item.product_snapshot?.name,
+  });
 };
 
 // ============================================
@@ -541,7 +479,7 @@ function MyOrdersPage() {
                                             alt={item.name}
                                             className="orders-detail__product-image"
                                             onError={(e) => {
-                                              e.target.src = SyltherineDaybed;
+                                              e.target.src = productImage({});
                                             }}
                                           />
                                           <div>

@@ -171,6 +171,7 @@ class OrderItem(models.Model):
         return {
             "sku": product.sku,
             "name": product.name,
+            "main_image": product.main_image.url if product.main_image else "",
             "material": product.material,
             "color": product.color,
             "style": product.style,

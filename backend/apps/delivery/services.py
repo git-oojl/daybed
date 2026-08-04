@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
+from math import asin, cos, radians, sin, sqrt
 
 import httpx
 from django.conf import settings
@@ -112,14 +113,40 @@ def geocode_address(address):
 
 
 def estimate_delivery(latitude, longitude, order_subtotal=None):
-    if not settings.OPENROUTESERVICE_API_KEY:
-        raise DeliveryConfigurationError("OpenRouteService API key is not configured.")
-
     store_settings = StoreSettings.get_active()
     origin_latitude = _decimal(store_settings.latitude)
     origin_longitude = _decimal(store_settings.longitude)
     destination_latitude = _decimal(latitude)
     destination_longitude = _decimal(longitude)
+
+    if not settings.OPENROUTESERVICE_API_KEY:
+        distance_km = _fallback_distance_km(
+            origin_latitude,
+            origin_longitude,
+            destination_latitude,
+            destination_longitude,
+        )
+        duration_minutes = _duration(distance_km / Decimal("35.0") * Decimal("60.0"))
+        delivery_fee = calculate_delivery_fee(
+            distance_km,
+            order_subtotal=order_subtotal,
+            store_settings=store_settings,
+        )
+        return DeliveryEstimate(
+            origin_latitude=origin_latitude,
+            origin_longitude=origin_longitude,
+            destination_latitude=destination_latitude,
+            destination_longitude=destination_longitude,
+            distance_km=distance_km,
+            estimated_duration_minutes=duration_minutes,
+            delivery_fee=delivery_fee,
+            free_shipping_applied=free_shipping_applies(
+                order_subtotal,
+                store_settings=store_settings,
+            ),
+            free_shipping_threshold=store_settings.free_shipping_threshold,
+            distance_provider="haversine_fallback",
+        )
 
     try:
         response = httpx.post(
@@ -169,3 +196,26 @@ def estimate_delivery(latitude, longitude, order_subtotal=None):
         ),
         free_shipping_threshold=store_settings.free_shipping_threshold,
     )
+
+
+def _fallback_distance_km(
+    origin_latitude,
+    origin_longitude,
+    destination_latitude,
+    destination_longitude,
+):
+    earth_radius_km = 6371.0
+    lat1 = radians(float(origin_latitude))
+    lon1 = radians(float(origin_longitude))
+    lat2 = radians(float(destination_latitude))
+    lon2 = radians(float(destination_longitude))
+    delta_lat = lat2 - lat1
+    delta_lon = lon2 - lon1
+    haversine = (
+        sin(delta_lat / 2) ** 2
+        + cos(lat1) * cos(lat2) * sin(delta_lon / 2) ** 2
+    )
+    straight_line_km = Decimal(
+        str(2 * earth_radius_km * asin(sqrt(haversine))),
+    )
+    return _distance(straight_line_km * Decimal("1.25"))

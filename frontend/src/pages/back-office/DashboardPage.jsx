@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -95,7 +95,7 @@ export default function DashboardPage() {
   ]);
 
   // ✅ Función para traducir estados del backend a español
-  const traducirEstado = (estado) => {
+  const traducirEstado = useCallback((estado) => {
     const estados = {
       'pending': 'Pendiente',
       'confirmed': 'Confirmado',
@@ -108,7 +108,7 @@ export default function DashboardPage() {
       'completed': 'Completado',
     };
     return estados[estado?.toLowerCase()] || estado || 'Pendiente';
-  };
+  }, []);
 
   // ✅ Función para obtener color según estado
   const getEstadoColor = (estado) => {
@@ -126,16 +126,8 @@ export default function DashboardPage() {
     return colores[estado] || '#8B5E3C';
   };
 
-  // ✅ Cargar datos del dashboard desde el backend
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       const data = await dashboardService.metrics();
 
       // ✅ Actualizar métricas con datos del backend
@@ -150,9 +142,9 @@ export default function DashboardPage() {
           icon: <FaDollarSign size={28} />,
           label: "Ventas",
           value: data.total_sales 
-            ? `$${data.total_sales.toLocaleString()}`
+            ? `$${Number(data.total_sales).toLocaleString()}`
             : data.sales_total 
-              ? `$${data.sales_total.toLocaleString()}`
+              ? `$${Number(data.sales_total).toLocaleString()}`
               : "$0",
           color: "#2E7D32",
         },
@@ -196,7 +188,7 @@ export default function DashboardPage() {
       if (data.sales_by_month && data.sales_by_month.length > 0) {
         setVentasPorMes(data.sales_by_month.map(item => ({
           mes: item.month || item.mes || "Mes",
-          monto: item.total || item.monto || item.amount || 0,
+          monto: Number(item.total || item.monto || item.amount || 0),
         })));
       }
 
@@ -207,7 +199,22 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+  }, [traducirEstado]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    fetchDashboardData();
   };
+
+  // ✅ Cargar datos del dashboard desde el backend
+  useEffect(() => {
+    const timeoutId = window.setTimeout(fetchDashboardData, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [fetchDashboardData]);
 
   // ✅ Estados de carga y error
   if (loading) {
@@ -226,7 +233,7 @@ export default function DashboardPage() {
         <HomeHeader />
         <ErrorMessage message={error} />
         <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button onClick={fetchDashboardData} className="btn-primary">
+          <button onClick={handleRetry} className="btn-primary">
             Reintentar
           </button>
         </div>

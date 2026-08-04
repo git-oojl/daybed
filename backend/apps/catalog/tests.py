@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -235,6 +236,39 @@ def test_employee_can_create_product():
 
     assert response.status_code == 201
     assert Product.objects.filter(name="Staff sofa", active=True).exists()
+
+
+def test_staff_product_management_accepts_uploaded_main_image(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    employee = create_user("empleado_product_image", User.Roles.EMPLOYEE)
+    category = create_category()
+    image = SimpleUploadedFile(
+        "sofa.gif",
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00"
+        b"\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+        content_type="image/gif",
+    )
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Staff sofa with image",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+            "image": image,
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    assert response.data["main_image"]
+
+    product = Product.objects.get(name="Staff sofa with image")
+    assert product.main_image.name.startswith("products/sofa")
 
 
 def test_staff_product_management_rejects_negative_price():

@@ -11,38 +11,7 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import { Link } from "react-router-dom";
 import { routePaths } from "../../routes/routePaths.js";
 import { catalogService, cartService } from "../../services/backendServices.js";
-
-// ============================================================
-// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
-// ============================================================
-const productImages = {
-  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
-  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
-  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
-  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400&h=400&fit=crop",
-  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
-  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
-  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&h=400&fit=crop",
-  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&h=400&fit=crop",
-  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop",
-  "Sillón": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop",
-  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&h=400&fit=crop",
-  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
-  "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
-  "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
-  "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
-  "Banco Baúl Nogal": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop",
-  "Daybed Roble Nórdico": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop",
-};
-
-// ✅ Función para obtener el nombre de la categoría (string)
-const getCategoryName = (category) => {
-  if (!category) return "";
-  if (typeof category === "string") return category;
-  if (typeof category === "object" && category.name) return category.name;
-  if (typeof category === "object" && category.title) return category.title;
-  return "";
-};
+import { productImage as resolveProductImage } from "../../services/viewMappers.js";
 
 const normalizeCategoryDisplayName = (value = "") => {
   const text = String(value)
@@ -79,33 +48,7 @@ const getProductCategoryName = (product) => {
 
 // ✅ Función para obtener imagen según el producto
 const getProductImage = (product) => {
-  if (product.image) return product.image;
-  if (product.images?.length > 0) return product.images[0];
-  
-  const name = product.name || "";
-  
-  for (const [key, value] of Object.entries(productImages)) {
-    if (name.includes(key) || key.includes(name)) {
-      return value;
-    }
-  }
-  
-  const categoryName = getCategoryName(product.category);
-  
-  if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
-    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
-  }
-  if (categoryName.includes("Mesa")) {
-    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop";
-  }
-  if (categoryName.includes("Silla")) {
-    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop";
-  }
-  if (categoryName.includes("Banco") || categoryName.includes("Almacenamiento")) {
-    return "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop";
-  }
-  
-  return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
+  return resolveProductImage(product);
 };
 
 // ============================================================

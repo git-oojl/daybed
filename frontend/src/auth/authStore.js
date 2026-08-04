@@ -188,12 +188,3 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 }));
-
-// ✅ FUNCIÓN PARA DETECTAR DEV PREVIEW (se mantiene pero no bloquea)
-function isDevPreviewRoute() {
-  return (
-    import.meta.env.DEV &&
-    typeof window !== "undefined" &&
-    window.location.pathname === "/dev/preview"
-  );
-}

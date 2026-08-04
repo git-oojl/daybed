@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import httpx
 import pytest
 from django.contrib.auth import get_user_model
@@ -188,7 +190,7 @@ def test_distance_provider_failure_returns_bad_gateway(monkeypatch):
     assert "failed" in api_response.data["detail"]
 
 
-def test_estimate_reports_missing_provider_key_without_external_call(monkeypatch):
+def test_estimate_uses_fallback_distance_without_provider_key(monkeypatch):
     customer = create_customer()
 
     def fail_post(*args, **kwargs):
@@ -203,8 +205,9 @@ def test_estimate_reports_missing_provider_key_without_external_call(monkeypatch
             format="json",
         )
 
-    assert api_response.status_code == 503
-    assert "API key" in api_response.data["detail"]
+    assert api_response.status_code == 200
+    assert api_response.data["distance_provider"] == "haversine_fallback"
+    assert Decimal(api_response.data["distance_km"]) > Decimal("0.000")
 
 
 @override_settings(OPENROUTESERVICE_API_KEY="test-key")

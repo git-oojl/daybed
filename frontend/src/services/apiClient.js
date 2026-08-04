@@ -15,6 +15,14 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    if (typeof config.headers?.delete === "function") {
+      config.headers.delete("Content-Type");
+    } else if (config.headers) {
+      delete config.headers["Content-Type"];
+    }
+  }
+
   if (isDevPreviewRoute()) {
     delete config.headers.Authorization;
     if (!isReadOnlyRequest(config.method)) {

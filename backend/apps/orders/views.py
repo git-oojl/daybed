@@ -62,6 +62,7 @@ class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
             return Order.objects.none()
         return (
             Order.objects.filter(user=self.request.user)
+            .select_related("user")
             .prefetch_related("items")
             .order_by("-created_at", "-id")
         )
@@ -102,7 +103,11 @@ class StaffOrderViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Order.objects.prefetch_related("items").order_by("-created_at", "-id")
+    queryset = (
+        Order.objects.select_related("user")
+        .prefetch_related("items")
+        .order_by("-created_at", "-id")
+    )
     filterset_fields = ("status", "delivery_zone")
     search_fields = ("user__username", "user__email", "original_address")
     ordering_fields = ("created_at", "total", "delivery_fee", "distance_km")

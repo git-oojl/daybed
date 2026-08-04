@@ -1,12 +1,12 @@
 // InternalOrderDetailPage.jsx
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
-import { orderService, accountService } from "../../services/backendServices.js";
+import { orderService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import {
@@ -63,7 +63,24 @@ export default function InternalOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [order, setOrder] = useState(null);
-  const [customerData, setCustomerData] = useState(null);
+
+  // ============================================
+  // ✅ CARGAR PEDIDO
+  // ============================================
+  const loadOrder = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const orderData = await orderService.manageDetail(orderId);
+      setOrder(orderData);
+    } catch (err) {
+      console.error("Error al cargar pedido:", err);
+      setError(err.message || "No se pudo cargar el pedido");
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId]);
 
   // ============================================
   // ✅ VERIFICAR AUTENTICACIÓN Y ROL
@@ -80,84 +97,12 @@ export default function InternalOrderDetailPage() {
         navigate(routePaths.support.unauthorized || "/no-autorizado");
         return;
       }
-      // eslint-disable-next-line react-hooks/immutability
-      loadOrder();
+      const timeoutId = window.setTimeout(loadOrder, 0);
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
     }
-  }, [isAuthenticated, authLoading, user, navigate, orderId]);
-
-  // ============================================
-  // ✅ CARGAR PEDIDO Y DATOS DEL CLIENTE
-  // ============================================
-  const loadOrder = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // 1. Obtener el pedido
-      const orderData = await orderService.manageDetail(orderId);
-      console.log("📦 Datos del pedido:", orderData);
-      setOrder(orderData);
-
-      // 2. Obtener todos los usuarios para encontrar al cliente
-      // El endpoint /api/accounts/users/ devuelve todos los usuarios (solo admin/empleado)
-      try {
-        const usersResponse = await accountService.users();
-        const users = usersResponse.results || usersResponse || [];
-        console.log("👥 Usuarios disponibles:", users);
-
-        // 3. Buscar el usuario que hizo el pedido
-        // Intentar encontrar por ID (si el pedido tiene user_id)
-        let foundCustomer = null;
-        
-        if (orderData.user_id) {
-          foundCustomer = users.find(u => u.id === orderData.user_id);
-        }
-        
-        // Si no se encuentra por ID, buscar por email o nombre
-        if (!foundCustomer && orderData.customer_email) {
-          foundCustomer = users.find(u => u.email === orderData.customer_email);
-        }
-        
-        // Si aún no se encuentra, buscar por nombre (coincidencia parcial)
-        if (!foundCustomer && orderData.customer_name) {
-          // eslint-disable-next-line no-unused-vars
-          const nameParts = orderData.customer_name.split(' ');
-          foundCustomer = users.find(u => {
-            const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-            return fullName.includes(orderData.customer_name) || 
-                   orderData.customer_name.includes(fullName);
-          });
-        }
-
-        if (foundCustomer) {
-          console.log("✅ Cliente encontrado:", foundCustomer);
-          setCustomerData(foundCustomer);
-        } else {
-          console.warn("⚠️ No se encontró el cliente asociado al pedido");
-          // Usar datos del pedido si existen
-          setCustomerData({
-            name: orderData.customer_name || "Cliente",
-            email: orderData.customer_email || "No disponible",
-            phone: orderData.customer_phone || "No disponible",
-          });
-        }
-      } catch (err) {
-        console.warn("⚠️ No se pudo obtener la lista de usuarios:", err);
-        // Fallback: usar datos del pedido
-        setCustomerData({
-          name: orderData.customer_name || "Cliente",
-          email: orderData.customer_email || "No disponible",
-          phone: orderData.customer_phone || "No disponible",
-        });
-      }
-
-    } catch (err) {
-      console.error("Error al cargar pedido:", err);
-      setError(err.message || "No se pudo cargar el pedido");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isAuthenticated, authLoading, user, navigate, loadOrder]);
 
   // ============================================
   // ✅ FUNCIONES AUXILIARES
@@ -180,24 +125,16 @@ export default function InternalOrderDetailPage() {
   // ✅ OBTENER DATOS DEL CLIENTE
   // ============================================
   const getCustomerName = () => {
-    if (customerData?.name) return customerData.name;
-    if (customerData?.first_name) {
-      const firstName = customerData.first_name || "";
-      const lastName = customerData.last_name || "";
-      return `${firstName} ${lastName}`.trim();
-    }
     if (order?.customer_name) return order.customer_name;
     return "Cliente";
   };
 
   const getCustomerEmail = () => {
-    if (customerData?.email) return customerData.email;
     if (order?.customer_email) return order.customer_email;
     return "No disponible";
   };
 
   const getCustomerPhone = () => {
-    if (customerData?.phone) return customerData.phone;
     if (order?.customer_phone) return order.customer_phone;
     return "No disponible";
   };

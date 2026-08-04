@@ -1,5 +1,9 @@
 from decimal import Decimal
+from pathlib import PurePosixPath
+from urllib.parse import urlparse
 
+import httpx
+from django.core.files.base import ContentFile
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -14,6 +18,13 @@ DIMENSION_FIELDS = (
     "diameter_cm",
     "weight_kg",
 )
+MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024
+ALLOWED_REMOTE_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 
 
 def validate_simple_json_object(value, field_name):
@@ -69,6 +80,41 @@ def validate_category_schema(value):
     return value
 
 
+def image_filename_from_url(url, content_type):
+    parsed = urlparse(url)
+    candidate = PurePosixPath(parsed.path).name or "product-image"
+    stem = PurePosixPath(candidate).stem or "product-image"
+    suffix = PurePosixPath(candidate).suffix.lower()
+    expected_suffix = ALLOWED_REMOTE_IMAGE_TYPES.get(content_type, ".jpg")
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        suffix = expected_suffix
+    return f"{stem[:80]}{suffix}"
+
+
+def download_remote_image(url):
+    try:
+        response = httpx.get(url, follow_redirects=True, timeout=10)
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise serializers.ValidationError(
+            "No se pudo descargar la imagen desde la URL proporcionada."
+        ) from exc
+
+    content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+    if content_type not in ALLOWED_REMOTE_IMAGE_TYPES:
+        raise serializers.ValidationError(
+            "La URL debe apuntar a una imagen JPG, PNG, WEBP o GIF."
+        )
+
+    content = response.content
+    if not content:
+        raise serializers.ValidationError("La imagen descargada esta vacia.")
+    if len(content) > MAX_REMOTE_IMAGE_BYTES:
+        raise serializers.ValidationError("La imagen no debe superar 5 MB.")
+
+    return ContentFile(content, name=image_filename_from_url(url, content_type))
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -107,6 +153,12 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     low_stock = serializers.BooleanField(read_only=True)
     structured_dimensions = serializers.SerializerMethodField()
+    image = serializers.ImageField(write_only=True, required=False)
+    image_url = serializers.URLField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+    )
 
     class Meta:
         model = Product
@@ -130,6 +182,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "structured_dimensions",
             "specifications",
             "main_image",
+            "image",
+            "image_url",
             "stock",
             "minimum_stock",
             "low_stock",
@@ -155,6 +209,13 @@ class ProductSerializer(serializers.ModelSerializer):
         return validate_simple_json_object(value, "specifications")
 
     def validate(self, attrs):
+        image = attrs.pop("image", None)
+        image_url = attrs.pop("image_url", "")
+        if image and not attrs.get("main_image"):
+            attrs["main_image"] = image
+        if image_url and not attrs.get("main_image"):
+            attrs["main_image"] = download_remote_image(image_url)
+
         for field in DIMENSION_FIELDS:
             value = attrs.get(field)
             if value is not None and value < Decimal("0.00"):

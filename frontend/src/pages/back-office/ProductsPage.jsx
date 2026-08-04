@@ -1,5 +1,5 @@
 // ProductsPage.jsx - CON VALIDACIÓN DE ACCESO
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
@@ -27,12 +27,14 @@ import {
 } from "react-icons/fa";
 import { catalogService } from "../../services/backendServices.js";
 import { getAccessToken } from "../../auth/tokenStorage.js";
+import { productImage } from "../../services/viewMappers.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
 
 const API_URL = "http://localhost:8000";
 const DELETED_PRODUCTS_KEY = 'daybed_deleted_products';
+const PAGE_SIZE = 10;
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -79,13 +81,22 @@ export default function ProductsPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [deletingId, setDeletingId] = useState(null);
-  const [deletedIds, setDeletedIds] = useState([]);
+  const [deletedIds, setDeletedIds] = useState(() => {
+    if (typeof window === "undefined") return [];
+
+    const saved = window.localStorage.getItem(DELETED_PRODUCTS_KEY);
+    if (!saved) return [];
+
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return [];
+    }
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
-
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
@@ -105,41 +116,15 @@ export default function ProductsPage() {
   const initialLoad = useRef(true);
   const isFetching = useRef(false);
 
-  const getToken = () => {
+  const getToken = useCallback(() => {
     return getAccessToken() || localStorage.getItem('access_token');
-  };
-
-  // Cargar categorías y productos eliminados
-  useEffect(() => {
-    const saved = localStorage.getItem(DELETED_PRODUCTS_KEY);
-    if (saved) {
-      try {
-        setDeletedIds(JSON.parse(saved));
-      } catch (e) {
-        setDeletedIds([]);
-      }
-    }
   }, []);
-
-  useEffect(() => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      fetchCategories();
-      fetchProducts();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!initialLoad.current && !isFetching.current) {
-      fetchProducts();
-    }
-  }, [currentPage, filterCategory, filterStatus, searchTerm, deletedIds]);
 
 // ProductsPage.jsx - fetchProducts CORREGIDO
 
 // ProductsPage.jsx - fetchProducts CORREGIDO PARA ADMIN Y EMPLEADO
 
-async function fetchProducts() {
+const fetchProducts = useCallback(async () => {
   if (isFetching.current) return;
   isFetching.current = true;
   
@@ -147,7 +132,7 @@ async function fetchProducts() {
     setLoading(true);
     const params = {
       page: currentPage,
-      page_size: pageSize,
+      page_size: PAGE_SIZE,
     };
     if (searchTerm) params.search = searchTerm;
     if (filterCategory) params.category = filterCategory;
@@ -186,7 +171,7 @@ async function fetchProducts() {
     
     setProducts(productsData);
     setTotalCount(productsData.length || 0);
-    setTotalPages(Math.ceil((productsData.length || 0) / pageSize));
+    setTotalPages(Math.ceil((productsData.length || 0) / PAGE_SIZE));
     setError(null);
     
     console.log(`✅ ${productsData.length} productos cargados`);
@@ -198,8 +183,9 @@ async function fetchProducts() {
     setLoading(false);
     isFetching.current = false;
   }
-}
-  async function fetchCategories() {
+}, [currentPage, deletedIds, filterCategory, filterStatus, searchTerm]);
+
+  const fetchCategories = useCallback(async () => {
     try {
       const token = getToken();
       if (!token) {
@@ -235,7 +221,21 @@ async function fetchProducts() {
         console.error("Error en fetch directo:", e);
       }
     }
-  }
+  }, [getToken]);
+
+  useEffect(() => {
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      fetchCategories();
+      fetchProducts();
+    }
+  }, [fetchCategories, fetchProducts]);
+
+  useEffect(() => {
+    if (!initialLoad.current && !isFetching.current) {
+      fetchProducts();
+    }
+  }, [fetchProducts]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -298,15 +298,7 @@ async function fetchProducts() {
 
   const getProductImageUrl = (product) => {
     if (!product) return null;
-    if (product.image) {
-      if (product.image.startsWith("http")) return product.image;
-      return `${API_URL}${product.image}`;
-    }
-    if (product.image_url) {
-      if (product.image_url.startsWith("http")) return product.image_url;
-      return `${API_URL}${product.image_url}`;
-    }
-    return null;
+    return productImage(product);
   };
 
   const handleOpenModal = (product = null) => {
@@ -384,7 +376,7 @@ async function fetchProducts() {
       formDataToSend.append("active", formData.status === "active");
       
       if (formData.image_file) {
-        formDataToSend.append("image", formData.image_file);
+        formDataToSend.append("main_image", formData.image_file);
       }
       if (formData.image_url && !formData.image_file) {
         formDataToSend.append("image_url", formData.image_url);

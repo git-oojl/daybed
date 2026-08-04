@@ -20,6 +20,7 @@ class InventoryProductSerializer(serializers.ModelSerializer):
             "stock",
             "minimum_stock",
             "low_stock",
+            "main_image",
             "active",
             "updated_at",
         )

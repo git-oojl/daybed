@@ -9,67 +9,7 @@ import { routePaths } from "../../routes/routePaths.js";
 import { cartService, orderService, deliveryService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
-
-// ============================================
-
-// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
-// ============================================
-const productImages = {
-  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop",
-  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=100&h=100&fit=crop",
-  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
-  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
-  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=100&h=100&fit=crop",
-  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=100&h=100&fit=crop",
-  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=100&h=100&fit=crop",
-  "Sillón": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=100&h=100&fit=crop",
-  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=100&h=100&fit=crop",
-  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop",
-  "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop",
-  "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop",
-  "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop",
-  "Daybed Roble": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Daybed Roble Nórdico": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-  "Syltherine": "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=100&h=100&fit=crop",
-  "Leviosa": "https://images.unsplash.com/photo-1683793837504-318275ff665d?w=100&h=100&fit=crop",
-  "Lolito": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=100&h=100&fit=crop",
-  "Respira": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop",
-};
-
-// ============================================
-// ✅ FUNCIÓN PARA OBTENER IMAGEN DEL PRODUCTO
-// ============================================
-const getProductImage = (product) => {
-  if (product?.main_image) return product.main_image;
-  if (product?.images?.length > 0) return product.images[0];
-  if (product?.image) return product.image;
-  
-  const name = product?.name || "";
-  
-  for (const [key, value] of Object.entries(productImages)) {
-    if (name.toLowerCase().includes(key.toLowerCase()) || 
-        key.toLowerCase().includes(name.toLowerCase())) {
-      return value;
-    }
-  }
-  
-  const category = product?.category?.name || product?.category || "";
-  const categoryLower = category.toLowerCase();
-  
-  if (categoryLower.includes("sofá") || categoryLower.includes("sillón") || categoryLower.includes("sofa")) {
-    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop";
-  }
-  if (categoryLower.includes("mesa")) {
-    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=100&h=100&fit=crop";
-  }
-  if (categoryLower.includes("silla")) {
-    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=100&h=100&fit=crop";
-  }
-  
-  return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop";
-};
+import { productImage } from "../../services/viewMappers.js";
 
 // ============================================
 
@@ -152,7 +92,7 @@ function getCartItemPrice(item) {
 
 function getCartItemImage(item) {
   const product = getCartItemProduct(item);
-  return getProductImage(product);
+  return productImage(product);
 }
 
 // ============================================
@@ -312,19 +252,22 @@ export default function CheckoutSummaryPage() {
         
         const geocode = await deliveryService.geocode({ address });
         
+        const orderSubtotal = cartItems.reduce(
+          (sum, item) => sum + getCartItemPrice(item) * (item.quantity || 0),
+          0,
+        );
+        const estimate = await deliveryService.estimate({
+          latitude: geocode.latitude,
+          longitude: geocode.longitude,
+          order_subtotal: orderSubtotal.toFixed(2),
+        });
+
         setGeocodeResult(geocode);
+        setDeliveryEstimate(estimate);
         geocodeSuccess = true;
-        
+
         console.log('✅ Éxito con formato:', address);
-        
-        const simulatedEstimate = {
-          distance_km: "5.0",
-          estimated_duration_minutes: "15.0",
-          delivery_fee: "150.00",
-          distance_provider: "simulado",
-        };
-        
-        setDeliveryEstimate(simulatedEstimate);
+
         setAddressValidated(true);
         setError(null);
         
@@ -339,50 +282,22 @@ export default function CheckoutSummaryPage() {
     // ✅ 4. SI NINGÚN FORMATO FUNCIONÓ
     if (!geocodeSuccess) {
       setGeocoding(false);
-      
-      if (lastError?.message?.includes("OpenRouteService") || 
-          lastError?.message?.includes("API key") ||
-          lastError?.message?.includes("geocode")) {
-        
-        console.warn('⚠️ API falló, simulando validación...');
-        
-        const simulatedGeocode = {
-          formatted_address: `${calleClean}, ${coloniaClean}, ${ciudadClean}, ${estadoClean}, CP ${cpClean}`,
-          latitude: "32.5149",
-          longitude: "-117.0382",
-          provider: "simulado",
-        };
-        
-        setGeocodeResult(simulatedGeocode);
-        
-        const simulatedEstimate = {
-          distance_km: "5.0",
-          estimated_duration_minutes: "15.0",
-          delivery_fee: "150.00",
-          distance_provider: "simulado",
-        };
-        
-        setDeliveryEstimate(simulatedEstimate);
-        setAddressValidated(true);
-        setError(null);
-        
-        console.log('✅ Validación simulada exitosa');
-      } else {
-        setError(
-          "No pudimos encontrar la dirección ingresada. Por favor, verifica que:\n" +
-          "• La calle y número sean correctos (ej: 'Av. Reforma 123')\n" +
-          "• La colonia esté bien escrita (ej: 'Col. Juárez')\n" +
-          "• La ciudad y estado sean válidos\n" +
-          "• El código postal sea correcto (5 dígitos)"
-        );
-        setAddressValidated(false);
-        setGeocodeResult(null);
-        setDeliveryEstimate(null);
-      }
+
+      setError(
+        (lastError?.message ? `${lastError.message}\n\n` : "") +
+        "No pudimos encontrar la dirección ingresada. Por favor, verifica que:\n" +
+        "• La calle y número sean correctos (ej: 'Av. Reforma 123')\n" +
+        "• La colonia esté bien escrita (ej: 'Col. Juárez')\n" +
+        "• La ciudad y estado sean válidos\n" +
+        "• El código postal sea correcto (5 dígitos)",
+      );
+      setAddressValidated(false);
+      setGeocodeResult(null);
+      setDeliveryEstimate(null);
     }
 
     setGeocoding(false);
-  }, [formData.calle, formData.colonia, formData.ciudad, formData.estado, formData.codigoPostal]);
+  }, [cartItems, formData]);
 
   // ============================================
   // ✅ CALCULAR SHIPPING COST
@@ -951,7 +866,7 @@ export default function CheckoutSummaryPage() {
                       alt={getCartItemName(item)} 
                       loading="lazy"
                       onError={(e) => {
-                        e.target.src = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&h=100&fit=crop";
+                        e.target.src = productImage({});
                       }}
                     />
                     <div className="checkout-item__info">

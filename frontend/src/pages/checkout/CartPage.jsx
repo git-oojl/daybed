@@ -8,66 +8,18 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, storeService } from "../../services/backendServices.js";
 import { useAuthStore } from "../../auth/authStore.js";
+import { productImage } from "../../services/viewMappers.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
 
 // ✅ Caché de imágenes GLOBAL
 const imageCache = new Map();
-
-// ============================================================
-// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO (para el carrito)
-// ============================================================
-const productImages = {
-  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop",
-  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop",
-  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=80&h=80&fit=crop",
-  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=80&h=80&fit=crop",
-  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop",
-  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop",
-  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=80&h=80&fit=crop",
-  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=80&h=80&fit=crop",
-  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=80&h=80&fit=crop",
-  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=80&h=80&fit=crop",
-  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=80&h=80&fit=crop",
-};
-
-// ✅ Función para obtener nombre de categoría (string)
-const getCategoryNameSafe = (category) => {
-  if (!category) return "";
-  if (typeof category === "string") return category;
-  if (typeof category === "object" && category.name) return category.name;
-  return "";
-};
+const FALLBACK_CART_IMAGE = productImage({});
 
 // ✅ Función para obtener imagen según el nombre
 const getProductImage = (product) => {
-  // Si el producto ya tiene imagen, usarla
-  if (product.image) return product.image;
-  if (product.images?.length > 0) return product.images[0];
-
-  const name = product.name || "";
-  // Buscar coincidencia exacta o parcial
-  for (const [key, value] of Object.entries(productImages)) {
-    if (name.includes(key) || key.includes(name)) {
-      return value;
-    }
-  }
-
-  // Si no coincide, usar imagen por categoría
-  const categoryName = getCategoryNameSafe(product.category);
-  
-  if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
-    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
-  }
-  if (categoryName.includes("Mesa")) {
-    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=80&h=80&fit=crop";
-  }
-  if (categoryName.includes("Silla")) {
-    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop";
-  }
-
-  return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+  return productImage(product);
 };
 
 // ✅ Componente de imagen con caché
@@ -75,7 +27,7 @@ function CachedImage({ src, alt, className }) {
   const [imgSrc, setImgSrc] = useState(() => {
     if (imageCache.has(src)) return imageCache.get(src);
     if (!src || src === "" || src === "null" || src === "undefined") {
-      return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      return FALLBACK_CART_IMAGE;
     }
     return src;
   });
@@ -90,7 +42,7 @@ function CachedImage({ src, alt, className }) {
     }
 
     if (!src || src === "" || src === "null" || src === "undefined") {
-      const fallback = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      const fallback = FALLBACK_CART_IMAGE;
       imageCache.set(src, fallback);
       setImgSrc(fallback);
       setIsLoaded(true);
@@ -104,7 +56,7 @@ function CachedImage({ src, alt, className }) {
       setIsLoaded(true);
     };
     img.onerror = () => {
-      const fallback = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      const fallback = FALLBACK_CART_IMAGE;
       imageCache.set(src, fallback);
       setImgSrc(fallback);
       setIsLoaded(true);

@@ -27,11 +27,19 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    customer_email = serializers.EmailField(source="user.email", read_only=True)
+    customer_phone = serializers.CharField(source="user.phone", read_only=True)
 
     class Meta:
         model = Order
         fields = (
             "id",
+            "user_id",
+            "customer_name",
+            "customer_email",
+            "customer_phone",
             "status",
             "items",
             "original_address",
@@ -51,6 +59,10 @@ class OrderSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = fields
+
+    def get_customer_name(self, obj):
+        full_name = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return full_name or obj.user.username or obj.user.email
 
 
 class CheckoutSerializer(serializers.Serializer):
