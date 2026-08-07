@@ -93,7 +93,7 @@ tar \
   --exclude='./backend/staticfiles' \
   --exclude='./.agent-logs' \
   --exclude='./.agent-tmp' \
-  --exclude='./.git' \
+  --exclude="$name/.git" \
   -C "$parent" -czf "$candidate" "$name"
 
 echo "==> Cold-accepting candidate before replacing any existing anchor"
