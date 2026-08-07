@@ -5,6 +5,8 @@ import "../../assets/CSS/account/profile-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
+import Avatar from "../../components/account/Avatar.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { accountService } from "../../services/backendServices.js";
@@ -101,27 +103,6 @@ function IconLogout() {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconLoading() {
-  return (
-    <svg
-      className="profile-loading__spinner"
-      width="40"
-      height="40"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2" />
-      <path
-        d="M12 2a10 10 0 0 1 10 10"
-        stroke="#B88E2F"
-        strokeWidth="2"
-        strokeLinecap="round"
       />
     </svg>
   );
@@ -259,6 +240,8 @@ export default function ProfilePage() {
   const [loadError, setLoadError] = useState(null);
   const [formError, setFormError] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -321,20 +304,24 @@ export default function ProfilePage() {
     setSuccessMessage("");
 
     try {
-      const payload = {
+      const payload = new FormData();
+      Object.entries({
         first_name: editForm.first_name,
         last_name: editForm.last_name,
         email: editForm.email,
         phone: editForm.phone,
         state: editForm.state,
         city: editForm.city,
-      };
+      }).forEach(([key, value]) => payload.append(key, value ?? ""));
+      if (avatarFile) payload.append("avatar", avatarFile);
       const updated = await accountService.updateMe(payload);
 
       setProfile(updated);
       setEditForm(formFromProfile(updated));
       setUser(updated);
       setEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview("");
       setSuccessMessage("Perfil actualizado exitosamente");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
@@ -385,7 +372,27 @@ export default function ProfilePage() {
     setEditForm((current) => ({ ...current, [name]: value }));
   };
 
+  useEffect(() => () => {
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+  }, [avatarPreview]);
+
+  const handleAvatarChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(file.type) || file.size > 5 * 1024 * 1024) {
+      setFormError("Selecciona una imagen JPG, PNG o WebP de hasta 5 MB.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setEditing(true);
+    setFormError(null);
+  };
+
   const handleCancel = () => {
+    setAvatarFile(null);
+    setAvatarPreview("");
     setEditForm(formFromProfile(profile));
     setEditing(false);
     setFormError(null);
@@ -395,10 +402,7 @@ export default function ProfilePage() {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
-        <div className="profile-loading">
-          <IconLoading />
-          <p>Cargando tu perfil...</p>
-        </div>
+<main className="profile-container"><FeatureState tone="loading" title="Cargando tu perfil" message="Estamos reuniendo tus datos, compras y accesos." /></main>
         <HomeFooter />
       </div>
     );
@@ -408,12 +412,7 @@ export default function ProfilePage() {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
-        <div className="profile-error">
-          <p>{loadError}</p>
-          <button onClick={fetchProfile} type="button">
-            Reintentar
-          </button>
-        </div>
+<main className="profile-container"><FeatureState tone="error" title="No pudimos abrir tu perfil" message={loadError} actionLabel="Intentar de nuevo" onAction={fetchProfile} secondaryLabel="Volver al inicio" secondaryTo={routePaths.public.home} /></main>
         <HomeFooter />
       </div>
     );
@@ -423,9 +422,7 @@ export default function ProfilePage() {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
-        <div className="profile-empty">
-          <p>No se encontraron datos de perfil</p>
-        </div>
+<main className="profile-container"><FeatureState tone="empty" title="No encontramos datos de perfil" message="Vuelve a iniciar sesión para reconstruir la información de tu cuenta." actionLabel="Iniciar sesión" actionTo={routePaths.account.login} /></main>
         <HomeFooter />
       </div>
     );
@@ -438,6 +435,16 @@ export default function ProfilePage() {
       <PageHero title="Mi perfil" eyebrow="Cuenta Daybed" image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82" current="Mi perfil" />
 
       <main className="profile-container">
+        <section className="profile-identity-card">
+          <div className="profile-identity-card__avatar">
+            <Avatar user={profile} src={avatarPreview || profile.avatar} size="xl" />
+            <label className="profile-avatar-upload">
+              <span>Cambiar foto</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
+            </label>
+          </div>
+          <div><p className="section-kicker">Cuenta Daybed</p><h1>{getDisplayName(profile)}</h1><p>{profile.email} · {roleLabel}</p><span>La foto se usa en tu perfil y en el control de cuenta de la barra de navegación.</span></div>
+        </section>
         {successMessage && (
           <div className="profile__alert profile__alert--success">
             <IconCheck />

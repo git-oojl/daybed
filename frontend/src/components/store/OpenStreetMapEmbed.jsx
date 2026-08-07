@@ -1,7 +1,7 @@
 const DEFAULT_STORE = {
   latitude: 32.5149,
-  longitude: -116.9645,
-  label: "Daybed · Blvd. Cucapah, Tijuana",
+  longitude: -117.0382,
+  label: "Daybed · Zona Centro, Tijuana",
 };
 
 function buildBounds(latitude, longitude, span = 0.018) {

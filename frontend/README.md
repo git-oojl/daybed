@@ -45,7 +45,7 @@ VITE_API_BASE_URL=http://localhost:8000/api
 VITE_BACKEND_ORIGIN=http://localhost:8000
 ```
 
-No se debe versionar `frontend/.env`.
+No se debe versionar `frontend/.env`. Vite lee las variables al iniciar; reinicia el proceso después de modificar cualquier valor `VITE_*`.
 
 `VITE_API_BASE_URL` se usa por el cliente HTTP. `VITE_BACKEND_ORIGIN` se usa por el proxy local de Vite para llamadas relativas a `/api/...`.
 
@@ -163,8 +163,8 @@ Authorization: Bearer <ACCESS_TOKEN>
   - `/api/delivery/geocode/`
   - `/api/delivery/estimate/`
   - `/api/checkout/`
-- El checkout usa pago simulado. Enviar `payment_method` con `card`, `transfer` o `cash`; solo para `card` se envian `card_number`, `card_expiry` y `card_cvv`. El frontend no debe guardar ni reutilizar esos datos.
-- Transferencia y efectivo quedan pendientes hasta que una vista interna marque el pago simulado como recibido con `orderService.updatePaymentStatus(...)`.
+- El checkout de desarrollo registra estados de pago sin integrar una pasarela bancaria. Enviar `payment_method` con `card`, `transfer` o `cash`; solo para `card` se envían `card_number`, `card_expiry` y `card_cvv`. El frontend no debe guardar ni reutilizar esos datos.
+- Transferencia y efectivo quedan pendientes hasta que una vista interna registre el pago como recibido con `orderService.updatePaymentStatus(...)`.
 - Para configuración básica de tienda usar `storeService.settings()` y
   `storeService.updateSettings()` contra `/api/store/settings/`. El frontend no
   debe guardar API keys, proveedores de mapas ni credenciales en estado. La key
@@ -247,12 +247,39 @@ Reglas de seguridad del preview:
 - La opción "Simular como" solo se usa en preview.
 - Al cambiar a una vista restringida en preview, el switcher elige automáticamente un perfil simulado con acceso.
 - El texto `Backend activo` / `Backend no disponible` muestra si `/api/health/` responde; al pasar el cursor o enfocar se ven los checks del health check y del modo que aplica para ese estado.
-- La sesión simulada no se guarda en `localStorage`.
+- La sesión de preview y sus cambios temporales se guardan únicamente en `sessionStorage` y se eliminan al salir o restablecer preview.
 - El preview no envía el bearer token real al backend.
-- Desde `/dev/preview`, el cliente API bloquea requests de escritura (`POST`, `PATCH`, `PUT`, `DELETE`) para evitar crear sesiones, pedidos o cambios reales por accidente.
+- Desde `/dev/preview`, el cliente API resuelve lecturas y escrituras compatibles contra fixtures de sesión. Nunca adjunta credenciales reales ni modifica la base de datos.
 - Para probar login real, checkout real o acciones contra backend, usar las rutas reales, no `/dev/preview`.
 
 Uso recomendado:
 
 - Usar `/dev/preview` para revisar visualmente estados de acceso, layouts y vistas.
 - Usar rutas reales con usuarios semilla para probar integración backend completa.
+
+## Arranque, build y pantallas en blanco
+
+La interfaz no debe ocultarse mientras `/api/health/` responde. El health check tiene tiempo límite y solo informa el estado del backend; no decide si React puede renderizar.
+
+Antes de entregar cambios de frontend ejecutar:
+
+```bash
+npm run validate
+```
+
+Esto ejecuta lint, el build real de Vite/Rollup y los tests. El build es obligatorio porque detecta exports inexistentes que un parser de JSX no puede validar.
+
+Para probar rutas directamente con Vite y Django activos:
+
+```bash
+DAYBED_SMOKE_BASE_URL=http://localhost:5173 npm run test:smoke
+```
+
+Si Vite conserva un bundle optimizado antiguo después de corregir imports de paquetes:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
+
+Consulta `docs/FRONTEND_BOOT_RELIABILITY.md` para el árbol de diagnóstico completo, recuperación de preview y límites de los error boundaries.

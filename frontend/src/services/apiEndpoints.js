@@ -40,6 +40,7 @@ export const apiEndpoints = {
   },
   store: {
     settings: "/store/settings/",
+    contact: "/store/contact/",
   },
   orders: {
     checkout: "/checkout/",

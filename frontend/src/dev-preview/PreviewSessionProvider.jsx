@@ -19,10 +19,19 @@ function buildPreviewUser(viewer) {
   return {
     id: `preview-${viewer.id}`,
     username: `preview_${viewer.id}`,
-    email: `preview-${viewer.id}@daybed.local`,
+    email: viewer.id === "customer"
+      ? "cliente.preview@daybed.local"
+      : viewer.id === "employee"
+        ? "empleado.preview@daybed.local"
+        : "admin.preview@daybed.local",
     first_name: viewer.label,
     last_name: "Preview",
     phone: "6645550190",
+    avatar: viewer.id === "admin"
+      ? "/preview-avatars/admin.svg"
+      : viewer.id === "employee"
+        ? "/preview-avatars/employee.svg"
+        : "/preview-avatars/customer.svg",
     state: "Baja California",
     city: "Tijuana",
     role: viewer.backendRole,

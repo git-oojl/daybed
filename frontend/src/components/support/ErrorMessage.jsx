@@ -1,5 +1,5 @@
-import { FaTriangleExclamation } from "react-icons/fa6";
+import FeatureState from "./FeatureState.jsx";
 
-export default function ErrorMessage({ message = "Ocurrió un error.", onRetry }) {
-  return <div className="state-card state-card--compact state-card--error" role="alert"><span className="state-card__icon"><FaTriangleExclamation /></span><h3>No pudimos completar esta vista</h3><p>{message}</p>{onRetry ? <button onClick={onRetry}>Reintentar</button> : null}</div>;
+export default function ErrorMessage({ message = "Algo interrumpió esta vista.", onRetry, title = "No pudimos mostrar esta información" }) {
+  return <FeatureState tone="error" compact title={title} message={message} actionLabel={onRetry ? "Intentar de nuevo" : undefined} onAction={onRetry} />;
 }

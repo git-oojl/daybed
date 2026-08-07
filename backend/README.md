@@ -1,6 +1,6 @@
 # Backend de Daybed
 
-Backend REST para Daybed, una tienda de muebles academica con usuarios por rol, catalogo, carrito, checkout y pago simulado, entregas, pedidos, inventario y metricas operativas.
+Backend REST para Daybed, una sola empresa de muebles con usuarios por rol, catálogo, carrito, checkout, entregas, pedidos, inventario y métricas operativas.
 
 Este archivo es el resumen rapido. La documentacion completa vive en `/docs`.
 
@@ -82,18 +82,18 @@ FRONTEND_PASSWORD_RESET_URL=http://localhost:5173/restablecer-password
 ```
 
 Los valores `STORE_LATITUDE`, `STORE_LONGITUDE`, `DELIVERY_BASE_FEE` y
-`DELIVERY_PRICE_PER_KM` son fallback/bootstrap para crear la configuración
-persistente inicial de tienda. Después de creada, la API usa
+`DELIVERY_PRICE_PER_KM` son fallback/bootstrap para crear la configuración global
+persistente de Daybed. Después de creada, la API usa
 `/api/store/settings/` como fuente de verdad para origen, tarifas y umbral de
 envío gratis.
 
-`OPENROUTESERVICE_API_KEY` puede quedar vacio para instalar, probar y correr el backend. Para probar el flujo completo de checkout con distancia y duracion reales, debe configurarse en `backend/.env`:
+`OPENROUTESERVICE_API_KEY` puede quedar vacía para instalar, probar y ejecutar el backend. Cuando no existe, está vencida o el proveedor no responde, Daybed conserva la sesión, el carrito y la dirección seleccionada; devuelve una estimación aproximada marcada como no confirmable y evita únicamente el envío final del pedido hasta obtener una ruta segura. Para usar distancia y duración viales reales, configúrala en `backend/.env`:
 
 ```env
 OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
 ```
 
-No se debe poner la key real en archivos versionados ni en variables del frontend. Nominatim/OpenStreetMap no requiere key; OpenRouteService se usa desde el backend para rutas.
+Las variables de entorno se leen al iniciar el proceso. Después de agregar o cambiar la key, reinicia el backend; si también cambiaste una variable `VITE_*`, reinicia el frontend. Una falla de OpenRouteService nunca debe cerrar la sesión ni borrar el carrito. No pongas la key real en archivos versionados ni en variables del frontend. Nominatim/OpenStreetMap no requiere key; ambos proveedores se consumen exclusivamente desde el backend.
 
 En desarrollo, `EMAIL_BACKEND` usa consola para imprimir los enlaces de
 recuperacion de contraseña. En producción debe configurarse un backend SMTP o

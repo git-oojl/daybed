@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import PreviewSessionProvider from "./PreviewSessionProvider.jsx";
+import RouteLoading from "../components/support/RouteLoading.jsx";
 import {
   canPreviewLayout,
   canPreviewViewer,
@@ -48,9 +50,19 @@ function DevPreviewPage() {
 
   return (
     <PreviewSessionProvider viewer={viewer}>
-      <LayoutComponent>
-        <ViewComponent />
-      </LayoutComponent>
+      <Suspense
+        fallback={
+          <RouteLoading
+            compact
+            title="Preparando la vista previa"
+            message="Solo estamos cargando el módulo seleccionado."
+          />
+        }
+      >
+        <LayoutComponent>
+          <ViewComponent />
+        </LayoutComponent>
+      </Suspense>
     </PreviewSessionProvider>
   );
 }

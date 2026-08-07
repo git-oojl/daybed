@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./DevViewSwitcher.css";
+import { useAuthStore } from "../auth/authStore.js";
+import { emitSessionReplaced } from "../auth/sessionEvents.js";
+import { resetPreviewFixtures } from "../services/apiFixtures.js";
 import {
   getDefaultModeFromBackendStatus,
   readDevViewSwitcherOpenState,
@@ -93,6 +96,7 @@ function DevViewSwitcher() {
     nextLayoutId = activeLayout.id,
     nextViewerId = activeViewer.id,
   ) {
+    emitSessionReplaced({ reason: "enter-preview" });
     saveDevViewSwitcherSelection({
       layoutId: nextLayoutId,
       mode: "preview",
@@ -118,13 +122,24 @@ function DevViewSwitcher() {
     );
   }
 
-  function goToRealRoute(view = activeView) {
+  async function goToRealRoute(view = activeView) {
+    resetPreviewFixtures();
     saveDevViewSwitcherSelection({
       layoutId: activeLayout.id,
       mode: "normal",
       viewerId: activeViewer.id,
     });
     setSelectedMode("normal");
+    emitSessionReplaced({ reason: "leave-preview" });
+
+    // Revalidate any preserved real session only after preview has been disabled.
+    // Invalid refresh credentials are cleared by the global auth client; network
+    // failures leave the last known account intact instead of logging it out.
+    try {
+      await useAuthStore.getState().loadCurrentUser();
+    } catch {
+      // Friendly session-expiry handling is centralized in the auth store/router.
+    }
     navigate(view.path, { replace: true });
   }
 
@@ -237,7 +252,7 @@ function DevViewSwitcher() {
             onClick={() => handleModeChange("preview")}
           >
             <strong>Preview</strong>
-            <small>Sesión simulada</small>
+            <small>Sesión temporal</small>
           </button>
         </div>
 
@@ -357,7 +372,7 @@ function getModeMessage(currentMode) {
     return "Usa la sesión real guardada, envía el token real y navega por las rutas reales.";
   }
 
-  return "Usa una sesión simulada local, no guarda login real, no envía token real y bloquea escrituras.";
+  return "Usa una sesión local y temporal: no envía tokens reales y conserva cambios solo hasta salir o restablecer el preview.";
 }
 
 function getStatusMessage({ isAllowed, isLayoutAllowed, isViewerAllowed }) {

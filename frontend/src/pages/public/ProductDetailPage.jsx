@@ -20,6 +20,7 @@ import {
   productImage,
   readCollection,
 } from "../../services/viewMappers.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 function formatPrice(amount) {
   return `$${(Number(amount) || 0).toLocaleString("es-MX")} MXN`;
@@ -75,6 +76,7 @@ function formatReviewDate(value) {
 }
 
 export default function ProductDetailPage() {
+  const { settings } = useStoreSettings();
   const { productId } = useParams();
   const { isAuthenticated } = useEffectiveSession();
   const [activeImage, setActiveImage] = useState(0);
@@ -169,9 +171,10 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = async () => {
-    if (!product || Number(product.stock || 0) <= 0) return;
+    if (!product || Number(product.stock || 0) <= 0 || settings.storefront_available === false) return;
     try {
       await cartService.addItem({ product_id: product.id, quantity });
+      window.dispatchEvent(new Event("daybed:cart-updated"));
       flashNotice(`${product.name} se agregó al carrito.`);
     } catch (requestError) {
       flashNotice(
@@ -193,8 +196,10 @@ export default function ProductDetailPage() {
   };
 
   const handleRelatedAddToCart = async (item) => {
+    if (settings.storefront_available === false) { flashNotice("Las compras están pausadas temporalmente."); return; }
     try {
       await cartService.addItem({ product_id: item.id, quantity: 1 });
+      window.dispatchEvent(new Event("daybed:cart-updated"));
       flashNotice(`${item.name} se agregó al carrito.`);
     } catch (requestError) {
       flashNotice(requestError.status === 401 ? "Inicia sesión para agregar productos." : requestError.message || "No pudimos agregar el producto.");
@@ -363,9 +368,9 @@ export default function ProductDetailPage() {
               type="button"
               className="product-detail__btn product-detail__btn--cart"
               onClick={handleAddToCart}
-              disabled={Number(product.stock || 0) <= 0}
+              disabled={Number(product.stock || 0) <= 0 || settings.storefront_available === false}
             >
-              {Number(product.stock || 0) > 0 ? "Agregar al carrito" : "Sin existencias"}
+              {Number(product.stock || 0) <= 0 ? "Sin existencias" : settings.storefront_available === false ? "Compra pausada" : "Agregar al carrito"}
             </button>
             <button
               type="button"

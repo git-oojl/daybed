@@ -14,15 +14,6 @@ import PageHero from "../../components/layout/PageHero.jsx";
 // ============================================
 // ICONOS SVG
 // ============================================
-function IconUsers() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M17 12a3 3 0 1 0 0-6M7 12a3 3 0 1 1 0-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
 function IconUserPlus() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -478,7 +469,7 @@ export default function InternalUsersPage() {
             <FaExclamationTriangle aria-hidden="true" />
             {error}
           </p>
-          <button onClick={loadUsers}>Reintentar</button>
+          <button onClick={loadUsers}>Volver a cargar equipo</button>
         </div>
         <HomeFooter />
       </div>

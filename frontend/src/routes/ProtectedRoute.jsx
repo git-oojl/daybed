@@ -43,7 +43,6 @@ function ProtectedRoute({
 
   if (
     requiredPermission &&
-    !previewSession.isPreview &&
     !hasEffectivePermission(user, requiredPermission)
   ) {
     return <Navigate to={redirectTo} replace state={{ from: location }} />;

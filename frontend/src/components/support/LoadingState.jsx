@@ -1,5 +1,5 @@
-import { FaCircleNotch } from "react-icons/fa";
+import FeatureState from "./FeatureState.jsx";
 
-export default function LoadingState({ message = "Cargando información..." }) {
-  return <div className="state-card state-card--compact" role="status"><span className="state-card__icon state-card__icon--spin"><FaCircleNotch /></span><h3>{message}</h3><p>Esto debería tomar solo un momento.</p></div>;
+export default function LoadingState({ message = "Preparando la información…", detail = "Conservaremos tu lugar mientras termina de cargar." }) {
+  return <FeatureState tone="loading" compact title={message} message={detail} />;
 }

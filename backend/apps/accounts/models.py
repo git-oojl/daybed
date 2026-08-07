@@ -10,6 +10,7 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=32, blank=True)
+    avatar = models.ImageField(upload_to="avatars/", blank=True)
     state = models.CharField(max_length=120, blank=True)
     city = models.CharField(max_length=120, blank=True)
     role = models.CharField(

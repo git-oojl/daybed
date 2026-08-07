@@ -1,45 +1,49 @@
+import { lazy } from "react";
+
 import {
   accessGroups,
   canViewerAccess,
   getPreviewViewer,
   previewViewers,
 } from "../auth/viewerAccess.js";
-import AdminLayout from "../layouts/AdminLayout.jsx";
-import BackOfficeLayout from "../layouts/BackOfficeLayout.jsx";
-import CheckoutLayout from "../layouts/CheckoutLayout.jsx";
-import CustomerLayout from "../layouts/CustomerLayout.jsx";
-import PublicLayout from "../layouts/PublicLayout.jsx";
-import SupportLayout from "../layouts/SupportLayout.jsx";
-import LoginPage from "../pages/account/LoginPage.jsx";
-import MyOrdersPage from "../pages/account/MyOrdersPage.jsx";
-import OrderDetailPage from "../pages/account/OrderDetailPage.jsx";
-import ProfilePage from "../pages/account/ProfilePage.jsx";
-import RegisterPage from "../pages/account/RegisterPage.jsx";
-import BasicSettingsPage from "../pages/admin/BasicSettingsPage.jsx";
-import BusinessMetricsPage from "../pages/admin/BusinessMetricsPage.jsx";
-import InternalUsersPage from "../pages/admin/InternalUsersPage.jsx";
-import RolesPermissionsPage from "../pages/admin/RolesPermissionsPage.jsx";
-import CategoriesPage from "../pages/back-office/CategoriesPage.jsx";
-import DashboardPage from "../pages/back-office/DashboardPage.jsx";
-import InternalOrderDetailPage from "../pages/back-office/InternalOrderDetailPage.jsx";
-import InternalOrdersPage from "../pages/back-office/InternalOrdersPage.jsx";
-import InventoryPage from "../pages/back-office/InventoryPage.jsx";
-import ProductsPage from "../pages/back-office/ProductsPage.jsx";
-import CartPage from "../pages/checkout/CartPage.jsx";
-import CheckoutSummaryPage from "../pages/checkout/CheckoutSummaryPage.jsx";
-import OrderConfirmationPage from "../pages/checkout/OrderConfirmationPage.jsx";
-import CatalogPage from "../pages/public/CatalogPage.jsx";
-import ContactHelpPage from "../pages/public/ContactHelpPage.jsx";
-import HomePage from "../pages/public/HomePage.jsx";
-import ProductDetailPage from "../pages/public/ProductDetailPage.jsx";
-import SavedItemsPage from "../pages/public/SavedItemsPage.jsx";
-import EmptyStatesPage from "../pages/support/EmptyStatesPage.jsx";
-import FeedbackMessagesPage from "../pages/support/FeedbackMessagesPage.jsx";
-import SuccessStatePage from "../pages/support/SuccessStatePage.jsx";
-import ErrorStatePage from "../pages/support/ErrorStatePage.jsx";
-import LoadingStatesPage from "../pages/support/LoadingStatesPage.jsx";
-import NotFoundPage from "../pages/support/NotFoundPage.jsx";
-import UnauthorizedPage from "../pages/support/UnauthorizedPage.jsx";
+
+const AdminLayout = lazy(() => import("../layouts/AdminLayout.jsx"));
+const BackOfficeLayout = lazy(() => import("../layouts/BackOfficeLayout.jsx"));
+const CheckoutLayout = lazy(() => import("../layouts/CheckoutLayout.jsx"));
+const CustomerLayout = lazy(() => import("../layouts/CustomerLayout.jsx"));
+const PublicLayout = lazy(() => import("../layouts/PublicLayout.jsx"));
+const SupportLayout = lazy(() => import("../layouts/SupportLayout.jsx"));
+
+const LoginPage = lazy(() => import("../pages/account/LoginPage.jsx"));
+const MyOrdersPage = lazy(() => import("../pages/account/MyOrdersPage.jsx"));
+const OrderDetailPage = lazy(() => import("../pages/account/OrderDetailPage.jsx"));
+const ProfilePage = lazy(() => import("../pages/account/ProfilePage.jsx"));
+const RegisterPage = lazy(() => import("../pages/account/RegisterPage.jsx"));
+const BasicSettingsPage = lazy(() => import("../pages/admin/BasicSettingsPage.jsx"));
+const BusinessMetricsPage = lazy(() => import("../pages/admin/BusinessMetricsPage.jsx"));
+const InternalUsersPage = lazy(() => import("../pages/admin/InternalUsersPage.jsx"));
+const RolesPermissionsPage = lazy(() => import("../pages/admin/RolesPermissionsPage.jsx"));
+const CategoriesPage = lazy(() => import("../pages/back-office/CategoriesPage.jsx"));
+const DashboardPage = lazy(() => import("../pages/back-office/DashboardPage.jsx"));
+const InternalOrderDetailPage = lazy(() => import("../pages/back-office/InternalOrderDetailPage.jsx"));
+const InternalOrdersPage = lazy(() => import("../pages/back-office/InternalOrdersPage.jsx"));
+const InventoryPage = lazy(() => import("../pages/back-office/InventoryPage.jsx"));
+const ProductsPage = lazy(() => import("../pages/back-office/ProductsPage.jsx"));
+const CartPage = lazy(() => import("../pages/checkout/CartPage.jsx"));
+const CheckoutSummaryPage = lazy(() => import("../pages/checkout/CheckoutSummaryPage.jsx"));
+const OrderConfirmationPage = lazy(() => import("../pages/checkout/OrderConfirmationPage.jsx"));
+const CatalogPage = lazy(() => import("../pages/public/CatalogPage.jsx"));
+const ContactHelpPage = lazy(() => import("../pages/public/ContactHelpPage.jsx"));
+const HomePage = lazy(() => import("../pages/public/HomePage.jsx"));
+const ProductDetailPage = lazy(() => import("../pages/public/ProductDetailPage.jsx"));
+const SavedItemsPage = lazy(() => import("../pages/public/SavedItemsPage.jsx"));
+const EmptyStatesPage = lazy(() => import("../pages/support/EmptyStatesPage.jsx"));
+const FeedbackMessagesPage = lazy(() => import("../pages/support/FeedbackMessagesPage.jsx"));
+const SuccessStatePage = lazy(() => import("../pages/support/SuccessStatePage.jsx"));
+const ErrorStatePage = lazy(() => import("../pages/support/ErrorStatePage.jsx"));
+const LoadingStatesPage = lazy(() => import("../pages/support/LoadingStatesPage.jsx"));
+const NotFoundPage = lazy(() => import("../pages/support/NotFoundPage.jsx"));
+const UnauthorizedPage = lazy(() => import("../pages/support/UnauthorizedPage.jsx"));
 
 export const previewLayouts = [
   {
@@ -101,7 +105,7 @@ export const previewViews = [
     id: "productDetail",
     label: "Detalle de producto",
     group: "Sitio público",
-    path: "/productos/demo-producto",
+    path: "/productos/1",
     defaultLayout: "public",
     allowedLayouts: ["public"],
     allowedViewers: accessGroups.publicStore,
@@ -178,7 +182,7 @@ export const previewViews = [
     id: "orderDetail",
     label: "Detalle de pedido",
     group: "Cuenta del cliente",
-    path: "/cuenta/pedidos/demo-pedido",
+    path: "/cuenta/pedidos/DAY-00801",
     defaultLayout: "customer",
     allowedLayouts: ["customer"],
     allowedViewers: accessGroups.authenticated,
@@ -211,7 +215,7 @@ export const previewViews = [
     id: "orderConfirmation",
     label: "Confirmación de pedido",
     group: "Flujo de compra",
-    path: "/pedido-confirmado/demo-pedido",
+    path: "/pedido-confirmado/801",
     defaultLayout: "checkout",
     allowedLayouts: ["checkout"],
     allowedViewers: accessGroups.checkout,
@@ -277,7 +281,7 @@ export const previewViews = [
     id: "internalOrderDetail",
     label: "Detalle operativo de pedido",
     group: "Back-office",
-    path: "/interno/pedidos/demo-pedido",
+    path: "/interno/pedidos/DAY-00802",
     defaultLayout: "backOffice",
     allowedLayouts: ["backOffice"],
     allowedViewers: accessGroups.backOffice,
@@ -439,33 +443,28 @@ export function canPreviewViewer(view, viewerId) {
   return canViewerAccess(view.allowedViewers, viewerId);
 }
 
+const dynamicPreviewRoots = {
+  productDetail: "/productos",
+  orderDetail: "/cuenta/pedidos",
+  orderConfirmation: "/pedido-confirmado",
+  internalOrderDetail: "/interno/pedidos",
+};
+
 export function getViewIdFromPath(pathname) {
-  const exactMatch = previewViews.find((view) => view.path === pathname);
+  const normalizedPath = pathname.replace(/\/$/, "") || "/";
+  const exactMatch = previewViews.find(
+    (view) => view.path.replace(/\/$/, "") === normalizedPath,
+  );
 
   if (exactMatch) {
     return exactMatch.id;
   }
 
-  const dynamicMatches = previewViews
-    .map((view) => {
-      const routeRoot = view.path
-        .replace("/demo-producto", "")
-        .replace("/demo-pedido", "");
+  const dynamicMatch = Object.entries(dynamicPreviewRoots)
+    .filter(([, routeRoot]) => normalizedPath.startsWith(`${routeRoot}/`))
+    .sort(([, leftRoot], [, rightRoot]) => rightRoot.length - leftRoot.length)[0];
 
-      return {
-        routeRoot,
-        score: routeRoot.length + (view.path.includes("/demo-") ? 1 : 0),
-        view,
-      };
-    })
-    .filter(
-      ({ routeRoot }) =>
-        routeRoot !== "/" &&
-        pathname.startsWith(`${routeRoot}/`),
-    )
-    .sort((left, right) => right.score - left.score);
-
-  return dynamicMatches[0]?.view.id;
+  return dynamicMatch?.[0];
 }
 
 export function getPreviewPath(viewId, layoutId, viewerId) {

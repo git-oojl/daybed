@@ -19,7 +19,12 @@ from apps.delivery.services import (
 
 def _error_response(exc):
     return Response(
-        {"detail": str(exc)},
+        {
+            "detail": str(exc),
+            "user_message": getattr(exc, "user_message", str(exc)),
+            "code": getattr(exc, "code", "delivery_service_unavailable"),
+            "feature": getattr(exc, "feature", "delivery"),
+        },
         status=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY),
     )
 

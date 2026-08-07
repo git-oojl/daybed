@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaArrowRight, FaBoxOpen, FaClock, FaSearch, FaTruck } from "react-icons/fa";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { routePaths } from "../../routes/routePaths.js";
 import { orderService } from "../../services/backendServices.js";
@@ -18,7 +19,7 @@ const FILTERS = [
 ];
 
 function OrderCard({ order }) {
-  const detailPath = routePaths.account.orderDetail.replace(":orderId", order.id);
+  const detailPath = routePaths.account.orderDetail.replace(":orderId", order.number);
   return (
     <article className="orders-v2__card reveal-on-hover">
       <header className="orders-v2__card-head">
@@ -70,24 +71,33 @@ export default function MyOrdersPage() {
     if (!authLoading && !isAuthenticated) navigate(routePaths.account.login);
   }, [authLoading, isAuthenticated, navigate]);
 
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await orderService.list();
-        const rows = Array.isArray(response) ? response : response?.results || [];
-        if (active) setOrders(rows.map(normalizeOrder));
-      } catch (err) {
-        if (active) setError(err.message || "No pudimos cargar tus pedidos.");
-      } finally {
-        if (active) setLoading(false);
-      }
+  const loadOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await orderService.list();
+      const rows = Array.isArray(response) ? response : response?.results || [];
+      setOrders(rows.map(normalizeOrder));
+    } catch (err) {
+      setError(err.message || "No pudimos cargar tus pedidos.");
+    } finally {
+      setLoading(false);
     }
-    if (isAuthenticated && !authLoading) load();
-    return () => { active = false; };
-  }, [authLoading, isAuthenticated]);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) loadOrders();
+  }, [authLoading, isAuthenticated, loadOrders]);
+
+  useEffect(() => {
+    const refresh = () => loadOrders();
+    window.addEventListener("daybed:orders-updated", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("daybed:orders-updated", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [loadOrders]);
 
   const filtered = useMemo(() => orders.filter((order) => {
     const term = query.trim().toLowerCase();
@@ -117,9 +127,9 @@ export default function MyOrdersPage() {
         </section>
 
         {loading || authLoading ? (
-          <section className="state-card"><span className="state-card__icon"><FaClock /></span><h2>Buscando tus pedidos</h2><p>Estamos organizando tu historial de compra.</p></section>
+          <FeatureState tone="loading" title="Buscando tus pedidos" message="Estamos organizando tu historial de compra." />
         ) : error ? (
-          <section className="state-card state-card--error"><span className="state-card__icon">!</span><h2>No pudimos abrir tus pedidos</h2><p>{error}</p><button onClick={() => window.location.reload()}>Reintentar</button></section>
+          <FeatureState tone="error" title="No pudimos abrir tus pedidos" message={error} actionLabel="Intentar de nuevo" onAction={loadOrders} secondaryLabel="Ir a Tienda" secondaryTo={routePaths.public.catalog} />
         ) : filtered.length ? (
           <section className="orders-v2__list">{filtered.map((order) => <OrderCard order={order} key={order.id} />)}</section>
         ) : (

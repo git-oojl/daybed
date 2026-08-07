@@ -14,6 +14,8 @@ class StoreSettings(models.Model):
     store_name = models.CharField(max_length=160, default="Daybed")
     contact_phone = models.CharField(max_length=32, default="+52 664 000 0000")
     contact_email = models.EmailField(default="contacto@daybed.local")
+    business_hours = models.CharField(max_length=220, default="Lun–Sáb · 10:00–19:00")
+    support_instructions = models.TextField(blank=True, default="Escríbenos con tu número de pedido y te ayudaremos.")
     street = models.CharField(max_length=180, default="Sucursal principal")
     neighborhood = models.CharField(max_length=120, default="Zona Centro")
     city = models.CharField(max_length=120, default="Tijuana")
@@ -31,6 +33,12 @@ class StoreSettings(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(Decimal("0.00"))],
     )
+    maximum_delivery_radius_km = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        default=Decimal("80.00"),
+    )
     free_shipping_threshold = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -38,6 +46,14 @@ class StoreSettings(models.Model):
         null=True,
         blank=True,
     )
+    currency = models.CharField(max_length=8, default="MXN")
+    cancellation_window_hours = models.PositiveIntegerField(default=12)
+    default_low_stock_threshold = models.PositiveIntegerField(default=2)
+    default_preparation_days = models.PositiveIntegerField(default=4)
+    announcement_message = models.CharField(max_length=220, blank=True)
+    instagram_url = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    storefront_available = models.BooleanField(default=True)
     show_cart_estimate = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -69,6 +85,8 @@ class StoreSettings(models.Model):
             "store_name": "Daybed",
             "contact_phone": "+52 664 000 0000",
             "contact_email": "contacto@daybed.local",
+            "business_hours": "Lun–Sáb · 10:00–19:00",
+            "support_instructions": "Escríbenos con tu número de pedido y te ayudaremos.",
             "street": "Sucursal principal",
             "neighborhood": "Zona Centro",
             "city": "Tijuana",
@@ -78,7 +96,16 @@ class StoreSettings(models.Model):
             "longitude": _decimal_setting("STORE_LONGITUDE"),
             "delivery_base_fee": _decimal_setting("DELIVERY_BASE_FEE"),
             "delivery_price_per_km": _decimal_setting("DELIVERY_PRICE_PER_KM"),
+            "maximum_delivery_radius_km": Decimal("80.00"),
             "free_shipping_threshold": None,
+            "currency": "MXN",
+            "cancellation_window_hours": 12,
+            "default_low_stock_threshold": 2,
+            "default_preparation_days": 4,
+            "announcement_message": "",
+            "instagram_url": "",
+            "facebook_url": "",
+            "storefront_available": True,
             "show_cart_estimate": True,
             "is_active": True,
         }
@@ -112,6 +139,7 @@ class StoreSettings(models.Model):
         for field in (
             "delivery_base_fee",
             "delivery_price_per_km",
+            "maximum_delivery_radius_km",
             "free_shipping_threshold",
         ):
             value = getattr(self, field)
@@ -136,3 +164,25 @@ class StoreSettings(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+class ContactRequest(models.Model):
+    class Status(models.TextChoices):
+        NEW = "new", "Nuevo"
+        IN_PROGRESS = "in_progress", "En seguimiento"
+        RESOLVED = "resolved", "Resuelto"
+
+    name = models.CharField(max_length=160)
+    email = models.EmailField()
+    subject = models.CharField(max_length=180)
+    message = models.TextField(max_length=2000)
+    order_code = models.CharField(max_length=24, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+
+    def __str__(self):
+        return f"{self.subject} · {self.email}"

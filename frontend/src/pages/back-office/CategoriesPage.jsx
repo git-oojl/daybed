@@ -1,150 +1,94 @@
-// CategoriesPage.jsx
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  FaArrowDown,
+  FaArrowUp,
+  FaBoxOpen,
+  FaEye,
+  FaImage,
+  FaPen,
+  FaPlus,
+  FaMagnifyingGlass,
+  FaToggleOff,
+  FaToggleOn,
+  FaXmark,
+} from "react-icons/fa6";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
-import {
-  FaCouch,
-  FaTable,
-  FaChair,
-  FaLightbulb,
-  FaBoxOpen,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaSearch,
-  FaFilter,
-  FaEye,
-  FaSpinner,
-} from "react-icons/fa";
 import { catalogService } from "../../services/backendServices.js";
-import LoadingState from "../../components/support/LoadingState.jsx";
-import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
-// ============================================
-// ✅ MAPA DE ICONOS POR CATEGORÍA
-// ============================================
-const getCategoryIcon = (name) => {
-  const icons = {
-    "Sofás": <FaCouch size={32} color="#8B5E3C" />,
-    "Mesas": <FaTable size={32} color="#8B5E3C" />,
-    "Sillas": <FaChair size={32} color="#8B5E3C" />,
-    "Iluminación": <FaLightbulb size={32} color="#8B5E3C" />,
-    "Almacenamiento": <FaBoxOpen size={32} color="#8B5E3C" />,
-    "Sofás cama": <FaCouch size={32} color="#8B5E3C" />,
-    "Mesas de centro": <FaTable size={32} color="#8B5E3C" />,
-    "Sillas de acento": <FaChair size={32} color="#8B5E3C" />,
-    "Decoración": <FaLightbulb size={32} color="#8B5E3C" />,
-  };
-  return icons[name] || <FaBoxOpen size={32} color="#8B5E3C" />;
+const FILTER_OPTIONS = [
+  ["room", "Espacio"],
+  ["furniture_type", "Tipo de mueble"],
+  ["material", "Material"],
+  ["color", "Color"],
+  ["style", "Estilo"],
+  ["has_storage", "Almacenamiento"],
+  ["is_sofa_bed", "Sofá cama"],
+  ["availability", "Disponibilidad"],
+  ["rating", "Calificación"],
+];
+
+const EMPTY_FORM = {
+  name: "",
+  slug: "",
+  description: "",
+  display_order: 0,
+  homepage_visible: false,
+  active: true,
+  filter_attributes: ["room", "material", "style"],
+  attributes: "",
+  image: null,
 };
 
-// ============================================
-// ✅ FUNCIONES AUXILIARES
-// ============================================
-const normalizeString = (str) => {
-  return str
+function collectionKey(label) {
+  return label
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-};
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
 
-const getStatusValue = (categoryOrStatus) => {
-  if (typeof categoryOrStatus === "boolean") return categoryOrStatus;
-  if (typeof categoryOrStatus === "object" && categoryOrStatus !== null) {
-    return categoryOrStatus.active !== false;
-  }
-  return categoryOrStatus === "active" || categoryOrStatus === "Activo";
-};
+function readCollection(response) {
+  return Array.isArray(response) ? response : response?.results || [];
+}
 
-const getStatusLabel = (status) => {
-  return getStatusValue(status) ? "Activo" : "Inactivo";
-};
-
-// ============================================
-// ✅ COMPONENTE PRINCIPAL
-// ============================================
 export default function CategoriesPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
-  const isEmployee = viewerId === "employee";
-  const effectivePermissionCodes = user?.effective_permission_codes ?? [];
-  
-  // ✅ PERMISOS
-  const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
-  const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
-  const canDeactivate =
-    isAdmin || effectivePermissionCodes.includes("products.deactivate");
-  const canView = isAdmin || effectivePermissionCodes.includes("products.view");
+  const permissionCodes = user?.effective_permission_codes || [];
+  const canView = isAdmin || permissionCodes.includes("products.view");
+  const canEdit = isAdmin || permissionCodes.includes("products.update");
+  const canCreate = isAdmin || permissionCodes.includes("products.create");
 
-  const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    attributes: "",
-    status: "active",
-  });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Todos");
-  const [updating, setUpdating] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  const statusOptions = ["Todos", "Activo", "Inactivo"];
-
-  // ============================================
-  // ✅ CARGAR CATEGORÍAS Y CONTAR PRODUCTOS
-  // ============================================
-  const fetchCategories = useCallback(async () => {
+  const loadCollections = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Obtener categorías
-      const response = await catalogService.manageCategories({ page_size: 100 });
-      let categoriesData = response.results || response || [];
-      
-      // Obtener productos para contar por categoría
-      try {
-        const productsResponse = await catalogService.manageProducts({ page_size: 1000 });
-        const products = productsResponse.results || productsResponse || [];
-        
-        // Contar productos por categoría
-        const productCounts = {};
-        products.forEach(product => {
-          const categoryId = product.category?.id || product.category;
-          if (categoryId) {
-            productCounts[categoryId] = (productCounts[categoryId] || 0) + 1;
-          }
-        });
-        
-        // Agregar contador a cada categoría
-        categoriesData = categoriesData.map(category => ({
-          ...category,
-          product_count: productCounts[category.id] || 0,
-        }));
-        
-      } catch {
-        categoriesData = categoriesData.map(category => ({
-          ...category,
-          product_count: category.product_count || 0,
-        }));
-      }
-      
-      setCategories(categoriesData);
-    } catch (err) {
-      console.error("No pudimos cargar las colecciones:", err);
-      setError(err.message || "No pudimos cargar las colecciones");
+      const response = await catalogService.manageCategories({ page_size: 100, ordering: "display_order,name" });
+      setCollections(readCollection(response));
+    } catch (requestError) {
+      setError(requestError);
     } finally {
       setLoading(false);
     }
@@ -152,743 +96,176 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!isAuthenticated) {
-      navigate(routePaths.account.login);
+      navigate(routePaths.account.login, { replace: true });
       return;
     }
-
-    if (!isAdmin && !isEmployee) {
-      navigate(routePaths.support.unauthorized || "/no-autorizado");
-      return;
-    }
-
     if (!canView) {
-      navigate(routePaths.support.unauthorized || "/no-autorizado");
+      navigate(routePaths.support.unauthorized, { replace: true });
       return;
     }
+    loadCollections();
+  }, [authLoading, isAuthenticated, canView, navigate, loadCollections]);
 
-    const timeoutId = window.setTimeout(fetchCategories, 0);
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [
-    authLoading,
-    isAuthenticated,
-    isAdmin,
-    isEmployee,
-    canView,
-    navigate,
-    fetchCategories,
-  ]);
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("es");
+    return [...collections]
+      .filter((item) => !needle || `${item.name} ${item.slug} ${item.description || ""}`.toLocaleLowerCase("es").includes(needle))
+      .filter((item) => status === "all" || (status === "active" ? item.active !== false : item.active === false))
+      .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || a.name.localeCompare(b.name, "es"));
+  }, [collections, query, status]);
 
-  // ============================================
-  // ✅ FILTRAR CATEGORÍAS
-  // ============================================
-  const filteredCategories = categories.filter((category) => {
-    const normalizedSearch = normalizeString(searchTerm);
-    const normalizedName = normalizeString(category.name);
-    const matchesSearch = normalizedName.includes(normalizedSearch);
-    const categoryStatus = getStatusLabel(category);
-    const matchesStatus =
-      filterStatus === "Todos" || categoryStatus === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  // ============================================
-  // ✅ CREAR/EDITAR CATEGORÍA
-  // ============================================
-  const handleOpenModal = (category = null) => {
-    if (category) {
-      setEditingCategory(category);
-      setFormData({
-        name: category.name,
-        description: category.description || "",
-        attributes: (category.specification_schema || []).map((item) => item.label || item.key).join(", "),
-        status: getStatusValue(category) ? "active" : "inactive",
-      });
-    } else {
-      setEditingCategory(null);
-      setFormData({
-        name: "",
-        description: "",
-        attributes: "",
-        status: "active",
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingCategory(null);
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setUpdating(true);
+  function openEditor(collection = null) {
     setError(null);
-    
-    try {
-      const payload = {
-        name: formData.name,
-        description: formData.description,
-        specification_schema: formData.attributes.split(",").map((label) => label.trim()).filter(Boolean).map((label) => ({
-          key: label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""),
-          label,
-          type: "text",
-          filterable: true,
-        })),
-        active: formData.status === "active",
-      };
-
-      if (editingCategory) {
-        await catalogService.updateCategory(editingCategory.slug || editingCategory.id, payload);
-      } else {
-        await catalogService.createCategory(payload);
-      }
-      handleCloseModal();
-      await fetchCategories();
-    } catch (err) {
-      console.error("Error al guardar categoría:", err);
-      setError(err.message || "Error al guardar categoría");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  // ============================================
-  // ✅ CAMBIAR ESTADO
-  // ============================================
-  const handleToggleStatus = async (category) => {
-    const newActive = !getStatusValue(category);
-    const newStatus = newActive ? "Activo" : "Inactivo";
-    
-    if (!window.confirm(`¿Cambiar estado de "${category.name}" a "${newStatus}"?`)) {
-      return;
-    }
-
-    setUpdating(true);
-    setError(null);
-
-    try {
-      await catalogService.updateCategory(category.slug || category.id, { active: newActive });
-      await fetchCategories();
-    } catch (err) {
-      console.error("Error al cambiar estado:", err);
-      setError(err.message || "Error al cambiar estado");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  // ============================================
-  // ✅ DESACTIVAR CATEGORÍA
-  // ============================================
-  const handleDelete = async (category) => {
-    if (!isAdmin) {
-      setError("No tienes permisos para desactivar colecciones");
-      return;
-    }
-    
-    if (!window.confirm(`¿Desactivar la categoría "${category.name}"?`)) {
-      return;
-    }
-
-    setUpdating(true);
-    setError(null);
-
-    try {
-      await catalogService.updateCategory(category.slug || category.id, { active: false });
-      await fetchCategories();
-    } catch (err) {
-      console.error("Error al desactivar categoría:", err);
-      setError(err.message || "Error al desactivar categoría");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  // ============================================
-  // ✅ ESTADOS DE CARGA
-  // ============================================
-  if (loading || authLoading) {
-    return (
-      <div className="home-page dashboard-page">
-        <HomeHeader />
-        <LoadingState message="Cargando colecciones..." />
-        <HomeFooter />
-      </div>
-    );
+    setEditing(collection);
+    setIsEditorOpen(true);
+    setForm(collection ? {
+      name: collection.name || "",
+      slug: collection.slug || "",
+      description: collection.description || "",
+      display_order: collection.display_order || 0,
+      homepage_visible: Boolean(collection.homepage_visible),
+      active: collection.active !== false,
+      filter_attributes: collection.filter_attributes || [],
+      attributes: (collection.specification_schema || []).map((item) => item.label || item.key).join(", "),
+      image: null,
+    } : { ...EMPTY_FORM, display_order: collections.length + 1, filter_attributes: [...EMPTY_FORM.filter_attributes] });
   }
 
-  if (error) {
-    return (
-      <div className="home-page dashboard-page">
-        <HomeHeader />
-        <ErrorMessage message={error} />
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button onClick={fetchCategories} style={{
-            padding: "10px 24px",
-            background: "#8B5E3C",
-            color: "#FFFFFF",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-          }}>Reintentar</button>
-        </div>
-        <HomeFooter />
-      </div>
-    );
+  function closeEditor() {
+    setEditing(null);
+    setIsEditorOpen(false);
+    setForm(EMPTY_FORM);
   }
 
-  // ============================================
-  // ✅ RENDER PRINCIPAL
-  // ============================================
+  function toggleFilterAttribute(key) {
+    setForm((current) => ({
+      ...current,
+      filter_attributes: current.filter_attributes.includes(key)
+        ? current.filter_attributes.filter((item) => item !== key)
+        : [...current.filter_attributes, key],
+    }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    try {
+      setSaving(true);
+      setError(null);
+      const attributeLabels = form.attributes.split(",").map((item) => item.trim()).filter(Boolean);
+      const payload = new FormData();
+      payload.append("name", form.name.trim());
+      if (form.slug.trim()) payload.append("slug", form.slug.trim());
+      payload.append("description", form.description.trim());
+      payload.append("display_order", String(Number(form.display_order || 0)));
+      payload.append("homepage_visible", String(Boolean(form.homepage_visible)));
+      payload.append("active", String(Boolean(form.active)));
+      payload.append("filter_attributes", JSON.stringify(form.filter_attributes));
+      payload.append("specification_schema", JSON.stringify(attributeLabels.map((label) => ({
+        key: collectionKey(label),
+        label,
+        type: "text",
+        filterable: true,
+      }))));
+      if (form.image) payload.append("image", form.image);
+
+      if (editing) await catalogService.updateCategory(editing.slug || editing.id, payload);
+      else await catalogService.createCategory(payload);
+      setEditing(null);
+      setIsEditorOpen(false);
+      setForm(EMPTY_FORM);
+      await loadCollections();
+    } catch (requestError) {
+      setError(requestError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function patchCollection(collection, changes) {
+    try {
+      setError(null);
+      await catalogService.updateCategory(collection.slug || collection.id, changes);
+      setCollections((current) => current.map((item) => item.id === collection.id ? { ...item, ...changes } : item));
+    } catch (requestError) {
+      setError(requestError);
+    }
+  }
+
+  async function move(collection, direction) {
+    const ordered = [...collections].sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0));
+    const index = ordered.findIndex((item) => item.id === collection.id);
+    const target = ordered[index + direction];
+    if (!target) return;
+    await Promise.all([
+      catalogService.updateCategory(collection.slug || collection.id, { display_order: target.display_order }),
+      catalogService.updateCategory(target.slug || target.id, { display_order: collection.display_order }),
+    ]);
+    await loadCollections();
+  }
+
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
-
-      {/* HERO */}
       <PageHero
         title="Colecciones y atributos"
-        eyebrow="Merchandising"
-        image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82"
-        current="Colecciones y atributos"
+        eyebrow="Merchandising Daybed"
+        image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82"
+        current="Colecciones"
       />
 
-      <main className="dashboard-container">
-        {/* HEADER */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "16px",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-            marginTop: "16px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "clamp(1.2rem, 2vw, 1.8rem)",
-              color: "#6B4A2B",
-              margin: 0,
-            }}
-          >
-            Colecciones de la tienda ({categories.length})
-          </h2>
-          {canCreate && (
-            <button
-              onClick={() => handleOpenModal()}
-              style={{
-                backgroundColor: "#8B5E3C",
-                color: "#FFFFFF",
-                border: "none",
-                padding: "12px 28px",
-                borderRadius: "8px",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "background-color 0.2s ease",
-                boxShadow: "0 2px 8px rgba(139,94,60,0.3)",
-              }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#6B4A2B")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#8B5E3C")}
-            >
-              <FaPlus /> Nueva colección
-            </button>
-          )}
-        </div>
-
-        {/* FILTROS */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "12px",
-            marginBottom: "24px",
-            padding: "16px 20px",
-            background: "#FDF8F0",
-            border: "1px solid #E8DCCC",
-            borderRadius: "12px",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ position: "relative", flex: "1", minWidth: "200px" }}>
-            <FaSearch
-              style={{
-                position: "absolute",
-                left: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#999",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Buscar colecciones..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px 10px 38px",
-                borderRadius: "8px",
-                border: "1px solid #E8DCCC",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                background: "#FFFFFF",
-              }}
-            />
+      <main className="collection-manager dashboard-container">
+        <header className="collection-manager__intro">
+          <div>
+            <p className="section-kicker">Una sola tienda, una sola estructura</p>
+            <h1>Organiza cómo se descubre el catálogo</h1>
+            <p>Las colecciones pertenecen al negocio Daybed. Define su orden, visibilidad en Inicio y los atributos que realmente pueden filtrar sus productos.</p>
           </div>
+          {canCreate ? <button className="btn-primary" type="button" onClick={() => openEditor()}><FaPlus /> Nueva colección</button> : null}
+        </header>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            <FaFilter style={{ color: "#8B5E3C" }} />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              style={{
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: "1px solid #E8DCCC",
-                fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                background: "#FFFFFF",
-                minWidth: "120px",
-              }}
-            >
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
+        <section className="collection-manager__toolbar" aria-label="Filtros de colecciones">
+          <label className="collection-manager__search"><FaMagnifyingGlass /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar nombre, slug o descripción" /></label>
+          <label>Estado<select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option><option value="active">Activas</option><option value="inactive">Inactivas</option></select></label>
+          <span>{filtered.length} {filtered.length === 1 ? "colección" : "colecciones"}</span>
+        </section>
+
+        {error ? <FeatureState tone="error" compact title="No pudimos completar la acción" message={error.message || "Revisa los datos e inténtalo de nuevo."} actionLabel="Volver a cargar" onAction={loadCollections} /> : null}
+        {loading ? <FeatureState tone="loading" title="Cargando colecciones" message="Estamos preparando la estructura de merchandising de Daybed." /> : filtered.length ? (
+          <div className="collection-table-wrap">
+            <table className="collection-table">
+              <thead><tr><th>Orden</th><th>Colección</th><th>Productos</th><th>Inicio</th><th>Filtros asociados</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
+              <tbody>{filtered.map((collection, index) => (
+                <tr key={collection.id || collection.slug}>
+                  <td><div className="collection-order"><strong>{Number(collection.display_order || index + 1)}</strong>{canEdit ? <span><button type="button" onClick={() => move(collection, -1)} disabled={index === 0} aria-label={`Subir ${collection.name}`}><FaArrowUp /></button><button type="button" onClick={() => move(collection, 1)} disabled={index === filtered.length - 1} aria-label={`Bajar ${collection.name}`}><FaArrowDown /></button></span> : null}</div></td>
+                  <td><div className="collection-identity"><span className="collection-identity__fallback"><FaBoxOpen /></span>{collection.image ? <img src={collection.image} alt="" onError={(event) => { event.currentTarget.remove(); }} /> : null}<div><strong>{collection.name}</strong><code>/{collection.slug}</code><small>{collection.description || "Sin descripción pública."}</small></div></div></td>
+                  <td><Link to={`${routePaths.backOffice.products}?categoria=${collection.id}`}>{collection.product_count || 0}</Link></td>
+                  <td>{canEdit ? <button className={`collection-toggle ${collection.homepage_visible ? "is-on" : ""}`} type="button" onClick={() => patchCollection(collection, { homepage_visible: !collection.homepage_visible })}>{collection.homepage_visible ? <FaToggleOn /> : <FaToggleOff />}<span>{collection.homepage_visible ? "Visible" : "Oculta"}</span></button> : collection.homepage_visible ? "Visible" : "Oculta"}</td>
+                  <td><div className="collection-attributes">{(collection.filter_attributes || []).slice(0, 4).map((key) => <span key={key}>{FILTER_OPTIONS.find(([value]) => value === key)?.[1] || key}</span>)}{(collection.filter_attributes || []).length > 4 ? <span>+{collection.filter_attributes.length - 4}</span> : null}</div></td>
+                  <td><span className={`status-pill ${collection.active === false ? "status-pill--muted" : "status-pill--success"}`}>{collection.active === false ? "Inactiva" : "Activa"}</span></td>
+                  <td><div className="collection-actions"><Link to={`${routePaths.public.catalog}?category__slug=${encodeURIComponent(collection.slug)}`} title="Abrir catálogo filtrado"><FaEye /></Link>{canEdit ? <button type="button" onClick={() => openEditor(collection)} title="Editar colección"><FaPen /></button> : null}{canEdit ? <button type="button" onClick={() => patchCollection(collection, { active: collection.active === false })} title={collection.active === false ? "Activar" : "Desactivar"}>{collection.active === false ? <FaToggleOn /> : <FaToggleOff />}</button> : null}</div></td>
+                </tr>
+              ))}</tbody>
+            </table>
           </div>
-        </div>
-
-        {/* GRID DE CATEGORÍAS */}
-        <div
-          className="dashboard-grid"
-          style={{
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "24px",
-          }}
-        >
-          {filteredCategories.length > 0 ? (
-            filteredCategories.map((category) => (
-              <div
-                key={category.id}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  textAlign: "center",
-                  padding: "clamp(24px, 3vw, 32px)",
-                  background: "#FFFFFF",
-                  border: "1px solid #E8DCCC",
-                  borderRadius: "16px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                  transition: "transform 0.2s ease, boxShadow 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)";
-                }}
-              >
-                {/* ICONO */}
-                <div
-                  style={{
-                    marginBottom: "12px",
-                    background: "#F8F3ED",
-                    padding: "14px",
-                    borderRadius: "50%",
-                    width: "68px",
-                    height: "68px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {getCategoryIcon(category.name)}
-                </div>
-
-                {/* NOMBRE */}
-                <h3
-                  style={{
-                    margin: "0 0 4px 0",
-                    color: "#6B4A2B",
-                    fontSize: "clamp(1rem, 1.3vw, 1.2rem)",
-                    fontWeight: 700,
-                  }}
-                >
-                  {category.name}
-                </h3>
-
-                {/* PRODUCTOS */}
-                <span
-                  style={{
-                    color: "#7A6B5A",
-                    fontSize: "clamp(0.8rem, 1vw, 0.9rem)",
-                    marginBottom: "16px",
-                  }}
-                >
-                  {category.product_count || 0} productos
-                </span>
-                <p className="collection-card__description">{category.description || "Agrupación comercial para organizar productos y sus atributos."}</p>
-                <div className="collection-card__attributes">{(category.specification_schema || []).slice(0, 3).map((attribute) => <span key={attribute.key}>{attribute.label || attribute.key}</span>)}{(category.specification_schema || []).length === 0 ? <span>Sin atributos definidos</span> : null}</div>
-
-                {/* ACCIONES */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    width: "100%",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                  }}
-                >
-                  {canUpdate && (
-                    <button
-                      onClick={() => handleOpenModal(category)}
-                      disabled={updating}
-                      style={{
-                        backgroundColor: "#F8F3ED",
-                        color: "#8B5E3C",
-                        border: "1px solid #E8DCCC",
-                        padding: "8px 18px",
-                        borderRadius: "25px",
-                        fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                        fontWeight: 600,
-                        cursor: updating ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        transition: "all 0.2s ease",
-                        flex: 1,
-                        justifyContent: "center",
-                        opacity: updating ? 0.5 : 1,
-                      }}
-                    >
-                      <FaEdit size={14} /> Editar
-                    </button>
-                  )}
-                  
-                  {canUpdate && (
-                    <button
-                      onClick={() => handleToggleStatus(category)}
-                      disabled={updating}
-                      style={{
-                        backgroundColor: getStatusValue(category) ? "#E8F5E9" : "#FFF3E0",
-                        color: getStatusValue(category) ? "#2E7D32" : "#EF6C00",
-                        border: "1px solid",
-                        borderColor: getStatusValue(category) ? "#A5D6A7" : "#FFCC80",
-                        padding: "8px 18px",
-                        borderRadius: "25px",
-                        fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                        fontWeight: 600,
-                        cursor: updating ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        transition: "all 0.2s ease",
-                        flex: 1,
-                        justifyContent: "center",
-                        opacity: updating ? 0.5 : 1,
-                      }}
-                    >
-                      {updating ? <FaSpinner className="spinner" /> : getStatusLabel(category)}
-                    </button>
-                  )}
-
-                  {/* DESACTIVAR - SOLO ADMIN */}
-                  {canDeactivate && (
-                    <button
-                      onClick={() => handleDelete(category)}
-                      disabled={updating}
-                      style={{
-                        backgroundColor: "#FDECEA",
-                        color: "#D32F2F",
-                        border: "1px solid #F5D0CC",
-                        padding: "8px 18px",
-                        borderRadius: "25px",
-                        fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                        fontWeight: 600,
-                        cursor: updating ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        transition: "all 0.2s ease",
-                        flex: 1,
-                        justifyContent: "center",
-                        opacity: updating ? 0.5 : 1,
-                      }}
-                    >
-                      <FaTrash size={14} /> Desactivar
-                    </button>
-                  )}
-                  {!canUpdate && !canDeactivate && (
-                    <span style={{ color: "#7A6B5A", fontSize: "0.85rem" }}>Solo lectura</span>
-                  )}
-                </div>
-
-                {/* ESTADO Y VER PRODUCTOS */}
-                <div
-                  style={{
-                    marginTop: "14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    justifyContent: "center",
-                    width: "100%",
-                  }}
-                >
-                  <span
-                    style={{
-                      backgroundColor: getStatusValue(category) ? "#E8F5E9" : "#FDECEA",
-                      color: getStatusValue(category) ? "#2E7D32" : "#D32F2F",
-                      padding: "4px 16px",
-                      borderRadius: "20px",
-                      fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {getStatusLabel(category)}
-                  </span>
-                  <Link
-                    to={`${routePaths.backOffice.products}?categoria=${category.id}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      color: "#8B5E3C",
-                      textDecoration: "none",
-                      fontSize: "clamp(0.7rem, 0.85vw, 0.8rem)",
-                      fontWeight: 500,
-                      padding: "4px 12px",
-                      borderRadius: "20px",
-                      backgroundColor: "#F8F3ED",
-                      border: "1px solid #E8DCCC",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#8B5E3C";
-                      e.currentTarget.style.color = "#FFFFFF";
-                      e.currentTarget.style.borderColor = "#8B5E3C";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F8F3ED";
-                      e.currentTarget.style.color = "#8B5E3C";
-                      e.currentTarget.style.borderColor = "#E8DCCC";
-                    }}
-                  >
-                    <FaEye size={14} /> Ver productos
-                  </Link>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div
-              style={{
-                gridColumn: "1 / -1",
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#999",
-                fontSize: "clamp(0.95rem, 1.2vw, 1.1rem)",
-              }}
-            >
-              No se encontraron colecciones que coincidan con los filtros
-            </div>
-          )}
-        </div>
+        ) : <FeatureState tone="empty" title="No encontramos colecciones" message="Prueba otro término o crea una colección para organizar el catálogo de Daybed." actionLabel={canCreate ? "Crear colección" : undefined} onAction={canCreate ? () => openEditor() : undefined} />}
       </main>
 
-      {/* MODAL CREAR/EDITAR */}
-      {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: "16px",
-          }}
-          onClick={handleCloseModal}
-        >
-          <div
-            style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: "16px",
-              padding: "clamp(20px, 4vw, 32px)",
-              maxWidth: "480px",
-              width: "92%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2
-              style={{
-                color: "#6B4A2B",
-                marginTop: 0,
-                fontSize: "clamp(1.2rem, 1.8vw, 1.5rem)",
-                fontWeight: 700,
-              }}
-            >
-              {editingCategory ? "Editar colección" : "Nueva colección"}
-            </h2>
-
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: "20px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontWeight: 600,
-                    marginBottom: "6px",
-                    color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                >
-                  Nombre de la colección *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: Sofás cama, Mesas auxiliares..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "2px solid #E8DCCC",
-                    borderRadius: "10px",
-                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                    outline: "none",
-                    transition: "border-color 0.2s ease",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#8B5E3C")}
-                  onBlur={(e) => (e.target.style.borderColor = "#E8DCCC")}
-                />
-              </div>
-
-              <div className="collection-editor__field">
-                <label>Descripción para la tienda</label>
-                <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Qué reúne esta colección y qué la distingue." />
-              </div>
-              <div className="collection-editor__field">
-                <label>Atributos de producto</label>
-                <input name="attributes" value={formData.attributes} onChange={handleChange} placeholder="Tapiz, acabado, número de plazas" />
-                <small>Sepáralos con comas. Se usarán como ficha y futuros filtros de catálogo.</small>
-              </div>
-
-              <div style={{ marginBottom: "28px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontWeight: 600,
-                    marginBottom: "6px",
-                    color: "#333",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                >
-                  Estado
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "2px solid #E8DCCC",
-                    borderRadius: "10px",
-                    fontSize: "clamp(0.9rem, 1vw, 1rem)",
-                    backgroundColor: "#FFFFFF",
-                    outline: "none",
-                  }}
-                >
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  justifyContent: "flex-end",
-                  flexWrap: "wrap",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  disabled={updating}
-                  style={{
-                    padding: "12px 28px",
-                    border: "2px solid #E8DCCC",
-                    borderRadius: "10px",
-                    backgroundColor: "#FFFFFF",
-                    color: "#666",
-                    cursor: updating ? "not-allowed" : "pointer",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                    fontWeight: 600,
-                    opacity: updating ? 0.5 : 1,
-                  }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={updating}
-                  style={{
-                    padding: "12px 32px",
-                    border: "none",
-                    borderRadius: "10px",
-                    backgroundColor: "#8B5E3C",
-                    color: "#FFFFFF",
-                    cursor: updating ? "not-allowed" : "pointer",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                    fontWeight: 600,
-                    boxShadow: "0 4px 12px rgba(139,94,60,0.3)",
-                    opacity: updating ? 0.5 : 1,
-                  }}
-                >
-                  {updating ? "Guardando..." : editingCategory ? "Actualizar" : "Crear"}
-                </button>
-              </div>
+      {isEditorOpen ? (
+        <div className="daybed-modal" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && closeEditor()}>
+          <section className="daybed-modal__panel" role="dialog" aria-modal="true" aria-labelledby="collection-editor-title">
+            <header><div><p className="section-kicker">Merchandising</p><h2 id="collection-editor-title">{editing ? `Editar ${editing.name}` : "Nueva colección"}</h2></div><button type="button" onClick={closeEditor} aria-label="Cerrar"><FaXmark /></button></header>
+            <form onSubmit={submit} className="collection-editor">
+              <div className="collection-editor__grid"><label>Nombre<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label>Slug<input value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} placeholder="Se genera si se deja vacío" /></label><label>Orden<input type="number" min="0" value={form.display_order} onChange={(event) => setForm({ ...form, display_order: event.target.value })} /></label><label>Imagen opcional<span className="file-field"><FaImage /><input type="file" accept="image/*" onChange={(event) => setForm({ ...form, image: event.target.files?.[0] || null })} /></span></label></div>
+              <label>Descripción<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows="3" /></label>
+              <fieldset><legend>Filtros relevantes</legend><p>Solo activa dimensiones que los productos de esta colección realmente utilizan.</p><div className="collection-filter-options">{FILTER_OPTIONS.map(([key, label]) => <label key={key}><input type="checkbox" checked={form.filter_attributes.includes(key)} onChange={() => toggleFilterAttribute(key)} />{label}</label>)}</div></fieldset>
+              <label>Atributos propios<textarea value={form.attributes} onChange={(event) => setForm({ ...form, attributes: event.target.value })} rows="2" placeholder="Tipo de apertura, plazas, acabado (separados por comas)" /></label>
+              <div className="collection-editor__switches"><label><input type="checkbox" checked={form.homepage_visible} onChange={(event) => setForm({ ...form, homepage_visible: event.target.checked })} />Mostrar en “Navega nuestras secciones”</label><label><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} />Colección activa</label></div>
+              <footer><button type="button" className="btn-secondary" onClick={closeEditor}>Cancelar</button><button type="submit" className="btn-primary" disabled={saving}>{saving ? "Guardando…" : "Guardar colección"}</button></footer>
             </form>
-          </div>
+          </section>
         </div>
-      )}
-
+      ) : null}
       <HomeFooter />
     </div>
   );

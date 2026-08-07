@@ -141,3 +141,51 @@ def test_model_rejects_more_than_one_active_settings_record():
     with pytest.raises(ValidationError):
         duplicate.full_clean()
 
+
+
+def test_store_settings_are_one_global_daybed_business_record():
+    first = StoreSettings.get_active()
+    second = StoreSettings.get_active()
+
+    assert first.pk == second.pk
+    assert StoreSettings.objects.count() == 1
+    assert first.store_name == "Daybed"
+
+
+def test_contact_request_is_public_persisted_and_normalizes_order_code():
+    response = api_client().post(
+        reverse("store-contact"),
+        {
+            "name": "María López",
+            "email": "maria@example.com",
+            "subject": "Seguimiento de entrega",
+            "message": "Quisiera confirmar la ventana de entrega.",
+            "order_code": "day-00801",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["order_code"] == "DAY-00801"
+    from apps.store.models import ContactRequest
+
+    request = ContactRequest.objects.get(pk=response.data["id"])
+    assert request.status == ContactRequest.Status.NEW
+    assert request.email == "maria@example.com"
+
+
+def test_contact_request_rejects_ambiguous_non_daybed_order_code():
+    response = api_client().post(
+        reverse("store-contact"),
+        {
+            "name": "María López",
+            "email": "maria@example.com",
+            "subject": "Pedido",
+            "message": "Necesito ayuda.",
+            "order_code": "801",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "DAY-00801" in str(response.data)

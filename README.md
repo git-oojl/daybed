@@ -138,7 +138,7 @@ Este paso es parte del setup normal del backend. Cada integrante debe trabajar c
 uv run python manage.py seed_demo
 ```
 
-Esto crea usuarios demo, configuración de tienda, categorías, catálogo amplio con imágenes, carritos, pedidos en distintos estados, pagos simulados e inventario. No compartas ni subas `db.sqlite3`; comparte cambios mediante migraciones, semillas y documentación.
+Esto crea usuarios demo, configuración global de Daybed, categorías, catálogo amplio con imágenes, carritos, pedidos en distintos estados, estados de pago de prueba e inventario. No compartas ni subas `db.sqlite3`; comparte cambios mediante migraciones, semillas y documentación.
 
 Usuarios demo para probar API y frontend:
 

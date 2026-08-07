@@ -12,7 +12,7 @@ from apps.cart.models import Cart, CartItem
 from apps.catalog.models import Category, Product, ProductImage, ProductReview
 from apps.inventory.models import InventoryMovement
 from apps.inventory.services import record_inventory_movement
-from apps.orders.models import Order, OrderItem
+from apps.orders.models import Order, OrderItem, OrderStatusEvent
 from apps.store.models import StoreSettings
 
 User = get_user_model()
@@ -1486,6 +1486,7 @@ class Command(BaseCommand):
             order = Order(user=customer, original_address=spec["address"])
         else:
             order.items.all().delete()
+            order.status_history.all().delete()
             InventoryMovement.objects.filter(order=order).delete()
 
         products_subtotal = Decimal("0.00")
@@ -1523,14 +1524,22 @@ class Command(BaseCommand):
                 product_snapshot=OrderItem.snapshot_from_product(product),
             )
 
+        OrderStatusEvent.objects.create(
+            order=order,
+            from_status="",
+            to_status=Order.Status.PENDING,
+            note="Pedido recibido por Daybed.",
+            actor=customer,
+        )
+
         if spec["status"] == Order.Status.CONFIRMED:
-            order.confirm(actor=employee)
+            order.transition_to(Order.Status.CONFIRMED, actor=employee)
         elif spec["status"] in {
             Order.Status.PREPARING,
             Order.Status.SHIPPED,
             Order.Status.DELIVERED,
         }:
-            order.confirm(actor=employee)
+            order.transition_to(Order.Status.CONFIRMED, actor=employee)
             for status in self._statuses_after_confirm(spec["status"]):
                 order.transition_to(status, actor=employee)
         elif spec["status"] == Order.Status.CANCELLED:
@@ -1542,7 +1551,7 @@ class Command(BaseCommand):
     def _payment_fields_for_spec(self, spec):
         method = spec.get("payment_method", Order.PaymentMethod.CASH)
         payment_status = spec.get("payment_status")
-        reference = f"SIM-DEMO-{spec['key'].upper()}"
+        reference = f"DAY-SEED-{spec['key'].upper()}"
 
         if method == Order.PaymentMethod.CARD:
             last4_by_key = {
@@ -1561,14 +1570,14 @@ class Command(BaseCommand):
                 "payment_reference": reference,
                 "payment_processed_at": timezone.now(),
                 "payment_snapshot": {
-                    "provider": "simulated",
+                    "provider": "daybed_checkout",
                     "brand": "Visa",
                     "last4": last4,
                     "masked": f"**** **** **** {last4}",
                     "message": (
-                        "Pago simulado rechazado."
+                        "Pago rechazado."
                         if status == Order.PaymentStatus.FAILED
-                        else "Pago simulado autorizado."
+                        else "Pago autorizado."
                     ),
                 },
             }
@@ -1581,11 +1590,11 @@ class Command(BaseCommand):
                 "payment_reference": reference,
                 "payment_processed_at": timezone.now(),
                 "payment_snapshot": {
-                    "provider": "simulated",
+                    "provider": "daybed_checkout",
                     "message": (
-                        "Transferencia simulada recibida."
+                        "Transferencia recibida."
                         if status == Order.PaymentStatus.AUTHORIZED
-                        else "Transferencia simulada pendiente de confirmación."
+                        else "Transferencia pendiente de confirmación."
                     ),
                 },
             }
@@ -1597,9 +1606,9 @@ class Command(BaseCommand):
             "payment_reference": reference,
             "payment_processed_at": timezone.now(),
             "payment_snapshot": {
-                "provider": "simulated",
+                "provider": "daybed_checkout",
                 "message": (
-                    "Pago en efectivo simulado recibido."
+                    "Pago en efectivo recibido."
                     if status == Order.PaymentStatus.AUTHORIZED
                     else "Pago en efectivo registrado para cobro contra entrega."
                 ),

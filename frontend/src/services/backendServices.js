@@ -76,6 +76,7 @@ export const deliveryService = {
 export const storeService = {
   settings: () => get(apiEndpoints.store.settings),
   updateSettings: (data) => patch(apiEndpoints.store.settings, data),
+  submitContact: (data) => post(apiEndpoints.store.contact, data),
 };
 
 export const orderService = {
@@ -84,8 +85,11 @@ export const orderService = {
   detail: (id) => get(apiEndpoints.orders.detail(id)),
   manageList: (params) => get(apiEndpoints.orders.manageList, params),
   manageDetail: (id) => get(apiEndpoints.orders.manageDetail(id)),
-  updateStatus: (id, status) =>
-    patch(apiEndpoints.orders.manageDetail(id), { status }),
+  updateStatus: (id, status, extra = {}) => {
+    const payload = { ...extra };
+    if (status) payload.status = status;
+    return patch(apiEndpoints.orders.manageDetail(id), payload);
+  },
   updatePaymentStatus: (id, paymentStatus) =>
     patch(apiEndpoints.orders.manageDetail(id), { payment_status: paymentStatus }),
 };

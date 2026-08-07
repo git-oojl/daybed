@@ -199,7 +199,7 @@ export default function DashboardPage() {
         <ErrorMessage message={error} />
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <button onClick={handleRetry} className="btn-primary">
-            Reintentar
+            Actualizar resumen
           </button>
         </div>
         <HomeFooter />
@@ -813,7 +813,7 @@ export default function DashboardPage() {
                     fontSize: "clamp(1rem, 1.3vw, 1.2rem)",
                   }}
                 >
-                  Empleado DayBed
+                  Empleado Daybed
                 </h3>
                 <p
                   style={{

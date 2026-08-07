@@ -98,6 +98,12 @@ export default function ProductsPage() {
     material: "",
     color: "",
     style: "",
+    room: "",
+    furniture_type: "",
+    has_storage: false,
+    is_sofa_bed: false,
+    featured: false,
+    featured_order: 0,
     width_cm: "",
     height_cm: "",
     depth_cm: "",
@@ -270,6 +276,12 @@ const fetchProducts = useCallback(async () => {
         material: product.material || "",
         color: product.color || "",
         style: product.style || "",
+        room: product.room || "",
+        furniture_type: product.furniture_type || "",
+        has_storage: Boolean(product.has_storage),
+        is_sofa_bed: Boolean(product.is_sofa_bed),
+        featured: Boolean(product.featured),
+        featured_order: product.featured_order || 0,
         width_cm: product.width_cm || "",
         height_cm: product.height_cm || "",
         depth_cm: product.depth_cm || "",
@@ -294,6 +306,12 @@ const fetchProducts = useCallback(async () => {
         material: "",
         color: "",
         style: "",
+        room: "",
+        furniture_type: "",
+        has_storage: false,
+        is_sofa_bed: false,
+        featured: false,
+        featured_order: 0,
         width_cm: "",
         height_cm: "",
         depth_cm: "",
@@ -317,7 +335,8 @@ const fetchProducts = useCallback(async () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, type, checked, value } = e.target;
+    setFormData((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleImageFileChange = (e) => {
@@ -353,6 +372,12 @@ const fetchProducts = useCallback(async () => {
       formDataToSend.append("material", formData.material || "");
       formDataToSend.append("color", formData.color || "");
       formDataToSend.append("style", formData.style || "");
+      formDataToSend.append("room", formData.room || "");
+      formDataToSend.append("furniture_type", formData.furniture_type || "");
+      formDataToSend.append("has_storage", String(Boolean(formData.has_storage)));
+      formDataToSend.append("is_sofa_bed", String(Boolean(formData.is_sofa_bed)));
+      formDataToSend.append("featured", String(Boolean(formData.featured)));
+      formDataToSend.append("featured_order", String(Number(formData.featured_order || 0)));
       ["width_cm", "height_cm", "depth_cm", "weight_kg"].forEach((field) => {
         if (formData[field] !== "") formDataToSend.append(field, Number(formData[field]));
       });
@@ -472,7 +497,7 @@ const handleDelete = async (id) => {
         <ErrorMessage message={error} />
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <button onClick={fetchProducts} className="btn-primary">
-            Reintentar
+            Volver a cargar productos
           </button>
         </div>
         <HomeFooter />
@@ -757,8 +782,9 @@ const handleDelete = async (id) => {
                                     borderRadius: "4px",
                                     border: "1px solid #E8DCCC",
                                   }}
-                                  onError={(e) => {
-                                    e.target.style.display = "none";
+                                  onError={(event) => {
+                                    event.currentTarget.onerror = null;
+                                    event.currentTarget.src = productImage({ name: product.name, category: getProductCategoryName(product) });
                                   }}
                                 />
                               ) : (
@@ -1189,7 +1215,23 @@ const handleDelete = async (id) => {
                   <label>Material<input name="material" value={formData.material} onChange={handleChange} placeholder="Lino, roble, acero..." /></label>
                   <label>Color<input name="color" value={formData.color} onChange={handleChange} placeholder="Arena, nogal..." /></label>
                   <label>Estilo<input name="style" value={formData.style} onChange={handleChange} placeholder="Contemporáneo" /></label>
+                  <label>Espacio<input name="room" value={formData.room} onChange={handleChange} placeholder="Sala, recámara, oficina..." /></label>
+                  <label>Tipo de mueble<input name="furniture_type" value={formData.furniture_type} onChange={handleChange} placeholder="Sofá cama, mesa, credenza..." /></label>
                 </div>
+              </section>
+
+              <section className="product-editor__section product-editor__section--merchandising">
+                <div className="product-editor__section-heading">
+                  <strong>Merchandising de la tienda</strong>
+                  <span>Estos controles alimentan Inicio y los filtros reales del catálogo.</span>
+                </div>
+                <div className="product-editor__toggles">
+                  <label><input type="checkbox" name="has_storage" checked={formData.has_storage} onChange={handleChange} />Incluye almacenamiento</label>
+                  <label><input type="checkbox" name="is_sofa_bed" checked={formData.is_sofa_bed} onChange={handleChange} />Es sofá cama</label>
+                  <label><input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />Mostrar en “Nuestros productos”</label>
+                  <label className={formData.featured ? "" : "is-disabled"}>Orden destacado<input type="number" min="1" max="4" name="featured_order" value={formData.featured_order} onChange={handleChange} disabled={!formData.featured} /></label>
+                </div>
+                <p className="product-editor__hint">Daybed muestra hasta cuatro productos destacados activos. Los agotados se excluyen de la portada.</p>
               </section>
 
               <section className="product-editor__section">
@@ -1311,8 +1353,8 @@ const handleDelete = async (id) => {
                         padding: "4px",
                         background: "#FDF8F0",
                       }}
-                      onError={(e) => {
-                        e.target.style.display = "none";
+                      onError={() => {
+                        setImagePreview("");
                       }}
                     />
                   </div>

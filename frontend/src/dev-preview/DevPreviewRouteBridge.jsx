@@ -21,10 +21,6 @@ function DevPreviewRouteBridge({ children }) {
   const selection = readDevViewSwitcherSelection();
   const isPreviewRoute = location.pathname === "/dev/preview";
 
-  if (!selection.mode && backendStatus.state === "checking" && !isPreviewRoute) {
-    return null;
-  }
-
   const currentMode =
     selection.mode ?? getDefaultModeFromBackendStatus(backendStatus.state);
 

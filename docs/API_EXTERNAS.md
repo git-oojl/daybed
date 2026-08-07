@@ -10,7 +10,7 @@ Nominatim/OpenStreetMap no requiere API key para el uso previsto del MVP. OpenRo
 OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
 ```
 
-La key debe guardarse únicamente en `backend/.env`. No debe subirse al repositorio, ponerse en `frontend/.env` ni enviarse al navegador. Sin esta variable, el backend puede arrancar, pero la estimación real de distancia/duración devuelve un error controlado.
+La key debe guardarse únicamente en `backend/.env`. No debe subirse al repositorio, ponerse en `frontend/.env` ni enviarse al navegador. Sin esta variable el backend puede arrancar. La estimación devuelve una alternativa aproximada con `routing_available: false`; la dirección, la sesión y el carrito se conservan, pero checkout no permite confirmar el pedido hasta obtener una ruta segura.
 
 ## Geocodificación: Nominatim / OpenStreetMap
 
@@ -52,7 +52,7 @@ Propósito:
 
 - Calcular distancia de ruta desde la tienda hasta el destino.
 - Calcular duración estimada.
-- Permitir que Daybed calcule una tarifa real usando la configuración activa de tienda.
+- Permitir que Daybed calcule una tarifa real usando su configuración global.
 
 Endpoint interno:
 
@@ -104,7 +104,7 @@ La API externa no define el precio de entrega. Daybed calcula la tarifa:
 delivery_fee = DELIVERY_BASE_FEE + (distance_km * DELIVERY_PRICE_PER_KM)
 ```
 
-En producción la regla usa `StoreSettings` activo. Las variables `STORE_LATITUDE`,
+En producción la regla usa el único registro global `StoreSettings` de Daybed. Las variables `STORE_LATITUDE`,
 `STORE_LONGITUDE`, `DELIVERY_BASE_FEE` y `DELIVERY_PRICE_PER_KM` son valores de
 bootstrap/fallback para crear la primera configuración si no existe registro
 persistente. Si `free_shipping_threshold` está configurado y `order_subtotal`
@@ -125,7 +125,7 @@ DELIVERY_PRICE_PER_KM=8.00
 
 ## Manejo de errores
 
-El backend debe devolver errores controlados cuando:
+El backend debe contener los fallos dentro del flujo de entrega y devolver estados controlados cuando:
 
 - No se encuentra la dirección.
 - El proveedor externo falla.
@@ -133,3 +133,10 @@ El backend debe devolver errores controlados cuando:
 - La respuesta del proveedor tiene formato inesperado.
 
 Las pruebas automatizadas deben mockear estas llamadas. No deben depender de proveedores vivos.
+
+
+## Reinicio y aislamiento de fallos
+
+Django y Vite leen sus variables al arrancar. Después de modificar `backend/.env` o una variable `VITE_*`, reinicia el proceso correspondiente. Un cambio de key no se aplica de forma retroactiva a un proceso ya iniciado.
+
+OpenRouteService no participa en autenticación. Una respuesta 401/403/timeout del proveedor se clasifica como indisponibilidad de rutas, no como un JWT inválido. La aplicación conserva credenciales, carrito, candidato geocodificado y navegación; únicamente impide confirmar un pedido cuyo costo de entrega no pueda validarse con seguridad.

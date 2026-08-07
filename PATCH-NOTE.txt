@@ -1,0 +1,3 @@
+Apply this archive while your shell is already in the Daybed PROJECT ROOT.
+It intentionally has no daybed-pase-final/ wrapper and makes no assumption about
+/home/debiant/src/daybed-pase-final or any other fixed workspace path.

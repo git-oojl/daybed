@@ -141,7 +141,7 @@ Campos editables por `/api/accounts/me/`:
 - `city`
 
 `id`, `username`, `role` y `effective_permission_codes` son de solo lectura.
-El perfil propio no cambia rol, grupos, permisos, configuración de tienda,
+El perfil propio no cambia rol, grupos, permisos, configuración global de Daybed,
 configuración de entrega ni credenciales.
 
 Cambio de contraseña:
@@ -221,7 +221,7 @@ Payload de actualización:
 
 El backend rechaza códigos desconocidos, permisos de cliente, permisos de
 administrador o capacidades que no correspondan a operaciones existentes. La
-gestión de usuarios, permisos y configuración de tienda sigue siendo solo admin.
+gestión de usuarios, permisos y configuración global de Daybed sigue siendo solo para administradores.
 
 ## Catalog
 
@@ -377,15 +377,15 @@ Estimate con dirección:
 ```
 
 `order_subtotal` es opcional. Si se envía y alcanza `free_shipping_threshold`
-en la configuración activa de tienda, la respuesta devuelve `delivery_fee:
+en la configuración global de Daybed, la respuesta devuelve `delivery_fee:
 "0.00"` y `free_shipping_applied: true`.
 
 ## Store
 
 | Método | Endpoint | Acceso | Descripción |
 | --- | --- | --- | --- |
-| GET | `/api/store/settings/` | Público | Consultar configuración activa de tienda. |
-| PATCH | `/api/store/settings/` | Admin | Actualizar configuración activa de tienda. |
+| GET | `/api/store/settings/` | Público | Consultar configuración global de Daybed. |
+| PATCH | `/api/store/settings/` | Admin | Actualizar configuración global de Daybed. |
 
 Payload:
 

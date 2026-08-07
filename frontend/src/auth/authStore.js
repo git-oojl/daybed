@@ -4,22 +4,27 @@ import {
   getCurrentUser,
   loginWithEmail,
   logoutRefreshToken,
-  refreshAccessToken,
 } from "./authService.js";
 import { getViewerIdForUser, viewerRoles } from "./roleMapping.js";
+import {
+  emitSessionReplaced,
+  subscribeToSessionExpired,
+  subscribeToTokensRefreshed,
+} from "./sessionEvents.js";
 import {
   clearStoredSession,
   getAccessToken,
   getRefreshToken,
   getStoredUser,
   setStoredSession,
-  setStoredTokens,
   setStoredUser,
 } from "./tokenStorage.js";
 
-const initialUser = getStoredUser();
 const initialAccessToken = getAccessToken();
 const initialRefreshToken = getRefreshToken();
+const initialUser = initialAccessToken || initialRefreshToken ? getStoredUser() : null;
+
+if (!initialAccessToken && !initialRefreshToken) clearStoredSession();
 
 export const useAuthStore = create((set, get) => ({
   accessToken: initialAccessToken,
@@ -31,55 +36,56 @@ export const useAuthStore = create((set, get) => ({
   error: null,
 
   setSession(session) {
-    if (session?.access) {
-      setStoredSession(session);
-      set({
-        accessToken: session.access,
-        refreshToken: session.refresh || get().refreshToken,
-        user: session.user,
-        viewerId: getViewerIdForUser(session.user),
-        isAuthenticated: Boolean(session.access && session.user),
-        error: null,
-      });
-    }
+    if (!session?.access || !session?.user) return;
+    clearStoredSession();
+    setStoredSession(session);
+    emitSessionReplaced({ reason: "login", userId: session.user.id });
+    set({
+      accessToken: session.access,
+      refreshToken: session.refresh || null,
+      user: session.user,
+      viewerId: getViewerIdForUser(session.user),
+      isAuthenticated: true,
+      error: null,
+    });
   },
 
-  clearSession() {
+  clearSession({ message = null, emit = true } = {}) {
     clearStoredSession();
+    if (emit) emitSessionReplaced({ reason: "logout" });
     set({
       accessToken: null,
       refreshToken: null,
       user: null,
       viewerId: viewerRoles.guest,
       isAuthenticated: false,
-      error: null,
+      isLoading: false,
+      error: message ? new Error(message) : null,
     });
   },
 
   setUser(user) {
-    if (user) {
-      setStoredUser(user);
-      set({
-        user,
-        viewerId: getViewerIdForUser(user),
-        isAuthenticated: Boolean(get().accessToken && user),
-      });
-    }
+    if (!user) return;
+    setStoredUser(user);
+    set({
+      user,
+      viewerId: getViewerIdForUser(user),
+      isAuthenticated: Boolean(get().accessToken && user),
+    });
   },
 
   async login(credentials) {
+    get().clearSession({ emit: true });
     set({ isLoading: true, error: null });
     try {
       const session = await loginWithEmail(credentials);
-
-      if (!session?.access) {
-        throw new Error("No se recibió token de acceso");
+      if (!session?.access || !session?.user) {
+        throw new Error("No se pudo iniciar una sesión válida.");
       }
-
       get().setSession(session);
       return session;
     } catch (error) {
-      set({ error: error.message || "Error al iniciar sesión" });
+      set({ error });
       throw error;
     } finally {
       set({ isLoading: false });
@@ -87,9 +93,7 @@ export const useAuthStore = create((set, get) => ({
   },
 
   async loadCurrentUser() {
-    if (!get().accessToken) {
-      return null;
-    }
+    if (!get().accessToken && !get().refreshToken) return null;
 
     set({ isLoading: true, error: null });
     try {
@@ -98,11 +102,17 @@ export const useAuthStore = create((set, get) => ({
       set({
         user,
         viewerId: getViewerIdForUser(user),
-        isAuthenticated: Boolean(get().accessToken && user),
+        isAuthenticated: Boolean(getAccessToken() && user),
+        accessToken: getAccessToken(),
+        refreshToken: getRefreshToken(),
       });
       return user;
     } catch (error) {
-      set({ error });
+      if (error?.kind === "auth_expired" || error?.status === 401) {
+        get().clearSession({ message: error.message, emit: false });
+      } else {
+        set({ error });
+      }
       throw error;
     } finally {
       set({ isLoading: false });
@@ -110,36 +120,42 @@ export const useAuthStore = create((set, get) => ({
   },
 
   async refreshSession() {
-    const refreshToken = get().refreshToken;
-    if (!refreshToken) {
-      get().clearSession();
+    if (!getRefreshToken()) {
+      get().clearSession({ emit: false });
       return null;
     }
 
-    set({ isLoading: true, error: null });
-    try {
-      const tokens = await refreshAccessToken(refreshToken);
-      setStoredTokens(tokens);
-      set({
-        accessToken: tokens.access,
-        refreshToken: tokens.refresh ?? refreshToken,
-        isAuthenticated: Boolean(tokens.access && get().user),
-      });
-      return tokens;
-    } catch (error) {
-      get().clearSession();
-      set({ error });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
+    // getCurrentUser goes through the global API client. A stale access token
+    // therefore uses the same single-flight refresh coordinator as every other
+    // protected request instead of creating a competing refresh path.
+    return get().loadCurrentUser();
   },
 
   async logout() {
-    const refreshToken = get().refreshToken;
-    get().clearSession();
+    const refreshToken = getRefreshToken();
+    get().clearSession({ emit: true });
     if (refreshToken) {
-      await logoutRefreshToken(refreshToken);
+      try {
+        await logoutRefreshToken(refreshToken);
+      } catch {
+        // The local session is already closed. A stale/blacklisted refresh token
+        // must never prevent logout or leave credentials behind.
+      }
     }
   },
 }));
+
+subscribeToTokensRefreshed((tokens) => {
+  useAuthStore.setState((state) => ({
+    accessToken: tokens.access,
+    refreshToken: tokens.refresh || state.refreshToken,
+    isAuthenticated: Boolean(tokens.access && state.user),
+  }));
+});
+
+subscribeToSessionExpired(({ message } = {}) => {
+  useAuthStore.getState().clearSession({
+    message: message || "Tu sesión venció. Inicia sesión nuevamente.",
+    emit: false,
+  });
+});

@@ -1,4 +1,4 @@
-from django.db.models import Prefetch
+from django.db.models import Avg, Prefetch, Q
 from rest_framework import generics, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -39,11 +39,17 @@ class PublicProductViewSet(SpecificationFilterMixin, viewsets.ReadOnlyModelViewS
         "color",
         "style",
     )
-    ordering_fields = ("name", "price", "stock", "created_at")
+    ordering_fields = ("name", "price", "stock", "created_at", "featured_order", "average_review_rating")
 
     def get_queryset(self):
         return (
             Product.objects.filter(active=True, category__active=True)
+            .annotate(
+                average_review_rating=Avg(
+                    "reviews__rating",
+                    filter=Q(reviews__active=True),
+                )
+            )
             .select_related("category")
             .prefetch_related(
                 Prefetch(
@@ -109,11 +115,11 @@ class ProductReviewListCreateView(generics.ListCreateAPIView):
 
 
 class StaffCategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.order_by("name")
+    queryset = Category.objects.order_by("display_order", "name")
     serializer_class = CategorySerializer
     lookup_field = "slug"
     search_fields = ("name", "description")
-    ordering_fields = ("name", "active", "created_at")
+    ordering_fields = ("display_order", "name", "active", "homepage_visible", "created_at")
 
     def get_permissions(self):
         permission_by_action = {
@@ -136,7 +142,12 @@ class StaffCategoryViewSet(viewsets.ModelViewSet):
 
 class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
     queryset = (
-        Product.objects.select_related("category")
+        Product.objects.annotate(
+            average_review_rating=Avg(
+                "reviews__rating",
+                filter=Q(reviews__active=True),
+            )
+        ).select_related("category")
         .prefetch_related(
             "images",
             Prefetch(
@@ -164,6 +175,8 @@ class StaffProductViewSet(SpecificationFilterMixin, viewsets.ModelViewSet):
         "stock",
         "minimum_stock",
         "active",
+        "featured_order",
+        "average_review_rating",
         "created_at",
     )
 

@@ -260,7 +260,7 @@ Reglas:
 
 - El stock se descuenta una sola vez al pasar a `confirmed`.
 - Los datos de entrega guardados desde checkout no aceptan coordenadas, distancia, duración o tarifa fuera de rango válido.
-- `delivery_fee` se recalcula al crear el pedido usando la configuración activa de tienda. El cliente no define el precio final.
+- `delivery_fee` se recalcula al crear el pedido usando la configuración global de Daybed. El cliente no define el precio final.
 - El pago es simulado; no hay cobro real ni integración con Stripe.
 - Datos crudos de tarjeta no se guardan en `Order`; `payment_snapshot` conserva solo metadata segura para mostrar.
 - Transferencia y efectivo quedan pendientes hasta que staff/admin marque el pago simulado como recibido o fallido.
@@ -269,7 +269,7 @@ Reglas:
 
 ### StoreSettings
 
-Configuración singleton-style de la tienda y sus reglas de entrega.
+Configuración singleton de la única empresa Daybed, su escaparate y sus reglas de entrega.
 
 Campos:
 
@@ -388,7 +388,7 @@ Usuarios:
 
 Contenido incluido:
 
-- Configuración de tienda activa para tarifas de entrega y envío gratis.
+- Configuración global de Daybed para identidad, escaparate, tarifas y envío gratis.
 - Categorías activas para catálogo y una categoría inactiva para validar filtros internos.
 - Productos activos, un producto inactivo, SKUs, dimensiones estructuradas, especificaciones flexibles, imágenes principales, galerías demo, stock bajo y stock agotado.
 - Carritos prellenados para `cliente@example.com` y `cliente.plus@example.com`.

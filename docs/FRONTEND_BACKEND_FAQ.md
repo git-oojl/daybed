@@ -166,7 +166,7 @@ No. El frontend debe llamar al backend:
 - `/api/delivery/geocode/`
 - `/api/delivery/estimate/`
 
-La configuración de tienda se consulta y actualiza por backend:
+La configuración global de la única tienda Daybed se consulta y actualiza por backend:
 
 - `/api/store/settings/`
 

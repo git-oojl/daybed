@@ -44,7 +44,7 @@ def create_store_settings(**overrides):
     return StoreSettings.objects.create(**defaults)
 
 
-def test_delivery_endpoints_require_authenticated_customer():
+def test_delivery_endpoints_require_authentication():
     geocode_response = api_client().post(
         reverse("delivery-geocode"),
         {"address": "123 Main St"},
@@ -60,7 +60,7 @@ def test_delivery_endpoints_require_authenticated_customer():
     assert estimate_response.status_code == 401
 
 
-def test_delivery_endpoints_block_employee_role():
+def test_delivery_endpoints_allow_employee_buyer_flow(monkeypatch):
     employee = User.objects.create_user(
         username="empleado_delivery",
         email="empleado_delivery@example.com",
@@ -68,20 +68,25 @@ def test_delivery_endpoints_block_employee_role():
         role=User.Roles.EMPLOYEE,
     )
 
-    geocode_response = api_client(employee).post(
-        reverse("delivery-geocode"),
-        {"address": "123 Main St"},
-        format="json",
-    )
-    estimate_response = api_client(employee).post(
-        reverse("delivery-estimate"),
-        {"latitude": "32.50000000", "longitude": "-117.00000000"},
-        format="json",
-    )
+    def fake_get(url, params, headers, timeout):
+        return response(200, [{"display_name": "Av. Reforma, Tijuana", "lat": "32.51490000", "lon": "-117.03820000", "address": {}}])
 
-    assert geocode_response.status_code == 403
-    assert estimate_response.status_code == 403
+    monkeypatch.setattr("apps.delivery.services.httpx.get", fake_get)
+    with override_settings(OPENROUTESERVICE_API_KEY=""):
+        geocode_response = api_client(employee).post(
+            reverse("delivery-geocode"),
+            {"address": "Av. Reforma, Tijuana"},
+            format="json",
+        )
+        estimate_response = api_client(employee).post(
+            reverse("delivery-estimate"),
+            {"latitude": "32.50000000", "longitude": "-117.00000000"},
+            format="json",
+        )
 
+    assert geocode_response.status_code == 200
+    assert estimate_response.status_code == 200
+    assert estimate_response.data["routing_available"] is False
 
 def test_successful_geocode_mocks_nominatim(monkeypatch):
     customer = create_customer()
@@ -112,15 +117,45 @@ def test_successful_geocode_mocks_nominatim(monkeypatch):
     )
 
     assert api_response.status_code == 200
-    assert api_response.data == {
-        "original_address": "123 Main St",
-        "formatted_address": "123 Main St, Tijuana",
-        "latitude": "32.51490000",
-        "longitude": "-117.03820000",
-        "provider": "nominatim",
-    }
+    assert api_response.data["original_address"] == "123 Main St"
+    assert api_response.data["formatted_address"] == "123 Main St, Tijuana"
+    assert api_response.data["latitude"] == "32.51490000"
+    assert api_response.data["longitude"] == "-117.03820000"
+    assert api_response.data["provider"] == "nominatim"
+    assert len(api_response.data["candidates"]) == 1
     assert calls["params"]["q"] == "123 Main St"
     assert calls["headers"]["User-Agent"]
+
+
+def test_geocode_retries_without_accents_when_first_search_has_no_matches(monkeypatch):
+    customer = create_customer("cliente_accent_retry")
+    queries = []
+
+    def fake_get(url, params, headers, timeout):
+        queries.append(params["q"])
+        if "Niños Héroes" in params["q"]:
+            return response(200, [])
+        return response(
+            200,
+            [{
+                "display_name": "Avenida Ninos Heroes, Guadalajara, Jalisco, México",
+                "lat": "20.66710000",
+                "lon": "-103.35580000",
+                "address": {"postcode": "44100"},
+            }],
+        )
+
+    monkeypatch.setattr("apps.delivery.services.httpx.get", fake_get)
+    api_response = api_client(customer).post(
+        reverse("delivery-geocode"),
+        {"address": "Avenida Niños Héroes, Guadalajara, Jalisco, 44100"},
+        format="json",
+    )
+
+    assert api_response.status_code == 200
+    assert len(queries) == 2
+    assert queries[0] != queries[1]
+    assert "Ninos Heroes" in queries[1]
 
 
 def test_failed_geocode_returns_not_found(monkeypatch):
@@ -138,7 +173,8 @@ def test_failed_geocode_returns_not_found(monkeypatch):
     )
 
     assert api_response.status_code == 404
-    assert "geocoded" in api_response.data["detail"]
+    assert api_response.data["code"] == "address_not_found"
+    assert "coincidencia" in api_response.data["user_message"].lower()
 
 
 @override_settings(
@@ -193,7 +229,7 @@ def test_successful_estimate_mocks_openrouteservice(monkeypatch):
 
 
 @override_settings(OPENROUTESERVICE_API_KEY="test-key")
-def test_distance_provider_failure_returns_bad_gateway(monkeypatch):
+def test_distance_provider_failure_returns_local_fallback(monkeypatch):
     customer = create_customer()
 
     def fake_post(url, json, headers, timeout):
@@ -207,8 +243,10 @@ def test_distance_provider_failure_returns_bad_gateway(monkeypatch):
         format="json",
     )
 
-    assert api_response.status_code == 502
-    assert "failed" in api_response.data["detail"]
+    assert api_response.status_code == 200
+    assert api_response.data["distance_provider"] == "approximate_fallback"
+    assert api_response.data["routing_available"] is False
+    assert "estimación" in api_response.data["routing_warning"].lower()
 
 
 def test_estimate_uses_fallback_distance_without_provider_key(monkeypatch):
@@ -227,8 +265,11 @@ def test_estimate_uses_fallback_distance_without_provider_key(monkeypatch):
         )
 
     assert api_response.status_code == 200
-    assert api_response.data["distance_provider"] == "haversine_fallback"
+    assert api_response.data["distance_provider"] == "approximate_fallback"
     assert Decimal(api_response.data["distance_km"]) > Decimal("0.000")
+    assert api_response.data["routing_available"] is False
+    assert "ruta" in api_response.data["routing_warning"].lower()
+    assert "openroute" not in api_response.data["routing_warning"].lower()
 
 
 @override_settings(OPENROUTESERVICE_API_KEY="test-key")

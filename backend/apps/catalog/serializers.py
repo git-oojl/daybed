@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.catalog.models import Category, Product, ProductImage, ProductReview
+from apps.store.models import StoreSettings
 
 SPEC_VALUE_TYPES = (str, int, float, bool, type(None))
 DIMENSION_FIELDS = (
@@ -129,6 +130,8 @@ def download_remote_image(url):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    product_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
         fields = (
@@ -137,11 +140,24 @@ class CategorySerializer(serializers.ModelSerializer):
             "slug",
             "description",
             "specification_schema",
+            "filter_attributes",
+            "image",
+            "display_order",
+            "homepage_visible",
+            "product_count",
             "active",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "product_count", "created_at", "updated_at")
+
+    def get_product_count(self, obj):
+        return obj.products.filter(active=True).count()
+
+    def validate_filter_attributes(self, value):
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+            raise serializers.ValidationError("Los atributos de filtro deben ser una lista de claves.")
+        return list(dict.fromkeys(value))
 
     def validate_specification_schema(self, value):
         return validate_category_schema(value)
@@ -216,6 +232,12 @@ class ProductSerializer(serializers.ModelSerializer):
             "material",
             "color",
             "style",
+            "room",
+            "furniture_type",
+            "has_storage",
+            "is_sofa_bed",
+            "featured",
+            "featured_order",
             "width_cm",
             "height_cm",
             "depth_cm",
@@ -265,6 +287,22 @@ class ProductSerializer(serializers.ModelSerializer):
         if image_url and not attrs.get("main_image"):
             attrs["main_image"] = download_remote_image(image_url)
 
+        featured = attrs.get("featured", getattr(self.instance, "featured", False))
+        active = attrs.get("active", getattr(self.instance, "active", True))
+        stock = attrs.get("stock", getattr(self.instance, "stock", 0))
+        if featured and (not active or stock <= 0):
+            raise serializers.ValidationError(
+                {"featured": "Solo se pueden destacar productos activos y con existencias."}
+            )
+        if featured and active:
+            featured_products = Product.objects.filter(featured=True, active=True)
+            if self.instance:
+                featured_products = featured_products.exclude(pk=self.instance.pk)
+            if featured_products.count() >= 4:
+                raise serializers.ValidationError(
+                    {"featured": "Daybed muestra hasta cuatro productos destacados. Retira uno antes de agregar otro."}
+                )
+
         for field in DIMENSION_FIELDS:
             value = attrs.get(field)
             if value is not None and value < Decimal("0.00"):
@@ -272,6 +310,12 @@ class ProductSerializer(serializers.ModelSerializer):
                     {field: "El valor no puede ser negativo."}
                 )
         return attrs
+
+
+    def create(self, validated_data):
+        if "minimum_stock" not in validated_data:
+            validated_data["minimum_stock"] = StoreSettings.get_active().default_low_stock_threshold
+        return super().create(validated_data)
 
     def _active_reviews(self, obj):
         return [review for review in obj.reviews.all() if review.active]

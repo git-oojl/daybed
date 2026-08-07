@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { BrowserRouter, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { accessGroups } from "../auth/viewerAccess.js";
 import AdminLayout from "../layouts/AdminLayout.jsx";
 import BackOfficeLayout from "../layouts/BackOfficeLayout.jsx";
@@ -9,6 +9,10 @@ import PublicLayout from "../layouts/PublicLayout.jsx";
 import SupportLayout from "../layouts/SupportLayout.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import { routePaths } from "./routePaths.js";
+import { subscribeToSessionExpired } from "../auth/sessionEvents.js";
+import { useAuthStore } from "../auth/authStore.js";
+import { isPreviewModeActive } from "../dev-preview/previewMode.js";
+import RouteLoading from "../components/support/RouteLoading.jsx";
 
 const BasicSettingsPage = lazy(
   () => import("../pages/admin/BasicSettingsPage.jsx"),
@@ -110,18 +114,45 @@ function OperationalRoute({ permission, children }) {
   );
 }
 
-function RouteLoading() {
-  return (
-    <div className="route-loading" role="status" aria-live="polite">
-      <div className="route-loading__card">
-        <span className="route-loading__spinner" aria-hidden="true" />
-        <div>
-          <strong>Preparando este espacio</strong>
-          <p>Estamos acomodando los últimos detalles.</p>
-        </div>
-      </div>
-    </div>
+function AuthBootstrap({ children }) {
+  const loadCurrentUser = useAuthStore((state) => state.loadCurrentUser);
+  const [initialSession] = useState(() => ({
+    accessToken: useAuthStore.getState().accessToken,
+    refreshToken: useAuthStore.getState().refreshToken,
+  }));
+  const [ready, setReady] = useState(
+    () => isPreviewModeActive() || (!initialSession.accessToken && !initialSession.refreshToken),
   );
+
+  useEffect(() => {
+    let active = true;
+    if (ready) return () => { active = false; };
+
+    loadCurrentUser()
+      .catch(() => undefined)
+      .finally(() => { if (active) setReady(true); });
+    return () => { active = false; };
+  }, [loadCurrentUser, ready]);
+
+  return ready ? children : <RouteLoading />;
+}
+
+function SessionExpiryRedirect() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => subscribeToSessionExpired(({ message } = {}) => {
+    if (location.pathname === routePaths.account.login) return;
+    navigate(routePaths.account.login, {
+      replace: true,
+      state: {
+        from: { pathname: location.pathname, search: location.search },
+        sessionMessage: message || "Tu sesión venció. Inicia sesión nuevamente para continuar.",
+      },
+    });
+  }), [navigate, location.pathname, location.search]);
+
+  return null;
 }
 
 function AppRoutes() {
@@ -317,7 +348,7 @@ function AppRoutes() {
         <Route
           path="/dev/preview"
           element={
-            <Suspense fallback={null}>
+            <Suspense fallback={<RouteLoading title="Abriendo el preview" message="Cargando únicamente la vista seleccionada." />}>
               <DevPreviewPage />
             </Suspense>
           }
@@ -351,18 +382,27 @@ function AppRoutes() {
 
   return (
     <BrowserRouter>
+      <SessionExpiryRedirect />
+      <AuthBootstrap>
       {showDevTools && DevPreviewRouteBridge ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={routeTree}>
           <DevPreviewRouteBridge>{routeTree}</DevPreviewRouteBridge>
         </Suspense>
       ) : (
         routeTree
       )}
       {showDevTools && DevViewSwitcher ? (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <span className="dev-tools-loading" role="status">
+              Cargando herramientas de desarrollo…
+            </span>
+          }
+        >
           <DevViewSwitcher />
         </Suspense>
       ) : null}
+      </AuthBootstrap>
     </BrowserRouter>
   );
   

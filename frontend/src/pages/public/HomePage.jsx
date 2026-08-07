@@ -4,6 +4,7 @@ import "../../assets/home-page.css";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import StoreProductCard from "../../components/store/StoreProductCard.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
 import {
@@ -13,29 +14,27 @@ import {
 } from "../../services/savedItems.js";
 import { readCollection } from "../../services/viewMappers.js";
 
-const INITIAL_VISIBLE = 4;
-
 const CATEGORIES = [
   {
     id: "comedor",
     label: "Comedor",
     image:
       "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600&q=80",
-    path: routePaths.public.catalog,
+    path: `${routePaths.public.catalog}?category__slug=comedores`,
   },
   {
     id: "sala",
     label: "Sala",
     image:
       "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80",
-    path: routePaths.public.catalog,
+    path: `${routePaths.public.catalog}?room=sala`,
   },
   {
     id: "habitacion",
     label: "Habitación",
     image:
       "https://images.unsplash.com/photo-1632829401795-2745c905ac77?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    path: routePaths.public.catalog,
+    path: `${routePaths.public.catalog}?category__slug=recamaras`,
   },
 ];
 
@@ -85,41 +84,57 @@ const GALLERY_IMAGES = [
   },
 ];
 
-function formatPrice(amount) {
-  return `$${(Number(amount) || 0).toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
-}
-
 function HomePage() {
   const navigate = useNavigate();
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const [products, setProducts] = useState([]);
+  const [homeCategories, setHomeCategories] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
   const [wishlist, setWishlist] = useState(() => getSavedProductIds());
   const [toast, setToast] = useState("");
 
   useEffect(() => {
     let active = true;
-    catalogService
-      .products({ ordering: "-id" })
-      .then((response) => {
-        if (active) setProducts(readCollection(response));
-      })
-      .catch(() => {
-        if (active) setProductsError("No fue posible cargar los productos.");
-      });
-    return () => {
-      active = false;
-    };
+    async function loadHomeMerchandising() {
+      try {
+        setProductsLoading(true);
+        setProductsError("");
+        const [featuredResponse, categoryResponse] = await Promise.all([
+          catalogService.products({ featured: true, in_stock: true, ordering: "featured_order" }),
+          catalogService.categories({ ordering: "name" }),
+        ]);
+        let featured = readCollection(featuredResponse).slice(0, 4);
+        if (!featured.length) {
+          const fallbackResponse = await catalogService.products({ in_stock: true, ordering: "-average_review_rating,-created_at" });
+          featured = readCollection(fallbackResponse).slice(0, 4);
+        }
+        if (active) {
+          setProducts(featured);
+          setHomeCategories(readCollection(categoryResponse).filter((item) => item.homepage_visible !== false).sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)).slice(0, 4));
+        }
+      } catch (error) {
+        if (active) setProductsError(error.message || "No fue posible cargar la selección Daybed.");
+      } finally {
+        if (active) setProductsLoading(false);
+      }
+    }
+    loadHomeMerchandising();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => subscribeToSavedItems(setWishlist), []);
 
-  const productsToShow = products;
-  const visibleProducts = useMemo(() => {
-    return productsToShow.slice(0, visibleCount);
-  }, [productsToShow, visibleCount]);
+  const categoryCards = useMemo(() => {
+    if (!homeCategories.length) return CATEGORIES;
+    return homeCategories.map((category, index) => ({
+      id: category.slug,
+      label: category.name,
+      image: category.image || CATEGORIES[index % CATEGORIES.length].image,
+      path: `${routePaths.public.catalog}?category__slug=${encodeURIComponent(category.slug)}`,
+    }));
+  }, [homeCategories]);
 
-  const hasMore = visibleCount < productsToShow.length;
+  const visibleProducts = products.slice(0, 4);
 
   const showToast = useCallback((message) => {
     setToast(message);
@@ -130,6 +145,7 @@ function HomePage() {
     async (product) => {
       try {
         await cartService.addItem({ product_id: product.id, quantity: 1 });
+        window.dispatchEvent(new Event("daybed:cart-updated"));
         showToast(`${product.name} agregado al carrito`);
       } catch (error) {
         showToast(error.status === 401 ? "Inicia sesión para agregar productos" : "No se pudo agregar el producto");
@@ -163,7 +179,7 @@ function HomePage() {
             </h1>
             <p className="home-hero__text">
               Diseña la comodidad para cada rincón de tu hogar, transforma
-              espacios y crea experiencias con DayBed
+              espacios y crea experiencias con Daybed
             </p>
             <button
               type="button"
@@ -180,13 +196,13 @@ function HomePage() {
           aria-labelledby="home-categories-title"
         >
           <p className="home-section__eyebrow">
-            El confort que buscabas esta en DayBed
+            El confort que buscabas está en Daybed
           </p>
           <h2 className="home-section__title" id="home-categories-title">
             Navega en nuestras diferentes secciones
           </h2>
           <div className="home-categories">
-            {CATEGORIES.map((cat) => (
+            {categoryCards.map((cat) => (
               <Link key={cat.id} to={cat.path} className="home-category">
                 <div className="home-category__img-wrap">
                   <img
@@ -206,8 +222,8 @@ function HomePage() {
           <h2 className="home-section__title" id="home-products-title">
             Nuestros productos
           </h2>
-          {productsError ? <p className="home-products__message">{productsError}</p> : null}
-          <div className="home-products">
+          <p className="home-products__intro">Cuatro piezas elegidas deliberadamente por Daybed. La selección se administra desde productos y permanece estable.</p>
+          {productsLoading ? <FeatureState compact tone="loading" title="Preparando la selección Daybed" message="Estamos reuniendo las piezas destacadas disponibles." /> : productsError ? <FeatureState compact tone="error" title="La selección no está disponible" message={productsError} actionLabel="Explorar Tienda" actionTo={routePaths.public.catalog} /> : visibleProducts.length ? <div className="home-products">
             {visibleProducts.map((product) => (
               <StoreProductCard
                 key={product.id}
@@ -217,25 +233,8 @@ function HomePage() {
                 onToggleSaved={(item) => handleToggleWishlist(item.id)}
               />
             ))}
-          </div>
-          {visibleProducts.length === 0 && (
-            <div className="home-products__empty">
-              <strong>La colección se está acomodando</strong>
-              <span>Vuelve a intentar o explora la tienda completa.</span>
-              <Link to={routePaths.public.catalog}>Ir a Tienda</Link>
-            </div>
-          )}
-          {hasMore && (
-            <div className="home-show-more">
-              <button
-                type="button"
-                className="home-show-more__btn"
-                onClick={() => setVisibleCount(productsToShow.length)}
-              >
-                Mostrar más
-              </button>
-            </div>
-          )}
+          </div> : <FeatureState compact tone="empty" title="La selección está por definirse" message="Mientras Daybed prepara sus destacados, puedes consultar toda la colección." actionLabel="Ir a Tienda" actionTo={routePaths.public.catalog} />}
+          <div className="home-show-more"><Link className="home-show-more__btn" to={`${routePaths.public.catalog}?in_stock=true`}>Ver toda la colección disponible</Link></div>
         </section>
 
         <section aria-label="Galería de la comunidad">

@@ -154,7 +154,7 @@ export default function InventoryPage() {
         <ErrorMessage message={loadError} />
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <button type="button" onClick={loadInventory} className="btn-primary">
-            Reintentar
+            Volver a cargar inventario
           </button>
         </div>
         <HomeFooter />

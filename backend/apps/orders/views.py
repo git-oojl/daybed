@@ -1,4 +1,7 @@
+import re
+
 from django.db.models import Prefetch
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
@@ -6,18 +9,21 @@ from rest_framework.views import APIView
 
 from apps.access_control.permissions import operational_permission
 from rest_framework.permissions import IsAuthenticated
-from apps.orders.models import Order, OrderItem
+from apps.orders.models import Order, OrderItem, OrderStatusEvent
+from apps.delivery.services import DeliveryServiceError
+
 from apps.orders.serializers import (
     CheckoutSerializer,
     OrderSerializer,
     OrderStatusSerializer,
+    StaffOrderSerializer,
 )
 
 ORDER_ID_PARAMETER = OpenApiParameter(
     name="id",
-    type=int,
+    type=str,
     location=OpenApiParameter.PATH,
-    description="ID del pedido.",
+    description="ID numérico o código Daybed, por ejemplo DAY-00801.",
 )
 
 
@@ -26,8 +32,32 @@ def order_queryset():
         Prefetch(
             "items",
             queryset=OrderItem.objects.select_related("product").order_by("id"),
-        )
+        ),
+        Prefetch(
+            "status_history",
+            queryset=OrderStatusEvent.objects.select_related("actor").order_by("created_at", "id"),
+        ),
     )
+
+
+class OrderLookupMixin:
+    """Resolve both database IDs and public DAY-00000 order codes."""
+
+    @staticmethod
+    def _order_pk(value):
+        match = re.fullmatch(r"(?:DAY-)?0*(\d+)", str(value or "").strip(), re.IGNORECASE)
+        return int(match.group(1)) if match else None
+
+    def get_object(self):
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        raw_lookup = self.kwargs.get(lookup_url_kwarg)
+        order_pk = self._order_pk(raw_lookup)
+        if order_pk is None:
+            # Return the same safe 404 used by normal DRF lookup behavior.
+            return get_object_or_404(self.filter_queryset(self.get_queryset()), pk=-1)
+        obj = get_object_or_404(self.filter_queryset(self.get_queryset()), pk=order_pk)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 @extend_schema(
@@ -45,8 +75,19 @@ class CheckoutView(APIView):
 
     def post(self, request):
         serializer = CheckoutSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        order = serializer.save()
+        try:
+            serializer.is_valid(raise_exception=True)
+            order = serializer.save()
+        except DeliveryServiceError as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                    "user_message": exc.user_message,
+                    "code": exc.code,
+                    "feature": exc.feature,
+                },
+                status=exc.status_code,
+            )
         order = order_queryset().get(pk=order.pk)
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
@@ -64,7 +105,7 @@ class CheckoutView(APIView):
         tags=["Pedidos"],
     ),
 )
-class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
+class CustomerOrderViewSet(OrderLookupMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)
 
@@ -94,7 +135,7 @@ class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
         summary="Actualizar estado del pedido",
         description="Permite al personal actualizar el estado de un pedido.",
         request=OrderStatusSerializer,
-        responses=OrderSerializer,
+        responses=StaffOrderSerializer,
         parameters=[ORDER_ID_PARAMETER],
         tags=["Pedidos administrativos"],
     ),
@@ -102,12 +143,13 @@ class CustomerOrderViewSet(viewsets.ReadOnlyModelViewSet):
         summary="Actualizar estado del pedido parcialmente",
         description="Permite al personal modificar el estado de un pedido.",
         request=OrderStatusSerializer,
-        responses=OrderSerializer,
+        responses=StaffOrderSerializer,
         parameters=[ORDER_ID_PARAMETER],
         tags=["Pedidos administrativos"],
     ),
 )
 class StaffOrderViewSet(
+    OrderLookupMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
@@ -121,7 +163,7 @@ class StaffOrderViewSet(
     def get_serializer_class(self):
         if self.action in {"update", "partial_update"}:
             return OrderStatusSerializer
-        return OrderSerializer
+        return StaffOrderSerializer
 
     def get_permissions(self):
         if self.action in {"update", "partial_update"}:
@@ -135,4 +177,4 @@ class StaffOrderViewSet(
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
         order = order_queryset().get(pk=order.pk)
-        return Response(OrderSerializer(order).data)
+        return Response(StaffOrderSerializer(order).data)

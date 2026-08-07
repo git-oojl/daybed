@@ -1,13 +1,15 @@
 import { productImage } from "../services/viewMappers.js";
 
 export const ORDER_STATUSES = [
-  { value: "pending", label: "Recibido", tone: "amber" },
-  { value: "confirmed", label: "Pago confirmado", tone: "green" },
-  { value: "preparing", label: "En preparación", tone: "violet" },
-  { value: "shipped", label: "En camino", tone: "blue" },
-  { value: "delivered", label: "Entregado", tone: "green" },
-  { value: "cancelled", label: "Cancelado", tone: "red" },
+  { value: "pending", label: "Pedido recibido", shortLabel: "Recibido", tone: "amber" },
+  { value: "confirmed", label: "Pago confirmado", shortLabel: "Confirmado", tone: "green" },
+  { value: "preparing", label: "Preparando tu pedido", shortLabel: "En preparación", tone: "violet" },
+  { value: "shipped", label: "En camino", shortLabel: "En camino", tone: "blue" },
+  { value: "delivered", label: "Entregado", shortLabel: "Entregado", tone: "green" },
+  { value: "cancelled", label: "Pedido cancelado", shortLabel: "Cancelado", tone: "red" },
 ];
+
+export const ORDER_PROGRESS_STEPS = ORDER_STATUSES.filter((item) => item.value !== "cancelled");
 
 export const paymentMethodLabel = (method) => ({
   card: "Tarjeta",
@@ -46,38 +48,80 @@ export function formatOrderDate(value, includeTime = false) {
   }).format(date);
 }
 
-export function orderNumber(id) {
+export function orderNumber(id, code) {
+  if (code) return String(code).replace(/^PEDIDO\s+/i, "");
   return `DAY-${String(id || 0).padStart(5, "0")}`;
+}
+
+function normalizeOptions(item, snapshot) {
+  const options = item.selected_options || snapshot.selected_options || snapshot.options || {};
+  if (Array.isArray(options)) return options;
+  return Object.entries(options).map(([label, value]) => ({ label, value }));
 }
 
 export function normalizeOrder(raw = {}) {
   const items = Array.isArray(raw.items) ? raw.items.map((item) => {
     const snapshot = item.product_snapshot || {};
+    const quantity = Number(item.quantity || 1);
+    const unitPrice = Number(item.unit_price || item.price || 0);
     return {
       ...item,
       productId: item.product || snapshot.id,
       name: item.product_name || snapshot.name || "Producto Daybed",
       sku: item.product_sku || snapshot.sku || "Sin SKU",
-      description: snapshot.description || "Pieza seleccionada para este pedido.",
-      quantity: Number(item.quantity || 1),
-      unitPrice: Number(item.unit_price || 0),
-      lineTotal: Number(item.line_total || Number(item.unit_price || 0) * Number(item.quantity || 1)),
+      description: snapshot.description || item.description || "Pieza seleccionada para este pedido.",
+      options: normalizeOptions(item, snapshot),
+      quantity,
+      unitPrice,
+      lineTotal: Number(item.line_total || unitPrice * quantity),
       image: productImage({ ...snapshot, ...item, name: item.product_name || snapshot.name }),
     };
   }) : [];
 
+  const subtotal = Number(raw.products_subtotal ?? raw.subtotal ?? items.reduce((sum, item) => sum + item.lineTotal, 0));
+  const deliveryFee = Number(raw.delivery_fee ?? raw.shipping ?? 0);
+  const discountTotal = Number(raw.discount_total ?? raw.discount ?? 0);
+  const latitude = raw.latitude == null || raw.latitude === "" ? null : Number(raw.latitude);
+  const longitude = raw.longitude == null || raw.longitude === "" ? null : Number(raw.longitude);
+
   return {
     ...raw,
     id: raw.id,
-    number: orderNumber(raw.id),
+    number: orderNumber(raw.id, raw.order_code),
+    label: `PEDIDO ${orderNumber(raw.id, raw.order_code)}`,
     customerName: raw.customer_name || "Cliente Daybed",
     customerEmail: raw.customer_email || "Sin correo disponible",
     customerPhone: raw.customer_phone || "Sin teléfono disponible",
+    status: raw.status || "pending",
     statusInfo: orderStatus(raw.status),
+    availableTransitions: Array.isArray(raw.available_status_transitions)
+      ? raw.available_status_transitions
+      : [],
+    statusHistory: Array.isArray(raw.status_history) ? raw.status_history : [],
     items,
-    address: raw.formatted_address || raw.original_address || "Dirección por confirmar",
-    subtotal: Number(raw.products_subtotal || 0),
-    deliveryFee: Number(raw.delivery_fee || 0),
-    total: Number(raw.total || 0),
+    address: raw.formatted_address || raw.original_address || raw.delivery_address || "Dirección por confirmar",
+    originalAddress: raw.original_address || "",
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
+    subtotal,
+    deliveryFee,
+    discountTotal,
+    total: Number(raw.total ?? subtotal + deliveryFee - discountTotal),
+    distanceKm: raw.distance_km == null ? null : Number(raw.distance_km),
+    durationMinutes: raw.estimated_duration_minutes == null ? null : Number(raw.estimated_duration_minutes),
+    deliveryZone: raw.delivery_zone || "standard",
+    deliveryNotes: raw.delivery_notes || "",
+    internalNotes: raw.internal_notes || "",
+    cancellationDeadline: raw.cancellation_deadline || null,
+    customerCancellationAvailable: Boolean(raw.customer_cancellation_available),
+    preparationEstimateDays: Number(raw.preparation_estimate_days || 0),
   };
+}
+
+export function progressIndexFor(status) {
+  return ORDER_PROGRESS_STEPS.findIndex((step) => step.value === status);
+}
+
+export function canTransition(order, status) {
+  return Boolean(status && order?.availableTransitions?.includes(status));
 }

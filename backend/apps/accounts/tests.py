@@ -2,6 +2,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import override_settings
 from django.urls import reverse
@@ -443,6 +444,7 @@ def test_current_user_profile_supports_all_authenticated_roles(role):
         "first_name": "",
         "last_name": "",
         "phone": "",
+        "avatar": None,
         "state": "",
         "city": "",
         "role": role,
@@ -641,3 +643,27 @@ def test_internal_admin_account_cannot_be_demoted_or_deactivated():
     protected_admin.refresh_from_db()
     assert protected_admin.role == User.Roles.ADMIN
     assert protected_admin.is_active is True
+
+
+def test_authenticated_user_can_upload_optional_profile_avatar(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    user = create_user("avatar_customer")
+    client = api_client()
+    client.force_authenticate(user=user)
+    avatar = SimpleUploadedFile(
+        "avatar.gif",
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00"
+        b"\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+        content_type="image/gif",
+    )
+
+    response = client.patch(
+        reverse("current-user"),
+        {"avatar": avatar},
+        format="multipart",
+    )
+
+    assert response.status_code == 200
+    assert response.data["avatar"]
+    user.refresh_from_db()
+    assert user.avatar.name.startswith("avatars/avatar")

@@ -2,6 +2,7 @@ import { generatePath, Link } from "react-router-dom";
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import { routePaths } from "../../routes/routePaths.js";
 import { productCategoryName, productImage } from "../../services/viewMappers.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 function formatPrice(amount) {
   return `$${Number(amount || 0).toLocaleString("es-MX")} MXN`;
@@ -14,11 +15,13 @@ export default function StoreProductCard({
   onAddToCart,
   compact = false,
 }) {
+  const { settings } = useStoreSettings();
   const detailPath = generatePath(routePaths.public.productDetail, {
     productId: product.id,
   });
   const category = productCategoryName(product);
-  const stock = Number(product.stock ?? 1);
+  const stock = Number(product.stock ?? 0);
+  const purchasePaused = settings.storefront_available === false;
 
   return (
     <article className={`store-product-card${compact ? " store-product-card--compact" : ""}`}>
@@ -55,14 +58,14 @@ export default function StoreProductCard({
         </p>
         <div className="store-product-card__bottom">
           <strong>{formatPrice(product.price)}</strong>
-          {stock <= 0 ? <span className="store-product-card__stock">Agotado</span> : null}
+          {stock <= 0 ? <span className="store-product-card__stock">Agotado</span> : purchasePaused ? <span className="store-product-card__stock">Compra pausada</span> : null}
         </div>
         <div className="store-product-card__actions">
           <Link to={detailPath}>Ver detalle</Link>
           {onAddToCart ? (
-            <button type="button" onClick={() => onAddToCart(product)} disabled={stock <= 0}>
+            <button type="button" onClick={() => onAddToCart(product)} disabled={stock <= 0 || purchasePaused}>
               <FaShoppingCart aria-hidden="true" />
-              Agregar
+              {stock <= 0 ? "Agotado" : purchasePaused ? "Compra pausada" : "Agregar"}
             </button>
           ) : null}
         </div>

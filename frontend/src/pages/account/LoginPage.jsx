@@ -202,8 +202,18 @@ const DividerStyled = styled(Divider)(({ theme }) => ({
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const backPath = location.state?.from?.pathname || routePaths.public.home;
-  const { login, isLoading, error: authError, isAuthenticated, user } = useAuthStore();
+  const fromLocation = location.state?.from;
+  const intendedPath = fromLocation?.pathname
+    ? `${fromLocation.pathname}${fromLocation.search || ""}`
+    : null;
+  const backPath = intendedPath || routePaths.public.home;
+  const {
+    login,
+    isLoading,
+    error: authError,
+    isAuthenticated,
+    user,
+  } = useAuthStore();
   const previewSession = usePreviewSession();
   const previewAuthenticated =
     previewSession.isPreview && previewSession.isAuthenticated;
@@ -227,12 +237,13 @@ function LoginPage() {
   };
 
   const validatePassword = (password) => {
-    return password.length >= 4;
+    return password.length >= 8;
   };
 
   const isEmailValid = validateEmail(formData.email);
   const isPasswordValid = validatePassword(formData.password);
-  const isFormDisabled = isLoading || previewSession.isPreview || isAuthenticated;
+  const isFormDisabled =
+    isLoading || previewSession.isPreview || isAuthenticated;
   const isFormValid = isEmailValid && isPasswordValid && !isFormDisabled;
 
   const handleChange = (e) => {
@@ -252,44 +263,42 @@ function LoginPage() {
     });
   };
 
- // LoginPage.jsx - CORRECCIÓN DE REDIRECCIÓN
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLocalError("");
+  // LoginPage.jsx - CORRECCIÓN DE REDIRECCIÓN
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLocalError("");
 
-  if (!validateEmail(formData.email)) {
-    setLocalError("Por favor, ingresa un correo electrónico válido");
-    return;
-  }
-
-  if (!validatePassword(formData.password)) {
-    setLocalError("La contraseña debe tener al menos 4 caracteres");
-    return;
-  }
-
-  try {
-    const session = await login(formData);
-    const viewerId = getViewerIdForUser(session?.user);
-
-    // ✅ REDIRECCIÓN CORREGIDA
-    if (viewerId === "admin") {
-      // ✅ Administrador → Métricas del negocio
-      navigate(routePaths.admin.businessMetrics || "/admin/metricas");
-    } else if (viewerId === "employee") {
-      // Empleado → Dashboard de empleado
-      navigate(routePaths.backOffice.dashboard || "/interno");
-    } else {
-      // Cliente o fallback → Home
-      navigate(routePaths.public.home || "/");
+    if (!validateEmail(formData.email)) {
+      setLocalError("Por favor, ingresa un correo electrónico válido");
+      return;
     }
-  } catch (error) {
-    const errorMessage =
-      error?.message ||
-      error?.response?.data?.detail ||
-      "Correo o contraseña incorrectos";
-    setLocalError(errorMessage);
-  }
-};
+
+    if (!validatePassword(formData.password)) {
+      setLocalError("La contraseña debe tener al menos 8 caracteres");
+      return;
+    }
+
+    try {
+      const session = await login(formData);
+      const viewerId = getViewerIdForUser(session?.user);
+
+      if (intendedPath && !intendedPath.startsWith(routePaths.account.login)) {
+        navigate(intendedPath, { replace: true });
+      } else if (viewerId === "admin") {
+        navigate(routePaths.admin.businessMetrics, { replace: true });
+      } else if (viewerId === "employee") {
+        navigate(routePaths.backOffice.dashboard, { replace: true });
+      } else {
+        navigate(routePaths.public.home, { replace: true });
+      }
+    } catch (error) {
+      const errorMessage =
+        error?.message ||
+        error?.response?.data?.detail ||
+        "Correo o contraseña incorrectos";
+      setLocalError(errorMessage);
+    }
+  };
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
@@ -300,17 +309,20 @@ const handleSubmit = async (e) => {
   const showPasswordError =
     touched.password && !isPasswordValid && formData.password !== "";
 
-  const displayError = localError || authError?.message;
+  const displayError =
+    localError || location.state?.sessionMessage || authError?.message;
 
   return (
     <LoginContainer className="login-container">
-      <RouterLink className="auth-back-link" to={backPath}>← Volver</RouterLink>
+      <RouterLink className="auth-back-link" to={backPath}>
+        ← Volver
+      </RouterLink>
       <LoginPaper elevation={0}>
         {/* Logo - Usando clases CSS */}
         <Box className="login-logo-wrapper">
           <StoreIcon className="login-logo-icon" />
           <Typography className="login-logo-text" variant="h1">
-            DayBed
+            Daybed
           </Typography>
         </Box>
 
@@ -332,7 +344,9 @@ const handleSubmit = async (e) => {
               },
             }}
           >
-            En preview, el selector de desarrollo controla la sesión. El formulario se muestra desactivado para que puedas revisar su diseño sin enviar credenciales.
+            En preview, el selector de desarrollo controla la sesión. El
+            formulario se muestra desactivado para que puedas revisar su diseño
+            sin enviar credenciales.
           </Alert>
         )}
 
@@ -350,7 +364,10 @@ const handleSubmit = async (e) => {
               },
             }}
           >
-            Ya tienes una sesión activa{activeUser?.first_name ? ` como ${activeUser.first_name}` : ""}. El formulario permanece visible para que puedas revisar esta pantalla sin cerrar sesión.
+            Ya tienes una sesión activa
+            {activeUser?.first_name ? ` como ${activeUser.first_name}` : ""}. El
+            formulario permanece visible para que puedas revisar esta pantalla
+            sin cerrar sesión.
           </Alert>
         )}
 
@@ -359,7 +376,14 @@ const handleSubmit = async (e) => {
             fullWidth
             variant="outlined"
             onClick={() => navigate(routePaths.account.profile)}
-            sx={{ mb: 2, borderRadius: 3, borderColor: "#8B6B4C", color: "#6B4F3A", textTransform: "none", fontWeight: 700 }}
+            sx={{
+              mb: 2,
+              borderRadius: 3,
+              borderColor: "#8B6B4C",
+              color: "#6B4F3A",
+              textTransform: "none",
+              fontWeight: 700,
+            }}
           >
             Ir a mi cuenta
           </Button>
@@ -397,14 +421,16 @@ const handleSubmit = async (e) => {
             placeholder="correo@ejemplo.com"
             error={showEmailError}
             helperText={showEmailError ? "Ingresa un correo válido" : ""}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon
-                    style={{ color: showEmailError ? "#C0392B" : "#61470c" }}
-                  />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon
+                      style={{ color: showEmailError ? "#C0392B" : "#61470c" }}
+                    />
+                  </InputAdornment>
+                ),
+              },
             }}
             required
             disabled={isFormDisabled}
@@ -424,33 +450,37 @@ const handleSubmit = async (e) => {
             error={showPasswordError}
             helperText={
               showPasswordError
-                ? "La contraseña debe tener al menos 4 caracteres"
+                ? "La contraseña debe tener al menos 8 caracteres"
                 : ""
             }
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon
-                    style={{
-                      color: showPasswordError ? "#C0392B" : "#61470c",
-                    }}
-                  />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={handleTogglePassword}
-                    edge="end"
-                    sx={{ color: "#61470c" }}
-                    aria-label={
-                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon
+                      style={{
+                        color: showPasswordError ? "#C0392B" : "#61470c",
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={handleTogglePassword}
+                      edge="end"
+                      sx={{ color: "#61470c" }}
+                      aria-label={
+                        showPassword
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"
+                      }
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
             required
             disabled={isFormDisabled}
@@ -459,7 +489,7 @@ const handleSubmit = async (e) => {
 
           <LoginButton type="submit" disabled={!isFormValid}>
             {previewAuthenticated
-              ? "Sesion preview activa"
+              ? "Sesión preview activa"
               : isLoading
                 ? "Iniciando sesión..."
                 : "Iniciar sesión"}
@@ -467,7 +497,10 @@ const handleSubmit = async (e) => {
         </form>
 
         <Box className="login-links-container">
-          <ForgotLink href={routePaths.account.forgotPassword} underline="hover">
+          <ForgotLink
+            href={routePaths.account.forgotPassword}
+            underline="hover"
+          >
             ¿Olvidaste tu contraseña?
           </ForgotLink>
         </Box>

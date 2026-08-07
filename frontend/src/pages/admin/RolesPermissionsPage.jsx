@@ -83,7 +83,7 @@ export default function RolesPermissionsPage() {
           <article><FaCrown /><div><strong>Administrador</strong><span>Acceso completo y protegido; no se puede degradar desde esta pantalla.</span></div></article>
         </section>
 
-        {error ? <div className="inline-notice inline-notice--error">{error}<button onClick={load}>Reintentar</button></div> : null}
+        {error ? <div className="inline-notice inline-notice--error">{error}<button onClick={load}>Volver a cargar accesos</button></div> : null}
         {notice ? <div className="inline-notice inline-notice--success"><FaCheck /> {notice}</div> : null}
 
         {loading || authLoading ? <section className="state-card"><span className="state-card__icon"><FaShieldHalved /></span><h2>Cargando accesos</h2><p>Consultando empleados y permisos operativos.</p></section> : employees.length ? (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaCheckCircle,
@@ -16,6 +16,8 @@ import PageHero from "../../components/layout/PageHero.jsx";
 import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
+import { storeService } from "../../services/backendServices.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 const FAQS = [
   {
@@ -40,36 +42,57 @@ const FAQS = [
   },
 ];
 
-const CONTACT_CARDS = [
-  { title: "Llámanos", value: "+52 664 555 0100", detail: "Lun–Vie · 9:00–18:00", href: "tel:+526645550100", icon: <FaPhone /> },
-  { title: "Escríbenos", value: "contacto@daybed.local", detail: "Respuesta en horario laboral", href: "mailto:contacto@daybed.local", icon: <FaEnvelope /> },
-  { title: "Visítanos", value: "Blvd. Cucapah 20100 Sur", detail: "El Lago, Tijuana, B.C.", href: null, icon: <FaMapMarkerAlt /> },
-  { title: "Postventa", value: "Seguimiento de pedidos", detail: "Entrega, cambios y soporte", href: routePaths.account.orders, icon: <FaTruck /> },
-];
-
 export default function ContactHelpPage() {
+  const { settings } = useStoreSettings();
   const [activeFaq, setActiveFaq] = useState("payments");
-  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", subject: "", order_code: "", message: "" });
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const addressLabel = [settings.street, settings.neighborhood, settings.city, settings.state, settings.postal_code].filter(Boolean).join(", ");
+  const contactCards = useMemo(() => [
+    { title: "Llámanos", value: settings.contact_phone, detail: settings.business_hours, href: `tel:${String(settings.contact_phone || "").replace(/[^+\d]/g, "")}`, icon: <FaPhone /> },
+    { title: "Escríbenos", value: settings.contact_email, detail: "Respuesta en horario laboral", href: `mailto:${settings.contact_email}`, icon: <FaEnvelope /> },
+    { title: "Visítanos", value: settings.street, detail: [settings.neighborhood, settings.city, settings.state].filter(Boolean).join(", "), href: null, icon: <FaMapMarkerAlt /> },
+    { title: "Postventa", value: "Seguimiento de pedidos", detail: "Entrega, cambios y soporte", href: routePaths.account.orders, icon: <FaTruck /> },
+  ], [settings]);
 
   const updateField = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
+    setSubmitError("");
   };
 
-  const submitForm = (event) => {
+  const submitForm = async (event) => {
     event.preventDefault();
     const nextErrors = {};
     if (!formData.name.trim()) nextErrors.name = "Escribe tu nombre";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) nextErrors.email = "Escribe un correo válido";
     if (!formData.subject.trim()) nextErrors.subject = "Cuéntanos el motivo";
+    if (formData.order_code.trim() && !/^DAY-\d{5}$/i.test(formData.order_code.trim())) nextErrors.order_code = "Usa un código como DAY-00801";
     if (!formData.message.trim()) nextErrors.message = "Escribe tu mensaje";
     if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
-    setSent(true);
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    window.setTimeout(() => setSent(false), 5000);
+    try {
+      setSending(true);
+      setSubmitError("");
+      await storeService.submitContact({
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        subject: formData.subject.trim(),
+        order_code: formData.order_code.trim().toUpperCase(),
+        message: formData.message.trim(),
+      });
+      setSent(true);
+      setFormData({ name: "", email: "", subject: "", order_code: "", message: "" });
+    } catch (requestError) {
+      setSubmitError(requestError.message || "No pudimos enviar el mensaje. Puedes escribirnos por correo.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -103,7 +126,7 @@ export default function ContactHelpPage() {
           <p className="contact-section__eyebrow">Estamos cerca</p>
           <h2 id="contact-info" className="contact-section__title">Hablemos de tu espacio</h2>
           <div className="contact-grid">
-            {CONTACT_CARDS.map((card) => {
+            {contactCards.map((card) => {
               const content = <><div className="contact-card__icon">{card.icon}</div><h3>{card.title}</h3><p className="contact-card__value">{card.value}</p><p className="contact-card__detail">{card.detail}</p></>;
               return card.href?.startsWith("/") ? <Link className="contact-card" to={card.href} key={card.title}>{content}</Link> : card.href ? <a className="contact-card" href={card.href} key={card.title}>{content}</a> : <article className="contact-card" key={card.title}>{content}</article>;
             })}
@@ -115,9 +138,9 @@ export default function ContactHelpPage() {
             <p className="contact-section__eyebrow">Showroom y punto de salida</p>
             <h2 id="daybed-location" className="contact-section__title">Encuéntranos en Tijuana</h2>
             <p>Visítanos para ver materiales y proporciones. Desde este punto coordinamos las entregas locales de Daybed.</p>
-            <div className="contact-location__details"><strong>Blvd. Cucapah 20100 Sur, El Lago</strong><span>Lunes a viernes · 9:00–18:00</span><span>Recomendamos agendar antes de visitar.</span></div>
+            <div className="contact-location__details"><strong>{addressLabel}</strong><span>{settings.business_hours}</span><span>Recomendamos agendar antes de visitar.</span></div>
           </div>
-          <OpenStreetMapEmbed />
+          <OpenStreetMapEmbed latitude={settings.latitude} longitude={settings.longitude} label={`${settings.store_name} · ${addressLabel}`} />
         </section>
 
         <section className="contact-section contact-section--split" id="faqs">
@@ -146,11 +169,13 @@ export default function ContactHelpPage() {
           </div>
           <div>
             {sent ? <div className="contact__alert contact__alert--success"><FaCheckCircle /><span>Recibimos tu mensaje. Nuestro equipo te responderá en horario laboral.</span></div> : null}
+            {submitError ? <div className="contact__alert contact__alert--error" role="alert"><FaEnvelope /><span>{submitError} <a href={`mailto:${settings.contact_email}`}>Escribir por correo</a></span></div> : null}
             <form className="contact-form" onSubmit={submitForm} noValidate>
               <div className="contact-form__row"><Field label="Nombre" name="name" value={formData.name} error={errors.name} onChange={updateField} /><Field label="Correo" name="email" type="email" value={formData.email} error={errors.email} onChange={updateField} /></div>
               <Field label="Asunto" name="subject" value={formData.subject} error={errors.subject} onChange={updateField} />
+              <Field label="Número de pedido (opcional)" name="order_code" value={formData.order_code} error={errors.order_code} onChange={updateField} />
               <Field label="Mensaje" name="message" value={formData.message} error={errors.message} onChange={updateField} multiline />
-              <button type="submit" className="contact-form__btn">Enviar mensaje</button>
+              <button type="submit" className="contact-form__btn" disabled={sending}>{sending ? "Enviando…" : "Enviar mensaje"}</button>
             </form>
           </div>
         </section>

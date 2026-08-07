@@ -341,8 +341,8 @@ const OrderConfirmationPage = () => {
                 {order.payment_status && (
                   <p className="order-card__detail">{getPaymentStatusLabel(order.payment_status)}</p>
                 )}
-                {order.payment_snapshot?.masked && (
-                  <p className="order-card__detail">{order.payment_snapshot.masked}</p>
+                {order.payment_summary?.masked && (
+                  <p className="order-card__detail">{order.payment_summary.masked}</p>
                 )}
                 {order.payment_reference && (
                   <p className="order-card__detail">Referencia: {order.payment_reference}</p>
@@ -381,7 +381,7 @@ const OrderConfirmationPage = () => {
                       className="order-item__image"
                       onError={(event) => {
                         event.currentTarget.onerror = null;
-                        event.currentTarget.style.display = "none";
+                        event.currentTarget.src = productImage({ name: itemName });
                       }}
                     />
                     <span className="order-item__name">{itemName}</span>
