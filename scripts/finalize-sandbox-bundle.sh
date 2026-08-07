@@ -2,6 +2,10 @@
 # Validate and package the existing complete bundle without assuming any fixed
 # workspace name/path. No network access is required. Existing local .env/db/
 # media/.venv/node_modules state is restored when this script exits.
+#
+# Safety: an existing ready bundle is never deleted before the new candidate
+# passes complete cold acceptance. Only then is the candidate atomically moved
+# into the canonical output path.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck disable=SC1091
@@ -9,6 +13,7 @@ source "$ROOT/scripts/agent-common.sh"
 
 stash="$(mktemp -d)"
 stashed=()
+candidate=""
 restore_local_state() {
   local code=$?
   trap - EXIT INT TERM
@@ -21,6 +26,9 @@ restore_local_state() {
     mv "$src" "$dst"
   done
   rm -rf "$stash"
+  if [[ -n "$candidate" && -f "$candidate" ]]; then
+    rm -f "$candidate"
+  fi
   exit "$code"
 }
 trap restore_local_state EXIT INT TERM
@@ -70,9 +78,10 @@ rm -rf "$ROOT/backend/media" "$ROOT/backend/staticfiles"
 parent="$(dirname "$ROOT")"
 name="$(basename "$ROOT")"
 out="$parent/${name}-openai-sandbox-linux-x86_64-playwright-ready.tar.gz"
-rm -f "$out"
+candidate="$parent/.${name}-openai-sandbox-linux-x86_64-playwright-ready.candidate.$$.tar.gz"
+rm -f "$candidate"
 
-echo "==> Packaging: $out"
+echo "==> Packaging candidate: $candidate"
 tar \
   --exclude='./backend/.venv' \
   --exclude='./frontend/node_modules' \
@@ -85,9 +94,14 @@ tar \
   --exclude='./.agent-logs' \
   --exclude='./.agent-tmp' \
   --exclude='./.git' \
-  -C "$parent" -czf "$out" "$name"
+  -C "$parent" -czf "$candidate" "$name"
 
-echo "==> Re-extracting finished archive elsewhere and repeating acceptance"
-"$ROOT/scripts/agent-archive-acceptance.sh" "$out"
+echo "==> Cold-accepting candidate before replacing any existing anchor"
+"$ROOT/scripts/agent-archive-acceptance.sh" "$candidate"
+
+# Same-filesystem rename: the old anchor remains untouched until acceptance has
+# succeeded. mv -f then replaces it in one final step.
+mv -f "$candidate" "$out"
+candidate=""
 
 echo "READY_BUNDLE=$out"

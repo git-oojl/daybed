@@ -78,6 +78,17 @@ git --version
 
 ---
 
+## Flujo recomendado en Debian / WSL2
+
+Para trabajar en Debian mediante WSL2, incluyendo el entorno hermético `.vendor`, recuperación después de un clone limpio, Playwright/Chromium y los comandos `make bootstrap`, `make validate` y `make smoke`, usa estas guías canónicas:
+
+- [`docs/LINUX_WSL2_WORKFLOW.md`](./docs/LINUX_WSL2_WORKFLOW.md)
+- [`docs/HERMETIC_SANDBOX_BUNDLE.md`](./docs/HERMETIC_SANDBOX_BUNDLE.md)
+
+El setup manual de Django/React documentado abajo sigue siendo válido; el flujo WSL2 lo automatiza y agrega la capa reproducible/offline.
+
+---
+
 ## Preparación del proyecto en Windows
 
 ### 1. Clonar el repositorio

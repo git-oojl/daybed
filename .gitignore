@@ -18,7 +18,6 @@ $RECYCLE.BIN/
 .Trashes/
 .Spotlight-V100/
 .fseventsd/
-*:Zone.Identifier
 *.Zone.Identifier
 
 # -------------------------
@@ -239,12 +238,13 @@ docker-compose.override.yml
 *-openai-sandbox-linux-x86_64.tar.gz
 
 # -------------------------
-# Agent handoff state
+# ChatGPT / agent handoff state
 # -------------------------
 .agent-logs/
 .agent-tmp/
 .agent-work/
 .agent-cache/
+.vendor-restore.*/
 daybed-head.tar.gz
 daybed-update-*.tar.gz
 daybed-environment-anchor.tar.gz

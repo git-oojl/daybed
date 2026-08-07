@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Run this on an internet-connected Linux x86_64 machine.
-# It creates a fat archive that can bootstrap in a network-isolated Linux x86_64 sandbox.
+# Rebuild the complete hermetic vendor payload from the tracked runtime/lockfiles.
+# Run on an internet-connected Linux x86_64 machine. The final packaging and
+# cold acceptance are delegated to finalize-sandbox-bundle.sh so every build
+# path produces the same relocatable playwright-ready archive convention.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Capture the host uv before agent-common prepends .vendor/bin to PATH.
+# Capture the host uv before agent-common may prepend an existing .vendor/bin.
 HOST_UV="$(command -v uv || true)"
 
 # shellcheck disable=SC1091
@@ -12,18 +14,15 @@ source "$ROOT/scripts/agent-common.sh"
 
 [[ "$(uname -s)" == "Linux" ]] || { echo "This bundle must be built on Linux." >&2; exit 2; }
 [[ "$(uname -m)" == "x86_64" ]] || { echo "This bundle must be built on x86_64." >&2; exit 2; }
-[[ -n "$HOST_UV" ]] || {
-  echo "Missing host uv. Install uv before building the bundle." >&2
-  exit 2
-}
+[[ -n "$HOST_UV" ]] || { echo "Missing host uv. Install uv before rebuilding the bundle." >&2; exit 2; }
 require_command node
 require_command npm
 require_command tar
 require_command curl
 
-mkdir -p "$VENDOR_DIR" "$UV_CACHE_DIR" "$NPM_CACHE_DIR" "$VENDOR_PYTHON_DIR" "$VENDOR_BIN_DIR"
+mkdir -p "$VENDOR_DIR" "$UV_CACHE_DIR" "$NPM_CACHE_DIR" "$VENDOR_PYTHON_DIR" "$VENDOR_BIN_DIR" "$PLAYWRIGHT_BROWSERS_DIR"
 
-# Freeze host uv so target execution does not depend on the sandbox's uv version.
+# Freeze host uv so target execution does not depend on the sandbox's uv.
 rm -f "$VENDOR_BIN_DIR/uv"
 cp "$HOST_UV" "$VENDOR_BIN_DIR/uv"
 chmod +x "$VENDOR_BIN_DIR/uv"
@@ -34,7 +33,7 @@ if ! version_ge "$nodever" "22.12.0"; then
   exit 3
 fi
 
-# Freeze an exact official Node.js Linux x64 runtime, including npm.
+# Freeze the exact official Node.js Linux x64 runtime, including npm.
 rm -rf "$VENDOR_NODE_DIR"
 node_archive="$VENDOR_DIR/node-v${NODE_VERSION}-linux-x64.tar.xz"
 curl -fL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" -o "$node_archive"
@@ -43,55 +42,33 @@ mv "$VENDOR_DIR/node-v${NODE_VERSION}-linux-x64" "$VENDOR_NODE_DIR"
 rm -f "$node_archive"
 export PATH="$VENDOR_NODE_DIR/bin:$VENDOR_BIN_DIR:$PATH"
 
-# Download an exact portable CPython runtime into the repository payload.
+# Download the exact portable CPython runtime into the repository payload.
+rm -rf "$VENDOR_PYTHON_DIR"
+mkdir -p "$VENDOR_PYTHON_DIR"
 UV_CACHE_DIR="$UV_CACHE_DIR" UV_PYTHON_INSTALL_DIR="$VENDOR_PYTHON_DIR" \
   uv python install "$PYTHON_VERSION" --install-dir "$VENDOR_PYTHON_DIR" --no-bin
 vendored_python="$(find_vendor_python)"
 
-# Populate uv's cache using the exact lock, then remove the host-created venv so destination bootstrap recreates it.
+# Populate uv's cache from the exact lock. Destination bootstrap will recreate
+# the virtualenv; do not make the archive depend on this builder's .venv.
 (
   cd "$ROOT/backend"
   rm -rf .venv
   UV_CACHE_DIR="$UV_CACHE_DIR" UV_PYTHON="$vendored_python" \
     uv sync --frozen --python "$vendored_python"
-  UV_CACHE_DIR="$UV_CACHE_DIR" UV_PYTHON="$vendored_python" \
-    uv run python manage.py check
-  UV_CACHE_DIR="$UV_CACHE_DIR" UV_PYTHON="$vendored_python" \
-    uv run pytest -q
   rm -rf .venv
 )
 
-# Populate npm's content-addressed cache from the lock, validate, then omit node_modules from the bundle.
+# Populate npm's cache from package-lock and download the exact Playwright
+# Chromium into the project-local browser payload.
 (
   cd "$ROOT/frontend"
   rm -rf node_modules
   npm ci --cache "$NPM_CACHE_DIR" --no-audit --no-fund
-  PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_DIR" "$ROOT/frontend/node_modules/.bin/playwright" install chromium
-  npm run validate
+  PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_DIR" \
+    "$ROOT/frontend/node_modules/.bin/playwright" install chromium
 )
 
-# Exercise the real vendored browser against the running Django + Vite stack.
-"$ROOT/scripts/agent-bootstrap.sh"
-"$ROOT/scripts/agent-smoke.sh"
-rm -rf "$ROOT/frontend/node_modules" "$ROOT/backend/.venv" "$ROOT/.agent-logs"
-
-# Never include local secrets or mutable databases in the upload bundle.
-rm -f "$ROOT/backend/.env" "$ROOT/frontend/.env" "$ROOT/backend/db.sqlite3"
-rm -rf "$ROOT/backend/media" "$ROOT/backend/staticfiles"
-
-# Make the archive relocatable: uv and uv-managed Python may create absolute
-# cache/runtime symlinks pointing at the builder checkout.
-"$ROOT/scripts/agent-relativize-vendor-links.sh"
-
-parent="$(dirname "$ROOT")"
-name="$(basename "$ROOT")"
-out="$parent/${name}-openai-sandbox-linux-x86_64.tar.gz"
-rm -f "$out"
-tar \
-  --exclude='./backend/.venv' \
-  --exclude='./frontend/node_modules' \
-  --exclude='./.git' \
-  -C "$parent" -czf "$out" "$name"
-
-echo "Created: $out"
-echo "Upload that fat archive to the sandbox, then run: make bootstrap && make validate"
+# One canonical finalization path performs bootstrap, validation, real browser
+# smoke, relocation repair, clean packaging, and cold archive acceptance.
+exec "$ROOT/scripts/finalize-sandbox-bundle.sh"

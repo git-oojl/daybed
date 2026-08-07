@@ -10,6 +10,8 @@ Esta carpeta centraliza la documentación funcional y técnica del proyecto Dayb
 | `API_EXTERNAS.md`              | Uso de servicios externos como Nominatim/OpenStreetMap y OpenRouteService para geocodificación y estimación de entregas. |
 | `DECISIONES_TECNICAS.md`       | Decisiones de arquitectura, stack tecnológico y criterios técnicos del proyecto.                                         |
 | `FRONTEND_BACKEND_FAQ.md`      | Preguntas frecuentes para integrar vistas frontend con el backend.                                                       |
+| `LINUX_WSL2_WORKFLOW.md`         | Flujo diario, recuperación desde clone limpio y uso de bootstrap/validate/smoke en Debian/WSL2.                         |
+| `HERMETIC_SANDBOX_BUNDLE.md`   | Contrato de `.vendor`, restore, rebuild, Playwright/Chromium, finalización y aceptación de bundles.                      |
 | `backend/README.md`            | Documentación técnica del backend, incluyendo arquitectura, ERD, flujo de pedido y contrato OpenAPI.                     |
 | `backend/ENDPOINTS_BACKEND.md` | Resumen de endpoints REST implementados en el backend.                                                                   |
 | `backend/MODELO_DATOS.md`      | Entidades principales, relaciones y reglas de datos del sistema.                                                         |
@@ -28,6 +30,9 @@ Esta carpeta centraliza la documentación funcional y técnica del proyecto Dayb
 - [Flujo principal de pedido](./backend/diagrams/flujo_pedido.png)
 
 ## Setup local obligatorio
+
+Para Debian/WSL2 y el entorno hermético, usa [LINUX_WSL2_WORKFLOW.md](./LINUX_WSL2_WORKFLOW.md). Los comandos siguientes documentan el setup manual subyacente.
+
 
 Después de migrar la base local del backend, cargar semillas:
 

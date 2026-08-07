@@ -23,21 +23,25 @@ The target sandbox may have Python 3.13 system-wide. Ignore that interpreter for
 
 ## First commands
 
-From the repository root:
+A Git clone does not contain `.vendor`. For an offline/hermetic checkout, restore a compatible environment anchor **before** bootstrap:
 
 ```bash
+make restore-vendor VENDOR_ARCHIVE=/path/to/daybed-environment-anchor.tar.gz
 make doctor
 make bootstrap
 make validate
+make smoke
 ```
 
-If `make bootstrap` reports that `.vendor` is missing, this is not a code failure. The sandbox has no network. Build the fat bundle on an internet-connected Linux x86_64 machine with:
+`restore-vendor.sh` is path/name agnostic and refuses anchors whose runtime/dependency contract differs from the current checkout.
+
+If no compatible anchor exists, rebuild the payload on an internet-connected Linux x86_64 machine:
 
 ```bash
-bash scripts/build-sandbox-bundle.sh
+make rebuild-bundle
 ```
 
-Then upload the generated archive instead of the thin source archive.
+See `docs/LINUX_WSL2_WORKFLOW.md` and `docs/HERMETIC_SANDBOX_BUNDLE.md`.
 
 ## Development commands
 
@@ -46,6 +50,8 @@ make backend      # Django on 0.0.0.0:8000
 make frontend     # Vite on 0.0.0.0:5173
 make serve        # both processes
 make validate     # Django checks/tests + frontend lint/build/tests
+make smoke        # Django + Vite + real Playwright/Chromium route smoke
+make bundle       # repackage current compatible .vendor; no network
 make backend-test
 make frontend-test
 ```
