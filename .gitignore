@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 .Trashes/
 .Spotlight-V100/
 .fseventsd/
+*:Zone.Identifier
 *.Zone.Identifier
 
 # -------------------------
