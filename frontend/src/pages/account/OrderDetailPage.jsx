@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaBoxOpen,
+  FaClock,
   FaCircleInfo,
   FaCreditCard,
   FaHeadset,
@@ -170,7 +171,14 @@ export default function OrderDetailPage() {
               <p className="order-detail-address">{order.address}</p>
               {order.deliveryNotes ? <div className="order-detail-note"><strong>Indicaciones:</strong> {order.deliveryNotes}</div> : null}
               {order.latitude != null && order.longitude != null ? (
-                <OpenStreetMapEmbed compact latitude={order.latitude} longitude={order.longitude} label={`Destino · ${order.address}`} title={`Destino del ${order.label}`} />
+                <>
+                  <OpenStreetMapEmbed compact latitude={order.latitude} longitude={order.longitude} label={`Destino · ${order.address}`} title={`Destino del ${order.label}`} />
+                  <dl className="delivery-stat-grid">
+                    <div><dt><FaTruck />Distancia</dt><dd>{order.distanceKm == null ? "Sin cálculo" : `${order.distanceKm.toFixed(1)} km`}</dd></div>
+                    <div><dt><FaClock />Tiempo estimado</dt><dd>{order.durationMinutes == null ? "Sin cálculo" : `${Math.round(order.durationMinutes)} min`}</dd></div>
+                    <div><dt><FaLocationDot />Zona</dt><dd>{order.deliveryZone}</dd></div>
+                  </dl>
+                </>
               ) : (
                 <FeatureState compact tone="map" title="Ubicación aún sin coordenadas" message="La dirección está guardada y Daybed la usará para la entrega. El mapa aparecerá cuando la ubicación quede confirmada." />
               )}

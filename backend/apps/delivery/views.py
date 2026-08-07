@@ -47,7 +47,7 @@ class GeocodeView(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            result = geocode_address(serializer.validated_data["address"])
+            result = geocode_address(**serializer.validated_data)
         except DeliveryServiceError as exc:
             return _error_response(exc)
 

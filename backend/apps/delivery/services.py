@@ -128,26 +128,34 @@ def calculate_delivery_fee(distance_km, order_subtotal=None, store_settings=None
     )
 
 
-def geocode_address(address):
-    normalized_address = normalize_address_text(address)
-    data = _search_geocoding_provider(normalized_address)
-    if not data:
-        accent_insensitive = strip_address_accents(normalized_address)
-        if accent_insensitive != normalized_address:
-            data = _search_geocoding_provider(accent_insensitive)
-    if not data:
-        raise DeliveryAddressNotFound()
-
-    candidates = tuple(
-        GeocodeCandidate(
-            formatted_address=result.get("display_name", normalized_address),
-            latitude=_decimal(result["lat"]),
-            longitude=_decimal(result["lon"]),
-            address=result.get("address") or {},
+def geocode_address(
+    address="",
+    *,
+    street="",
+    neighborhood="",
+    city="",
+    state="",
+    postal_code="",
+):
+    normalized_address = normalize_address_text(
+        address
+        or build_structured_address(
+            street=street,
+            neighborhood=neighborhood,
+            city=city,
+            state=state,
+            postal_code=postal_code,
         )
-        for result in data
-        if result.get("lat") is not None and result.get("lon") is not None
     )
+    attempts = _build_geocoding_attempts(
+        normalized_address=normalized_address,
+        street=street,
+        neighborhood=neighborhood,
+        city=city,
+        state=state,
+        postal_code=postal_code,
+    )
+    candidates = _collect_geocode_candidates(attempts, normalized_address)
     if not candidates:
         raise DeliveryAddressNotFound()
 
@@ -161,17 +169,147 @@ def geocode_address(address):
     )
 
 
-def _search_geocoding_provider(query):
+def _clean_part(value):
+    return normalize_address_text(value)
+
+
+def _append_attempt(attempts, seen, params):
+    normalized = tuple(
+        sorted(
+            (key, value)
+            for key, value in params.items()
+            if str(value or "").strip()
+        )
+    )
+    if not normalized or normalized in seen:
+        return
+    seen.add(normalized)
+    attempts.append(dict(normalized))
+
+
+def _build_geocoding_attempts(
+    *,
+    normalized_address,
+    street="",
+    neighborhood="",
+    city="",
+    state="",
+    postal_code="",
+):
+    street = _clean_part(street)
+    neighborhood = _clean_part(neighborhood)
+    city = _clean_part(city)
+    state = _clean_part(state)
+    postal_code = _clean_part(postal_code)
+    attempts = []
+    seen = set()
+
+    if street and city and state:
+        _append_attempt(
+            attempts,
+            seen,
+            {
+                "street": street,
+                "city": city,
+                "state": state,
+                "postalcode": postal_code,
+                "country": "México",
+            },
+        )
+        _append_attempt(
+            attempts,
+            seen,
+            {
+                "street": street,
+                "city": city,
+                "state": state,
+                "country": "México",
+            },
+        )
+        _append_attempt(
+            attempts,
+            seen,
+            {
+                "street": street,
+                "county": city,
+                "state": state,
+                "postalcode": postal_code,
+                "country": "México",
+            },
+        )
+
+    free_text_variants = [
+        normalized_address,
+        build_structured_address(
+            street=street,
+            neighborhood=neighborhood,
+            city=city,
+            state=state,
+        ),
+        build_structured_address(
+            street=street,
+            city=city,
+            state=state,
+            postal_code=postal_code,
+        ),
+        build_structured_address(
+            street=street,
+            city=city,
+            state=state,
+        ),
+        normalize_address_text(", ".join(part for part in [street, neighborhood, city, state] if part)),
+        normalize_address_text(", ".join(part for part in [street, city, state, "México"] if part)),
+        normalize_address_text(", ".join(part for part in [street, city, "México"] if part)),
+    ]
+    for query in free_text_variants:
+        if query:
+            _append_attempt(attempts, seen, {"q": query})
+            accent_insensitive = strip_address_accents(query)
+            if accent_insensitive != query:
+                _append_attempt(attempts, seen, {"q": accent_insensitive})
+    return attempts
+
+
+def _collect_geocode_candidates(attempts, fallback_address):
+    merged = []
+    seen = set()
+    for params in attempts:
+        data = _search_geocoding_provider(params)
+        if not data:
+            continue
+        for result in data:
+            lat = result.get("lat")
+            lon = result.get("lon")
+            if lat is None or lon is None:
+                continue
+            key = (str(lat), str(lon), result.get("display_name", fallback_address))
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(
+                GeocodeCandidate(
+                    formatted_address=result.get("display_name", fallback_address),
+                    latitude=_decimal(lat),
+                    longitude=_decimal(lon),
+                    address=result.get("address") or {},
+                )
+            )
+        if merged:
+            break
+    return tuple(merged)
+
+
+def _search_geocoding_provider(params):
     try:
         response = httpx.get(
             f"{settings.NOMINATIM_BASE_URL}/search",
             params={
-                "q": query,
                 "format": "jsonv2",
                 "limit": 5,
                 "addressdetails": 1,
                 "countrycodes": "mx",
                 "accept-language": "es-MX,es",
+                **params,
             },
             headers={"User-Agent": settings.NOMINATIM_USER_AGENT},
             timeout=10,
@@ -188,13 +326,46 @@ def estimate_delivery(latitude, longitude, order_subtotal=None, store_settings=N
     origin_longitude = _decimal(store_settings.longitude)
     destination_latitude = _decimal(latitude)
     destination_longitude = _decimal(longitude)
-    distance_km = _fallback_distance_km(
-        origin_latitude,
-        origin_longitude,
-        destination_latitude,
-        destination_longitude,
-    )
-    duration_minutes = _duration(distance_km / Decimal("35.0") * Decimal("60.0"))
+    if not settings.OPENROUTESERVICE_API_KEY:
+        return _fallback_estimate(
+            origin_latitude,
+            origin_longitude,
+            destination_latitude,
+            destination_longitude,
+            order_subtotal,
+            store_settings,
+            "Usamos una estimación local de distancia y tiempo porque la ruta en mapa no está disponible ahora.",
+        )
+
+    try:
+        response = httpx.post(
+            f"{settings.OPENROUTESERVICE_BASE_URL}/v2/directions/driving-car",
+            json={
+                "coordinates": [
+                    [float(origin_longitude), float(origin_latitude)],
+                    [float(destination_longitude), float(destination_latitude)],
+                ]
+            },
+            headers={
+                "Authorization": settings.OPENROUTESERVICE_API_KEY,
+                "Content-Type": "application/json",
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        summary = _openrouteservice_summary(response.json())
+        distance_km = _distance(_decimal(summary["distance"]) / Decimal("1000"))
+        duration_minutes = _duration(_decimal(summary["duration"]) / Decimal("60"))
+    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
+        return _fallback_estimate(
+            origin_latitude,
+            origin_longitude,
+            destination_latitude,
+            destination_longitude,
+            order_subtotal,
+            store_settings,
+            "Usamos una estimación local de distancia y tiempo porque la ruta en mapa no respondió correctamente.",
+        )
 
     delivery_fee = calculate_delivery_fee(
         distance_km,
@@ -211,7 +382,9 @@ def estimate_delivery(latitude, longitude, order_subtotal=None, store_settings=N
         delivery_fee=delivery_fee,
         free_shipping_applied=free_shipping_applies(order_subtotal, store_settings),
         free_shipping_threshold=store_settings.free_shipping_threshold,
-        distance_provider="straight_line_estimate",
+        distance_provider="openrouteservice",
+        routing_available=True,
+        routing_warning="",
     )
 
 

@@ -245,7 +245,7 @@ def test_checkout_revalidates_sold_out_stock_and_preserves_cart():
     assert product.stock == 1
 
 
-def test_routing_failure_is_focused_and_does_not_destroy_cart_or_session(monkeypatch):
+def test_routing_failure_uses_fallback_estimate_and_still_completes_checkout(monkeypatch):
     customer = create_user("cliente_route_failure")
     product = create_product(stock=3)
     add_cart_item(customer, product)
@@ -270,11 +270,12 @@ def test_routing_failure_is_focused_and_does_not_destroy_cart_or_session(monkeyp
     monkeypatch.setattr("apps.orders.serializers.estimate_delivery", unavailable)
     response = checkout(customer)
 
-    assert response.status_code == 503
-    assert response.data["code"] == "routing_service_unavailable"
-    assert response.data["feature"] == "delivery"
-    assert Order.objects.filter(user=customer).count() == 0
-    assert CartItem.objects.filter(cart__user=customer).count() == 1
+    assert response.status_code == 201
+    assert response.data["estimated_duration_minutes"] == "30.0"
+    assert response.data["distance_km"] == "12.500"
+    order = Order.objects.get(user=customer)
+    assert order.distance_provider == "approximate_fallback"
+    assert CartItem.objects.filter(cart__user=customer).count() == 0
     assert api_client(customer).get(reverse("cart-detail")).status_code == 200
 
 

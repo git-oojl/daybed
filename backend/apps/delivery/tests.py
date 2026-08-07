@@ -127,6 +127,46 @@ def test_successful_geocode_mocks_nominatim(monkeypatch):
     assert calls["headers"]["User-Agent"]
 
 
+def test_structured_geocode_fields_resolve_even_when_full_text_would_fail(monkeypatch):
+    customer = create_customer("cliente_structured_geocode")
+    calls = []
+
+    def fake_get(url, params, headers, timeout):
+        calls.append(params)
+        if params.get("street") == "Colina de las Lajas 70":
+            return response(
+                200,
+                [
+                    {
+                        "display_name": "Privada Colina de las Lajas, Los Olivos, Delegación La Mesa, Tijuana, Municipio de Tijuana, Baja California, 22194, México",
+                        "lat": "32.48927730",
+                        "lon": "-116.99078630",
+                        "address": {"postcode": "22194"},
+                    }
+                ],
+            )
+        return response(200, [])
+
+    monkeypatch.setattr("apps.delivery.services.httpx.get", fake_get)
+
+    api_response = api_client(customer).post(
+        reverse("delivery-geocode"),
+        {
+            "street": "Colina de las Lajas 70",
+            "neighborhood": "Residencial Aguacaliente",
+            "city": "Tijuana",
+            "state": "Baja California",
+            "postal_code": "22194",
+        },
+        format="json",
+    )
+
+    assert api_response.status_code == 200
+    assert api_response.data["latitude"] == "32.48927730"
+    assert api_response.data["longitude"] == "-116.99078630"
+    assert any("street" in params for params in calls)
+
+
 def test_geocode_retries_without_accents_when_first_search_has_no_matches(monkeypatch):
     customer = create_customer("cliente_accent_retry")
     queries = []

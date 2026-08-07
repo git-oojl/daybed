@@ -43,7 +43,12 @@ export default function SavedItemsPage() {
     }).then((response) => {
       if (!active) return;
       const byId = new Map(readCollection(response).map((product) => [String(product.id), product]));
-      setProducts(savedIds.map((id) => byId.get(String(id))).filter(Boolean));
+      const nextProducts = savedIds.map((id) => byId.get(String(id))).filter(Boolean);
+      const validIds = nextProducts.map((product) => String(product.id));
+      setProducts(nextProducts);
+      if (validIds.length !== savedIds.length) {
+        setSavedProductIds(validIds);
+      }
     }).catch((requestError) => { if (active) setError(requestError); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [savedIds]);

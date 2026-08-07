@@ -1,3 +1,4 @@
+import inspect
 import re
 import uuid
 from datetime import timedelta
@@ -19,6 +20,14 @@ from apps.inventory.services import record_inventory_movement
 from apps.catalog.models import Product
 from apps.orders.models import Order, OrderItem, OrderStatusEvent
 from apps.store.models import StoreSettings
+
+
+def _estimate_delivery_for_checkout(latitude, longitude, *, order_subtotal, store_settings):
+    parameters = inspect.signature(estimate_delivery).parameters
+    kwargs = {"order_subtotal": order_subtotal}
+    if "store_settings" in parameters:
+        kwargs["store_settings"] = store_settings
+    return estimate_delivery(latitude, longitude, **kwargs)
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -320,7 +329,7 @@ class CheckoutSerializer(serializers.Serializer):
         distance_provider = ""
 
         if latitude is not None and longitude is not None:
-            server_estimate = estimate_delivery(
+            server_estimate = _estimate_delivery_for_checkout(
                 latitude,
                 longitude,
                 order_subtotal=products_subtotal,
