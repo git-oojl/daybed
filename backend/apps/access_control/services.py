@@ -105,14 +105,37 @@ def _content_type():
 
 def ensure_operational_permissions():
     content_type = _content_type()
-    permission_objects = {}
-    for permission in PERMISSION_CATALOG:
-        permission_object, _created = Permission.objects.update_or_create(
+    by_codename = {
+        permission.codename: permission
+        for permission in Permission.objects.filter(
+            content_type=content_type,
+            codename__in=[item.codename for item in PERMISSION_CATALOG],
+        )
+    }
+    missing = [
+        Permission(
             content_type=content_type,
             codename=permission.codename,
-            defaults={"name": permission.label},
+            name=permission.label,
         )
-        permission_objects[permission.code] = permission_object
+        for permission in PERMISSION_CATALOG
+        if permission.codename not in by_codename
+    ]
+    if missing:
+        Permission.objects.bulk_create(missing, ignore_conflicts=True)
+        by_codename = {
+            permission.codename: permission
+            for permission in Permission.objects.filter(
+                content_type=content_type,
+                codename__in=[item.codename for item in PERMISSION_CATALOG],
+            )
+        }
+
+    permission_objects = {}
+    for permission in PERMISSION_CATALOG:
+        permission_object = by_codename.get(permission.codename)
+        if permission_object is not None:
+            permission_objects[permission.code] = permission_object
     return permission_objects
 
 
@@ -229,4 +252,3 @@ def permission_catalog_payload():
         }
         for permission in PERMISSION_CATALOG
     ]
-

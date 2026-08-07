@@ -36,6 +36,13 @@ const CATEGORIES = [
       "https://images.unsplash.com/photo-1632829401795-2745c905ac77?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     path: `${routePaths.public.catalog}?category__slug=recamaras`,
   },
+  {
+    id: "oficina",
+    label: "Oficina",
+    image:
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&q=80",
+    path: `${routePaths.public.catalog}?category__slug=oficina`,
+  },
 ];
 
 const GALLERY_IMAGES = [
@@ -126,11 +133,11 @@ function HomePage() {
 
   const categoryCards = useMemo(() => {
     if (!homeCategories.length) return CATEGORIES;
-    return homeCategories.map((category, index) => ({
-      id: category.slug,
-      label: category.name,
+    return homeCategories.slice(0, 4).map((category, index) => ({
+      id: category.slug || category.id,
+      label: category.name || category.label,
       image: category.image || CATEGORIES[index % CATEGORIES.length].image,
-      path: `${routePaths.public.catalog}?category__slug=${encodeURIComponent(category.slug)}`,
+      path: category.path || `${routePaths.public.catalog}?category__slug=${encodeURIComponent(category.slug)}`,
     }));
   }, [homeCategories]);
 

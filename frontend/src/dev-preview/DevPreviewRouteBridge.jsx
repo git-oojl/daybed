@@ -39,7 +39,7 @@ function DevPreviewRouteBridge({ children }) {
   return (
     <Navigate
       replace
-      to={getPreviewPath(nextView.id, nextLayoutId, nextViewerId)}
+      to={getPreviewPath(nextView.id, nextLayoutId, nextViewerId, `${location.pathname}${location.search}${location.hash}`)}
     />
   );
 }

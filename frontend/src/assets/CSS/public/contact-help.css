@@ -46,3 +46,8 @@
 .contact__alert { margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; padding: 13px 15px; border-radius: 10px; background: #e8f0e5; color: #476040; font-weight: 650; }
 @media (max-width: 980px) { .about-us, .contact-section--split, .contact-section--form { grid-template-columns: 1fr; } .contact-grid { grid-template-columns: repeat(2,1fr); } .about-us__image { min-height: 360px; } }
 @media (max-width: 620px) { .contact-container { width: min(100% - 32px,1360px); padding-top: 46px; gap: 58px; } .contact-hero, .contact-hero__overlay { min-height: 270px; } .contact-grid, .contact-form__row { grid-template-columns: 1fr; } .contact-section--form { padding: 28px 20px; gap: 30px; } .about-us__image, .about-us__image img { min-height: 300px; } }
+
+#nosotros,
+#contacto {
+  scroll-margin-top: calc(var(--site-header-height, 78px) + 18px);
+}

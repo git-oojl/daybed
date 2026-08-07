@@ -5,7 +5,6 @@ import {
   FaCreditCard,
   FaLocationDot,
   FaPen,
-  FaShieldHeart,
   FaTruck,
   FaUser,
 } from "react-icons/fa6";
@@ -72,6 +71,7 @@ export default function CheckoutSummaryPage() {
     city: user?.city || "",
     state: user?.state || "",
     postal_code: "",
+    reference: "",
     delivery_notes: "",
   });
 
@@ -114,8 +114,13 @@ export default function CheckoutSummaryPage() {
     const product = productFor(item);
     return product.active === false || Number(product.stock || 0) < Number(item.quantity || 0);
   }), [cartItems]);
-  const shipping = deliveryEstimate ? Number(deliveryEstimate.delivery_fee || 0) : 0;
-  const total = subtotal + shipping;
+  const baseDeliveryFee = useMemo(() => {
+    const threshold = Number(storeSettings.free_shipping_threshold || 0);
+    if (threshold > 0 && subtotal >= threshold) return 0;
+    return Number(storeSettings.delivery_base_fee || 0);
+  }, [storeSettings.delivery_base_fee, storeSettings.free_shipping_threshold, subtotal]);
+  const effectiveShipping = deliveryEstimate ? Number(deliveryEstimate.delivery_fee || 0) : baseDeliveryFee;
+  const total = subtotal + effectiveShipping;
   const addressComplete = REQUIRED_ADDRESS_FIELDS.every((field) => clean(address[field])) && /^\d{5}$/.test(clean(address.postal_code));
 
   function updateAddress(event) {
@@ -192,10 +197,6 @@ export default function CheckoutSummaryPage() {
       setSubmitError({ message: "Las compras están pausadas temporalmente. Tu carrito permanece guardado." });
       return;
     }
-    if (!selectedCandidate || !deliveryEstimate || deliveryEstimate.routing_available === false) {
-      setSubmitError({ message: deliveryEstimate?.routing_available === false ? "La dirección está localizada, pero el cálculo vial no está disponible. Vuelve a calcular la entrega antes de finalizar." : "Confirma una dirección y calcula su entrega antes de finalizar el pedido." });
-      return;
-    }
     if (soldOutItems.length) {
       setSubmitError({ message: "Actualiza el carrito: una pieza ya no tiene existencias suficientes." });
       return;
@@ -209,16 +210,22 @@ export default function CheckoutSummaryPage() {
       setSubmitting(true);
       setSubmitError(null);
       const payload = {
-        original_address: [address.street, address.neighborhood, address.city, address.state, address.postal_code].filter(Boolean).join(", "),
-        formatted_address: selectedCandidate.formatted_address,
-        latitude: selectedCandidate.latitude,
-        longitude: selectedCandidate.longitude,
-        distance_km: deliveryEstimate.distance_km,
-        estimated_duration_minutes: deliveryEstimate.estimated_duration_minutes,
-        delivery_fee: deliveryEstimate.delivery_fee,
-        delivery_zone: deliveryEstimate.delivery_zone || "standard",
+        delivery_address: {
+          street: clean(address.street),
+          neighborhood: clean(address.neighborhood),
+          city: clean(address.city),
+          state: clean(address.state),
+          postal_code: clean(address.postal_code),
+          country: "México",
+          reference: clean(address.reference),
+        },
         delivery_notes: clean(address.delivery_notes),
         payment_method: paymentMethod,
+        ...(selectedCandidate ? {
+          latitude: selectedCandidate.latitude,
+          longitude: selectedCandidate.longitude,
+          geocoding_provider: "nominatim",
+        } : {}),
         ...(paymentMethod === "card" ? payment : {}),
       };
       const order = await orderService.checkout(payload);
@@ -250,7 +257,7 @@ export default function CheckoutSummaryPage() {
       <PageHero title="Resumen de pedido" eyebrow="Compra Daybed" image={HERO} />
       <main className="checkout-v3__main">
         <Link className="back-inline" to={routePaths.checkout.cart}><FaArrowLeft /> Volver al carrito</Link>
-        <section className="checkout-v3__heading"><div><p className="section-kicker">Compra protegida</p><h1>Confirma entrega y pago</h1><p>Tu identidad proviene de la cuenta. Aquí solo decides dónde entregar y cómo pagar.</p></div><span><FaShieldHeart /> El carrito sobrevive a fallos de ubicación</span></section>
+        <section className="checkout-v3__heading"><div><p className="section-kicker">Compra protegida</p><h1>Confirma entrega y pago</h1><p>Tu identidad proviene de la cuenta. Aquí solo decides dónde entregar y cómo pagar.</p></div></section>
 
         {storeSettings.storefront_available === false ? <div className="inline-notice inline-notice--warning" role="status"><strong>La tienda online está en pausa.</strong><span>Puedes revisar tu pedido y conservar el carrito, pero no finalizar una compra todavía.</span></div> : null}
         {soldOutItems.length ? <div className="inline-notice inline-notice--error" role="alert"><strong>Hay productos sin disponibilidad suficiente.</strong><span>Regresa al carrito para ajustar cantidades antes de finalizar.</span><Link to={routePaths.checkout.cart}>Revisar carrito</Link></div> : null}
@@ -272,16 +279,17 @@ export default function CheckoutSummaryPage() {
                 <label>Ciudad o municipio *<input name="city" value={address.city} onChange={updateAddress} placeholder="Guadalajara" /></label>
                 <label>Estado o entidad *<input name="state" value={address.state} onChange={updateAddress} placeholder="Jalisco" /></label>
                 <label>Código postal *<input inputMode="numeric" maxLength="5" name="postal_code" value={address.postal_code} onChange={updateAddress} placeholder="44130" /></label>
+                <label className="is-wide">Referencia adicional<input name="reference" value={address.reference} onChange={updateAddress} placeholder="Portón blanco, entre calle 4 y 5" /></label>
                 <label className="is-wide">Indicaciones de entrega<textarea name="delivery_notes" value={address.delivery_notes} onChange={updateAddress} rows="3" placeholder="Piso, acceso, horario o referencias útiles" /></label>
               </div>
-              <button className="solid-action" type="button" disabled={!addressComplete || geocoding} onClick={verifyAddress}>{geocoding ? "Buscando coincidencias…" : "Buscar esta dirección"}</button>
-              {!addressComplete ? <p className="checkout-field-hint">Completa calle, ciudad o municipio, entidad y un código postal mexicano de cinco dígitos.</p> : null}
+              <button className="solid-action" type="button" disabled={!addressComplete || geocoding} onClick={verifyAddress}>{geocoding ? "Buscando coincidencias…" : "Verificar en el mapa"}</button>
+              {!addressComplete ? <p className="checkout-field-hint">Completa calle, ciudad o municipio, entidad y un código postal mexicano de cinco dígitos.</p> : <p className="checkout-field-hint">La verificación en mapa es opcional. Si no aparece una coincidencia útil, puedes continuar con la dirección escrita.</p>}
 
-              {addressError ? <div className="checkout-local-error" role="alert"><strong>{addressError.kind === API_ERROR_KINDS.EXTERNAL_SERVICE ? "La ubicación no está disponible temporalmente" : "Revisa la dirección"}</strong><p>{addressError.message}</p>{selectedCandidate ? <button type="button" onClick={() => calculateEstimate(selectedCandidate)}>Recalcular entrega</button> : null}</div> : null}
+              {addressError ? <div className="checkout-local-error" role="alert"><strong>{addressError.kind === API_ERROR_KINDS.EXTERNAL_SERVICE ? "No pudimos validar la ubicación ahora" : "Revisa la dirección"}</strong><p>{addressError.message}</p><p>Puedes continuar con la dirección manual. Si vuelves a verificar y encontramos una coincidencia, también guardaremos la ubicación del pedido.</p>{selectedCandidate ? <button type="button" onClick={() => calculateEstimate(selectedCandidate)}>Recalcular entrega</button> : null}</div> : null}
 
               {candidates.length ? <fieldset className="address-candidates"><legend>Selecciona la coincidencia correcta</legend>{candidates.map((candidate, index) => <label key={`${candidate.latitude}-${candidate.longitude}-${index}`} className={selectedCandidate === candidate ? "is-selected" : ""}><input type="radio" name="candidate" checked={selectedCandidate === candidate} onChange={() => chooseCandidate(candidate)} /><span><strong>{candidate.formatted_address}</strong><small>{candidate.address?.postcode ? `C.P. ${candidate.address.postcode}` : "Verifica la ubicación antes de continuar"}</small></span></label>)}</fieldset> : null}
 
-              {selectedCandidate ? <div className="checkout-map-block"><OpenStreetMapEmbed compact latitude={selectedCandidate.latitude} longitude={selectedCandidate.longitude} label={selectedCandidate.formatted_address} title="Destino de entrega seleccionado" />{estimating ? <p className="checkout-field-hint">Calculando entrega…</p> : deliveryEstimate ? <div className="delivery-estimate-card"><span><FaTruck /><strong>{Number(deliveryEstimate.distance_km).toFixed(1)} km</strong></span><span><strong>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</strong> estimados</span><span><strong>{Number(deliveryEstimate.delivery_fee) ? formatMoney(deliveryEstimate.delivery_fee) : "Envío gratis"}</strong></span>{deliveryEstimate.routing_warning ? <p className={deliveryEstimate.routing_available === false ? "is-blocking" : ""}>{deliveryEstimate.routing_warning}{deliveryEstimate.routing_available === false ? " Puedes editar la dirección o intentar el cálculo nuevamente; tu carrito permanece intacto." : ""}</p> : null}</div> : null}</div> : null}
+              {selectedCandidate ? <div className="checkout-map-block"><OpenStreetMapEmbed compact latitude={selectedCandidate.latitude} longitude={selectedCandidate.longitude} label={selectedCandidate.formatted_address} title="Destino de entrega seleccionado" />{estimating ? <p className="checkout-field-hint">Calculando entrega…</p> : deliveryEstimate ? <div className="delivery-estimate-card"><span><FaTruck /><strong>{Number(deliveryEstimate.distance_km).toFixed(1)} km</strong></span><span><strong>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</strong> estimados</span><span><strong>{Number(deliveryEstimate.delivery_fee) ? formatMoney(deliveryEstimate.delivery_fee) : "Envío gratis"}</strong></span></div> : null}</div> : null}
             </section>
 
             <section className="checkout-section-card">
@@ -292,7 +300,7 @@ export default function CheckoutSummaryPage() {
           </div>
 
           <aside className="checkout-v3__summary">
-            <section className="checkout-order-card"><p className="section-kicker">Tu selección</p><h2>{cartItems.length} {cartItems.length === 1 ? "pieza" : "piezas"}</h2><div className="checkout-product-list">{cartItems.map((item) => { const product = productFor(item); return <article key={item.id}><img src={productImage(product)} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productImage({}); }} /><div><strong>{product.name}</strong><span>{item.quantity} × {formatMoney(product.price)}</span>{Number(product.stock || 0) < Number(item.quantity || 0) ? <em>Sin existencias suficientes</em> : null}</div><b>{formatMoney(Number(product.price || 0) * Number(item.quantity || 0))}</b></article>; })}</div><dl className="order-money-list"><div><dt>Productos</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Envío</dt><dd>{deliveryEstimate ? (shipping ? formatMoney(shipping) : "Gratis") : "Por calcular"}</dd></div><div className="is-total"><dt>Total</dt><dd>{deliveryEstimate ? formatMoney(total) : formatMoney(subtotal)}</dd></div></dl><label className="checkout-terms"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>Acepto los términos de compra y confirmo que la dirección seleccionada es correcta.</span></label><button className="checkout-submit" type="button" disabled={storeSettings.storefront_available === false || submitting || !deliveryEstimate || deliveryEstimate.routing_available === false || soldOutItems.length > 0 || !acceptedTerms || !paymentReady()} onClick={submitOrder}>{submitting ? "Creando pedido…" : "Confirmar pedido"}</button><p>El servidor vuelve a comprobar existencias y costo de envío antes de crear el pedido.</p></section>
+            <section className="checkout-order-card"><p className="section-kicker">Tu selección</p><h2>{cartItems.length} {cartItems.length === 1 ? "pieza" : "piezas"}</h2><div className="checkout-product-list">{cartItems.map((item) => { const product = productFor(item); return <article key={item.id}><img src={productImage(product)} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productImage({}); }} /><div><strong>{product.name}</strong><span>{item.quantity} × {formatMoney(product.price)}</span>{Number(product.stock || 0) < Number(item.quantity || 0) ? <em>Sin existencias suficientes</em> : null}</div><b>{formatMoney(Number(product.price || 0) * Number(item.quantity || 0))}</b></article>; })}</div><dl className="order-money-list"><div><dt>Productos</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Envío</dt><dd>{effectiveShipping ? formatMoney(effectiveShipping) : "Gratis"}</dd></div>{deliveryEstimate ? <><div><dt>Distancia estimada</dt><dd>{Number(deliveryEstimate.distance_km).toFixed(1)} km</dd></div><div><dt>Tiempo estimado</dt><dd>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</dd></div></> : <div><dt>Estimación</dt><dd>Envío base sin mapa</dd></div>}<div className="is-total"><dt>Total</dt><dd>{formatMoney(total)}</dd></div></dl><label className="checkout-terms"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>Acepto los términos de compra y confirmo que la dirección escrita es correcta.</span></label><button className="checkout-submit" type="button" disabled={storeSettings.storefront_available === false || submitting || soldOutItems.length > 0 || !acceptedTerms || !paymentReady() || !addressComplete} onClick={submitOrder}>{submitting ? "Creando pedido…" : "Confirmar pedido"}</button><p>El servidor vuelve a comprobar existencias y aplica el envío real según la configuración actual de la tienda.</p></section>
           </aside>
         </div>
       </main>

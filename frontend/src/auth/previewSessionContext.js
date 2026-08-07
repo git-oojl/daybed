@@ -9,4 +9,6 @@ export const PreviewSessionContext = createContext({
   setUser: () => undefined,
   clearSession: () => undefined,
   logout: async () => undefined,
+  routeLocation: null,
+  setRouteSearchParams: () => undefined,
 });

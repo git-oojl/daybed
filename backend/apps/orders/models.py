@@ -42,10 +42,30 @@ class Order(models.Model):
 
     original_address = models.CharField(max_length=500)
     formatted_address = models.CharField(max_length=500)
-    latitude = models.DecimalField(max_digits=12, decimal_places=8)
-    longitude = models.DecimalField(max_digits=12, decimal_places=8)
-    distance_km = models.DecimalField(max_digits=10, decimal_places=3)
-    estimated_duration_minutes = models.DecimalField(max_digits=10, decimal_places=1)
+    latitude = models.DecimalField(
+        max_digits=12,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+    longitude = models.DecimalField(
+        max_digits=12,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+    distance_km = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    estimated_duration_minutes = models.DecimalField(
+        max_digits=10,
+        decimal_places=1,
+        null=True,
+        blank=True,
+    )
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_zone = models.CharField(max_length=80, default="standard")
     geocoding_provider = models.CharField(max_length=80, blank=True)

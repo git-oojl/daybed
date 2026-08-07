@@ -186,11 +186,6 @@ const ADMIN_SHORTCUTS = [
     path: routePaths.admin.businessMetrics,
   },
   {
-    title: "Usuarios internos",
-    description: "Gestión de cuentas y roles",
-    path: routePaths.admin.internalUsers,
-  },
-  {
     title: "Accesos del equipo",
     description: "Permisos individuales de empleados",
     path: routePaths.admin.rolesPermissions,
@@ -438,9 +433,9 @@ export default function ProfilePage() {
         <section className="profile-identity-card">
           <div className="profile-identity-card__avatar">
             <Avatar user={profile} src={avatarPreview || profile.avatar} size="xl" />
-            <label className="profile-avatar-upload">
-              <span>Cambiar foto</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
+            <label className="profile-avatar-upload" aria-label="Agregar o cambiar foto de perfil" title="Agregar o cambiar foto de perfil">
+              <span aria-hidden="true">+</span>
+              <input aria-label="Agregar o cambiar foto de perfil" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
             </label>
           </div>
           <div><p className="section-kicker">Cuenta Daybed</p><h1>{getDisplayName(profile)}</h1><p>{profile.email} · {roleLabel}</p><span>La foto se usa en tu perfil y en el control de cuenta de la barra de navegación.</span></div>

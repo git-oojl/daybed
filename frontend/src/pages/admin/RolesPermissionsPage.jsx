@@ -98,7 +98,7 @@ export default function RolesPermissionsPage() {
               <div className="team-access-v2__groups">{Object.entries(grouped).map(([category, permissions]) => <section key={category}><h4>{category}</h4>{permissions.map((permission) => <label key={permission.code} className={codes.includes(permission.code) ? "is-enabled" : ""}><input type="checkbox" checked={codes.includes(permission.code)} onChange={() => toggle(permission.code)} /><span className="team-access-v2__check"><FaCheck /></span><div><strong>{permission.label}</strong><small>{permission.description}</small></div></label>)}</section>)}</div>
             </div>
           </section>
-        ) : <section className="state-card"><span className="state-card__icon"><FaUserGear /></span><h2>No hay empleados activos</h2><p>Crea o activa una cuenta de empleado para asignarle accesos individuales.</p><button onClick={() => navigate(routePaths.admin.internalUsers)}>Gestionar usuarios</button></section>}
+        ) : <section className="state-card"><span className="state-card__icon"><FaUserGear /></span><h2>No hay empleados activos</h2><p>Crea o activa una cuenta de empleado para asignarle accesos individuales.</p><button onClick={() => navigate(routePaths.admin.rolesPermissions)}>Gestionar accesos</button></section>}
       </main>
       <HomeFooter />
     </div>

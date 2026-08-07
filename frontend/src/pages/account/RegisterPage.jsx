@@ -31,6 +31,7 @@ import "../../assets/CSS/account/register-page.css";
 import registerBackground from "../../assets/RegisterPage.webp";
 import { registerCustomer } from "../../auth/authService.js";
 import { routePaths } from "../../routes/routePaths.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 const COLORS = {
   primary: "#977422",
@@ -433,6 +434,7 @@ function splitFullName(value) {
 function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useStoreSettings();
   const fromLocation = location.state?.from;
   const backPath = fromLocation?.pathname
     ? `${fromLocation.pathname}${fromLocation.search || ""}`
@@ -615,18 +617,27 @@ function RegisterPage() {
     formData.confirmPassword !== "" &&
     formData.password !== formData.confirmPassword;
 
+  const handleBack = (event) => {
+    event.preventDefault();
+    if (window.history.length > 1 && document.referrer) {
+      navigate(-1);
+      return;
+    }
+    navigate(backPath, { replace: true });
+  };
+
   return (
     <Box
       className="register-container"
       sx={{ backgroundImage: `url(${registerBackground})` }}
     >
-      <RouterLink className="auth-back-link" to={backPath}>
+      <RouterLink className="auth-back-link" to={backPath} onClick={handleBack}>
         ← Volver
       </RouterLink>
       <Paper className="register-paper" elevation={0}>
         <BrandSection>
           <BrandIcon />
-          <BrandTitle variant="h1">Daybed</BrandTitle>
+          <BrandTitle variant="h1">{settings.store_name || "Daybed"}</BrandTitle>
         </BrandSection>
 
         <DividerLine />
@@ -956,7 +967,7 @@ function RegisterPage() {
         <FooterWrapper>
           <Typography variant="body1">
             ¿Ya tienes una cuenta?{" "}
-            <LoginLink href={routePaths.account.login} underline="hover">
+            <LoginLink component={RouterLink} to={routePaths.account.login} underline="hover">
               Inicia sesión
             </LoginLink>
           </Typography>

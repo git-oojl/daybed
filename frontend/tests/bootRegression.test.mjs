@@ -64,3 +64,34 @@ test("known incompatible Font Awesome 5 names are not imported from fa6", async 
     );
   }
 });
+
+test("homepage merchandising stays intentionally capped for the homepage rail", async () => {
+  const home = await read("src/pages/public/HomePage.jsx");
+  assert.match(
+    home,
+    /setHomeCategories\([\s\S]*?\.slice\(0,\s*(?:3|4)\)\)/,
+  );
+  assert.match(
+    home,
+    /const visibleProducts = products\.slice\(0,\s*4\)/,
+  );
+  const seededCards = (home.match(/id:\s*["'](?:comedor|sala|habitacion)["']/g) || []).length;
+  assert.ok(seededCards === 3 || seededCards === 4);
+});
+
+test("dynamic preview pages resolve their simulated route instead of router shell params", async () => {
+  const previewPage = await read("src/dev-preview/DevPreviewPage.jsx");
+  const registry = await read("src/dev-preview/viewPreviewRegistry.jsx");
+  const routeState = await read("src/dev-preview/useEffectiveRouteState.js");
+  const product = await read("src/pages/public/ProductDetailPage.jsx");
+  const customerOrder = await read("src/pages/account/OrderDetailPage.jsx");
+  const internalOrder = await read("src/pages/back-office/InternalOrderDetailPage.jsx");
+
+  assert.match(previewPage, /searchParams\.get\(["']route["']\)/);
+  assert.match(registry, /route:\s*routeLocation\s*\|\|\s*view\.path/);
+  assert.match(routeState, /matchPath\(/);
+  assert.match(product, /useEffectiveParams\(routePaths\.public\.productDetail\)/);
+  assert.match(product, /if\s*\(!detail\)\s*throw new Error/);
+  assert.match(customerOrder, /useEffectiveParams\(routePaths\.account\.orderDetail\)/);
+  assert.match(internalOrder, /useEffectiveParams\(routePaths\.backOffice\.orderDetail\)/);
+});

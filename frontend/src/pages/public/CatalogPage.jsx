@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { FaCircleCheck, FaFilter, FaTriangleExclamation, FaXmark } from "react-icons/fa6";
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
 import StoreProductCard from "../../components/store/StoreProductCard.jsx";
@@ -42,7 +42,7 @@ function unique(items, key) {
 }
 
 export default function CatalogPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useEffectiveSearchParams();
   const queryKey = searchParams.toString();
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -56,7 +56,7 @@ export default function CatalogPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([catalogService.products(), catalogService.categories()])
+    Promise.all([catalogService.products({ page_size: 200 }), catalogService.categories({ page_size: 100 })])
       .then(([productResponse, categoryResponse]) => {
         if (!active) return;
         setAllProducts(readCollection(productResponse));
@@ -161,7 +161,7 @@ export default function CatalogPage() {
           </aside>
 
           <section className="catalog-content" aria-label="Productos">
-            <div className="catalog-results-heading"><div><p className="catalog-results-heading__eyebrow">Colección disponible</p><h1>{loading ? "Buscando piezas" : `${products.length} ${products.length === 1 ? "producto" : "productos"}`}</h1></div><p>Todos los controles de esta vista modifican resultados reales y permanecen en la URL.</p></div>
+            <div className="catalog-results-heading"><div><p className="catalog-results-heading__eyebrow">Colección disponible</p><h1>{loading ? "Buscando piezas" : `${products.length} ${products.length === 1 ? "producto" : "productos"}`}</h1></div></div>
             {activeFilters.length ? <div className="catalog-active-filters" aria-label="Filtros activos">{activeFilters.map(([key, value]) => <button type="button" key={`${key}-${value}`} onClick={() => setFilter(key, "")}>{chipLabel(key, value)} <FaXmark /></button>)}</div> : null}
             {loading ? <FeatureState tone="loading" compact title="Aplicando filtros" message="Estamos preparando una selección coherente con tus preferencias." /> : error ? <FeatureState tone="error" title="No pudimos abrir la colección" message={error.message} actionLabel="Intentar de nuevo" onAction={loadProducts} /> : products.length ? <div className="catalog-grid">{products.map((product) => <StoreProductCard key={product.id} product={product} saved={savedIds.includes(String(product.id))} onToggleSaved={toggleSaved} onAddToCart={addToCart} />)}</div> : <FeatureState tone="empty" title="No hay piezas con esta combinación" message="Quita un filtro para ampliar la colección; tus demás preferencias permanecerán activas." actionLabel="Limpiar filtros" onAction={clearFilters} />}
           </section>

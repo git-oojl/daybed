@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaBox,
@@ -19,6 +19,7 @@ import {
 import "../assets/home-page.css";
 import Avatar from "./account/Avatar.jsx";
 import { routePaths } from "../routes/routePaths.js";
+import { useEffectiveLocation } from "../dev-preview/useEffectiveRouteState.js";
 import { useEffectiveSession } from "../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../auth/roleMapping.js";
 import { cartService } from "../services/backendServices.js";
@@ -26,10 +27,18 @@ import { getSavedProductIds, subscribeToSavedItems } from "../services/savedItem
 import { useStoreSettings } from "../services/useStoreSettings.js";
 
 const NAV_LINKS = [
-  { label: "Inicio", path: routePaths.public.home },
-  { label: "Tienda", path: routePaths.public.catalog },
-  { label: "Nosotros y contacto", path: routePaths.public.contactHelp },
+  { label: "Inicio", path: routePaths.public.home, section: "home" },
+  { label: "Tienda", path: routePaths.public.catalog, section: "catalog" },
+  { label: "Nosotros y contacto", path: routePaths.public.contactHelp, section: "contactHelp" },
 ];
+
+function isPrimaryNavActive(item, location) {
+  if (item.section === "home") return location.pathname === routePaths.public.home;
+  if (item.section === "catalog") {
+    return location.pathname === routePaths.public.catalog || location.pathname.startsWith("/productos/");
+  }
+  return item.section === "contactHelp" && location.pathname === routePaths.public.contactHelp;
+}
 
 function displayName(user) {
   return [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Mi cuenta";
@@ -37,7 +46,7 @@ function displayName(user) {
 
 export default function HomeHeader() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useEffectiveLocation();
   const menuRef = useRef(null);
   const { user, isAuthenticated, logout } = useEffectiveSession();
   const { settings: storeSettings } = useStoreSettings();
@@ -53,7 +62,7 @@ export default function HomeHeader() {
   useEffect(() => {
     setMobileOpen(false);
     setAccountOpen(false);
-  }, [location.pathname, location.search]);
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
     const close = (event) => {
@@ -100,7 +109,7 @@ export default function HomeHeader() {
     ] : [];
     const admin = viewer === "admin" ? [
       ["Métricas", routePaths.admin.businessMetrics, FaChartLine],
-      ["Equipo y accesos", routePaths.admin.internalUsers, FaUsers],
+      ["Equipo y accesos", routePaths.admin.rolesPermissions, FaUsers],
       ["Configuración de Daybed", routePaths.admin.basicSettings, FaGear],
     ] : [];
     return [...common, ...operations, ...admin];
@@ -129,11 +138,11 @@ export default function HomeHeader() {
       ) : null}
       <div className="home-header__inner home-header__inner--stable">
         <div className="home-header__brand-region">
-          <Link className="home-header__logo" to={routePaths.public.home} aria-label="Daybed, inicio">Daybed</Link>
+          <Link className="home-header__logo" to={routePaths.public.home} aria-label={`${storeSettings.store_name || "Daybed"}, inicio`}>{storeSettings.store_name || "Daybed"}</Link>
         </div>
 
         <nav className="home-header__nav-region" aria-label="Navegación principal">
-          {NAV_LINKS.map((item) => <NavLink key={item.path} to={item.path} className={({ isActive }) => isActive ? "is-active" : ""}>{item.label}</NavLink>)}
+          {NAV_LINKS.map((item) => <Link key={item.path} to={item.path} className={isPrimaryNavActive(item, location) ? "is-active" : ""}>{item.label}</Link>)}
         </nav>
 
         <div className="home-header__action-region">
@@ -160,7 +169,7 @@ export default function HomeHeader() {
           <button className="home-header__menu-btn" type="button" aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"} onClick={() => setMobileOpen((open) => !open)}>{mobileOpen ? <FaXmark /> : <FaBars />}</button>
         </div>
       </div>
-      {mobileOpen ? <div className="home-header__mobile-panel"><nav>{NAV_LINKS.map((item) => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}</nav><form onSubmit={submitSearch}><FaMagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en Tienda" /></form></div> : null}
+      {mobileOpen ? <div className="home-header__mobile-panel"><nav>{NAV_LINKS.map((item) => <Link key={item.path} to={item.path}>{item.label}</Link>)}</nav><form onSubmit={submitSearch}><FaMagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en Tienda" /></form></div> : null}
     </header>
   );
 }

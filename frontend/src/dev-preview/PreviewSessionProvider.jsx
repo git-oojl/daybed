@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PreviewSessionContext } from "../auth/previewSessionContext.js";
 
 const OPERATIONAL_PERMISSION_CODES = [
@@ -42,11 +42,55 @@ function buildPreviewUser(viewer) {
   };
 }
 
-function PreviewSessionProvider({ viewer, children }) {
+function parseRouteLocation(value = "/") {
+  try {
+    const url = new URL(value, "https://preview.daybed.local");
+    return {
+      pathname: url.pathname || "/",
+      search: url.search,
+      hash: url.hash,
+    };
+  } catch {
+    return { pathname: "/", search: "", hash: "" };
+  }
+}
+
+function formatRouteLocation(routeLocation) {
+  return `${routeLocation.pathname}${routeLocation.search}${routeLocation.hash}`;
+}
+
+function PreviewSessionProvider({ viewer, routeLocation, onRouteLocationChange, children }) {
   const initialUser = useMemo(() => buildPreviewUser(viewer), [viewer]);
   const [user, setUser] = useState(initialUser);
+  const [effectiveRouteLocation, setEffectiveRouteLocation] = useState(
+    () => parseRouteLocation(routeLocation),
+  );
+  const routeLocationRef = useRef(effectiveRouteLocation);
 
   useEffect(() => { setUser(initialUser); }, [initialUser]);
+  useEffect(() => {
+    const nextRouteLocation = parseRouteLocation(routeLocation);
+    routeLocationRef.current = nextRouteLocation;
+    setEffectiveRouteLocation(nextRouteLocation);
+  }, [routeLocation]);
+
+  const setRouteSearchParams = useCallback((nextInit, options) => {
+    const current = routeLocationRef.current;
+    const currentParams = new URLSearchParams(current.search);
+    const nextValue = typeof nextInit === "function"
+      ? nextInit(new URLSearchParams(currentParams))
+      : nextInit;
+    const nextParams = new URLSearchParams(nextValue);
+    const search = nextParams.toString();
+    const nextRouteLocation = {
+      ...current,
+      search: search ? `?${search}` : "",
+    };
+
+    routeLocationRef.current = nextRouteLocation;
+    setEffectiveRouteLocation(nextRouteLocation);
+    onRouteLocationChange?.(formatRouteLocation(nextRouteLocation), options);
+  }, [onRouteLocationChange]);
 
   return (
     <PreviewSessionContext.Provider
@@ -59,6 +103,8 @@ function PreviewSessionProvider({ viewer, children }) {
         setUser,
         clearSession: () => setUser(null),
         logout: async () => setUser(null),
+        routeLocation: effectiveRouteLocation,
+        setRouteSearchParams,
       }}
     >
       {children}

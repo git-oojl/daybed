@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaArrowRight, FaSearch } from "react-icons/fa";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
@@ -8,6 +8,7 @@ import FeatureState from "../../components/support/FeatureState.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveLocation, useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { orderService } from "../../services/backendServices.js";
 import { productImage } from "../../services/viewMappers.js";
 import { formatMoney, formatOrderDate, normalizeOrder, ORDER_STATUSES } from "../../utils/orderPresentation.js";
@@ -16,8 +17,8 @@ const HERO = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1800&q
 
 export default function InternalOrdersPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useEffectiveLocation();
+  const [searchParams, setSearchParams] = useEffectiveSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewer = getViewerIdForUser(user);
   const [orders, setOrders] = useState([]);

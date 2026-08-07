@@ -67,7 +67,7 @@ class DeliveryEstimate:
     delivery_fee: Decimal
     free_shipping_applied: bool
     free_shipping_threshold: Decimal | None
-    distance_provider: str = "openrouteservice"
+    distance_provider: str = "straight_line_estimate"
     routing_available: bool = True
     routing_warning: str = ""
 
@@ -182,53 +182,19 @@ def _search_geocoding_provider(query):
         raise GeocodingServiceUnavailable() from exc
 
 
-def estimate_delivery(latitude, longitude, order_subtotal=None):
-    store_settings = StoreSettings.get_active()
+def estimate_delivery(latitude, longitude, order_subtotal=None, store_settings=None):
+    store_settings = store_settings or StoreSettings.get_active()
     origin_latitude = _decimal(store_settings.latitude)
     origin_longitude = _decimal(store_settings.longitude)
     destination_latitude = _decimal(latitude)
     destination_longitude = _decimal(longitude)
-
-    if not settings.OPENROUTESERVICE_API_KEY:
-        return _fallback_estimate(
-            origin_latitude,
-            origin_longitude,
-            destination_latitude,
-            destination_longitude,
-            order_subtotal,
-            store_settings,
-            "No pudimos consultar la ruta vial; conservamos la ubicación y usamos una estimación aproximada.",
-        )
-
-    try:
-        response = httpx.post(
-            f"{settings.OPENROUTESERVICE_BASE_URL}/v2/directions/driving-car",
-            json={
-                "coordinates": [
-                    [float(origin_longitude), float(origin_latitude)],
-                    [float(destination_longitude), float(destination_latitude)],
-                ]
-            },
-            headers={
-                "Authorization": settings.OPENROUTESERVICE_API_KEY,
-                "Content-Type": "application/json",
-            },
-            timeout=10,
-        )
-        response.raise_for_status()
-        summary = _openrouteservice_summary(response.json())
-        distance_km = _distance(_decimal(summary["distance"]) / Decimal("1000"))
-        duration_minutes = _duration(_decimal(summary["duration"]) / Decimal("60"))
-    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
-        return _fallback_estimate(
-            origin_latitude,
-            origin_longitude,
-            destination_latitude,
-            destination_longitude,
-            order_subtotal,
-            store_settings,
-            "No pudimos consultar la ruta vial; conservamos la ubicación y usamos una estimación aproximada.",
-        )
+    distance_km = _fallback_distance_km(
+        origin_latitude,
+        origin_longitude,
+        destination_latitude,
+        destination_longitude,
+    )
+    duration_minutes = _duration(distance_km / Decimal("35.0") * Decimal("60.0"))
 
     delivery_fee = calculate_delivery_fee(
         distance_km,
@@ -245,6 +211,7 @@ def estimate_delivery(latitude, longitude, order_subtotal=None):
         delivery_fee=delivery_fee,
         free_shipping_applied=free_shipping_applies(order_subtotal, store_settings),
         free_shipping_threshold=store_settings.free_shipping_threshold,
+        distance_provider="straight_line_estimate",
     )
 
 

@@ -1,6 +1,6 @@
 // ProductsPage.jsx - CON VALIDACIÓN DE ACCESO
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
@@ -9,6 +9,7 @@ import PageHero from "../../components/layout/PageHero.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
 import {
   FaPlus,
   FaEdit,
@@ -33,10 +34,38 @@ import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
 
 const PAGE_SIZE = 10;
+const ROOM_OPTIONS = ["sala", "recámara", "comedor", "oficina", "exterior"];
+const STYLE_OPTIONS = [
+  "Contemporáneo",
+  "Moderno",
+  "Nórdico",
+  "Japandi",
+  "Orgánico",
+  "Clásico",
+  "Mid-century",
+  "Industrial",
+  "Minimalista",
+  "Escandinavo",
+  "Modular",
+];
+const TYPE_OPTIONS = [
+  "sofá cama",
+  "sofá",
+  "mesa de centro",
+  "mesa auxiliar",
+  "silla de acento",
+  "sillón",
+  "cama",
+  "buró",
+  "comedor",
+  "escritorio",
+  "repisa",
+  "banco",
+];
 
 export default function ProductsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useEffectiveSearchParams();
   const categoryParam = searchParams.get("categoria") || "";
   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
@@ -1212,12 +1241,14 @@ const handleDelete = async (id) => {
                 <div className="product-editor__grid">
                   <label>SKU<input name="sku" value={formData.sku} onChange={handleChange} placeholder="Se genera automáticamente" /></label>
                   <label>Stock mínimo<input type="number" min="0" name="minimum_stock" value={formData.minimum_stock} onChange={handleChange} /></label>
-                  <label>Material<input name="material" value={formData.material} onChange={handleChange} placeholder="Lino, roble, acero..." /></label>
-                  <label>Color<input name="color" value={formData.color} onChange={handleChange} placeholder="Arena, nogal..." /></label>
-                  <label>Estilo<input name="style" value={formData.style} onChange={handleChange} placeholder="Contemporáneo" /></label>
-                  <label>Espacio<input name="room" value={formData.room} onChange={handleChange} placeholder="Sala, recámara, oficina..." /></label>
-                  <label>Tipo de mueble<input name="furniture_type" value={formData.furniture_type} onChange={handleChange} placeholder="Sofá cama, mesa, credenza..." /></label>
+                  <label>Material<input list="product-material-options" name="material" value={formData.material} onChange={handleChange} placeholder="Lino, roble, acero..." /></label>
+                  <label>Color<input list="product-color-options" name="color" value={formData.color} onChange={handleChange} placeholder="Arena, nogal..." /></label>
+                  <label>Estilo<select name="style" value={formData.style} onChange={handleChange}><option value="">Selecciona o deja vacío</option>{STYLE_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                  <label>Espacio<select name="room" value={formData.room} onChange={handleChange}><option value="">Selecciona o deja vacío</option>{ROOM_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                  <label>Tipo de mueble<select name="furniture_type" value={formData.furniture_type} onChange={handleChange}><option value="">Selecciona o deja vacío</option>{TYPE_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
                 </div>
+                <datalist id="product-material-options"><option value="Madera" /><option value="Roble" /><option value="Nogal" /><option value="Fresno" /><option value="Lino" /><option value="Bouclé" /><option value="Terciopelo" /><option value="Metal" /><option value="MDF enchapado" /></datalist>
+                <datalist id="product-color-options"><option value="Natural" /><option value="Arena" /><option value="Nogal oscuro" /><option value="Nogal claro" /><option value="Miel" /><option value="Terracota" /><option value="Gris" /><option value="Marfil" /><option value="Verde olivo" /><option value="Azul petróleo" /></datalist>
               </section>
 
               <section className="product-editor__section product-editor__section--merchandising">

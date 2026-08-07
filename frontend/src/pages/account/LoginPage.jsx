@@ -27,6 +27,7 @@ import { useAuthStore } from "../../auth/authStore.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { usePreviewSession } from "../../dev-preview/usePreviewSession.js";
 import { routePaths } from "../../routes/routePaths.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 // ============================================
 // ESTILOS - SOLO LOS QUE SE USAN
@@ -202,6 +203,7 @@ const DividerStyled = styled(Divider)(({ theme }) => ({
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useStoreSettings();
   const fromLocation = location.state?.from;
   const intendedPath = fromLocation?.pathname
     ? `${fromLocation.pathname}${fromLocation.search || ""}`
@@ -312,9 +314,18 @@ function LoginPage() {
   const displayError =
     localError || location.state?.sessionMessage || authError?.message;
 
+  const handleBack = (event) => {
+    event.preventDefault();
+    if (window.history.length > 1 && document.referrer) {
+      navigate(-1);
+      return;
+    }
+    navigate(backPath, { replace: true });
+  };
+
   return (
     <LoginContainer className="login-container">
-      <RouterLink className="auth-back-link" to={backPath}>
+      <RouterLink className="auth-back-link" to={backPath} onClick={handleBack}>
         ← Volver
       </RouterLink>
       <LoginPaper elevation={0}>
@@ -322,7 +333,7 @@ function LoginPage() {
         <Box className="login-logo-wrapper">
           <StoreIcon className="login-logo-icon" />
           <Typography className="login-logo-text" variant="h1">
-            Daybed
+            {settings.store_name || "Daybed"}
           </Typography>
         </Box>
 
@@ -498,7 +509,8 @@ function LoginPage() {
 
         <Box className="login-links-container">
           <ForgotLink
-            href={routePaths.account.forgotPassword}
+            component={RouterLink}
+            to={routePaths.account.forgotPassword}
             underline="hover"
           >
             ¿Olvidaste tu contraseña?
@@ -514,7 +526,7 @@ function LoginPage() {
         <Box className="login-register-wrapper">
           <Typography variant="body1">
             ¿No tienes cuenta?{" "}
-            <RegisterLink href={routePaths.account.register} underline="hover">
+            <RegisterLink component={RouterLink} to={routePaths.account.register} underline="hover">
               Regístrate
             </RegisterLink>
           </Typography>

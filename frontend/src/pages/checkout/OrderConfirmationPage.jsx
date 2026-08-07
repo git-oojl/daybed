@@ -1,12 +1,13 @@
 // OrderConfirmationPage.jsx
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveLocation, useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { orderService } from "../../services/backendServices.js";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { productImage } from "../../services/viewMappers.js";
@@ -104,9 +105,9 @@ function formatRouteDuration(minutes) {
 // ✅ COMPONENTE PRINCIPAL
 // ============================================
 const OrderConfirmationPage = () => {
-  const location = useLocation();
+  const location = useEffectiveLocation();
   const navigate = useNavigate();
-  const { orderId: routeOrderId } = useParams();
+  const { orderId: routeOrderId } = useEffectiveParams(routePaths.checkout.confirmationDetail);
   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   
   const [loading, setLoading] = useState(true);

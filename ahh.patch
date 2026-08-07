@@ -1,0 +1,1367 @@
+diff --git a/frontend/src/assets/CSS/public/contact-help.css b/frontend/src/assets/CSS/public/contact-help.css
+index 6f92abb..9abfe0b 100644
+--- a/frontend/src/assets/CSS/public/contact-help.css
++++ b/frontend/src/assets/CSS/public/contact-help.css
+@@ -46,3 +46,8 @@
+ .contact__alert { margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; padding: 13px 15px; border-radius: 10px; background: #e8f0e5; color: #476040; font-weight: 650; }
+ @media (max-width: 980px) { .about-us, .contact-section--split, .contact-section--form { grid-template-columns: 1fr; } .contact-grid { grid-template-columns: repeat(2,1fr); } .about-us__image { min-height: 360px; } }
+ @media (max-width: 620px) { .contact-container { width: min(100% - 32px,1360px); padding-top: 46px; gap: 58px; } .contact-hero, .contact-hero__overlay { min-height: 270px; } .contact-grid, .contact-form__row { grid-template-columns: 1fr; } .contact-section--form { padding: 28px 20px; gap: 30px; } .about-us__image, .about-us__image img { min-height: 300px; } }
++
++#nosotros,
++#contacto {
++  scroll-margin-top: calc(var(--site-header-height, 78px) + 18px);
++}
+diff --git a/frontend/src/assets/catalog-page.css b/frontend/src/assets/catalog-page.css
+index ecd0a83..0ca93c3 100644
+--- a/frontend/src/assets/catalog-page.css
++++ b/frontend/src/assets/catalog-page.css
+@@ -613,3 +613,47 @@
+ .catalog-state > svg { color: #a05347; font-size: 1.8rem; margin-bottom: 12px; }
+ @media (min-width: 1320px) { .catalog-grid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+ @media (max-width: 1100px) { .catalog-main { padding-inline: 1.25rem; } .catalog-filters-sidebar { width: 245px; } }
++
++/* Tablet catalogue: keep filters compact and full-width before product results. */
++@media (max-width: 820px) {
++  .catalog-main {
++    width: min(100% - 28px, 1500px);
++  }
++
++  .catalog-layout {
++    display: flex;
++    flex-direction: column;
++    gap: 20px;
++  }
++
++  .catalog-filters-sidebar {
++    position: static;
++    width: 100%;
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 0 18px;
++    box-sizing: border-box;
++  }
++
++  .catalog-filters-header {
++    grid-column: 1 / -1;
++  }
++
++  .catalog-filters-section {
++    min-width: 0;
++  }
++
++  .catalog-content {
++    width: 100%;
++  }
++}
++
++@media (max-width: 560px) {
++  .catalog-filters-sidebar {
++    grid-template-columns: 1fr;
++  }
++
++  .catalog-filters-header {
++    grid-column: auto;
++  }
++}
+diff --git a/frontend/src/assets/home-page.css b/frontend/src/assets/home-page.css
+index 32e578b..8f079ba 100644
+--- a/frontend/src/assets/home-page.css
++++ b/frontend/src/assets/home-page.css
+@@ -1285,3 +1285,72 @@
+ .home-footer__copy { max-width: 1440px; margin: 0 auto; padding: 0; border: 0; color: #725e4d; text-align: center; font-size: .82rem; }
+ @media (max-width: 1120px) { .home-header__inner { grid-template-columns: auto 1fr auto; } .home-footer__inner { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+ @media (max-width: 720px) { .home-footer__inner { grid-template-columns: 1fr; padding-inline: 24px; gap: 32px; } .home-footer__bottom { padding-inline: 24px; } }
++
++/* Stable three-region header overrides legacy responsive rules used by older shells. */
++@media (max-width: 1220px) and (min-width: 941px) {
++  .home-header__inner.home-header__inner--stable {
++    width: min(100% - 36px, 1480px);
++    grid-template-columns: minmax(105px, .55fr) auto minmax(270px, .9fr) !important;
++    gap: 12px;
++  }
++
++  .home-header__nav-region {
++    display: flex;
++    gap: clamp(13px, 1.6vw, 22px);
++  }
++
++  .home-header__nav-region a {
++    font-size: .76rem;
++  }
++
++  .home-header__search.home-header__search--inline {
++    width: clamp(120px, 13vw, 150px);
++    padding: 0 10px;
++    justify-content: flex-start;
++  }
++
++  .home-header__search--inline input {
++    display: block;
++  }
++
++  .home-header__menu-btn {
++    display: none;
++  }
++}
++
++@media (max-width: 940px) {
++  .home-header__inner.home-header__inner--stable {
++    width: min(100% - 28px, 1480px);
++    min-height: 70px;
++    grid-template-columns: minmax(110px, 1fr) auto !important;
++    gap: 10px;
++  }
++
++  .home-header__nav-region {
++    display: none;
++  }
++
++  .home-header__action-region {
++    gap: 5px;
++  }
++
++  .home-header__search.home-header__search--inline {
++    width: clamp(126px, 22vw, 180px);
++    padding: 0 10px;
++    justify-content: flex-start;
++  }
++
++  .home-header__search--inline input {
++    display: block;
++  }
++
++  .home-header__inner--stable .home-header__menu-btn {
++    display: grid;
++  }
++}
++
++@media (max-width: 720px) {
++  .home-header__search.home-header__search--inline {
++    display: none;
++  }
++}
+diff --git a/frontend/src/assets/polish-v2.css b/frontend/src/assets/polish-v2.css
+index e159f50..3e299cb 100644
+--- a/frontend/src/assets/polish-v2.css
++++ b/frontend/src/assets/polish-v2.css
+@@ -847,6 +847,9 @@
+ .internal-product-row img { width: 105px; height: 86px; object-fit: cover; border-radius: 11px; background: #eadfd2; }
+ .order-line-item__copy,
+ .internal-product-row > div { min-width: 0; display: grid; gap: 4px; }
++.internal-product-row a { width: fit-content; color: #765238; font-size: .68rem; font-weight: 800; text-decoration-thickness: 1px; text-underline-offset: 3px; }
++.internal-product-row a:hover,
++.internal-product-row a:focus-visible { color: #4f3524; }
+ .order-line-item__copy strong,
+ .internal-product-row strong { color: #49362b; }
+ .order-line-item__copy span,
+@@ -885,6 +888,34 @@
+ .internal-order-overview h1 { margin: 0; color: #433126; }
+ .internal-order-actions { padding: 18px; }
+ .internal-order-actions__buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
++.internal-order-actions__buttons button {
++  min-height: 40px;
++  border: 1px solid #765238;
++  border-radius: 9px;
++  background: #765238;
++  color: #fffaf3;
++  padding: 0 14px;
++  font: inherit;
++  font-size: .7rem;
++  font-weight: 820;
++  cursor: pointer;
++  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
++}
++.internal-order-actions__buttons button.is-danger {
++  border-color: #c88f83;
++  background: #fff3ef;
++  color: #8b443b;
++}
++.internal-order-actions__buttons button:not(:disabled):hover,
++.internal-order-actions__buttons button:not(:disabled):focus-visible {
++  transform: translateY(-1px);
++  box-shadow: 0 8px 18px rgba(72, 49, 31, .13);
++}
++.internal-order-actions__buttons button:focus-visible {
++  outline: 3px solid rgba(118, 82, 56, .2);
++  outline-offset: 2px;
++}
++.internal-order-actions__buttons button:disabled { opacity: .5; cursor: not-allowed; }
+ .solid-action,
+ .ghost-action { min-height: 41px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #765238; border-radius: 9px; padding: 0 14px; font: inherit; font-size: .72rem; font-weight: 800; cursor: pointer; }
+ .solid-action { background: #765238; color: white; }
+@@ -893,8 +924,10 @@
+ .status-history li { position: relative; display: grid; grid-template-columns: 18px minmax(0,1fr); gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee2d5; }
+ .status-history li:last-child { border-bottom: 0; }
+ .status-history li::before { content: ""; width: 9px; height: 9px; margin-top: 5px; border: 3px solid #eadbca; border-radius: 50%; background: #765238; }
++.status-history li > div { min-width: 0; }
+ .status-history strong { color: #4d392b; font-size: .74rem; }
+-.status-history span { display: block; margin-top: 3px; color: #806c59; font-size: .66rem; line-height: 1.45; }
++.status-history p { margin: 3px 0 0; color: #806c59; font-size: .66rem; line-height: 1.45; }
++.status-history small { display: block; margin-top: 4px; color: #99816b; font-size: .61rem; line-height: 1.45; }
+ .delivery-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; padding: 15px 18px 18px; }
+ .delivery-stat-grid div { padding: 11px; border-radius: 10px; background: #f5ebdf; }
+ .delivery-stat-grid span { display: block; color: #8a745f; font-size: .62rem; }
+@@ -1290,3 +1323,220 @@
+   font-size: .7rem;
+   box-shadow: 0 8px 24px rgba(63, 43, 28, .12);
+ }
++
++/* Profile photo affordance: compact, explicit and keyboard-visible. */
++.profile-avatar-upload > span {
++  display: block;
++  font-size: 1.55rem;
++  font-weight: 500;
++  line-height: 1;
++  transform: translateY(-1px);
++}
++.profile-avatar-upload:focus-within {
++  outline: 3px solid rgba(118, 82, 56, .24);
++  outline-offset: 3px;
++}
++
++/* Catalogue controls use the same warm, compact language as the storefront cards. */
++.catalog-filters-header > button {
++  border: 1px solid transparent;
++  border-radius: 999px;
++  background: transparent;
++  color: #79563d;
++  padding: 6px 9px;
++  font: inherit;
++  font-size: .72rem;
++  font-weight: 800;
++  cursor: pointer;
++  transition: background .18s ease, border-color .18s ease, color .18s ease;
++}
++.catalog-filters-header > button:hover,
++.catalog-filters-header > button:focus-visible {
++  border-color: #d8c1a6;
++  background: #f2e5d5;
++  color: #4f3728;
++}
++.catalog-filters-section > label:not(.catalog-filters-sort) {
++  display: grid;
++  gap: 7px;
++  color: #5b4434;
++  font-size: .78rem;
++  font-weight: 750;
++}
++.catalog-filters-section > label:not(.catalog-filters-sort) + label:not(.catalog-filters-sort) {
++  margin-top: 12px;
++}
++.catalog-filters-section select,
++.catalog-filters-section input[type="number"] {
++  width: 100%;
++  min-width: 0;
++  min-height: 42px;
++  border: 1px solid #d7c2a8;
++  border-radius: 9px;
++  background-color: #f4e9dc;
++  color: #4b372a;
++  padding: 0 36px 0 11px;
++  font: inherit;
++  font-size: .82rem;
++  font-weight: 700;
++  appearance: none;
++  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23604a38' d='M6 8L1.5 3.5h9z'/%3E%3C/svg%3E");
++  background-repeat: no-repeat;
++  background-position: right 11px center;
++}
++.catalog-filters-section input[type="number"] {
++  padding-right: 11px;
++  appearance: textfield;
++  background-image: none;
++}
++.catalog-filters-section select:focus-visible,
++.catalog-filters-section input[type="number"]:focus-visible {
++  outline: 3px solid rgba(147, 101, 62, .18);
++  outline-offset: 1px;
++  border-color: #a57b57;
++}
++.catalog-filter-checks {
++  display: grid;
++  gap: 8px;
++}
++.catalog-filter-checks > label {
++  display: flex !important;
++  grid-template-columns: none;
++  align-items: center;
++  gap: 9px !important;
++  min-height: 40px;
++  margin: 0 !important;
++  padding: 8px 10px;
++  border: 1px solid #e2d0bb;
++  border-radius: 9px;
++  background: #fbf4eb;
++  color: #604a38 !important;
++  cursor: pointer;
++  font-size: .76rem !important;
++  font-weight: 700 !important;
++  transition: background .18s ease, border-color .18s ease;
++}
++.catalog-filter-checks > label:has(input:checked) {
++  border-color: #b78f69;
++  background: #ead7c1;
++  color: #432f22 !important;
++}
++.catalog-filter-checks input[type="checkbox"] {
++  width: 17px;
++  height: 17px;
++  flex: 0 0 auto;
++  margin: 0;
++  accent-color: #80583b;
++}
++.catalog-price-fields {
++  display: grid;
++  gap: 12px;
++}
++.catalog-price-fields > label {
++  margin: 0 !important;
++}
++.catalog-active-filters {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++  margin: -5px 0 18px;
++}
++.catalog-active-filters button {
++  min-height: 34px;
++  display: inline-flex;
++  align-items: center;
++  gap: 7px;
++  border: 1px solid #cfae89;
++  border-radius: 999px;
++  background: #efe0ce;
++  color: #5a3f2e;
++  padding: 6px 10px 6px 12px;
++  font: inherit;
++  font-size: .73rem;
++  font-weight: 800;
++  cursor: pointer;
++  transition: background .18s ease, border-color .18s ease, transform .18s ease;
++}
++.catalog-active-filters button:hover,
++.catalog-active-filters button:focus-visible {
++  border-color: #aa7b53;
++  background: #e7cfb4;
++  transform: translateY(-1px);
++}
++.catalog-active-filters button svg {
++  font-size: .72rem;
++}
++.catalog-results-heading h1 {
++  margin: 0;
++  color: #3f2f24;
++  font-size: clamp(1.45rem, 2.3vw, 1.95rem);
++  line-height: 1.05;
++}
++.catalog-results-heading > p {
++  max-width: 460px;
++  margin: 0;
++  color: #756150;
++  font-size: .82rem;
++  line-height: 1.55;
++  text-align: right;
++}
++@media (max-width: 760px) {
++  .catalog-filters-sidebar {
++    padding: 18px;
++  }
++  .catalog-results-heading > p {
++    text-align: left;
++  }
++}
++
++/* Keep global settings and collection actions out of browser-default button chrome. */
++.daybed-settings-actions button,
++.collection-manager__intro .btn-primary,
++.collection-editor footer .btn-primary,
++.collection-editor footer .btn-secondary {
++  min-height: 42px;
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  gap: 8px;
++  border: 1px solid #765238;
++  border-radius: 9px;
++  padding: 0 16px;
++  font: inherit;
++  font-size: .72rem;
++  font-weight: 820;
++  cursor: pointer;
++  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
++}
++.daybed-settings-actions button:last-child,
++.collection-manager__intro .btn-primary,
++.collection-editor footer .btn-primary {
++  background: #765238;
++  color: #fffaf3;
++}
++.daybed-settings-actions button:first-child,
++.collection-editor footer .btn-secondary {
++  background: transparent;
++  color: #765238;
++}
++.daybed-settings-actions button:not(:disabled):hover,
++.collection-manager__intro .btn-primary:not(:disabled):hover,
++.collection-editor footer button:not(:disabled):hover {
++  transform: translateY(-1px);
++  box-shadow: 0 9px 20px rgba(76, 52, 33, .13);
++}
++.daybed-settings-actions button:disabled,
++.collection-manager__intro .btn-primary:disabled,
++.collection-editor footer button:disabled {
++  opacity: .5;
++  cursor: not-allowed;
++}
++@media (max-width: 560px) {
++  .daybed-settings-actions {
++    display: grid;
++    grid-template-columns: 1fr;
++  }
++  .daybed-settings-actions button {
++    width: 100%;
++  }
++}
+diff --git a/frontend/src/auth/previewSessionContext.js b/frontend/src/auth/previewSessionContext.js
+index f0dc545..116e26a 100644
+--- a/frontend/src/auth/previewSessionContext.js
++++ b/frontend/src/auth/previewSessionContext.js
+@@ -9,4 +9,6 @@ export const PreviewSessionContext = createContext({
+   setUser: () => undefined,
+   clearSession: () => undefined,
+   logout: async () => undefined,
++  routeLocation: null,
++  setRouteSearchParams: () => undefined,
+ });
+diff --git a/frontend/src/components/HomeHeader.jsx b/frontend/src/components/HomeHeader.jsx
+index f6c7591..7ef3dde 100644
+--- a/frontend/src/components/HomeHeader.jsx
++++ b/frontend/src/components/HomeHeader.jsx
+@@ -1,5 +1,5 @@
+ import { useEffect, useMemo, useRef, useState } from "react";
+-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import {
+   FaBars,
+   FaBox,
+@@ -19,6 +19,7 @@ import {
+ import "../assets/home-page.css";
+ import Avatar from "./account/Avatar.jsx";
+ import { routePaths } from "../routes/routePaths.js";
++import { useEffectiveLocation } from "../dev-preview/useEffectiveRouteState.js";
+ import { useEffectiveSession } from "../auth/useEffectiveSession.js";
+ import { getViewerIdForUser } from "../auth/roleMapping.js";
+ import { cartService } from "../services/backendServices.js";
+@@ -26,18 +27,29 @@ import { getSavedProductIds, subscribeToSavedItems } from "../services/savedItem
+ import { useStoreSettings } from "../services/useStoreSettings.js";
+ 
+ const NAV_LINKS = [
+-  { label: "Inicio", path: routePaths.public.home },
+-  { label: "Tienda", path: routePaths.public.catalog },
+-  { label: "Nosotros y contacto", path: routePaths.public.contactHelp },
++  { label: "Inicio", path: routePaths.public.home, section: "home" },
++  { label: "Tienda", path: routePaths.public.catalog, section: "catalog" },
++  { label: "Nosotros", path: `${routePaths.public.contactHelp}#nosotros`, section: "about" },
++  { label: "Contacto", path: `${routePaths.public.contactHelp}#contacto`, section: "contact" },
+ ];
+ 
++function isPrimaryNavActive(item, location) {
++  if (item.section === "home") return location.pathname === routePaths.public.home;
++  if (item.section === "catalog") {
++    return location.pathname === routePaths.public.catalog || location.pathname.startsWith("/productos/");
++  }
++  if (location.pathname !== routePaths.public.contactHelp) return false;
++  if (item.section === "contact") return location.hash === "#contacto";
++  return item.section === "about" && location.hash !== "#contacto";
++}
++
+ function displayName(user) {
+   return [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Mi cuenta";
+ }
+ 
+ export default function HomeHeader() {
+   const navigate = useNavigate();
+-  const location = useLocation();
++  const location = useEffectiveLocation();
+   const menuRef = useRef(null);
+   const { user, isAuthenticated, logout } = useEffectiveSession();
+   const { settings: storeSettings } = useStoreSettings();
+@@ -53,7 +65,7 @@ export default function HomeHeader() {
+   useEffect(() => {
+     setMobileOpen(false);
+     setAccountOpen(false);
+-  }, [location.pathname, location.search]);
++  }, [location.hash, location.pathname, location.search]);
+ 
+   useEffect(() => {
+     const close = (event) => {
+@@ -133,7 +145,7 @@ export default function HomeHeader() {
+         </div>
+ 
+         <nav className="home-header__nav-region" aria-label="Navegación principal">
+-          {NAV_LINKS.map((item) => <NavLink key={item.path} to={item.path} className={({ isActive }) => isActive ? "is-active" : ""}>{item.label}</NavLink>)}
++          {NAV_LINKS.map((item) => <Link key={item.path} to={item.path} className={isPrimaryNavActive(item, location) ? "is-active" : ""}>{item.label}</Link>)}
+         </nav>
+ 
+         <div className="home-header__action-region">
+@@ -160,7 +172,7 @@ export default function HomeHeader() {
+           <button className="home-header__menu-btn" type="button" aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"} onClick={() => setMobileOpen((open) => !open)}>{mobileOpen ? <FaXmark /> : <FaBars />}</button>
+         </div>
+       </div>
+-      {mobileOpen ? <div className="home-header__mobile-panel"><nav>{NAV_LINKS.map((item) => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}</nav><form onSubmit={submitSearch}><FaMagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en Tienda" /></form></div> : null}
++      {mobileOpen ? <div className="home-header__mobile-panel"><nav>{NAV_LINKS.map((item) => <Link key={item.path} to={item.path}>{item.label}</Link>)}</nav><form onSubmit={submitSearch}><FaMagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en Tienda" /></form></div> : null}
+     </header>
+   );
+ }
+diff --git a/frontend/src/dev-preview/DevPreviewPage.jsx b/frontend/src/dev-preview/DevPreviewPage.jsx
+index f2b153e..0e6b15e 100644
+--- a/frontend/src/dev-preview/DevPreviewPage.jsx
++++ b/frontend/src/dev-preview/DevPreviewPage.jsx
+@@ -7,25 +7,34 @@ import {
+   canPreviewViewer,
+   getAllowedPreviewViewer,
+   getPreviewLayout,
++  getPreviewPath,
++  getViewIdFromPath,
+   getPreviewView,
+   previewLayouts,
+   previewViewers,
+ } from "./viewPreviewRegistry.jsx";
+ 
+ function DevPreviewPage() {
+-  const [searchParams] = useSearchParams();
++  const [searchParams, setSearchParams] = useSearchParams();
+   const viewId = searchParams.get("view");
+   const layoutId = searchParams.get("layout");
+   const viewerId = searchParams.get("viewer");
++  const requestedRouteLocation = searchParams.get("route");
+   const view = getPreviewView(viewId);
+   const layout = getPreviewLayout(layoutId ?? view.defaultLayout);
+   const viewer = getAllowedPreviewViewer(view, viewerId);
++  const routeLocation = getPreviewRouteLocation(view, requestedRouteLocation);
++  function updateRouteLocation(nextRouteLocation, options = {}) {
++    const nextParams = new URLSearchParams(searchParams);
++    nextParams.set("route", nextRouteLocation);
++    setSearchParams(nextParams, { replace: options.replace ?? true });
++  }
+ 
+   if (!viewId || !layoutId || viewerId !== viewer.id) {
+     return (
+       <Navigate
+         replace
+-        to={`/dev/preview?view=${view.id}&layout=${view.defaultLayout}&viewer=${viewer.id}`}
++        to={getPreviewPath(view.id, view.defaultLayout, viewer.id, routeLocation)}
+       />
+     );
+   }
+@@ -49,7 +58,11 @@ function DevPreviewPage() {
+   const ViewComponent = view.Component;
+ 
+   return (
+-    <PreviewSessionProvider viewer={viewer}>
++    <PreviewSessionProvider
++      viewer={viewer}
++      routeLocation={routeLocation}
++      onRouteLocationChange={updateRouteLocation}
++    >
+       <Suspense
+         fallback={
+           <RouteLoading
+@@ -67,6 +80,19 @@ function DevPreviewPage() {
+   );
+ }
+ 
++function getPreviewRouteLocation(view, requestedRouteLocation) {
++  if (!requestedRouteLocation) return view.path;
++
++  try {
++    const url = new URL(requestedRouteLocation, "https://preview.daybed.local");
++    return getViewIdFromPath(url.pathname) === view.id
++      ? `${url.pathname}${url.search}${url.hash}`
++      : view.path;
++  } catch {
++    return view.path;
++  }
++}
++
+ function ForbiddenPreview({
+   isLayoutAllowed,
+   isViewerAllowed,
+diff --git a/frontend/src/dev-preview/DevPreviewRouteBridge.jsx b/frontend/src/dev-preview/DevPreviewRouteBridge.jsx
+index 1d1cff7..27ae646 100644
+--- a/frontend/src/dev-preview/DevPreviewRouteBridge.jsx
++++ b/frontend/src/dev-preview/DevPreviewRouteBridge.jsx
+@@ -39,7 +39,7 @@ function DevPreviewRouteBridge({ children }) {
+   return (
+     <Navigate
+       replace
+-      to={getPreviewPath(nextView.id, nextLayoutId, nextViewerId)}
++      to={getPreviewPath(nextView.id, nextLayoutId, nextViewerId, `${location.pathname}${location.search}${location.hash}`)}
+     />
+   );
+ }
+diff --git a/frontend/src/dev-preview/DevViewSwitcher.jsx b/frontend/src/dev-preview/DevViewSwitcher.jsx
+index 01e07ad..73aedf6 100644
+--- a/frontend/src/dev-preview/DevViewSwitcher.jsx
++++ b/frontend/src/dev-preview/DevViewSwitcher.jsx
+@@ -49,6 +49,9 @@ function DevViewSwitcher() {
+     searchParams.get("viewer") ?? previewControls.viewerId,
+   );
+   const isPreviewRoute = location.pathname === "/dev/preview";
++  const activeRouteLocation = isPreviewRoute
++    ? searchParams.get("route") || activeView.path
++    : `${location.pathname}${location.search}${location.hash}`;
+   const currentMode =
+     selectedMode ?? getDefaultModeFromBackendStatus(backendStatus.state);
+   const isLayoutAllowed = canPreviewLayout(activeView, activeLayout.id);
+@@ -68,6 +71,21 @@ function DevViewSwitcher() {
+     [],
+   );
+ 
++  useEffect(() => {
++    if (!isPreviewRoute) return;
++
++    saveDevViewSwitcherSelection({
++      layoutId: activeLayout.id,
++      mode: "preview",
++      viewerId: activeViewer.id,
++    });
++    setPreviewControls({
++      layoutId: activeLayout.id,
++      viewerId: activeViewer.id,
++    });
++    setSelectedMode("preview");
++  }, [activeLayout.id, activeViewer.id, isPreviewRoute]);
++
+   useEffect(() => {
+     if (currentMode !== "preview" || isPreviewRoute) {
+       return;
+@@ -79,14 +97,16 @@ function DevViewSwitcher() {
+       : nextView.defaultLayout;
+     const nextViewerId = getAllowedPreviewViewer(nextView, activeViewer.id).id;
+ 
+-    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId), {
++    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId, `${location.pathname}${location.search}${location.hash}`), {
+       replace: true,
+     });
+   }, [
+     activeLayout.id,
+     activeViewer.id,
+     isPreviewRoute,
++    location.hash,
+     location.pathname,
++    location.search,
+     navigate,
+     currentMode,
+   ]);
+@@ -95,6 +115,7 @@ function DevViewSwitcher() {
+     nextViewId = activeView.id,
+     nextLayoutId = activeLayout.id,
+     nextViewerId = activeViewer.id,
++    routeLocation = null,
+   ) {
+     emitSessionReplaced({ reason: "enter-preview" });
+     saveDevViewSwitcherSelection({
+@@ -107,7 +128,7 @@ function DevViewSwitcher() {
+       layoutId: nextLayoutId,
+       viewerId: nextViewerId,
+     });
+-    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId));
++    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId, routeLocation));
+   }
+ 
+   function goToAllowedPreview(
+@@ -119,6 +140,7 @@ function DevViewSwitcher() {
+       nextView.id,
+       nextLayoutId,
+       getAllowedPreviewViewer(nextView, nextViewerId).id,
++      nextView.id === activeView.id ? activeRouteLocation : nextView.path,
+     );
+   }
+ 
+@@ -140,7 +162,7 @@ function DevViewSwitcher() {
+     } catch {
+       // Friendly session-expiry handling is centralized in the auth store/router.
+     }
+-    navigate(view.path, { replace: true });
++    navigate(view.id === activeView.id ? activeRouteLocation : view.path, { replace: true });
+   }
+ 
+   function handleModeChange(nextMode) {
+@@ -174,11 +196,11 @@ function DevViewSwitcher() {
+   }
+ 
+   function handleLayoutChange(event) {
+-    goToPreview(activeView.id, event.target.value, activeViewer.id);
++    goToPreview(activeView.id, event.target.value, activeViewer.id, activeRouteLocation);
+   }
+ 
+   function handleViewerChange(event) {
+-    goToPreview(activeView.id, activeLayout.id, event.target.value);
++    goToPreview(activeView.id, activeLayout.id, event.target.value, activeRouteLocation);
+   }
+ 
+   if (!isOpen) {
+diff --git a/frontend/src/dev-preview/PreviewSessionProvider.jsx b/frontend/src/dev-preview/PreviewSessionProvider.jsx
+index 5218003..ea8f51c 100644
+--- a/frontend/src/dev-preview/PreviewSessionProvider.jsx
++++ b/frontend/src/dev-preview/PreviewSessionProvider.jsx
+@@ -1,4 +1,4 @@
+-import { useEffect, useMemo, useState } from "react";
++import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import { PreviewSessionContext } from "../auth/previewSessionContext.js";
+ 
+ const OPERATIONAL_PERMISSION_CODES = [
+@@ -42,11 +42,55 @@ function buildPreviewUser(viewer) {
+   };
+ }
+ 
+-function PreviewSessionProvider({ viewer, children }) {
++function parseRouteLocation(value = "/") {
++  try {
++    const url = new URL(value, "https://preview.daybed.local");
++    return {
++      pathname: url.pathname || "/",
++      search: url.search,
++      hash: url.hash,
++    };
++  } catch {
++    return { pathname: "/", search: "", hash: "" };
++  }
++}
++
++function formatRouteLocation(routeLocation) {
++  return `${routeLocation.pathname}${routeLocation.search}${routeLocation.hash}`;
++}
++
++function PreviewSessionProvider({ viewer, routeLocation, onRouteLocationChange, children }) {
+   const initialUser = useMemo(() => buildPreviewUser(viewer), [viewer]);
+   const [user, setUser] = useState(initialUser);
++  const [effectiveRouteLocation, setEffectiveRouteLocation] = useState(
++    () => parseRouteLocation(routeLocation),
++  );
++  const routeLocationRef = useRef(effectiveRouteLocation);
+ 
+   useEffect(() => { setUser(initialUser); }, [initialUser]);
++  useEffect(() => {
++    const nextRouteLocation = parseRouteLocation(routeLocation);
++    routeLocationRef.current = nextRouteLocation;
++    setEffectiveRouteLocation(nextRouteLocation);
++  }, [routeLocation]);
++
++  const setRouteSearchParams = useCallback((nextInit, options) => {
++    const current = routeLocationRef.current;
++    const currentParams = new URLSearchParams(current.search);
++    const nextValue = typeof nextInit === "function"
++      ? nextInit(new URLSearchParams(currentParams))
++      : nextInit;
++    const nextParams = new URLSearchParams(nextValue);
++    const search = nextParams.toString();
++    const nextRouteLocation = {
++      ...current,
++      search: search ? `?${search}` : "",
++    };
++
++    routeLocationRef.current = nextRouteLocation;
++    setEffectiveRouteLocation(nextRouteLocation);
++    onRouteLocationChange?.(formatRouteLocation(nextRouteLocation), options);
++  }, [onRouteLocationChange]);
+ 
+   return (
+     <PreviewSessionContext.Provider
+@@ -59,6 +103,8 @@ function PreviewSessionProvider({ viewer, children }) {
+         setUser,
+         clearSession: () => setUser(null),
+         logout: async () => setUser(null),
++        routeLocation: effectiveRouteLocation,
++        setRouteSearchParams,
+       }}
+     >
+       {children}
+diff --git a/frontend/src/dev-preview/useEffectiveRouteState.js b/frontend/src/dev-preview/useEffectiveRouteState.js
+new file mode 100644
+index 0000000..e7f8cc9
+--- /dev/null
++++ b/frontend/src/dev-preview/useEffectiveRouteState.js
+@@ -0,0 +1,56 @@
++import { useContext, useMemo } from "react";
++import {
++  createSearchParams,
++  matchPath,
++  useLocation,
++  useParams,
++  useSearchParams,
++} from "react-router-dom";
++
++import { PreviewSessionContext } from "../auth/previewSessionContext.js";
++
++export function useEffectiveLocation() {
++  const routerLocation = useLocation();
++  const previewSession = useContext(PreviewSessionContext);
++
++  if (!previewSession.isPreview || !previewSession.routeLocation) {
++    return routerLocation;
++  }
++
++  return {
++    ...routerLocation,
++    ...previewSession.routeLocation,
++    state: routerLocation.state,
++  };
++}
++
++export function useEffectiveParams(routePattern) {
++  const routerParams = useParams();
++  const previewSession = useContext(PreviewSessionContext);
++
++  if (!previewSession.isPreview || !routePattern || !previewSession.routeLocation) {
++    return routerParams;
++  }
++
++  return (
++    matchPath(
++      { path: routePattern, end: true },
++      previewSession.routeLocation.pathname,
++    )?.params ?? routerParams
++  );
++}
++
++export function useEffectiveSearchParams(defaultInit) {
++  const routerSearchParams = useSearchParams(defaultInit);
++  const previewSession = useContext(PreviewSessionContext);
++  const previewSearchParams = useMemo(
++    () => createSearchParams(previewSession.routeLocation?.search || ""),
++    [previewSession.routeLocation?.search],
++  );
++
++  if (!previewSession.isPreview || !previewSession.routeLocation) {
++    return routerSearchParams;
++  }
++
++  return [previewSearchParams, previewSession.setRouteSearchParams];
++}
+diff --git a/frontend/src/dev-preview/viewPreviewRegistry.jsx b/frontend/src/dev-preview/viewPreviewRegistry.jsx
+index 5c33ba3..315444a 100644
+--- a/frontend/src/dev-preview/viewPreviewRegistry.jsx
++++ b/frontend/src/dev-preview/viewPreviewRegistry.jsx
+@@ -467,11 +467,13 @@ export function getViewIdFromPath(pathname) {
+   return dynamicMatch?.[0];
+ }
+ 
+-export function getPreviewPath(viewId, layoutId, viewerId) {
++export function getPreviewPath(viewId, layoutId, viewerId, routeLocation = null) {
++  const view = getPreviewView(viewId);
+   const params = new URLSearchParams({
+     layout: layoutId,
+-    view: viewId,
++    view: view.id,
+     viewer: viewerId,
++    route: routeLocation || view.path,
+   });
+ 
+   return `/dev/preview?${params.toString()}`;
+diff --git a/frontend/src/pages/account/OrderDetailPage.jsx b/frontend/src/pages/account/OrderDetailPage.jsx
+index 5da36aa..534cf51 100644
+--- a/frontend/src/pages/account/OrderDetailPage.jsx
++++ b/frontend/src/pages/account/OrderDetailPage.jsx
+@@ -1,5 +1,5 @@
+ import { useCallback, useEffect, useState } from "react";
+-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import {
+   FaArrowLeft,
+   FaBoxOpen,
+@@ -17,6 +17,7 @@ import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
+ import FeatureState from "../../components/support/FeatureState.jsx";
+ import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveLocation, useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import { API_ERROR_KINDS } from "../../services/apiErrors.js";
+ import { orderService } from "../../services/backendServices.js";
+ import { productImage } from "../../services/viewMappers.js";
+@@ -88,9 +89,9 @@ function ProductRow({ item }) {
+ }
+ 
+ export default function OrderDetailPage() {
+-  const { orderId } = useParams();
++  const { orderId } = useEffectiveParams(routePaths.account.orderDetail);
+   const navigate = useNavigate();
+-  const location = useLocation();
++  const location = useEffectiveLocation();
+   const { isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+   const { settings } = useStoreSettings();
+   const [order, setOrder] = useState(null);
+diff --git a/frontend/src/pages/account/ProfilePage.jsx b/frontend/src/pages/account/ProfilePage.jsx
+index ca793fc..24041e6 100644
+--- a/frontend/src/pages/account/ProfilePage.jsx
++++ b/frontend/src/pages/account/ProfilePage.jsx
+@@ -438,9 +438,9 @@ export default function ProfilePage() {
+         <section className="profile-identity-card">
+           <div className="profile-identity-card__avatar">
+             <Avatar user={profile} src={avatarPreview || profile.avatar} size="xl" />
+-            <label className="profile-avatar-upload">
+-              <span>Cambiar foto</span>
+-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
++            <label className="profile-avatar-upload" aria-label="Agregar o cambiar foto de perfil" title="Agregar o cambiar foto de perfil">
++              <span aria-hidden="true">+</span>
++              <input aria-label="Agregar o cambiar foto de perfil" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
+             </label>
+           </div>
+           <div><p className="section-kicker">Cuenta Daybed</p><h1>{getDisplayName(profile)}</h1><p>{profile.email} · {roleLabel}</p><span>La foto se usa en tu perfil y en el control de cuenta de la barra de navegación.</span></div>
+diff --git a/frontend/src/pages/back-office/InternalOrderDetailPage.jsx b/frontend/src/pages/back-office/InternalOrderDetailPage.jsx
+index 767fd6a..462d030 100644
+--- a/frontend/src/pages/back-office/InternalOrderDetailPage.jsx
++++ b/frontend/src/pages/back-office/InternalOrderDetailPage.jsx
+@@ -1,5 +1,5 @@
+ import { useCallback, useEffect, useMemo, useState } from "react";
+-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import {
+   FaArrowLeft,
+   FaBoxOpen,
+@@ -21,6 +21,7 @@ import FeatureState from "../../components/support/FeatureState.jsx";
+ import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+ import { getViewerIdForUser } from "../../auth/roleMapping.js";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveLocation, useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import { orderService } from "../../services/backendServices.js";
+ import { productImage } from "../../services/viewMappers.js";
+ import {
+@@ -42,9 +43,9 @@ const STATUS_EXPLANATIONS = {
+ };
+ 
+ export default function InternalOrderDetailPage() {
+-  const { orderId } = useParams();
++  const { orderId } = useEffectiveParams(routePaths.backOffice.orderDetail);
+   const navigate = useNavigate();
+-  const location = useLocation();
++  const location = useEffectiveLocation();
+   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+   const viewer = getViewerIdForUser(user);
+   const canUpdate = viewer === "admin" || (user?.effective_permission_codes || []).includes("orders.status.update");
+@@ -189,7 +190,7 @@ export default function InternalOrderDetailPage() {
+ 
+                 <section className="order-detail-panel">
+                   <header><FaClockRotateLeft /><div><p>Trazabilidad</p><h2>Historial de estados</h2></div></header>
+-                  {order.statusHistory.length ? <ol className="status-history">{order.statusHistory.map((event) => <li key={event.id || `${event.to_status}-${event.created_at}`}><span /><div><strong>{ORDER_STATUSES.find((status) => status.value === event.to_status)?.shortLabel || event.to_status}</strong><p>{event.note || "Cambio registrado por Daybed."}</p><small>{formatOrderDate(event.created_at, true)} · {event.actor_name || "Daybed"}</small></div></li>)}</ol> : <FeatureState compact tone="empty" title="Sin historial previo" message="Los próximos cambios quedarán registrados aquí." />}
++                  {order.statusHistory.length ? <ol className="status-history">{order.statusHistory.map((event) => <li key={event.id || `${event.to_status}-${event.created_at}`}><div><strong>{ORDER_STATUSES.find((status) => status.value === event.to_status)?.shortLabel || event.to_status}</strong><p>{event.note || "Cambio registrado por Daybed."}</p><small>{formatOrderDate(event.created_at, true)} · {event.actor_name || "Daybed"}</small></div></li>)}</ol> : <FeatureState compact tone="empty" title="Sin historial previo" message="Los próximos cambios quedarán registrados aquí." />}
+                 </section>
+               </div>
+ 
+diff --git a/frontend/src/pages/back-office/InternalOrdersPage.jsx b/frontend/src/pages/back-office/InternalOrdersPage.jsx
+index 4438dfa..f0b3c76 100644
+--- a/frontend/src/pages/back-office/InternalOrdersPage.jsx
++++ b/frontend/src/pages/back-office/InternalOrdersPage.jsx
+@@ -1,5 +1,5 @@
+ import { useCallback, useEffect, useMemo, useState } from "react";
+-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import { FaArrowRight, FaSearch } from "react-icons/fa";
+ import HomeHeader from "../../components/HomeHeader.jsx";
+ import HomeFooter from "../../components/HomeFooter.jsx";
+@@ -8,6 +8,7 @@ import FeatureState from "../../components/support/FeatureState.jsx";
+ import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+ import { getViewerIdForUser } from "../../auth/roleMapping.js";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveLocation, useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import { orderService } from "../../services/backendServices.js";
+ import { productImage } from "../../services/viewMappers.js";
+ import { formatMoney, formatOrderDate, normalizeOrder, ORDER_STATUSES } from "../../utils/orderPresentation.js";
+@@ -16,8 +17,8 @@ const HERO = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1800&q
+ 
+ export default function InternalOrdersPage() {
+   const navigate = useNavigate();
+-  const location = useLocation();
+-  const [searchParams, setSearchParams] = useSearchParams();
++  const location = useEffectiveLocation();
++  const [searchParams, setSearchParams] = useEffectiveSearchParams();
+   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+   const viewer = getViewerIdForUser(user);
+   const [orders, setOrders] = useState([]);
+diff --git a/frontend/src/pages/back-office/ProductsPage.jsx b/frontend/src/pages/back-office/ProductsPage.jsx
+index f73c0a5..5b60ecb 100644
+--- a/frontend/src/pages/back-office/ProductsPage.jsx
++++ b/frontend/src/pages/back-office/ProductsPage.jsx
+@@ -1,6 +1,6 @@
+ // ProductsPage.jsx - CON VALIDACIÓN DE ACCESO
+ import { useState, useEffect, useRef, useCallback } from "react";
+-import { Link, useNavigate, useSearchParams } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import "../../assets/home-page.css";
+ import "../../assets/dashboard-page.css";
+ import HomeHeader from "../../components/HomeHeader.jsx";
+@@ -9,6 +9,7 @@ import PageHero from "../../components/layout/PageHero.jsx";
+ import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+ import { getViewerIdForUser } from "../../auth/roleMapping.js";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import {
+   FaPlus,
+   FaEdit,
+@@ -36,7 +37,7 @@ const PAGE_SIZE = 10;
+ 
+ export default function ProductsPage() {
+   const navigate = useNavigate();
+-  const [searchParams] = useSearchParams();
++  const [searchParams] = useEffectiveSearchParams();
+   const categoryParam = searchParams.get("categoria") || "";
+   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+   const viewerId = getViewerIdForUser(user);
+diff --git a/frontend/src/pages/checkout/OrderConfirmationPage.jsx b/frontend/src/pages/checkout/OrderConfirmationPage.jsx
+index 84f750f..7c59d1e 100644
+--- a/frontend/src/pages/checkout/OrderConfirmationPage.jsx
++++ b/frontend/src/pages/checkout/OrderConfirmationPage.jsx
+@@ -1,12 +1,13 @@
+ // OrderConfirmationPage.jsx
+ import { useState, useEffect } from "react";
+-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import "../../assets/home-page.css";
+ import "../../assets/cart-page.css";
+ import HomeHeader from "../../components/HomeHeader.jsx";
+ import HomeFooter from "../../components/HomeFooter.jsx";
+ import PageHero from "../../components/layout/PageHero.jsx";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveLocation, useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import { orderService } from "../../services/backendServices.js";
+ import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+ import { productImage } from "../../services/viewMappers.js";
+@@ -104,9 +105,9 @@ function formatRouteDuration(minutes) {
+ // ✅ COMPONENTE PRINCIPAL
+ // ============================================
+ const OrderConfirmationPage = () => {
+-  const location = useLocation();
++  const location = useEffectiveLocation();
+   const navigate = useNavigate();
+-  const { orderId: routeOrderId } = useParams();
++  const { orderId: routeOrderId } = useEffectiveParams(routePaths.checkout.confirmationDetail);
+   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+   
+   const [loading, setLoading] = useState(true);
+diff --git a/frontend/src/pages/public/CatalogPage.jsx b/frontend/src/pages/public/CatalogPage.jsx
+index 7428563..14102c9 100644
+--- a/frontend/src/pages/public/CatalogPage.jsx
++++ b/frontend/src/pages/public/CatalogPage.jsx
+@@ -1,9 +1,9 @@
+ import { useCallback, useEffect, useMemo, useState } from "react";
+-import { useSearchParams } from "react-router-dom";
+ import { FaCircleCheck, FaFilter, FaTriangleExclamation, FaXmark } from "react-icons/fa6";
+ import "../../assets/catalog-page.css";
+ import "../../assets/home-page.css";
+ import HomeHeader from "../../components/HomeHeader.jsx";
++import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import HomeFooter from "../../components/HomeFooter.jsx";
+ import PageHero from "../../components/layout/PageHero.jsx";
+ import StoreProductCard from "../../components/store/StoreProductCard.jsx";
+@@ -42,7 +42,7 @@ function unique(items, key) {
+ }
+ 
+ export default function CatalogPage() {
+-  const [searchParams, setSearchParams] = useSearchParams();
++  const [searchParams, setSearchParams] = useEffectiveSearchParams();
+   const queryKey = searchParams.toString();
+   const [products, setProducts] = useState([]);
+   const [allProducts, setAllProducts] = useState([]);
+diff --git a/frontend/src/pages/public/ContactHelpPage.jsx b/frontend/src/pages/public/ContactHelpPage.jsx
+index 6519d49..e9d1659 100644
+--- a/frontend/src/pages/public/ContactHelpPage.jsx
++++ b/frontend/src/pages/public/ContactHelpPage.jsx
+@@ -1,4 +1,4 @@
+-import { useMemo, useState } from "react";
++import { useEffect, useMemo, useState } from "react";
+ import { Link } from "react-router-dom";
+ import {
+   FaCheckCircle,
+@@ -16,6 +16,7 @@ import PageHero from "../../components/layout/PageHero.jsx";
+ import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
+ import HomeFooter from "../../components/HomeFooter.jsx";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveLocation } from "../../dev-preview/useEffectiveRouteState.js";
+ import { storeService } from "../../services/backendServices.js";
+ import useStoreSettings from "../../services/useStoreSettings.js";
+ 
+@@ -43,6 +44,7 @@ const FAQS = [
+ ];
+ 
+ export default function ContactHelpPage() {
++  const location = useEffectiveLocation();
+   const { settings } = useStoreSettings();
+   const [activeFaq, setActiveFaq] = useState("payments");
+   const [formData, setFormData] = useState({ name: "", email: "", subject: "", order_code: "", message: "" });
+@@ -51,6 +53,19 @@ export default function ContactHelpPage() {
+   const [sending, setSending] = useState(false);
+   const [submitError, setSubmitError] = useState("");
+ 
++  useEffect(() => {
++    const sectionId = location.hash === "#contacto"
++      ? "contacto"
++      : location.hash === "#nosotros"
++        ? "nosotros"
++        : null;
++    if (!sectionId) return;
++
++    window.requestAnimationFrame(() => {
++      document.getElementById(sectionId)?.scrollIntoView({ block: "start" });
++    });
++  }, [location.hash]);
++
+   const addressLabel = [settings.street, settings.neighborhood, settings.city, settings.state, settings.postal_code].filter(Boolean).join(", ");
+   const contactCards = useMemo(() => [
+     { title: "Llámanos", value: settings.contact_phone, detail: settings.business_hours, href: `tel:${String(settings.contact_phone || "").replace(/[^+\d]/g, "")}`, icon: <FaPhone /> },
+@@ -105,7 +120,7 @@ export default function ContactHelpPage() {
+       />
+ 
+       <main className="contact-container">
+-        <section className="contact-section contact-section--story" aria-labelledby="about-daybed">
++        <section className="contact-section contact-section--story" id="nosotros" aria-labelledby="about-daybed">
+           <div className="about-us">
+             <div className="about-us__content">
+               <p className="contact-section__eyebrow">Nuestra forma de hacer tienda</p>
+@@ -122,7 +137,7 @@ export default function ContactHelpPage() {
+           </div>
+         </section>
+ 
+-        <section className="contact-section" aria-labelledby="contact-info">
++        <section className="contact-section" id="contacto" aria-labelledby="contact-info">
+           <p className="contact-section__eyebrow">Estamos cerca</p>
+           <h2 id="contact-info" className="contact-section__title">Hablemos de tu espacio</h2>
+           <div className="contact-grid">
+diff --git a/frontend/src/pages/public/HomePage.jsx b/frontend/src/pages/public/HomePage.jsx
+index ad874f5..b68665b 100644
+--- a/frontend/src/pages/public/HomePage.jsx
++++ b/frontend/src/pages/public/HomePage.jsx
+@@ -110,7 +110,7 @@ function HomePage() {
+         }
+         if (active) {
+           setProducts(featured);
+-          setHomeCategories(readCollection(categoryResponse).filter((item) => item.homepage_visible !== false).sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)).slice(0, 4));
++          setHomeCategories(readCollection(categoryResponse).filter((item) => item.homepage_visible !== false).sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)).slice(0, 3));
+         }
+       } catch (error) {
+         if (active) setProductsError(error.message || "No fue posible cargar la selección Daybed.");
+diff --git a/frontend/src/pages/public/ProductDetailPage.jsx b/frontend/src/pages/public/ProductDetailPage.jsx
+index d22506b..0b044b7 100644
+--- a/frontend/src/pages/public/ProductDetailPage.jsx
++++ b/frontend/src/pages/public/ProductDetailPage.jsx
+@@ -1,5 +1,5 @@
+ import { useEffect, useMemo, useState } from "react";
+-import { Link, useParams } from "react-router-dom";
++import { Link } from "react-router-dom";
+ import { FaCheckCircle, FaHeart, FaRegCopy, FaStar } from "react-icons/fa";
+ import "../../assets/home-page.css";
+ import "../../assets/product-detail-page.css";
+@@ -8,6 +8,7 @@ import HomeHeader from "../../components/HomeHeader.jsx";
+ import StoreProductCard from "../../components/store/StoreProductCard.jsx";
+ import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+ import { routePaths } from "../../routes/routePaths.js";
++import { useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
+ import { cartService, catalogService } from "../../services/backendServices.js";
+ import {
+   getSavedProductIds,
+@@ -77,7 +78,7 @@ function formatReviewDate(value) {
+ 
+ export default function ProductDetailPage() {
+   const { settings } = useStoreSettings();
+-  const { productId } = useParams();
++  const { productId } = useEffectiveParams(routePaths.public.productDetail);
+   const { isAuthenticated } = useEffectiveSession();
+   const [activeImage, setActiveImage] = useState(0);
+   const [quantity, setQuantity] = useState(1);
+@@ -104,6 +105,7 @@ export default function ProductDetailPage() {
+     ])
+       .then(([detail, list]) => {
+         if (!active) return;
++        if (!detail) throw new Error("El producto que buscas ya no está disponible.");
+         const galleryImages = (detail.images || [])
+           .filter((image) => image?.active !== false)
+           .map((image) => assetUrl(image))
+diff --git a/frontend/tests/bootRegression.test.mjs b/frontend/tests/bootRegression.test.mjs
+index 7782afd..1a69455 100644
+--- a/frontend/tests/bootRegression.test.mjs
++++ b/frontend/tests/bootRegression.test.mjs
+@@ -64,3 +64,29 @@ test("known incompatible Font Awesome 5 names are not imported from fa6", async
+     );
+   }
+ });
++
++test("homepage merchandising is capped at three section links", async () => {
++  const home = await read("src/pages/public/HomePage.jsx");
++  assert.match(
++    home,
++    /setHomeCategories\([\s\S]*?\.slice\(0,\s*3\)\)/,
++  );
++  assert.equal((home.match(/id:\s*["'](?:comedor|sala|habitacion)["']/g) || []).length, 3);
++});
++
++test("dynamic preview pages resolve their simulated route instead of router shell params", async () => {
++  const previewPage = await read("src/dev-preview/DevPreviewPage.jsx");
++  const registry = await read("src/dev-preview/viewPreviewRegistry.jsx");
++  const routeState = await read("src/dev-preview/useEffectiveRouteState.js");
++  const product = await read("src/pages/public/ProductDetailPage.jsx");
++  const customerOrder = await read("src/pages/account/OrderDetailPage.jsx");
++  const internalOrder = await read("src/pages/back-office/InternalOrderDetailPage.jsx");
++
++  assert.match(previewPage, /searchParams\.get\(["']route["']\)/);
++  assert.match(registry, /route:\s*routeLocation\s*\|\|\s*view\.path/);
++  assert.match(routeState, /matchPath\(/);
++  assert.match(product, /useEffectiveParams\(routePaths\.public\.productDetail\)/);
++  assert.match(product, /if\s*\(!detail\)\s*throw new Error/);
++  assert.match(customerOrder, /useEffectiveParams\(routePaths\.account\.orderDetail\)/);
++  assert.match(internalOrder, /useEffectiveParams\(routePaths\.backOffice\.orderDetail\)/);
++});
+diff --git a/frontend/tests/routeSmoke.test.mjs b/frontend/tests/routeSmoke.test.mjs
+index 251430c..3cceed7 100644
+--- a/frontend/tests/routeSmoke.test.mjs
++++ b/frontend/tests/routeSmoke.test.mjs
+@@ -3,17 +3,30 @@ import test from "node:test";
+ 
+ const baseUrl = process.env.DAYBED_SMOKE_BASE_URL;
+ const routes = [
+-  "/",
+-  "/catalogo/",
+-  "/productos/1",
+-  "/login",
+-  "/cuenta/perfil",
+-  "/carrito",
+-  "/checkout",
+-  "/cuenta/pedidos",
+-  "/admin/configuracion",
+-  "/admin/roles-permisos",
+-  "/dev/preview?view=home&layout=public&viewer=guest",
++  { path: "/", selector: ".home-category", count: 3 },
++  { path: "/catalogo/" },
++  { path: "/productos/1", text: "Daybed Roble Nórdico" },
++  { path: "/login" },
++  { path: "/cuenta/perfil" },
++  { path: "/carrito" },
++  { path: "/checkout" },
++  { path: "/cuenta/pedidos" },
++  { path: "/admin/configuracion" },
++  { path: "/admin/roles-permisos" },
++  { path: "/dev/preview?view=home&layout=public&viewer=guest", selector: ".home-category", count: 3 },
++  {
++    path: "/dev/preview?view=productDetail&layout=public&viewer=guest&route=%2Fproductos%2F1",
++    text: "Daybed Roble Nórdico",
++    absentText: "No encontramos esta pieza",
++  },
++  {
++    path: "/dev/preview?view=orderDetail&layout=customer&viewer=customer&route=%2Fcuenta%2Fpedidos%2FDAY-00803",
++    text: "PEDIDO DAY-00803",
++  },
++  {
++    path: "/dev/preview?view=internalOrderDetail&layout=backOffice&viewer=employee&route=%2Finterno%2Fpedidos%2FDAY-00802",
++    text: "PEDIDO DAY-00802",
++  },
+ ];
+ 
+ test("direct routes populate #root without uncaught page errors", async (t) => {
+@@ -49,7 +62,8 @@ test("direct routes populate #root without uncaught page errors", async (t) => {
+   }
+   if (!browser) throw launchError;
+   try {
+-    for (const route of routes) {
++    for (const routeCase of routes) {
++      const { path: route, text, absentText, selector, count } = routeCase;
+       await t.test(route, async () => {
+         const page = await browser.newPage();
+         const pageErrors = [];
+@@ -92,11 +106,21 @@ test("direct routes populate #root without uncaught page errors", async (t) => {
+           waitUntil: "domcontentloaded",
+           timeout: 15000,
+         });
+-        await page.waitForTimeout(750);
++        if (text) {
++          await page.locator("#root").getByText(text, { exact: false }).first().waitFor({ timeout: 7000 });
++        } else if (selector) {
++          await page.locator(selector).first().waitFor({ timeout: 7000 });
++        } else {
++          await page.waitForTimeout(750);
++        }
+ 
+         const rootText = (await page.locator("#root").innerText()).trim();
+         assert.ok(rootText.length > 0, `${route} left #root empty`);
+         assert.doesNotMatch(rootText, /Esta vista no pudo abrirse/);
++        if (absentText) assert.ok(!rootText.includes(absentText), `${route} rendered ${absentText}`);
++        if (selector && Number.isInteger(count)) {
++          assert.equal(await page.locator(selector).count(), count, `${route} expected ${count} ${selector} elements`);
++        }
+         assert.deepEqual(pageErrors, [], `${route} emitted page errors`);
+         assert.deepEqual(consoleErrors, [], `${route} emitted console errors`);
+         assert.deepEqual(
+@@ -111,3 +135,76 @@ test("direct routes populate #root without uncaught page errors", async (t) => {
+     await browser.close();
+   }
+ });
++
++
++test("preview catalogue keeps listing detail inside the simulated route", async (t) => {
++  if (!baseUrl) {
++    t.skip("Set DAYBED_SMOKE_BASE_URL after starting Vite to run browser smoke tests.");
++    return;
++  }
++
++  const { chromium } = await import("playwright");
++  const browser = await chromium.launch({
++    headless: true,
++    args: ["--disable-gpu", "--disable-gpu-sandbox", "--disable-dev-shm-usage"],
++  });
++
++  try {
++    const page = await browser.newPage();
++    const pageErrors = [];
++    const consoleErrors = [];
++    const transparentPng = Buffer.from(
++      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
++      "base64",
++    );
++
++    await page.route("**/*", async (browserRoute) => {
++      const request = browserRoute.request();
++      const url = new URL(request.url());
++      if (url.hostname === "127.0.0.1" || url.hostname === "localhost") {
++        await browserRoute.continue();
++        return;
++      }
++      if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") {
++        await browserRoute.fulfill({ status: 200, contentType: "text/css", body: "" });
++        return;
++      }
++      if (url.hostname === "images.unsplash.com") {
++        await browserRoute.fulfill({ status: 200, contentType: "image/png", body: transparentPng });
++        return;
++      }
++      if (url.hostname === "www.openstreetmap.org") {
++        await browserRoute.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>offline map placeholder</title>" });
++        return;
++      }
++      await browserRoute.abort("blockedbyclient");
++    });
++
++    page.on("pageerror", (error) => pageErrors.push(error.message));
++    page.on("console", (message) => {
++      if (message.type() === "error") consoleErrors.push(message.text());
++    });
++
++    await page.goto(
++      new URL("/dev/preview?view=catalog&layout=public&viewer=guest&route=%2Fcatalogo", baseUrl).href,
++      { waitUntil: "domcontentloaded", timeout: 15000 },
++    );
++    const detailLink = page.getByRole("link", { name: "Ver detalle" }).first();
++    await detailLink.waitFor({ timeout: 7000 });
++    await detailLink.click();
++    await page.waitForURL(/\/dev\/preview\?/, { timeout: 7000 });
++    await page.getByText("Daybed Roble Nórdico", { exact: false }).first().waitFor({ timeout: 7000 });
++
++    const url = new URL(page.url());
++    const rootText = await page.locator("#root").innerText();
++    assert.equal(url.pathname, "/dev/preview");
++    assert.equal(url.searchParams.get("view"), "productDetail");
++    assert.equal(url.searchParams.get("route"), "/productos/1");
++    assert.doesNotMatch(rootText, /No encontramos esta pieza/);
++    assert.doesNotMatch(rootText, /can't access property/i);
++    assert.deepEqual(pageErrors, []);
++    assert.deepEqual(consoleErrors, []);
++  } finally {
++    await browser.close();
++  }
++});

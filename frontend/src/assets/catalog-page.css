@@ -613,3 +613,47 @@
 .catalog-state > svg { color: #a05347; font-size: 1.8rem; margin-bottom: 12px; }
 @media (min-width: 1320px) { .catalog-grid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
 @media (max-width: 1100px) { .catalog-main { padding-inline: 1.25rem; } .catalog-filters-sidebar { width: 245px; } }
+
+/* Tablet catalogue: keep filters compact and full-width before product results. */
+@media (max-width: 820px) {
+  .catalog-main {
+    width: min(100% - 28px, 1500px);
+  }
+
+  .catalog-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .catalog-filters-sidebar {
+    position: static;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
+    box-sizing: border-box;
+  }
+
+  .catalog-filters-header {
+    grid-column: 1 / -1;
+  }
+
+  .catalog-filters-section {
+    min-width: 0;
+  }
+
+  .catalog-content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .catalog-filters-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-filters-header {
+    grid-column: auto;
+  }
+}

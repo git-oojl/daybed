@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FaCheckCircle, FaHeart, FaRegCopy, FaStar } from "react-icons/fa";
 import "../../assets/home-page.css";
 import "../../assets/product-detail-page.css";
@@ -8,6 +8,7 @@ import HomeHeader from "../../components/HomeHeader.jsx";
 import StoreProductCard from "../../components/store/StoreProductCard.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
 import {
   getSavedProductIds,
@@ -77,7 +78,7 @@ function formatReviewDate(value) {
 
 export default function ProductDetailPage() {
   const { settings } = useStoreSettings();
-  const { productId } = useParams();
+  const { productId } = useEffectiveParams(routePaths.public.productDetail);
   const { isAuthenticated } = useEffectiveSession();
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -104,6 +105,7 @@ export default function ProductDetailPage() {
     ])
       .then(([detail, list]) => {
         if (!active) return;
+        if (!detail) throw new Error("El producto que buscas ya no está disponible.");
         const galleryImages = (detail.images || [])
           .filter((image) => image?.active !== false)
           .map((image) => assetUrl(image))

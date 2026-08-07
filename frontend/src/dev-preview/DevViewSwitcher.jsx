@@ -49,6 +49,9 @@ function DevViewSwitcher() {
     searchParams.get("viewer") ?? previewControls.viewerId,
   );
   const isPreviewRoute = location.pathname === "/dev/preview";
+  const activeRouteLocation = isPreviewRoute
+    ? searchParams.get("route") || activeView.path
+    : `${location.pathname}${location.search}${location.hash}`;
   const currentMode =
     selectedMode ?? getDefaultModeFromBackendStatus(backendStatus.state);
   const isLayoutAllowed = canPreviewLayout(activeView, activeLayout.id);
@@ -69,6 +72,21 @@ function DevViewSwitcher() {
   );
 
   useEffect(() => {
+    if (!isPreviewRoute) return;
+
+    saveDevViewSwitcherSelection({
+      layoutId: activeLayout.id,
+      mode: "preview",
+      viewerId: activeViewer.id,
+    });
+    setPreviewControls({
+      layoutId: activeLayout.id,
+      viewerId: activeViewer.id,
+    });
+    setSelectedMode("preview");
+  }, [activeLayout.id, activeViewer.id, isPreviewRoute]);
+
+  useEffect(() => {
     if (currentMode !== "preview" || isPreviewRoute) {
       return;
     }
@@ -79,14 +97,16 @@ function DevViewSwitcher() {
       : nextView.defaultLayout;
     const nextViewerId = getAllowedPreviewViewer(nextView, activeViewer.id).id;
 
-    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId), {
+    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId, `${location.pathname}${location.search}${location.hash}`), {
       replace: true,
     });
   }, [
     activeLayout.id,
     activeViewer.id,
     isPreviewRoute,
+    location.hash,
     location.pathname,
+    location.search,
     navigate,
     currentMode,
   ]);
@@ -95,6 +115,7 @@ function DevViewSwitcher() {
     nextViewId = activeView.id,
     nextLayoutId = activeLayout.id,
     nextViewerId = activeViewer.id,
+    routeLocation = null,
   ) {
     emitSessionReplaced({ reason: "enter-preview" });
     saveDevViewSwitcherSelection({
@@ -107,7 +128,7 @@ function DevViewSwitcher() {
       layoutId: nextLayoutId,
       viewerId: nextViewerId,
     });
-    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId));
+    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId, routeLocation));
   }
 
   function goToAllowedPreview(
@@ -119,6 +140,7 @@ function DevViewSwitcher() {
       nextView.id,
       nextLayoutId,
       getAllowedPreviewViewer(nextView, nextViewerId).id,
+      nextView.id === activeView.id ? activeRouteLocation : nextView.path,
     );
   }
 
@@ -140,7 +162,7 @@ function DevViewSwitcher() {
     } catch {
       // Friendly session-expiry handling is centralized in the auth store/router.
     }
-    navigate(view.path, { replace: true });
+    navigate(view.id === activeView.id ? activeRouteLocation : view.path, { replace: true });
   }
 
   function handleModeChange(nextMode) {
@@ -174,11 +196,11 @@ function DevViewSwitcher() {
   }
 
   function handleLayoutChange(event) {
-    goToPreview(activeView.id, event.target.value, activeViewer.id);
+    goToPreview(activeView.id, event.target.value, activeViewer.id, activeRouteLocation);
   }
 
   function handleViewerChange(event) {
-    goToPreview(activeView.id, activeLayout.id, event.target.value);
+    goToPreview(activeView.id, activeLayout.id, event.target.value, activeRouteLocation);
   }
 
   if (!isOpen) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaBoxOpen,
@@ -21,6 +21,7 @@ import FeatureState from "../../components/support/FeatureState.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveLocation, useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { orderService } from "../../services/backendServices.js";
 import { productImage } from "../../services/viewMappers.js";
 import {
@@ -42,9 +43,9 @@ const STATUS_EXPLANATIONS = {
 };
 
 export default function InternalOrderDetailPage() {
-  const { orderId } = useParams();
+  const { orderId } = useEffectiveParams(routePaths.backOffice.orderDetail);
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useEffectiveLocation();
   const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewer = getViewerIdForUser(user);
   const canUpdate = viewer === "admin" || (user?.effective_permission_codes || []).includes("orders.status.update");
@@ -189,7 +190,7 @@ export default function InternalOrderDetailPage() {
 
                 <section className="order-detail-panel">
                   <header><FaClockRotateLeft /><div><p>Trazabilidad</p><h2>Historial de estados</h2></div></header>
-                  {order.statusHistory.length ? <ol className="status-history">{order.statusHistory.map((event) => <li key={event.id || `${event.to_status}-${event.created_at}`}><span /><div><strong>{ORDER_STATUSES.find((status) => status.value === event.to_status)?.shortLabel || event.to_status}</strong><p>{event.note || "Cambio registrado por Daybed."}</p><small>{formatOrderDate(event.created_at, true)} · {event.actor_name || "Daybed"}</small></div></li>)}</ol> : <FeatureState compact tone="empty" title="Sin historial previo" message="Los próximos cambios quedarán registrados aquí." />}
+                  {order.statusHistory.length ? <ol className="status-history">{order.statusHistory.map((event) => <li key={event.id || `${event.to_status}-${event.created_at}`}><div><strong>{ORDER_STATUSES.find((status) => status.value === event.to_status)?.shortLabel || event.to_status}</strong><p>{event.note || "Cambio registrado por Daybed."}</p><small>{formatOrderDate(event.created_at, true)} · {event.actor_name || "Daybed"}</small></div></li>)}</ol> : <FeatureState compact tone="empty" title="Sin historial previo" message="Los próximos cambios quedarán registrados aquí." />}
                 </section>
               </div>
 

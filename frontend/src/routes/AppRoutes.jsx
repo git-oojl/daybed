@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { BrowserRouter, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { accessGroups } from "../auth/viewerAccess.js";
 import AdminLayout from "../layouts/AdminLayout.jsx";
 import BackOfficeLayout from "../layouts/BackOfficeLayout.jsx";
@@ -19,9 +19,6 @@ const BasicSettingsPage = lazy(
 );
 const BusinessMetricsPage = lazy(
   () => import("../pages/admin/BusinessMetricsPage.jsx"),
-);
-const InternalUsersPage = lazy(
-  () => import("../pages/admin/InternalUsersPage.jsx"),
 );
 const RolesPermissionsPage = lazy(
   () => import("../pages/admin/RolesPermissionsPage.jsx"),
@@ -325,7 +322,7 @@ function AppRoutes() {
       >
         <Route
           path={routePaths.admin.internalUsers}
-          element={<InternalUsersPage />}
+          element={<Navigate replace to={routePaths.admin.rolesPermissions} />}
         />
         <Route
           path={routePaths.admin.rolesPermissions}

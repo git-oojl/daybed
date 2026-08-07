@@ -24,9 +24,25 @@ export default function SavedItemsPage() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    catalogService.products().then((response) => { if (active) setProducts(readCollection(response)); }).catch((requestError) => { if (active) setError(requestError); }).finally(() => { if (active) setLoading(false); });
+    setError(null);
+
+    if (!savedIds.length) {
+      setProducts([]);
+      setLoading(false);
+      return () => { active = false; };
+    }
+
+    catalogService.products({
+      ids: savedIds.join(","),
+      page_size: Math.max(20, savedIds.length),
+      ordering: "name",
+    }).then((response) => {
+      if (!active) return;
+      const byId = new Map(readCollection(response).map((product) => [String(product.id), product]));
+      setProducts(savedIds.map((id) => byId.get(String(id))).filter(Boolean));
+    }).catch((requestError) => { if (active) setError(requestError); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [savedIds]);
 
   const savedProducts = useMemo(() => {
     const ids = new Set(savedIds.map(String));
@@ -35,6 +51,7 @@ export default function SavedItemsPage() {
 
   function toggleSaved(product) {
     setSavedProductIds(savedIds.filter((id) => id !== String(product.id)));
+    setProducts((current) => current.filter((item) => String(item.id) !== String(product.id)));
   }
 
   async function addToCart(product) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
   FaBoxOpen,
@@ -17,6 +17,7 @@ import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
 import FeatureState from "../../components/support/FeatureState.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveLocation, useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { API_ERROR_KINDS } from "../../services/apiErrors.js";
 import { orderService } from "../../services/backendServices.js";
 import { productImage } from "../../services/viewMappers.js";
@@ -88,9 +89,9 @@ function ProductRow({ item }) {
 }
 
 export default function OrderDetailPage() {
-  const { orderId } = useParams();
+  const { orderId } = useEffectiveParams(routePaths.account.orderDetail);
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useEffectiveLocation();
   const { isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const { settings } = useStoreSettings();
   const [order, setOrder] = useState(null);

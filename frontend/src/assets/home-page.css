@@ -554,6 +554,12 @@
   gap: 24px;
 }
 
+.home-products__intro {
+  max-width: 760px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
 .home-product {
   position: relative;
 }
@@ -1285,3 +1291,72 @@
 .home-footer__copy { max-width: 1440px; margin: 0 auto; padding: 0; border: 0; color: #725e4d; text-align: center; font-size: .82rem; }
 @media (max-width: 1120px) { .home-header__inner { grid-template-columns: auto 1fr auto; } .home-footer__inner { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 720px) { .home-footer__inner { grid-template-columns: 1fr; padding-inline: 24px; gap: 32px; } .home-footer__bottom { padding-inline: 24px; } }
+
+/* Stable three-region header overrides legacy responsive rules used by older shells. */
+@media (max-width: 1220px) and (min-width: 941px) {
+  .home-header__inner.home-header__inner--stable {
+    width: min(100% - 36px, 1480px);
+    grid-template-columns: minmax(105px, .55fr) auto minmax(270px, .9fr) !important;
+    gap: 12px;
+  }
+
+  .home-header__nav-region {
+    display: flex;
+    gap: clamp(13px, 1.6vw, 22px);
+  }
+
+  .home-header__nav-region a {
+    font-size: .76rem;
+  }
+
+  .home-header__search.home-header__search--inline {
+    width: clamp(120px, 13vw, 150px);
+    padding: 0 10px;
+    justify-content: flex-start;
+  }
+
+  .home-header__search--inline input {
+    display: block;
+  }
+
+  .home-header__menu-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 940px) {
+  .home-header__inner.home-header__inner--stable {
+    width: min(100% - 28px, 1480px);
+    min-height: 70px;
+    grid-template-columns: minmax(110px, 1fr) auto !important;
+    gap: 10px;
+  }
+
+  .home-header__nav-region {
+    display: none;
+  }
+
+  .home-header__action-region {
+    gap: 5px;
+  }
+
+  .home-header__search.home-header__search--inline {
+    width: clamp(126px, 22vw, 180px);
+    padding: 0 10px;
+    justify-content: flex-start;
+  }
+
+  .home-header__search--inline input {
+    display: block;
+  }
+
+  .home-header__inner--stable .home-header__menu-btn {
+    display: grid;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-header__search.home-header__search--inline {
+    display: none;
+  }
+}

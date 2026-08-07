@@ -11,7 +11,7 @@ import { dashboardService } from "../../services/backendServices.js";
 import { formatMoney, formatOrderDate, orderNumber, orderStatus } from "../../utils/orderPresentation.js";
 
 const HERO = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1800&q=82";
-const RANGES = [[30, "30 días"], [90, "90 días"], [180, "6 meses"], [365, "12 meses"]];
+const RANGES = [[7, "7 días"], [30, "30 días"], [90, "90 días"], [180, "6 meses"], [365, "12 meses"]];
 
 function Metric({ icon: Icon, label, value, detail }) {
   return <article className="metrics-v2__metric"><span><Icon /></span><div><p>{label}</p><strong>{value}</strong><small>{detail}</small></div></article>;

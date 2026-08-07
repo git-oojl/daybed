@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaCheckCircle,
@@ -16,6 +16,7 @@ import PageHero from "../../components/layout/PageHero.jsx";
 import OpenStreetMapEmbed from "../../components/store/OpenStreetMapEmbed.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveLocation } from "../../dev-preview/useEffectiveRouteState.js";
 import { storeService } from "../../services/backendServices.js";
 import useStoreSettings from "../../services/useStoreSettings.js";
 
@@ -43,6 +44,7 @@ const FAQS = [
 ];
 
 export default function ContactHelpPage() {
+  const location = useEffectiveLocation();
   const { settings } = useStoreSettings();
   const [activeFaq, setActiveFaq] = useState("payments");
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", order_code: "", message: "" });
@@ -50,6 +52,19 @@ export default function ContactHelpPage() {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    const sectionId = location.hash === "#contacto"
+      ? "contacto"
+      : location.hash === "#nosotros"
+        ? "nosotros"
+        : null;
+    if (!sectionId) return;
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ block: "start" });
+    });
+  }, [location.hash]);
 
   const addressLabel = [settings.street, settings.neighborhood, settings.city, settings.state, settings.postal_code].filter(Boolean).join(", ");
   const contactCards = useMemo(() => [
@@ -105,7 +120,7 @@ export default function ContactHelpPage() {
       />
 
       <main className="contact-container">
-        <section className="contact-section contact-section--story" aria-labelledby="about-daybed">
+        <section className="contact-section contact-section--story" id="nosotros" aria-labelledby="about-daybed">
           <div className="about-us">
             <div className="about-us__content">
               <p className="contact-section__eyebrow">Nuestra forma de hacer tienda</p>
@@ -122,7 +137,7 @@ export default function ContactHelpPage() {
           </div>
         </section>
 
-        <section className="contact-section" aria-labelledby="contact-info">
+        <section className="contact-section" id="contacto" aria-labelledby="contact-info">
           <p className="contact-section__eyebrow">Estamos cerca</p>
           <h2 id="contact-info" className="contact-section__title">Hablemos de tu espacio</h2>
           <div className="contact-grid">

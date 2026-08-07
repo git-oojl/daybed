@@ -9,7 +9,11 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.cart.models import Cart
-from apps.delivery.services import DeliveryConfigurationError, estimate_delivery
+from apps.delivery.services import (
+    build_structured_address,
+    calculate_delivery_fee,
+    estimate_delivery,
+)
 from apps.inventory.models import InventoryMovement
 from apps.inventory.services import record_inventory_movement
 from apps.catalog.models import Product
@@ -159,35 +163,71 @@ class StaffOrderSerializer(OrderSerializer):
         return obj.available_status_transitions()
 
 
+class DeliveryAddressInputSerializer(serializers.Serializer):
+    street = serializers.CharField(max_length=180)
+    exterior_number = serializers.CharField(
+        max_length=40,
+        required=False,
+        allow_blank=True,
+    )
+    interior_number = serializers.CharField(
+        max_length=40,
+        required=False,
+        allow_blank=True,
+    )
+    neighborhood = serializers.CharField(
+        max_length=120,
+        required=False,
+        allow_blank=True,
+    )
+    city = serializers.CharField(max_length=120)
+    state = serializers.CharField(max_length=120)
+    postal_code = serializers.CharField(max_length=10)
+    country = serializers.CharField(
+        max_length=80,
+        required=False,
+        allow_blank=True,
+        default="México",
+    )
+    reference = serializers.CharField(
+        max_length=180,
+        required=False,
+        allow_blank=True,
+    )
+
+    def validate_postal_code(self, value):
+        digits = re.sub(r"\D", "", value or "")
+        if len(digits) != 5:
+            raise serializers.ValidationError(
+                "El código postal debe contener cinco dígitos."
+            )
+        return digits
+
+
 class CheckoutSerializer(serializers.Serializer):
-    original_address = serializers.CharField(max_length=500)
-    formatted_address = serializers.CharField(max_length=500)
+    delivery_address = DeliveryAddressInputSerializer(required=False)
+    original_address = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+    )
+    formatted_address = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+    )
     latitude = serializers.DecimalField(
         max_digits=12,
         decimal_places=8,
         min_value=Decimal("-90.00000000"),
         max_value=Decimal("90.00000000"),
+        required=False,
     )
     longitude = serializers.DecimalField(
         max_digits=12,
         decimal_places=8,
         min_value=Decimal("-180.00000000"),
         max_value=Decimal("180.00000000"),
-    )
-    distance_km = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=3,
-        min_value=Decimal("0.000"),
-    )
-    estimated_duration_minutes = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=1,
-        min_value=Decimal("0.0"),
-    )
-    delivery_fee = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        min_value=Decimal("0.00"),
         required=False,
     )
     delivery_zone = serializers.CharField(max_length=80, default="standard")
@@ -258,32 +298,95 @@ class CheckoutSerializer(serializers.Serializer):
             )
 
         products_subtotal = sum((item.line_total for item in items), Decimal("0.00"))
-        server_estimate = estimate_delivery(
-            attrs["latitude"],
-            attrs["longitude"],
-            order_subtotal=products_subtotal,
-        )
-        if not server_estimate.routing_available:
-            raise DeliveryConfigurationError()
+        original_address, formatted_address = self._resolve_address(attrs)
+        latitude = attrs.get("latitude")
+        longitude = attrs.get("longitude")
 
-        if server_estimate.distance_km > store_settings.maximum_delivery_radius_km:
+        if (latitude is None) ^ (longitude is None):
             raise serializers.ValidationError(
                 {
-                    "distance_km": (
-                        f"La dirección está fuera del radio de entrega de {store_settings.maximum_delivery_radius_km} km."
+                    "delivery_address": (
+                        "Envía latitud y longitud juntas o no envíes coordenadas."
                     )
                 }
             )
+
+        server_estimate = None
+        delivery_fee = calculate_delivery_fee(
+            Decimal("0.000"),
+            order_subtotal=products_subtotal,
+            store_settings=store_settings,
+        )
+        distance_provider = ""
+
+        if latitude is not None and longitude is not None:
+            server_estimate = estimate_delivery(
+                latitude,
+                longitude,
+                order_subtotal=products_subtotal,
+                store_settings=store_settings,
+            )
+            if server_estimate.distance_km > store_settings.maximum_delivery_radius_km:
+                raise serializers.ValidationError(
+                    {
+                        "delivery_address": (
+                            f"La dirección está fuera del radio de entrega de {store_settings.maximum_delivery_radius_km} km."
+                        )
+                    }
+                )
+            delivery_fee = server_estimate.delivery_fee
+            distance_provider = server_estimate.distance_provider
+
         attrs.update(
-            distance_km=server_estimate.distance_km,
-            estimated_duration_minutes=server_estimate.estimated_duration_minutes,
-            delivery_fee=server_estimate.delivery_fee,
-            distance_provider=server_estimate.distance_provider,
+            original_address=original_address,
+            formatted_address=formatted_address,
+            latitude=latitude,
+            longitude=longitude,
+            distance_km=server_estimate.distance_km if server_estimate else None,
+            estimated_duration_minutes=(
+                server_estimate.estimated_duration_minutes if server_estimate else None
+            ),
+            delivery_fee=delivery_fee,
+            distance_provider=distance_provider,
+            geocoding_provider=attrs.get("geocoding_provider", ""),
         )
         attrs["cart"] = cart
         attrs["cart_signature"] = self._cart_signature(items)
         attrs["payment_fields"] = self._build_payment_fields(attrs)
         return attrs
+
+    def _resolve_address(self, attrs):
+        delivery_address = attrs.get("delivery_address")
+        if delivery_address:
+            street_bits = [delivery_address.get("street", "").strip()]
+            if delivery_address.get("exterior_number"):
+                street_bits.append(delivery_address["exterior_number"].strip())
+            if delivery_address.get("interior_number"):
+                street_bits.append(f"Int. {delivery_address['interior_number'].strip()}")
+            street = " ".join(bit for bit in street_bits if bit).strip()
+            original = build_structured_address(
+                street=street,
+                neighborhood=delivery_address.get("neighborhood", ""),
+                city=delivery_address.get("city", ""),
+                state=delivery_address.get("state", ""),
+                postal_code=delivery_address.get("postal_code", ""),
+            )
+            parts = [original]
+            if delivery_address.get("reference"):
+                parts.append(f"Referencia: {delivery_address['reference'].strip()}")
+            return original, ". ".join(part for part in parts if part).strip()
+
+        original = (attrs.get("original_address") or "").strip()
+        formatted = (attrs.get("formatted_address") or original).strip()
+        if not original:
+            raise serializers.ValidationError(
+                {
+                    "delivery_address": (
+                        "La calle, ciudad, estado y código postal son obligatorios."
+                    )
+                }
+            )
+        return original, formatted or original
 
     @staticmethod
     def _cart_signature(items):
@@ -409,6 +512,7 @@ class CheckoutSerializer(serializers.Serializer):
         validated_data.pop("card_number", None)
         validated_data.pop("card_expiry", None)
         validated_data.pop("card_cvv", None)
+        validated_data.pop("delivery_address", None)
 
         locked_cart = Cart.objects.select_for_update().get(
             pk=cart.pk,
@@ -573,4 +677,3 @@ class OrderStatusSerializer(serializers.ModelSerializer):
                 }
             instance.save(update_fields=("payment_status", "payment_snapshot", "updated_at"))
         return instance
-

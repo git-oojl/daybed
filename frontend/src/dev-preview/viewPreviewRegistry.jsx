@@ -467,11 +467,13 @@ export function getViewIdFromPath(pathname) {
   return dynamicMatch?.[0];
 }
 
-export function getPreviewPath(viewId, layoutId, viewerId) {
+export function getPreviewPath(viewId, layoutId, viewerId, routeLocation = null) {
+  const view = getPreviewView(viewId);
   const params = new URLSearchParams({
     layout: layoutId,
-    view: viewId,
+    view: view.id,
     viewer: viewerId,
+    route: routeLocation || view.path,
   });
 
   return `/dev/preview?${params.toString()}`;

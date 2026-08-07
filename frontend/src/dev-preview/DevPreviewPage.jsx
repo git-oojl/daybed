@@ -7,25 +7,34 @@ import {
   canPreviewViewer,
   getAllowedPreviewViewer,
   getPreviewLayout,
+  getPreviewPath,
+  getViewIdFromPath,
   getPreviewView,
   previewLayouts,
   previewViewers,
 } from "./viewPreviewRegistry.jsx";
 
 function DevPreviewPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const viewId = searchParams.get("view");
   const layoutId = searchParams.get("layout");
   const viewerId = searchParams.get("viewer");
+  const requestedRouteLocation = searchParams.get("route");
   const view = getPreviewView(viewId);
   const layout = getPreviewLayout(layoutId ?? view.defaultLayout);
   const viewer = getAllowedPreviewViewer(view, viewerId);
+  const routeLocation = getPreviewRouteLocation(view, requestedRouteLocation);
+  function updateRouteLocation(nextRouteLocation, options = {}) {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("route", nextRouteLocation);
+    setSearchParams(nextParams, { replace: options.replace ?? true });
+  }
 
   if (!viewId || !layoutId || viewerId !== viewer.id) {
     return (
       <Navigate
         replace
-        to={`/dev/preview?view=${view.id}&layout=${view.defaultLayout}&viewer=${viewer.id}`}
+        to={getPreviewPath(view.id, view.defaultLayout, viewer.id, routeLocation)}
       />
     );
   }
@@ -49,7 +58,11 @@ function DevPreviewPage() {
   const ViewComponent = view.Component;
 
   return (
-    <PreviewSessionProvider viewer={viewer}>
+    <PreviewSessionProvider
+      viewer={viewer}
+      routeLocation={routeLocation}
+      onRouteLocationChange={updateRouteLocation}
+    >
       <Suspense
         fallback={
           <RouteLoading
@@ -65,6 +78,19 @@ function DevPreviewPage() {
       </Suspense>
     </PreviewSessionProvider>
   );
+}
+
+function getPreviewRouteLocation(view, requestedRouteLocation) {
+  if (!requestedRouteLocation) return view.path;
+
+  try {
+    const url = new URL(requestedRouteLocation, "https://preview.daybed.local");
+    return getViewIdFromPath(url.pathname) === view.id
+      ? `${url.pathname}${url.search}${url.hash}`
+      : view.path;
+  } catch {
+    return view.path;
+  }
 }
 
 function ForbiddenPreview({

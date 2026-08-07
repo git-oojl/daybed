@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -387,6 +388,51 @@ class Command(BaseCommand):
                 "active": False,
             },
         ]
+
+        merchandising = {
+            "sofas-cama": {
+                "homepage_visible": True,
+                "display_order": 1,
+                "filter_attributes": ["room", "style", "material", "is_sofa_bed"],
+            },
+            "mesas-centro": {
+                "homepage_visible": True,
+                "display_order": 2,
+                "filter_attributes": ["room", "style", "material", "has_storage"],
+            },
+            "recamaras": {
+                "homepage_visible": True,
+                "display_order": 3,
+                "filter_attributes": ["room", "style", "material", "has_storage"],
+            },
+            "comedores": {
+                "homepage_visible": True,
+                "display_order": 4,
+                "filter_attributes": ["room", "style", "material"],
+            },
+            "sillas-acento": {
+                "display_order": 5,
+                "filter_attributes": ["room", "style", "material"],
+            },
+            "almacenamiento": {
+                "display_order": 6,
+                "filter_attributes": ["room", "material", "has_storage"],
+            },
+            "oficina": {
+                "display_order": 7,
+                "filter_attributes": ["room", "style", "material", "has_storage"],
+            },
+            "exterior": {
+                "display_order": 8,
+                "filter_attributes": ["room", "style", "material"],
+            },
+            "decoracion": {
+                "display_order": 9,
+                "filter_attributes": [],
+            },
+        }
+        for item in category_data:
+            item.update(merchandising.get(item["slug"], {}))
 
         return {
             item["slug"]: Category.objects.update_or_create(
@@ -1190,9 +1236,10 @@ class Command(BaseCommand):
         for item in product_data:
             image_asset = item["image_asset"]
             gallery_assets = item.get("gallery_assets", [])
+            normalized_item = self._normalize_seed_product_defaults(item)
             defaults = {
                 key: value
-                for key, value in item.items()
+                for key, value in normalized_item.items()
                 if key not in {"image_asset", "gallery_assets"}
             }
             product, _created = Product.objects.update_or_create(
@@ -1203,6 +1250,38 @@ class Command(BaseCommand):
             self._apply_product_gallery(product, gallery_assets)
             products[item["name"]] = product
         return products
+
+    def _normalize_seed_product_defaults(self, item):
+        defaults = dict(item)
+        specifications = defaults.get("specifications") or {}
+        category = defaults["category"]
+        defaults["room"] = (
+            defaults.get("room")
+            or specifications.get("room")
+            or {
+                "sofas-cama": "sala",
+                "mesas-centro": "sala",
+                "sillas-acento": "recámara",
+                "almacenamiento": "recámara",
+                "recamaras": "recámara",
+                "comedores": "comedor",
+                "oficina": "oficina",
+                "exterior": "exterior",
+            }.get(category.slug, "")
+        )
+        defaults["furniture_type"] = (
+            defaults.get("furniture_type")
+            or category.name.rstrip("s").lower()
+        )
+        defaults["has_storage"] = bool(
+            defaults.get("has_storage") or specifications.get("storage_included")
+        )
+        defaults["is_sofa_bed"] = bool(
+            defaults.get("is_sofa_bed")
+            or category.slug == "sofas-cama"
+            or "convertible" in (specifications.get("features") or [])
+        )
+        return defaults
 
     def _validate_product_images(self, product_data):
         missing_assets = sorted(
@@ -1461,6 +1540,7 @@ class Command(BaseCommand):
         ]
 
         seeded_orders = {}
+        day_offsets = [6, 18, 33, 57, 84, 126, 176, 243, 318]
         for index, spec in enumerate(order_specs, start=1):
             seeded_orders[spec["key"]] = self._upsert_order(
                 customer=users[spec.get("customer_key", "customer")],
@@ -1469,11 +1549,23 @@ class Command(BaseCommand):
                 spec=spec,
                 latitude=Decimal("32.51490000") + Decimal(index) / Decimal("1000"),
                 longitude=Decimal("-117.03820000") - Decimal(index) / Decimal("1000"),
+                created_at=timezone.now()
+                - timedelta(days=day_offsets[(index - 1) % len(day_offsets)]),
             )
 
         return seeded_orders
 
-    def _upsert_order(self, *, customer, employee, products, spec, latitude, longitude):
+    def _upsert_order(
+        self,
+        *,
+        customer,
+        employee,
+        products,
+        spec,
+        latitude,
+        longitude,
+        created_at,
+    ):
         order = (
             Order.objects.filter(
                 user=customer,
@@ -1504,7 +1596,7 @@ class Command(BaseCommand):
         order.delivery_fee = spec["delivery_fee"]
         order.delivery_zone = "standard"
         order.geocoding_provider = "nominatim"
-        order.distance_provider = "openrouteservice"
+        order.distance_provider = "straight_line_estimate"
         order.products_subtotal = products_subtotal
         order.total = products_subtotal + spec["delivery_fee"]
         for field, value in self._payment_fields_for_spec(spec).items():
@@ -1545,6 +1637,17 @@ class Command(BaseCommand):
         elif spec["status"] == Order.Status.CANCELLED:
             order.transition_to(Order.Status.CANCELLED, actor=employee)
 
+        updated_at = created_at + timedelta(
+            hours=max(2, order.status_history.count() * 2)
+        )
+        Order.objects.filter(pk=order.pk).update(
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        for event_index, event in enumerate(order.status_history.order_by("id"), start=1):
+            OrderStatusEvent.objects.filter(pk=event.pk).update(
+                created_at=created_at + timedelta(hours=event_index),
+            )
         order.refresh_from_db()
         return order
 
