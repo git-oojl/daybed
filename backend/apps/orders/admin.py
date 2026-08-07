@@ -16,13 +16,27 @@ class OrderAdmin(admin.ModelAdmin):
         "id",
         "user",
         "status",
+        "payment_method",
+        "payment_status",
         "products_subtotal",
         "delivery_fee",
         "total",
     )
-    list_filter = ("status", "delivery_zone", "geocoding_provider", "distance_provider")
+    list_filter = (
+        "status",
+        "payment_method",
+        "payment_status",
+        "delivery_zone",
+        "geocoding_provider",
+        "distance_provider",
+    )
     search_fields = ("user__username", "user__email", "original_address")
-    readonly_fields = ("stock_decremented_at",)
+    readonly_fields = (
+        "stock_decremented_at",
+        "payment_reference",
+        "payment_processed_at",
+        "payment_snapshot",
+    )
 
 
 @admin.register(OrderItem)

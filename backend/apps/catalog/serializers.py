@@ -1,9 +1,14 @@
 from decimal import Decimal
+from pathlib import PurePosixPath
+from urllib.parse import urlparse
 
+import httpx
+from django.core.files.base import ContentFile
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.catalog.models import Category, Product, ProductImage
+from apps.catalog.models import Category, Product, ProductImage, ProductReview
+from apps.store.models import StoreSettings
 
 SPEC_VALUE_TYPES = (str, int, float, bool, type(None))
 DIMENSION_FIELDS = (
@@ -14,6 +19,13 @@ DIMENSION_FIELDS = (
     "diameter_cm",
     "weight_kg",
 )
+MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024
+ALLOWED_REMOTE_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 
 
 def validate_simple_json_object(value, field_name):
@@ -69,7 +81,57 @@ def validate_category_schema(value):
     return value
 
 
+def image_filename_from_url(url, content_type):
+    parsed = urlparse(url)
+    candidate = PurePosixPath(parsed.path).name or "product-image"
+    stem = PurePosixPath(candidate).stem or "product-image"
+    suffix = PurePosixPath(candidate).suffix.lower()
+    expected_suffix = ALLOWED_REMOTE_IMAGE_TYPES.get(content_type, ".jpg")
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        suffix = expected_suffix
+    return f"{stem[:80]}{suffix}"
+
+
+def download_remote_image(url):
+    parsed_url = urlparse(url)
+    if parsed_url.scheme not in {"http", "https"}:
+        raise serializers.ValidationError("La URL de imagen debe usar http o https.")
+
+    try:
+        with httpx.stream("GET", url, follow_redirects=True, timeout=10) as response:
+            response.raise_for_status()
+            content_type = (
+                response.headers.get("content-type", "").split(";", 1)[0].lower()
+            )
+            if content_type not in ALLOWED_REMOTE_IMAGE_TYPES:
+                raise serializers.ValidationError(
+                    "La URL debe apuntar a una imagen JPG, PNG, WEBP o GIF."
+                )
+
+            chunks = []
+            total_bytes = 0
+            for chunk in response.iter_bytes():
+                total_bytes += len(chunk)
+                if total_bytes > MAX_REMOTE_IMAGE_BYTES:
+                    raise serializers.ValidationError(
+                        "La imagen no debe superar 5 MB."
+                    )
+                chunks.append(chunk)
+    except httpx.HTTPError as exc:
+        raise serializers.ValidationError(
+            "No se pudo descargar la imagen desde la URL proporcionada."
+        ) from exc
+
+    content = b"".join(chunks)
+    if not content:
+        raise serializers.ValidationError("La imagen descargada esta vacia.")
+
+    return ContentFile(content, name=image_filename_from_url(url, content_type))
+
+
 class CategorySerializer(serializers.ModelSerializer):
+    product_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
         fields = (
@@ -78,11 +140,24 @@ class CategorySerializer(serializers.ModelSerializer):
             "slug",
             "description",
             "specification_schema",
+            "filter_attributes",
+            "image",
+            "display_order",
+            "homepage_visible",
+            "product_count",
             "active",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "product_count", "created_at", "updated_at")
+
+    def get_product_count(self, obj):
+        return obj.products.filter(active=True).count()
+
+    def validate_filter_attributes(self, value):
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+            raise serializers.ValidationError("Los atributos de filtro deben ser una lista de claves.")
+        return list(dict.fromkeys(value))
 
     def validate_specification_schema(self, value):
         return validate_category_schema(value)
@@ -102,11 +177,47 @@ class ProductImageSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "created_at")
 
 
+class ProductReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField()
+    date = serializers.DateTimeField(source="created_at", read_only=True)
+
+    class Meta:
+        model = ProductReview
+        fields = (
+            "id",
+            "author",
+            "rating",
+            "title",
+            "body",
+            "verified_purchase",
+            "date",
+        )
+        read_only_fields = ("id", "author", "verified_purchase", "date")
+
+    def get_author(self, obj):
+        full_name = obj.user.get_full_name().strip()
+        return full_name or obj.user.username or "Cliente Daybed"
+
+    def validate_rating(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("La calificación debe estar entre 1 y 5.")
+        return value
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category_detail = CategorySerializer(source="category", read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
+    reviews = ProductReviewSerializer(many=True, read_only=True)
+    review_count = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
     low_stock = serializers.BooleanField(read_only=True)
     structured_dimensions = serializers.SerializerMethodField()
+    image = serializers.ImageField(write_only=True, required=False)
+    image_url = serializers.URLField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+    )
 
     class Meta:
         model = Product
@@ -121,6 +232,12 @@ class ProductSerializer(serializers.ModelSerializer):
             "material",
             "color",
             "style",
+            "room",
+            "furniture_type",
+            "has_storage",
+            "is_sofa_bed",
+            "featured",
+            "featured_order",
             "width_cm",
             "height_cm",
             "depth_cm",
@@ -130,11 +247,16 @@ class ProductSerializer(serializers.ModelSerializer):
             "structured_dimensions",
             "specifications",
             "main_image",
+            "image",
+            "image_url",
             "stock",
             "minimum_stock",
             "low_stock",
             "active",
             "images",
+            "reviews",
+            "review_count",
+            "average_rating",
             "created_at",
             "updated_at",
         )
@@ -142,6 +264,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "id",
             "low_stock",
             "structured_dimensions",
+            "reviews",
+            "review_count",
+            "average_rating",
             "created_at",
             "updated_at",
         )
@@ -155,6 +280,29 @@ class ProductSerializer(serializers.ModelSerializer):
         return validate_simple_json_object(value, "specifications")
 
     def validate(self, attrs):
+        image = attrs.pop("image", None)
+        image_url = attrs.pop("image_url", "")
+        if image and not attrs.get("main_image"):
+            attrs["main_image"] = image
+        if image_url and not attrs.get("main_image"):
+            attrs["main_image"] = download_remote_image(image_url)
+
+        featured = attrs.get("featured", getattr(self.instance, "featured", False))
+        active = attrs.get("active", getattr(self.instance, "active", True))
+        stock = attrs.get("stock", getattr(self.instance, "stock", 0))
+        if featured and (not active or stock <= 0):
+            raise serializers.ValidationError(
+                {"featured": "Solo se pueden destacar productos activos y con existencias."}
+            )
+        if featured and active:
+            featured_products = Product.objects.filter(featured=True, active=True)
+            if self.instance:
+                featured_products = featured_products.exclude(pk=self.instance.pk)
+            if featured_products.count() >= 4:
+                raise serializers.ValidationError(
+                    {"featured": "Daybed muestra hasta cuatro productos destacados. Retira uno antes de agregar otro."}
+                )
+
         for field in DIMENSION_FIELDS:
             value = attrs.get(field)
             if value is not None and value < Decimal("0.00"):
@@ -162,6 +310,29 @@ class ProductSerializer(serializers.ModelSerializer):
                     {field: "El valor no puede ser negativo."}
                 )
         return attrs
+
+
+    def create(self, validated_data):
+        if "minimum_stock" not in validated_data:
+            validated_data["minimum_stock"] = StoreSettings.get_active().default_low_stock_threshold
+        return super().create(validated_data)
+
+    def _active_reviews(self, obj):
+        return [review for review in obj.reviews.all() if review.active]
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_review_count(self, obj):
+        return len(self._active_reviews(obj))
+
+    @extend_schema_field(serializers.FloatField())
+    def get_average_rating(self, obj):
+        active_reviews = self._active_reviews(obj)
+        if not active_reviews:
+            return 0
+        return round(
+            sum(review.rating for review in active_reviews) / len(active_reviews),
+            1,
+        )
 
     @extend_schema_field(serializers.DictField(allow_empty=True))
     def get_structured_dimensions(self, obj):

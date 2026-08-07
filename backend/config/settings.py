@@ -1,4 +1,5 @@
 from decimal import Decimal
+from importlib.util import find_spec
 from pathlib import Path
 
 import environ
@@ -65,8 +66,10 @@ INSTALLED_APPS = [
     "apps.delivery",
     "apps.store",
     "apps.dashboard",
-    "django_extensions",
 ]
+
+if DEBUG and find_spec("django_extensions"):
+    INSTALLED_APPS.append("django_extensions")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -105,6 +108,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            "timeout": 20,
+        },
     }
 }
 
@@ -117,7 +123,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {"min_length": 6},
+        "OPTIONS": {"min_length": 8},
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",

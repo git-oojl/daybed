@@ -1,505 +1,80 @@
-// BusinessMetricsPage.jsx
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaExclamationTriangle } from "react-icons/fa";
-import {
-  FaArrowTrendUp,
-  FaBoxOpen,
-  FaChartPie,
-  FaLocationDot,
-  FaMoneyBillTrendUp,
-  FaReceipt,
-  FaTruckFast,
-  FaTags,
-  FaBox,
-} from "react-icons/fa6";
-import { Link } from "react-router-dom";
-import "../../assets/CSS/admin/business-metrics.css";
-import { routePaths } from "../../routes/routePaths.js";
-import { dashboardService } from "../../services/backendServices.js";
-import { inventoryService, catalogService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
-import { getViewerIdForUser } from "../../auth/roleMapping.js";
-import { productImage, readCollection, statusLabel } from "../../services/viewMappers.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaArrowRight, FaBoxOpen, FaChartLine, FaReceipt, FaRoute, FaSackDollar, FaTriangleExclamation } from "react-icons/fa6";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { routePaths } from "../../routes/routePaths.js";
+import { dashboardService } from "../../services/backendServices.js";
+import { formatMoney, formatOrderDate, orderNumber, orderStatus } from "../../utils/orderPresentation.js";
 
-const ADMIN_HERO_IMAGE =
-  "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1920&q=80";
+const HERO = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1800&q=82";
+const RANGES = [[7, "7 días"], [30, "30 días"], [90, "90 días"], [180, "6 meses"], [365, "12 meses"]];
 
-// ============================================
-// ✅ COMPONENTE METRIC CARD
-// ============================================
-function MetricCard({ icon, label, value, detail, trend, tone = "gold" }) {
-  return (
-    <article className={`business-metric-card business-metric-card--${tone}`}>
-      <div className="business-metric-card__icon">{icon}</div>
-      <div>
-        <p className="business-metric-card__label">{label}</p>
-        <strong className="business-metric-card__value">{value}</strong>
-        <span className="business-metric-card__detail">
-          {trend ? <FaArrowTrendUp aria-hidden="true" /> : null}
-          {detail}
-        </span>
-      </div>
-    </article>
-  );
+function Metric({ icon: Icon, label, value, detail }) {
+  return <article className="metrics-v2__metric"><span><Icon /></span><div><p>{label}</p><strong>{value}</strong><small>{detail}</small></div></article>;
 }
 
-// ============================================
-// ✅ ICONO DE CARGA
-// ============================================
-function IconLoading() {
-  return (
-    <svg className="business-metrics-loading__spinner" width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2"/>
-      <path d="M12 2a10 10 0 0 1 10 10" stroke="#B88E2F" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-// ============================================
-// ✅ COMPONENTE DE CATEGORÍA
-// ============================================
-function CategoryItem({ category }) {
-  return (
-    <div className="business-category-item">
-      <span className="business-category-item__name">{category.name}</span>
-      <span className="business-category-item__count">{category.product_count || 0} productos</span>
-    </div>
-  );
-}
-
-// ============================================
-// ✅ COMPONENTE DE PRODUCTO
-// ============================================
-function ProductItem({ product }) {
-  return (
-    <div className="business-product-item">
-      <img src={productImage(product)} alt={product.name} className="business-product-item__image" />
-      <div className="business-product-item__info">
-        <strong className="business-product-item__name">{product.name}</strong>
-        <span className="business-product-item__sku">{product.sku || "Sin SKU"}</span>
-      </div>
-      <span className="business-product-item__stock">{product.stock || 0} uds.</span>
-    </div>
-  );
-}
-
-// ============================================
-// ✅ COMPONENTE PRINCIPAL
-// ============================================
-function BusinessMetricsPage() {
+export default function BusinessMetricsPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
-
-  // Estados
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const [rangeDays, setRangeDays] = useState(90);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [metrics, setMetrics] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [error, setError] = useState("");
 
-  // ============================================
-  // ✅ DATOS ESTÁTICOS DE FALLBACK
-  // ============================================
-  const fallbackMetrics = {
-    total_orders: 124,
-    total_simulated_sales: 185500,
-    average_delivery_fee: 280,
-    average_delivery_distance: 18,
-    orders_by_status: [
-      { status: "delivered", label: "Entregados", value: 68, color: "#4d9b63" },
-      { status: "preparing", label: "En proceso", value: 24, color: "#c99742" },
-      { status: "pending", label: "Pendientes", value: 8, color: "#d7765d" },
-    ],
-    low_stock_count: 2,
-    recent_orders: [],
-    low_stock_products: [
-      { name: "Daybed Roble", reference: "DB-104", units: 2, image: "/images/macetabotom4.jpeg" },
-      { name: "Mesa auxiliar Nórdica", reference: "MN-208", units: 5, image: "/images/maceta5.jpeg" },
-    ],
-  };
-
-  const fallbackCategories = [
-    { id: 1, name: "Sofás", product_count: 12 },
-    { id: 2, name: "Mesas", product_count: 8 },
-    { id: 3, name: "Sillas", product_count: 15 },
-    { id: 4, name: "Lámparas", product_count: 6 },
-  ];
-
-  const fallbackProducts = [
-    { id: 1, name: "Sofá Cama Lino", sku: "DAY-SOF-001", stock: 8 },
-    { id: 2, name: "Mesa Centro Fresno", sku: "DAY-MES-002", stock: 12 },
-    { id: 3, name: "Silla Lectura Olivo", sku: "DAY-SIL-003", stock: 5 },
-  ];
-
-  // ============================================
-  // ✅ CARGAR MÉTRICAS DEL BACKEND
-  // ============================================
-  const loadMetrics = async () => {
-    setLoading(true);
-    setError(null);
-
+  const load = useCallback(async () => {
     try {
-      const [response, lowStockResponse, categoriesResponse, productsResponse] = await Promise.all([
-        dashboardService.metrics(),
-        inventoryService.lowStock(),
-        catalogService.categories(),
-        catalogService.products(),
-      ]);
-
-      console.log("📊 Métricas del backend:", response);
-
-      // Mapear métricas
-      const mappedMetrics = {
-        total_orders: response.total_orders || 0,
-        total_simulated_sales: response.total_simulated_sales || 0,
-        average_delivery_fee: response.average_delivery_fee || 0,
-        average_delivery_distance: response.average_delivery_distance || 0,
-        orders_by_status: (response.orders_by_status || []).map((item) => ({
-          ...item,
-          label: statusLabel(item.status),
-          value: item.count,
-        })),
-        low_stock_count: response.low_stock_count || 0,
-        recent_orders: response.recent_orders || [],
-        low_stock_products: readCollection(lowStockResponse).map((product) => ({
-          name: product.name,
-          reference: product.sku,
-          units: product.stock,
-          image: productImage(product),
-        })),
-      };
-
-      setMetrics(mappedMetrics);
-
-      // Mapear categorías
-      const categoriesData = readCollection(categoriesResponse);
-      setCategories(categoriesData);
-
-      // Mapear productos (últimos 5)
-      const productsData = readCollection(productsResponse);
-      setProducts(productsData.slice(0, 5));
-
+      setLoading(true); setError("");
+      setData(await dashboardService.metrics({ range_days: rangeDays }));
     } catch (err) {
-      console.error("❌ Error al cargar métricas:", err);
-      setError(err.message || "Error al cargar las métricas");
-      // Usar datos de fallback
-      setMetrics(fallbackMetrics);
-      setCategories(fallbackCategories);
-      setProducts(fallbackProducts);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setError(err.message || "No fue posible consultar las métricas.");
+      setData(null);
+    } finally { setLoading(false); }
+  }, [rangeDays]);
 
-  // ============================================
-  // ✅ VERIFICAR AUTENTICACIÓN Y ROL
-  // ============================================
   useEffect(() => {
-    const initializeMetrics = async () => {
-      if (!authLoading && !isAuthenticated) {
-        navigate(routePaths.account.login);
-        return;
-      }
+    if (!authLoading && !isAuthenticated) return navigate(routePaths.account.login);
+    if (!authLoading && isAuthenticated && !["admin", "employee"].includes(viewer)) return navigate(routePaths.support.unauthorized);
+    if (!authLoading && isAuthenticated) load();
+  }, [authLoading, isAuthenticated, load, navigate, viewer]);
 
-      if (!authLoading && isAuthenticated) {
-        const viewerId = getViewerIdForUser(user);
-        if (viewerId !== "admin" && viewerId !== "employee") {
-          navigate(routePaths.support.unauthorized || "/no-autorizado");
-          return;
-        }
-        await loadMetrics();
-      }
-    };
+  const statusRows = data?.orders_by_status || [];
+  const maxStatus = Math.max(1, ...statusRows.map((item) => Number(item.count || 0)));
+  const monthRows = data?.sales_by_month || [];
+  const maxMonth = Math.max(1, ...monthRows.map((item) => Number(item.total || 0)));
+  const nonCancelled = useMemo(() => statusRows.filter((item) => item.status !== "cancelled").reduce((sum, item) => sum + Number(item.count || 0), 0), [statusRows]);
 
-    initializeMetrics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authLoading, user, navigate]);
-
-  // ============================================
-  // ✅ DATOS PARA MOSTRAR
-  // ============================================
-  const data = metrics || fallbackMetrics;
-
-  const totalOrders = data.total_orders || 0;
-  const totalSales = data.total_simulated_sales || 0;
-  const avgDeliveryFee = data.average_delivery_fee || 0;
-  const avgDistance = data.average_delivery_distance || 0;
-  const orderStatusData = data.orders_by_status || [];
-  const lowStockProducts = data.low_stock_products || [];
-
-  const formatPrice = (amount) => {
-    return `$${(Number(amount) || 0).toLocaleString("es-MX")} MXN`;
-  };
-
-  // ============================================
-  // ✅ ESTADOS DE CARGA Y ERROR
-  // ============================================
-  if (loading || authLoading) {
-    return (
-      <div className="home-page business-metrics">
-        <HomeHeader />
-        <section className="business-metrics__hero" style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}>
-          <div className="business-metrics__hero-overlay">
-            <h1>Métricas del negocio</h1>
-            <nav aria-label="Miga de pan" className="business-metrics__breadcrumb">
-              <Link to={routePaths.public.home}>Inicio</Link>
-              <span aria-hidden="true">/</span>
-              <span>Métricas del negocio</span>
-            </nav>
-          </div>
-        </section>
-        <div className="business-metrics-loading">
-          <IconLoading />
-          <p>Cargando métricas...</p>
-        </div>
-        <HomeFooter />
-      </div>
-    );
-  }
-
-  if (error && !metrics) {
-    return (
-      <div className="home-page business-metrics">
-        <HomeHeader />
-        <section className="business-metrics__hero" style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}>
-          <div className="business-metrics__hero-overlay">
-            <h1>Métricas del negocio</h1>
-            <nav aria-label="Miga de pan" className="business-metrics__breadcrumb">
-              <Link to={routePaths.public.home}>Inicio</Link>
-              <span aria-hidden="true">/</span>
-              <span>Métricas del negocio</span>
-            </nav>
-          </div>
-        </section>
-        <div className="business-metrics-error">
-          <p>❌ {error}</p>
-          <button onClick={loadMetrics}>Reintentar</button>
-        </div>
-        <HomeFooter />
-      </div>
-    );
-  }
-
-  // ============================================
-  // ✅ RENDER PRINCIPAL
-  // ============================================
   return (
-    <div className="home-page business-metrics">
+    <div className="home-page metrics-v2">
       <HomeHeader />
+      <PageHero title="Métricas del negocio" eyebrow="Administración" image={HERO} />
+      <main className="metrics-v2__main">
+        <section className="metrics-v2__heading"><div><p className="section-kicker">Datos reales</p><h2>Lectura del periodo</h2><p>Los indicadores se recalculan con los pedidos registrados dentro del rango seleccionado.</p></div><label>Periodo<select value={rangeDays} onChange={(event) => setRangeDays(Number(event.target.value))}>{RANGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></section>
 
-      <section
-        className="business-metrics__hero"
-        style={{ backgroundImage: `url(${ADMIN_HERO_IMAGE})` }}
-      >
-        <div className="business-metrics__hero-overlay">
-          <h1>Métricas del negocio</h1>
-          <nav
-            aria-label="Miga de pan"
-            className="business-metrics__breadcrumb"
-          >
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">/</span>
-            <span>Métricas del negocio</span>
-          </nav>
-        </div>
-      </section>
+        {error ? <section className="state-card state-card--error"><span className="state-card__icon"><FaTriangleExclamation /></span><h2>Las métricas no están disponibles</h2><p>{error}</p><button onClick={load}>Actualizar métricas</button></section> : loading || authLoading ? <section className="state-card"><span className="state-card__icon"><FaChartLine /></span><h2>Calculando indicadores</h2><p>Consultando pedidos, ventas e inventario.</p></section> : data ? <>
+          <section className="metrics-v2__cards">
+            <Metric icon={FaReceipt} label="Pedidos" value={Number(data.total_orders || 0).toLocaleString("es-MX")} detail={`${nonCancelled} no cancelados`} />
+            <Metric icon={FaSackDollar} label="Ventas" value={formatMoney(data.total_sales)} detail={`Últimos ${data.range_days || rangeDays} días`} />
+            <Metric icon={FaRoute} label="Distancia media" value={`${Number(data.average_delivery_distance || 0).toFixed(1)} km`} detail={`Entrega media ${formatMoney(data.average_delivery_fee)}`} />
+            <Metric icon={FaBoxOpen} label="Stock bajo" value={Number(data.low_stock_count || 0).toLocaleString("es-MX")} detail={`${Number(data.total_products || 0)} productos activos`} />
+          </section>
 
-      <main className="business-metrics__content">
-        <div className="business-metrics__heading">
-          <div>
-            <p className="business-metrics__kicker">Panel administrativo</p>
-            <h2>Resumen de rendimiento</h2>
-            <p>Consulta el comportamiento de pedidos, ventas e inventario.</p>
-          </div>
-          <label className="business-metrics__range">
-            <span>Rango de fechas</span>
-            <select defaultValue="30">
-              <option value="7">Últimos 7 días</option>
-              <option value="30">Últimos 30 días</option>
-              <option value="90">Últimos 3 meses</option>
-            </select>
-          </label>
-        </div>
+          <section className="metrics-v2__grid">
+            <article className="metrics-panel"><header><div><p>Operación</p><h3>Pedidos por estado</h3></div><span>{data.total_orders} pedidos</span></header><div className="metrics-bars">{statusRows.map((item) => { const info = orderStatus(item.status); return <div className="metrics-bar" key={item.status}><div><span>{info.label}</span><strong>{item.count}</strong></div><i><b style={{ width: `${Math.max(4, Number(item.count || 0) / maxStatus * 100)}%` }} /></i></div>; })}</div></article>
+            <article className="metrics-panel"><header><div><p>Ingresos</p><h3>Ventas por mes</h3></div><span>{formatMoney(data.total_sales)}</span></header>{monthRows.length ? <div className="metrics-columns">{monthRows.map((item) => <div key={item.month}><span title={formatMoney(item.total)} style={{ height: `${Math.max(8, Number(item.total || 0) / maxMonth * 100)}%` }} /><small>{new Date(`${item.month}-02`).toLocaleDateString("es-MX", { month: "short" })}</small></div>)}</div> : <div className="soft-fallback">Todavía no hay ventas en este periodo.</div>}</article>
+          </section>
 
-        <section
-          className="business-metrics__summary"
-          aria-label="Resumen de métricas"
-        >
-          <MetricCard
-            icon={<FaReceipt />}
-            label="Total de pedidos"
-            value={totalOrders}
-            detail="Pedidos del periodo"
-            trend
-          />
-          <MetricCard
-            icon={<FaMoneyBillTrendUp />}
-            label="Ventas simuladas"
-            value={formatPrice(totalSales)}
-            detail="Ingresos del periodo"
-            tone="green"
-          />
-          <MetricCard
-            icon={<FaTruckFast />}
-            label="Costo promedio de entrega"
-            value={formatPrice(avgDeliveryFee)}
-            detail="Por pedido entregado"
-            tone="blue"
-          />
-          <MetricCard
-            icon={<FaLocationDot />}
-            label="Distancia estimada"
-            value={`${avgDistance} km`}
-            detail="Promedio por entrega"
-            tone="terracotta"
-          />
-        </section>
-
-        <section className="business-metrics__grid">
-          <article className="business-panel business-panel--stock">
-            <div className="business-panel__heading">
-              <div>
-                <p className="business-panel__overline">
-                  <FaExclamationTriangle /> Atención requerida
-                </p>
-                <h3>Productos con bajo stock</h3>
-              </div>
-              <Link to={routePaths.backOffice.inventory}>Ver inventario</Link>
-            </div>
-            <div className="business-stock-list">
-              {lowStockProducts.length === 0 ? (
-                <div className="business-stock-empty">
-                  No hay productos con bajo stock
-                </div>
-              ) : (
-                lowStockProducts.map((product) => (
-                  <div className="business-stock-item" key={product.reference}>
-                    <img src={product.image || "https://via.placeholder.com/50"} alt="" />
-                    <div>
-                      <strong>{product.name}</strong>
-                      <span>{product.reference}</span>
-                    </div>
-                    <b>{product.units} uds.</b>
-                  </div>
-                ))
-              )}
-            </div>
-            <p className="business-panel__notice">
-              {data.low_stock_count || 0} productos requieren reposición próxima.
-            </p>
-          </article>
-
-          <article className="business-panel">
-            <div className="business-panel__heading">
-              <div>
-                <p className="business-panel__overline">
-                  <FaChartPie /> Distribución
-                </p>
-                <h3>Pedidos por estado</h3>
-              </div>
-              <span className="business-panel__total">{totalOrders} pedidos</span>
-            </div>
-            <div
-              className="business-status-chart"
-              aria-label="Distribución de pedidos por estado"
-            >
-              <div className="business-status-chart__donut">
-                <span>
-                  {totalOrders}<small>%</small>
-                </span>
-              </div>
-              <div className="business-status-chart__legend">
-                {orderStatusData.map((status) => (
-                  <div key={status.status || status.label}>
-                    <span style={{ backgroundColor: status.color || "#B88E2F" }} />
-                    <p>
-                      {status.label}
-                      <b>{status.value || status.count || 0}%</b>
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </article>
-        </section>
-
-        {/* ============================================
-            ✅ CATEGORÍAS Y PRODUCTOS
-            ============================================ */}
-        <section className="business-metrics__catalog">
-          <div className="business-metrics__catalog-grid">
-            {/* CATEGORÍAS */}
-            <article className="business-panel business-panel--categories">
-              <div className="business-panel__heading">
-                <div>
-                  <p className="business-panel__overline">
-                    <FaTags /> Catálogo
-                  </p>
-                  <h3>Categorías</h3>
-                </div>
-                <Link to={routePaths.backOffice.categories}>Ver todas</Link>
-              </div>
-              <div className="business-categories-list">
-                {categories.length === 0 ? (
-                  <div className="business-categories-empty">
-                    No hay categorías registradas
-                  </div>
-                ) : (
-                  categories.map((category) => (
-                    <CategoryItem key={category.id} category={category} />
-                  ))
-                )}
-              </div>
-            </article>
-
-            {/* PRODUCTOS RECIENTES */}
-            <article className="business-panel business-panel--products">
-              <div className="business-panel__heading">
-                <div>
-                  <p className="business-panel__overline">
-                    <FaBox /> Últimos
-                  </p>
-                  <h3>Productos agregados</h3>
-                </div>
-                <Link to={routePaths.backOffice.products}>Ver todos</Link>
-              </div>
-              <div className="business-products-list">
-                {products.length === 0 ? (
-                  <div className="business-products-empty">
-                    No hay productos registrados
-                  </div>
-                ) : (
-                  products.map((product) => (
-                    <ProductItem key={product.id} product={product} />
-                  ))
-                )}
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="business-insight" aria-label="Indicador principal">
-          <div className="business-insight__icon">
-            <FaBoxOpen />
-          </div>
-          <div>
-            <p>Indicador del periodo</p>
-            <strong>
-              {totalOrders > 0
-                ? `Los pedidos entregados representan el ${orderStatusData[0]?.value || 68}% del total.`
-                : "Cargando indicadores..."}
-            </strong>
-          </div>
-          <Link to={routePaths.backOffice.orders}>Revisar pedidos</Link>
-        </section>
+          <section className="metrics-v2__grid metrics-v2__grid--lower">
+            <article className="metrics-panel"><header><div><p>Atención</p><h3>Pedidos recientes</h3></div><Link to={routePaths.backOffice.orders}>Ver operación <FaArrowRight /></Link></header><div className="metrics-list">{(data.recent_orders || []).length ? data.recent_orders.map((order) => <Link to={routePaths.backOffice.orderDetail.replace(":orderId", order.id)} key={order.id}><div><strong>{orderNumber(order.id)}</strong><span>{order.customer_name} · {formatOrderDate(order.created_at)}</span></div><div><span className={`order-pill order-pill--${orderStatus(order.status).tone}`}>{orderStatus(order.status).label}</span><strong>{formatMoney(order.total)}</strong></div></Link>) : <div className="soft-fallback">No hay pedidos recientes en el rango.</div>}</div></article>
+            <article className="metrics-panel"><header><div><p>Inventario</p><h3>Productos por reponer</h3></div><Link to={routePaths.backOffice.inventory}>Abrir inventario <FaArrowRight /></Link></header><div className="metrics-list">{(data.low_stock || []).length ? data.low_stock.map((product) => <Link to={routePaths.backOffice.products} key={product.id}><div><strong>{product.name}</strong><span>{product.sku || "Sin SKU"} · mínimo {product.minimum_stock}</span></div><div><strong>{product.stock} uds.</strong></div></Link>) : <div className="soft-fallback">El inventario está por encima de sus mínimos.</div>}</div></article>
+          </section>
+        </> : null}
       </main>
-
       <HomeFooter />
     </div>
   );
 }
-
-export default BusinessMetricsPage;

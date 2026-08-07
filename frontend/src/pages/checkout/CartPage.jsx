@@ -1,73 +1,27 @@
 // CartPage.jsx
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FaHeart, FaShoppingCart } from "react-icons/fa";
 import "../../assets/home-page.css";
 import "../../assets/cart-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
 import { routePaths } from "../../routes/routePaths.js";
-import { cartService, storeService } from "../../services/backendServices.js";
-import { useAuthStore } from "../../auth/authStore.js";
+import { cartService } from "../../services/backendServices.js";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { productImage } from "../../services/viewMappers.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
-import ErrorMessage from "../../components/support/ErrorMessage.jsx";
-import EmptyState from "../../components/support/EmptyState.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 // ✅ Caché de imágenes GLOBAL
 const imageCache = new Map();
-
-// ============================================================
-// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO (para el carrito)
-// ============================================================
-const productImages = {
-  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop",
-  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop",
-  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=80&h=80&fit=crop",
-  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=80&h=80&fit=crop",
-  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop",
-  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop",
-  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=80&h=80&fit=crop",
-  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=80&h=80&fit=crop",
-  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=80&h=80&fit=crop",
-  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=80&h=80&fit=crop",
-  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=80&h=80&fit=crop",
-};
-
-// ✅ Función para obtener nombre de categoría (string)
-const getCategoryNameSafe = (category) => {
-  if (!category) return "";
-  if (typeof category === "string") return category;
-  if (typeof category === "object" && category.name) return category.name;
-  return "";
-};
+const FALLBACK_CART_IMAGE = productImage({});
 
 // ✅ Función para obtener imagen según el nombre
 const getProductImage = (product) => {
-  // Si el producto ya tiene imagen, usarla
-  if (product.image) return product.image;
-  if (product.images?.length > 0) return product.images[0];
-
-  const name = product.name || "";
-  // Buscar coincidencia exacta o parcial
-  for (const [key, value] of Object.entries(productImages)) {
-    if (name.includes(key) || key.includes(name)) {
-      return value;
-    }
-  }
-
-  // Si no coincide, usar imagen por categoría
-  const categoryName = getCategoryNameSafe(product.category);
-  
-  if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
-    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
-  }
-  if (categoryName.includes("Mesa")) {
-    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=80&h=80&fit=crop";
-  }
-  if (categoryName.includes("Silla")) {
-    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=80&h=80&fit=crop";
-  }
-
-  return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+  return productImage(product);
 };
 
 // ✅ Componente de imagen con caché
@@ -75,7 +29,7 @@ function CachedImage({ src, alt, className }) {
   const [imgSrc, setImgSrc] = useState(() => {
     if (imageCache.has(src)) return imageCache.get(src);
     if (!src || src === "" || src === "null" || src === "undefined") {
-      return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      return FALLBACK_CART_IMAGE;
     }
     return src;
   });
@@ -90,7 +44,7 @@ function CachedImage({ src, alt, className }) {
     }
 
     if (!src || src === "" || src === "null" || src === "undefined") {
-      const fallback = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      const fallback = FALLBACK_CART_IMAGE;
       imageCache.set(src, fallback);
       setImgSrc(fallback);
       setIsLoaded(true);
@@ -104,7 +58,7 @@ function CachedImage({ src, alt, className }) {
       setIsLoaded(true);
     };
     img.onerror = () => {
-      const fallback = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      const fallback = FALLBACK_CART_IMAGE;
       imageCache.set(src, fallback);
       setImgSrc(fallback);
       setIsLoaded(true);
@@ -130,8 +84,9 @@ function CachedImage({ src, alt, className }) {
         borderRadius: "8px",
         border: "1px solid #e8dccc"
       }}
-      onError={(e) => {
-        e.target.src = "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=80&h=80&fit=crop";
+      onError={(event) => {
+        event.currentTarget.onerror = null;
+        event.currentTarget.src = FALLBACK_CART_IMAGE;
       }}
     />
   );
@@ -160,13 +115,13 @@ function IconTrash() {
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+  const { settings: storeSettings } = useStoreSettings();
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState(false);
-  const [storeSettings, setStoreSettings] = useState(null);
 
   // ✅ Función para cargar el carrito
   const fetchCart = useCallback(async () => {
@@ -177,7 +132,7 @@ export default function CartPage() {
       setCartItems(response.items || []);
     } catch (err) {
       console.error("Error al cargar carrito:", err);
-      setError(err.message || "Error al cargar el carrito");
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -195,22 +150,7 @@ export default function CartPage() {
     }
   }, [isAuthenticated, authLoading, navigate, fetchCart]);
 
-  useEffect(() => {
-    let active = true;
 
-    storeService
-      .settings()
-      .then((settings) => {
-        if (active) setStoreSettings(settings);
-      })
-      .catch(() => {
-        if (active) setStoreSettings(null);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   // ✅ Eliminar item SIN recargar toda la lista
   const removeFromCart = useCallback(async (itemId) => {
@@ -218,9 +158,10 @@ export default function CartPage() {
       setUpdating(true);
       setCartItems(prev => prev.filter(item => item.id !== itemId));
       await cartService.removeItem(itemId);
+      window.dispatchEvent(new Event("daybed:cart-updated"));
     } catch (err) {
       console.error("Error al eliminar item:", err);
-      setError(err.message || "Error al eliminar item");
+      setError(err);
       await fetchCart();
     } finally {
       setUpdating(false);
@@ -241,9 +182,10 @@ export default function CartPage() {
       ));
 
       await cartService.updateItem(itemId, { quantity: newQuantity });
+      window.dispatchEvent(new Event("daybed:cart-updated"));
     } catch (err) {
       console.error("Error al actualizar cantidad:", err);
-      setError(err.message || "Error al actualizar cantidad");
+      setError(err);
       await fetchCart();
     } finally {
       setUpdating(false);
@@ -258,9 +200,10 @@ export default function CartPage() {
       setUpdating(true);
       setCartItems([]);
       await cartService.clear();
+      window.dispatchEvent(new Event("daybed:cart-updated"));
     } catch (err) {
       console.error("Error al vaciar carrito:", err);
-      setError(err.message || "Error al vaciar carrito");
+      setError(err);
       await fetchCart();
     } finally {
       setUpdating(false);
@@ -280,14 +223,16 @@ export default function CartPage() {
     );
     const qualifiesForFreeShipping =
       freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
-    const shippingLabel = qualifiesForFreeShipping
-      ? "Gratis"
-      : "Se calcula en checkout";
+    const shippingLabel = storeSettings?.show_cart_estimate === false
+      ? "Se confirma al elegir dirección"
+      : qualifiesForFreeShipping
+        ? "Gratis"
+        : "Se calcula en checkout";
     return { subtotal, totalItems, shippingLabel, total: subtotal };
   }, [cartItems, storeSettings]);
 
   const formatPrice = (price) => {
-    return `$${price.toLocaleString("es-MX")} MX`;
+    return `$${Number(price || 0).toLocaleString("es-MX")} MXN`;
   };
 
   // Estados de carga
@@ -305,12 +250,10 @@ export default function CartPage() {
     return (
       <div className="home-page cart-page">
         <HomeHeader />
-        <ErrorMessage message={error} />
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button onClick={fetchCart} className="btn-primary">
-            Reintentar
-          </button>
-        </div>
+        <PageHero title="Carrito de compras" eyebrow="Tu selección" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" current="Carrito" />
+        <main className="cart-state cart-state--error">
+          <FeatureState tone="error" title="No pudimos abrir tu carrito" message={error.message || "Tu selección sigue guardada. Intenta cargarla nuevamente."} actionLabel="Intentar de nuevo" onAction={fetchCart} secondaryLabel="Volver a Tienda" secondaryTo={routePaths.public.catalog} />
+        </main>
         <HomeFooter />
       </div>
     );
@@ -321,35 +264,16 @@ export default function CartPage() {
     return (
       <div className="home-page cart-page">
         <HomeHeader />
-        <section className="checkout-hero" aria-label="Carrito de compras">
-          <div className="checkout-hero__overlay">
-            <h1 className="checkout-hero__title">Carrito de compras</h1>
-            <p className="checkout-hero__breadcrumb">
-              <Link to={routePaths.public.home}>Inicio</Link>
-              <span aria-hidden="true">&gt;</span>
-              Carrito
-            </p>
+        <PageHero title="Carrito de compras" eyebrow="Tu selección" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" current="Carrito" />
+        <main className="cart-empty">
+          <div className="cart-empty__icon"><FaShoppingCart aria-hidden="true" /></div>
+          <p className="cart-empty__eyebrow">Tu selección empieza aquí</p>
+          <h2>El carrito está listo para una buena pieza</h2>
+          <p>Explora la tienda, guarda tus favoritos y regresa cuando hayas encontrado lo que encaja en tu espacio.</p>
+          <div className="cart-empty__actions">
+            <Link to={routePaths.public.catalog}>Explorar la tienda</Link>
+            <Link to={routePaths.public.savedItems}><FaHeart aria-hidden="true" /> Ver guardados</Link>
           </div>
-        </section>
-        <main className="cart-container" style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <EmptyState message="Tu carrito está vacío" />
-          <p style={{ margin: "1rem 0 2rem", color: "#7b6f5d" }}>
-            ¡Explora nuestros productos y encuentra lo que necesitas!
-          </p>
-          <Link
-            to={routePaths.public.catalog}
-            style={{
-              display: "inline-block",
-              padding: "0.85rem 2rem",
-              background: "#8B5E3C",
-              color: "white",
-              borderRadius: "0.8rem",
-              textDecoration: "none",
-              fontWeight: "700",
-            }}
-          >
-            Ir a la tienda
-          </Link>
         </main>
         <HomeFooter />
       </div>
@@ -357,26 +281,14 @@ export default function CartPage() {
   }
 
   const { subtotal, totalItems, shippingLabel, total } = totals;
+  const unavailableItems = cartItems.filter((item) => Number((item.product || item).stock || 0) < Number(item.quantity || 0) || (item.product || item).active === false);
 
   // ✅ Render principal del carrito
   return (
     <div className="home-page cart-page">
       <HomeHeader />
 
-      <section className="checkout-hero" aria-label="Carrito de compras">
-        <div className="checkout-hero__overlay">
-          <h1 className="checkout-hero__title">
-            Carrito de compras ({totalItems} items)
-          </h1>
-          <p className="checkout-hero__breadcrumb">
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <Link to={routePaths.public.catalog}>Catálogo</Link>
-            <span aria-hidden="true">&gt;</span>
-            Carrito
-          </p>
-        </div>
-      </section>
+      <PageHero title="Carrito de compras" eyebrow="Tu selección" image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82" current="Carrito" />
 
       <main className="cart-container">
         <div className="cart-table">
@@ -406,7 +318,7 @@ export default function CartPage() {
                     alt={productName}
                     className="cart-product-image"
                   />
-                  <span>{productName}</span>
+                  <span>{productName}{product.active === false ? <small className="cart-stock-warning">Producto no disponible</small> : Number(product.stock || 0) === 0 ? <small className="cart-stock-warning">Agotado</small> : Number(product.stock || 0) < quantity ? <small className="cart-stock-warning">Solo quedan {Number(product.stock || 0)} disponibles</small> : null}</span>
                 </div>
 
                 <div className="cart-row__price">
@@ -427,7 +339,7 @@ export default function CartPage() {
                     type="button"
                     aria-label="Aumentar cantidad"
                     onClick={() => updateQuantity(item.id, quantity + 1)}
-                    disabled={updating}
+                    disabled={updating || quantity >= Number(product.stock || 0)}
                   >
                     +
                   </button>
@@ -467,55 +379,9 @@ export default function CartPage() {
             <span>{formatPrice(total)}</span>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", flexDirection: "column" }}>
-            <button
-              onClick={clearCart}
-              disabled={updating}
-              style={{
-                padding: "12px",
-                background: "transparent",
-                color: "#D32F2F",
-                border: "2px solid #D32F2F",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: "0.9rem",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = "#FDECEA";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = "transparent";
-              }}
-            >
-              Vaciar carrito
-            </button>
-
-            <Link
-              to={routePaths.checkout.summary}
-              className="cart-pay-button"
-              style={{
-                display: "block",
-                textAlign: "center",
-                padding: "16px",
-                background: "#8B5E3C",
-                color: "#FFFFFF",
-                textDecoration: "none",
-                borderRadius: "8px",
-                fontWeight: 700,
-                fontSize: "1.1rem",
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = "#6B4A2B";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = "#8B5E3C";
-              }}
-            >
-              Proceder al pago
-            </Link>
+          <div className="cart-summary__actions">
+            <button className="cart-clear-button" type="button" onClick={clearCart} disabled={updating}>Vaciar carrito</button>
+            {storeSettings?.storefront_available === false ? <div className="cart-summary__blocked"><strong>Las compras están pausadas</strong><span>Tu carrito se conserva. Vuelve cuando la tienda online esté disponible.</span></div> : unavailableItems.length ? <div className="cart-summary__blocked"><strong>Revisa la disponibilidad</strong><span>Ajusta o elimina las piezas agotadas antes de continuar.</span></div> : <Link to={routePaths.checkout.summary} className="cart-pay-button">Continuar al checkout</Link>}
           </div>
         </aside>
       </main>

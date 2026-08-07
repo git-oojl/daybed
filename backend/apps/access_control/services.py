@@ -30,28 +30,28 @@ PERMISSION_CATALOG = (
         "products_view",
         "Ver productos",
         "Productos",
-        "Consultar catálogo interno, categorías y productos.",
+        "Consultar catálogo interno, colecciones y productos.",
     ),
     OperationalPermissionSpec(
         "products.create",
         "products_create",
         "Crear productos",
         "Productos",
-        "Crear productos o categorías desde el back-office.",
+        "Crear productos o colecciones desde el back-office.",
     ),
     OperationalPermissionSpec(
         "products.update",
         "products_update",
         "Actualizar productos",
         "Productos",
-        "Editar productos o categorías desde el back-office.",
+        "Editar productos o colecciones desde el back-office.",
     ),
     OperationalPermissionSpec(
         "products.deactivate",
         "products_deactivate",
         "Desactivar productos",
         "Productos",
-        "Desactivar productos o categorías sin borrado físico.",
+        "Desactivar productos o colecciones sin borrado físico.",
     ),
     OperationalPermissionSpec(
         "inventory.view",
@@ -79,7 +79,7 @@ PERMISSION_CATALOG = (
         "orders_view",
         "Ver pedidos",
         "Pedidos",
-        "Consultar pedidos internos y detalle administrativo.",
+        "Consultar pedidos de clientes y su detalle operativo.",
     ),
     OperationalPermissionSpec(
         "orders.status.update",
@@ -105,14 +105,37 @@ def _content_type():
 
 def ensure_operational_permissions():
     content_type = _content_type()
-    permission_objects = {}
-    for permission in PERMISSION_CATALOG:
-        permission_object, _created = Permission.objects.update_or_create(
+    by_codename = {
+        permission.codename: permission
+        for permission in Permission.objects.filter(
+            content_type=content_type,
+            codename__in=[item.codename for item in PERMISSION_CATALOG],
+        )
+    }
+    missing = [
+        Permission(
             content_type=content_type,
             codename=permission.codename,
-            defaults={"name": permission.label},
+            name=permission.label,
         )
-        permission_objects[permission.code] = permission_object
+        for permission in PERMISSION_CATALOG
+        if permission.codename not in by_codename
+    ]
+    if missing:
+        Permission.objects.bulk_create(missing, ignore_conflicts=True)
+        by_codename = {
+            permission.codename: permission
+            for permission in Permission.objects.filter(
+                content_type=content_type,
+                codename__in=[item.codename for item in PERMISSION_CATALOG],
+            )
+        }
+
+    permission_objects = {}
+    for permission in PERMISSION_CATALOG:
+        permission_object = by_codename.get(permission.codename)
+        if permission_object is not None:
+            permission_objects[permission.code] = permission_object
     return permission_objects
 
 
@@ -184,6 +207,9 @@ def user_has_operational_permission(user, code):
     if not permission:
         return False
 
+    if user.operational_permission_codes is not None:
+        return code in set(user.operational_permission_codes)
+
     sync_user_employee_group(user)
     return user.groups.filter(
         name=EMPLOYEE_GROUP_NAME,
@@ -200,6 +226,13 @@ def get_effective_permission_codes(user):
         return [permission.code for permission in PERMISSION_CATALOG]
 
     if user.role == User.Roles.EMPLOYEE:
+        if user.operational_permission_codes is not None:
+            configured = set(user.operational_permission_codes)
+            return [
+                permission.code
+                for permission in PERMISSION_CATALOG
+                if permission.code in configured
+            ]
         return [
             permission.code
             for permission in PERMISSION_CATALOG
@@ -219,4 +252,3 @@ def permission_catalog_payload():
         }
         for permission in PERMISSION_CATALOG
     ]
-

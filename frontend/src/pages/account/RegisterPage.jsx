@@ -1,6 +1,6 @@
 // RegisterPage.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -28,9 +28,10 @@ import {
 } from "react-icons/fa";
 import { styled } from "@mui/material/styles";
 import "../../assets/CSS/account/register-page.css";
-import registerBackground from "../../assets/RegisterPage.jpg";
+import registerBackground from "../../assets/RegisterPage.webp";
 import { registerCustomer } from "../../auth/authService.js";
 import { routePaths } from "../../routes/routePaths.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 const COLORS = {
   primary: "#977422",
@@ -432,6 +433,12 @@ function splitFullName(value) {
 // ============================================
 function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { settings } = useStoreSettings();
+  const fromLocation = location.state?.from;
+  const backPath = fromLocation?.pathname
+    ? `${fromLocation.pathname}${fromLocation.search || ""}`
+    : routePaths.public.home;
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -457,7 +464,7 @@ function RegisterPage() {
   };
 
   const validatePassword = (password) => {
-    return password.length >= 6;
+    return password.length >= 8;
   };
 
   const validatePhone = (phone) => {
@@ -534,15 +541,15 @@ function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await registerCustomer(payload);
-      console.log("Registro exitoso:", response);
+      await registerCustomer(payload);
 
       navigate(routePaths.account.login, {
-        state: { message: "Cuenta creada exitosamente. Inicia sesión." },
+        state: {
+          sessionMessage: "Cuenta creada exitosamente. Inicia sesión.",
+          from: fromLocation || undefined,
+        },
       });
     } catch (err) {
-      console.error("Error en registro:", err);
-
       if (err.fieldErrors) {
         setFieldErrors(err.fieldErrors);
         const fieldMap = {
@@ -591,7 +598,9 @@ function RegisterPage() {
   const showNombreError =
     (touched.nombre && formData.nombre.trim() === "") || fieldErrors.nombre;
   const showEmailError =
-    (touched.email && !validateEmail(formData.email) && formData.email !== "") ||
+    (touched.email &&
+      !validateEmail(formData.email) &&
+      formData.email !== "") ||
     fieldErrors.email;
   const showPhoneError =
     (touched.telefono &&
@@ -608,15 +617,27 @@ function RegisterPage() {
     formData.confirmPassword !== "" &&
     formData.password !== formData.confirmPassword;
 
+  const handleBack = (event) => {
+    event.preventDefault();
+    if (window.history.length > 1 && document.referrer) {
+      navigate(-1);
+      return;
+    }
+    navigate(backPath, { replace: true });
+  };
+
   return (
     <Box
       className="register-container"
       sx={{ backgroundImage: `url(${registerBackground})` }}
     >
+      <RouterLink className="auth-back-link" to={backPath} onClick={handleBack}>
+        ← Volver
+      </RouterLink>
       <Paper className="register-paper" elevation={0}>
         <BrandSection>
           <BrandIcon />
-          <BrandTitle variant="h1">DayBed</BrandTitle>
+          <BrandTitle variant="h1">{settings.store_name || "Daybed"}</BrandTitle>
         </BrandSection>
 
         <DividerLine />
@@ -647,14 +668,16 @@ function RegisterPage() {
                     : "Requerido"
                   : ""
               }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonIcon
-                      style={{ color: COLORS.secondary, fontSize: 20 }}
-                    />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon
+                        style={{ color: COLORS.secondary, fontSize: 20 }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
               }}
               required
             />
@@ -679,17 +702,21 @@ function RegisterPage() {
                     : "Correo inválido"
                   : ""
               }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon
-                      style={{
-                        color: showEmailError ? COLORS.error : COLORS.secondary,
-                        fontSize: 20,
-                      }}
-                    />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon
+                        style={{
+                          color: showEmailError
+                            ? COLORS.error
+                            : COLORS.secondary,
+                          fontSize: 20,
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
               }}
               required
               autoComplete="email"
@@ -715,17 +742,21 @@ function RegisterPage() {
                     : "10 dígitos"
                   : ""
               }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneIcon
-                      style={{
-                        color: showPhoneError ? COLORS.error : COLORS.secondary,
-                        fontSize: 20,
-                      }}
-                    />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon
+                        style={{
+                          color: showPhoneError
+                            ? COLORS.error
+                            : COLORS.secondary,
+                          fontSize: 20,
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
               }}
               required
               autoComplete="tel"
@@ -746,14 +777,16 @@ function RegisterPage() {
               helperText={
                 touched.estado && formData.estado === "" ? "Selecciona" : ""
               }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PinDropIcon
-                      style={{ color: COLORS.secondary, fontSize: 20 }}
-                    />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PinDropIcon
+                        style={{ color: COLORS.secondary, fontSize: 20 }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
               }}
               required
             >
@@ -780,16 +813,20 @@ function RegisterPage() {
               placeholder="Tijuana"
               error={touched.ciudad && formData.ciudad.trim() === ""}
               helperText={
-                touched.ciudad && formData.ciudad.trim() === "" ? "Requerida" : ""
+                touched.ciudad && formData.ciudad.trim() === ""
+                  ? "Requerida"
+                  : ""
               }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CityIcon
-                      style={{ color: COLORS.secondary, fontSize: 20 }}
-                    />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <CityIcon
+                        style={{ color: COLORS.secondary, fontSize: 20 }}
+                      />
+                    </InputAdornment>
+                  ),
+                },
               }}
               required
             />
@@ -806,44 +843,46 @@ function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 error={showPasswordError}
                 helperText={
                   showPasswordError
                     ? typeof fieldErrors.password === "string"
                       ? fieldErrors.password
-                      : "Mínimo 6 caracteres"
+                      : "Mínimo 8 caracteres"
                     : ""
                 }
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon
-                        style={{
-                          color: showPasswordError
-                            ? COLORS.error
-                            : COLORS.secondary,
-                          fontSize: 20,
-                        }}
-                      />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleTogglePassword}
-                        edge="end"
-                        sx={{ color: COLORS.secondary }}
-                        aria-label={
-                          showPassword
-                            ? "Ocultar contraseña"
-                            : "Mostrar contraseña"
-                        }
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon
+                          style={{
+                            color: showPasswordError
+                              ? COLORS.error
+                              : COLORS.secondary,
+                            fontSize: 20,
+                          }}
+                        />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={handleTogglePassword}
+                          edge="end"
+                          sx={{ color: COLORS.secondary }}
+                          aria-label={
+                            showPassword
+                              ? "Ocultar contraseña"
+                              : "Mostrar contraseña"
+                          }
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
                 required
                 autoComplete="new-password"
@@ -865,39 +904,41 @@ function RegisterPage() {
                 placeholder="Repite tu contraseña"
                 error={showConfirmError}
                 helperText={showConfirmError ? "No coinciden" : ""}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon
-                        style={{
-                          color: showConfirmError
-                            ? COLORS.error
-                            : COLORS.secondary,
-                          fontSize: 20,
-                        }}
-                      />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={handleToggleConfirmPassword}
-                        edge="end"
-                        sx={{ color: COLORS.secondary }}
-                        aria-label={
-                          showConfirmPassword
-                            ? "Ocultar contraseña"
-                            : "Mostrar contraseña"
-                        }
-                      >
-                        {showConfirmPassword ? (
-                          <VisibilityOff />
-                        ) : (
-                          <Visibility />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon
+                          style={{
+                            color: showConfirmError
+                              ? COLORS.error
+                              : COLORS.secondary,
+                            fontSize: 20,
+                          }}
+                        />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={handleToggleConfirmPassword}
+                          edge="end"
+                          sx={{ color: COLORS.secondary }}
+                          aria-label={
+                            showConfirmPassword
+                              ? "Ocultar contraseña"
+                              : "Mostrar contraseña"
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <VisibilityOff />
+                          ) : (
+                            <Visibility />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
                 required
                 autoComplete="new-password"
@@ -926,7 +967,7 @@ function RegisterPage() {
         <FooterWrapper>
           <Typography variant="body1">
             ¿Ya tienes una cuenta?{" "}
-            <LoginLink href={routePaths.account.login} underline="hover">
+            <LoginLink component={RouterLink} to={routePaths.account.login} underline="hover">
               Inicia sesión
             </LoginLink>
           </Typography>

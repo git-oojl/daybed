@@ -6,7 +6,7 @@
 }
 
 .inventory-hero {
-  min-height: 260px;
+  min-height: 180px;
   background-image: url("https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1600&q=80");
   background-size: cover;
   background-position: center;
@@ -15,27 +15,29 @@
 
 .inventory-hero__overlay {
   width: 100%;
-  min-height: 260px;
-  background: rgba(255, 255, 255, 0.45);
+  min-height: 180px;
+  background: rgba(62, 42, 27, 0.72);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  padding: 40px 24px;
-  text-align: center;
+  align-items: flex-start;
+  padding: 2rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  text-align: left;
 }
 
 .inventory-hero__title {
-  margin: 0 0 10px;
-  font-size: 3.25rem;
-  font-weight: 600;
-  color: var(--black);
+  margin: 0 0 0.25rem;
+  font-size: 38px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .inventory-hero__breadcrumb {
   margin: 0;
-  font-size: 0.875rem;
-  color: rgba(0, 0, 0, 0.6);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
   display: flex;
   gap: 8px;
   text-transform: lowercase;
@@ -47,7 +49,8 @@
 }
 
 .inventory-hero__breadcrumb a:hover {
-  color: var(--gold);
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 .inventory-main {

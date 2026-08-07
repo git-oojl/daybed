@@ -230,3 +230,23 @@ docker-compose.override.yml
 *.tgz
 *.7z
 *.rar
+
+# -------------------------
+# Hermetic agent/sandbox payload
+# -------------------------
+.vendor/
+*-openai-sandbox-linux-x86_64.tar.gz
+
+# -------------------------
+# ChatGPT / agent handoff state
+# -------------------------
+.agent-logs/
+.agent-tmp/
+.agent-work/
+.agent-cache/
+.vendor-restore.*/
+daybed-head.tar.gz
+daybed-update-*.tar.gz
+daybed-environment-anchor.tar.gz
+daybed-environment-anchor.tar.gz.sha256
+*-playwright-ready.tar.gz

@@ -2,10 +2,11 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from apps.catalog.models import Category, Product
+from apps.catalog.models import Category, Product, ProductReview
 
 pytestmark = pytest.mark.django_db
 
@@ -237,6 +238,144 @@ def test_employee_can_create_product():
     assert Product.objects.filter(name="Staff sofa", active=True).exists()
 
 
+def test_staff_product_management_accepts_uploaded_main_image(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    employee = create_user("empleado_product_image", User.Roles.EMPLOYEE)
+    category = create_category()
+    image = SimpleUploadedFile(
+        "sofa.gif",
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00"
+        b"\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;",
+        content_type="image/gif",
+    )
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Staff sofa with image",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+            "image": image,
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    assert response.data["main_image"]
+
+    product = Product.objects.get(name="Staff sofa with image")
+    assert product.main_image.name.startswith("products/sofa")
+
+
+def test_staff_product_management_accepts_remote_image_url(
+    monkeypatch,
+    settings,
+    tmp_path,
+):
+    settings.MEDIA_ROOT = tmp_path
+    employee = create_user("empleado_remote_product_image", User.Roles.EMPLOYEE)
+    category = create_category()
+    image_bytes = (
+        b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00"
+        b"\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+    )
+
+    class FakeStreamResponse:
+        headers = {"content-type": "image/gif"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_bytes(self):
+            yield image_bytes
+
+    def fake_stream(method, url, **kwargs):
+        assert method == "GET"
+        assert url == "https://example.test/remote-sofa.gif"
+        assert kwargs["follow_redirects"] is True
+        return FakeStreamResponse()
+
+    monkeypatch.setattr("apps.catalog.serializers.httpx.stream", fake_stream)
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Staff sofa with remote image",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+            "image_url": "https://example.test/remote-sofa.gif",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["main_image"]
+
+    product = Product.objects.get(name="Staff sofa with remote image")
+    assert product.main_image.name.startswith("products/remote-sofa")
+
+
+def test_staff_product_management_rejects_oversized_remote_image(monkeypatch):
+    employee = create_user("empleado_large_remote_product_image", User.Roles.EMPLOYEE)
+    category = create_category()
+
+    class FakeStreamResponse:
+        headers = {"content-type": "image/gif"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_bytes(self):
+            yield b"x" * (5 * 1024 * 1024)
+            yield b"x"
+
+    def fake_stream(method, url, **kwargs):
+        return FakeStreamResponse()
+
+    monkeypatch.setattr("apps.catalog.serializers.httpx.stream", fake_stream)
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Staff sofa with oversized remote image",
+            "description": "Created by staff",
+            "price": "999.99",
+            "category": category.id,
+            "stock": 10,
+            "minimum_stock": 3,
+            "active": True,
+            "image_url": "https://example.test/remote-sofa.gif",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "5 MB" in str(response.data)
+    assert not Product.objects.filter(
+        name="Staff sofa with oversized remote image"
+    ).exists()
+
+
 def test_staff_product_management_rejects_negative_price():
     employee = create_user("empleado_negative_price", User.Roles.EMPLOYEE)
     category = create_category()
@@ -385,3 +524,260 @@ def test_staff_delete_deactivates_product_instead_of_hard_delete():
     product.refresh_from_db()
     assert product.active is False
     assert Product.objects.filter(id=product.id).exists()
+
+
+def test_public_product_detail_includes_active_reviews_and_aggregate():
+    product = create_product()
+    reviewer = create_user("reviewer_catalog", User.Roles.CUSTOMER)
+    ProductReview.objects.create(
+        product=product,
+        user=reviewer,
+        rating=5,
+        title="Excelente pieza",
+        body="Se siente firme y llegó en muy buenas condiciones.",
+        verified_purchase=True,
+    )
+
+    response = api_client().get(reverse("catalog-product-detail", args=[product.id]))
+
+    assert response.status_code == 200
+    assert response.data["review_count"] == 1
+    assert response.data["average_rating"] == 5.0
+    assert response.data["reviews"][0]["author"] == reviewer.username
+    assert response.data["reviews"][0]["verified_purchase"] is True
+
+
+def test_authenticated_customer_can_create_product_review():
+    product = create_product()
+    customer = create_user("customer_review_create", User.Roles.CUSTOMER)
+
+    response = api_client(customer).post(
+        reverse("product-review-list-create", args=[product.id]),
+        {
+            "rating": 4,
+            "title": "Muy buena compra",
+            "body": "Las medidas coinciden y el acabado se ve muy bien.",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    review = ProductReview.objects.get(product=product, user=customer)
+    assert review.rating == 4
+    assert review.verified_purchase is False
+
+
+def test_customer_cannot_review_same_product_twice():
+    product = create_product()
+    customer = create_user("customer_review_duplicate", User.Roles.CUSTOMER)
+    ProductReview.objects.create(
+        product=product,
+        user=customer,
+        rating=5,
+        title="Primera reseña",
+        body="Una buena experiencia.",
+    )
+
+    response = api_client(customer).post(
+        reverse("product-review-list-create", args=[product.id]),
+        {
+            "rating": 3,
+            "title": "Segunda reseña",
+            "body": "No debería guardarse.",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert ProductReview.objects.filter(product=product, user=customer).count() == 1
+
+
+def test_merchandising_filters_are_backed_by_real_product_fields():
+    category = Category.objects.create(
+        name="Sofás cama",
+        active=True,
+        homepage_visible=True,
+        display_order=1,
+    )
+    expected = create_product(
+        "Sofá cama con almacenaje",
+        category=category,
+        room="sala",
+        furniture_type="sofá cama",
+        material="lino",
+        color="arena",
+        style="nórdico",
+        has_storage=True,
+        is_sofa_bed=True,
+        featured=True,
+        featured_order=1,
+        stock=4,
+    )
+    create_product(
+        "Mesa auxiliar",
+        room="sala",
+        furniture_type="mesa",
+        material="madera",
+        has_storage=False,
+        is_sofa_bed=False,
+        featured=False,
+    )
+
+    response = api_client().get(
+        reverse("catalog-product-list"),
+        {
+            "category__slug": category.slug,
+            "room": "sala",
+            "furniture_type": "sofá cama",
+            "material": "lino",
+            "color": "arena",
+            "style": "nórdico",
+            "has_storage": "true",
+            "is_sofa_bed": "true",
+            "featured": "true",
+            "in_stock": "true",
+        },
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["results"]] == [expected.id]
+
+
+def test_minimum_rating_filter_uses_active_reviews():
+    reviewer = create_user("rating_customer", User.Roles.CUSTOMER)
+    category = create_category("Rating category")
+    strong = create_product("Highly rated", category=category)
+    weak = create_product("Low rated", category=category)
+    ProductReview.objects.create(product=strong, user=reviewer, rating=5, title="Excelente", body="Muy bien.")
+    other = create_user("rating_customer_two", User.Roles.CUSTOMER)
+    ProductReview.objects.create(product=weak, user=other, rating=3, title="Bien", body="Correcto.")
+
+    response = api_client().get(
+        reverse("catalog-product-list"),
+        {"min_rating": "4", "ordering": "-average_review_rating"},
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["results"]] == [strong.id]
+
+
+def test_product_creation_uses_global_default_low_stock_threshold_when_omitted():
+    from apps.store.models import StoreSettings
+
+    settings = StoreSettings.get_active()
+    settings.default_low_stock_threshold = 6
+    settings.save(update_fields=("default_low_stock_threshold", "updated_at"))
+    employee = create_user("employee_default_threshold", User.Roles.EMPLOYEE)
+    category = create_category("Threshold collection")
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Threshold sofa",
+            "description": "Uses global Daybed inventory default.",
+            "price": "999.00",
+            "category": category.id,
+            "stock": 8,
+            "active": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["minimum_stock"] == 6
+
+
+def test_only_four_active_products_can_be_manually_featured():
+    employee = create_user("employee_featured_limit", User.Roles.EMPLOYEE)
+    category = create_category("Featured collection")
+    for index in range(4):
+        create_product(
+            f"Featured {index}",
+            category=category,
+            featured=True,
+            featured_order=index + 1,
+        )
+
+    response = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Featured overflow",
+            "description": "Should be rejected until another product is removed.",
+            "price": "1200.00",
+            "category": category.id,
+            "stock": 3,
+            "featured": True,
+            "featured_order": 5,
+            "active": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert "cuatro" in str(response.data).lower()
+
+
+def test_sold_out_or_inactive_product_cannot_be_featured():
+    employee = create_user("employee_featured_availability", User.Roles.EMPLOYEE)
+    category = create_category("Featured availability")
+
+    sold_out = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Sold out featured chair",
+            "description": "Unavailable products cannot lead the storefront.",
+            "price": "1200.00",
+            "category": category.id,
+            "stock": 0,
+            "featured": True,
+            "featured_order": 1,
+            "active": True,
+        },
+        format="json",
+    )
+    inactive = api_client(employee).post(
+        reverse("staff-product-list"),
+        {
+            "name": "Inactive featured chair",
+            "description": "Inactive products cannot lead the storefront.",
+            "price": "1200.00",
+            "category": category.id,
+            "stock": 3,
+            "featured": True,
+            "featured_order": 2,
+            "active": False,
+        },
+        format="json",
+    )
+
+    assert sold_out.status_code == 400
+    assert inactive.status_code == 400
+    assert "existencias" in str(sold_out.data).lower()
+    assert "activo" in str(inactive.data).lower()
+
+
+def test_collection_administration_exposes_homepage_and_filter_configuration():
+    employee = create_user("employee_collections", User.Roles.EMPLOYEE)
+
+    response = api_client(employee).post(
+        reverse("staff-category-list"),
+        {
+            "name": "Sala compacta",
+            "description": "Piezas para espacios reducidos.",
+            "display_order": 2,
+            "homepage_visible": True,
+            "filter_attributes": ["room", "style", "has_storage"],
+            "active": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["homepage_visible"] is True
+    assert response.data["display_order"] == 2
+    assert response.data["filter_attributes"] == ["room", "style", "has_storage"]
+    preview = api_client().get(
+        reverse("catalog-product-list"),
+        {"category__slug": response.data["slug"]},
+    )
+    assert preview.status_code == 200

@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsCustomer
+from rest_framework.permissions import IsAuthenticated
 from apps.delivery.serializers import (
     DeliveryEstimateRequestSerializer,
     DeliveryEstimateResponseSerializer,
@@ -19,7 +19,12 @@ from apps.delivery.services import (
 
 def _error_response(exc):
     return Response(
-        {"detail": str(exc)},
+        {
+            "detail": str(exc),
+            "user_message": getattr(exc, "user_message", str(exc)),
+            "code": getattr(exc, "code", "delivery_service_unavailable"),
+            "feature": getattr(exc, "feature", "delivery"),
+        },
         status=getattr(exc, "status_code", status.HTTP_502_BAD_GATEWAY),
     )
 
@@ -35,14 +40,14 @@ def _error_response(exc):
     tags=["Entregas"],
 )
 class GeocodeView(APIView):
-    permission_classes = (IsCustomer,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         serializer = GeocodeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
-            result = geocode_address(serializer.validated_data["address"])
+            result = geocode_address(**serializer.validated_data)
         except DeliveryServiceError as exc:
             return _error_response(exc)
 
@@ -61,7 +66,7 @@ class GeocodeView(APIView):
     tags=["Entregas"],
 )
 class DeliveryEstimateView(APIView):
-    permission_classes = (IsCustomer,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         serializer = DeliveryEstimateRequestSerializer(data=request.data)

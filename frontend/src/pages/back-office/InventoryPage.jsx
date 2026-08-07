@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
-import { routePaths } from "../../routes/routePaths.js";
 import { inventoryService } from "../../services/backendServices.js";
-import { readCollection } from "../../services/viewMappers.js";
+import { productImage, readCollection } from "../../services/viewMappers.js";
 import {
   FaSearch,
   FaBoxes,
@@ -19,62 +18,11 @@ import {
   FaCheckCircle,
   FaEdit,
 } from "react-icons/fa";
-
-/* const INITIAL_PRODUCTS = [
-  {
-    id: 1,
-    name: "Sofá Daybed",
-    sku: "DD37473",
-    stock: 30,
-    minStock: 30,
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=200&q=80",
-  },
-  {
-    id: 2,
-    name: "Sofá Esquinero",
-    sku: "DD73844",
-    stock: 39,
-    minStock: 20,
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=80",
-  },
-  {
-    id: 3,
-    name: "Mesa de Centro",
-    sku: "DD83482",
-    stock: 20,
-    minStock: 30,
-    status: "low",
-    image:
-      "https://images.unsplash.com/photo-1499933374294-4584851497cc?w=200&q=80",
-  },
-  {
-    id: 4,
-    name: "Black Chair",
-    sku: "DD38418",
-    stock: 6,
-    minStock: 30,
-    status: "low",
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=200&q=80",
-  },
-  {
-    id: 5,
-    name: "Lámpara Grifo",
-    sku: "LG005",
-    stock: 12,
-    minStock: 3,
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=200&q=80",
-  },
-]; */
+import LoadingState from "../../components/support/LoadingState.jsx";
+import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 
 export default function InventoryPage() {
-  const user = useAuthStore((state) => state.user);
+  const { user } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
@@ -84,8 +32,8 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState("1");
-  const [stockValue, setStockValue] = useState(30);
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [stockValue, setStockValue] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [modalTitle, setModalTitle] = useState("");
@@ -95,7 +43,7 @@ export default function InventoryPage() {
     ...product,
     minStock: product.minimum_stock,
     status: product.low_stock ? "low" : "active",
-    image: product.image || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&q=80",
+    image: productImage(product),
   });
 
   const loadInventory = async () => {
@@ -103,7 +51,16 @@ export default function InventoryPage() {
     setLoadError("");
     try {
       const response = await inventoryService.products();
-      setProducts(readCollection(response).map(normalizeProduct));
+      const loadedProducts = readCollection(response).map(normalizeProduct);
+      const selectedId = Number(selectedProduct);
+      const selectedLoadedProduct =
+        loadedProducts.find((product) => product.id === selectedId) ||
+        loadedProducts[0];
+      setProducts(loadedProducts);
+      setSelectedProduct(
+        selectedLoadedProduct ? String(selectedLoadedProduct.id) : "",
+      );
+      setStockValue(selectedLoadedProduct?.stock || 0);
     } catch (error) {
       setLoadError(error.message || "No se pudo cargar el inventario.");
     } finally {
@@ -123,7 +80,7 @@ export default function InventoryPage() {
     (p) =>
       !searchQuery.trim() ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase()),
+      String(p.sku || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleStockUpdate = async (e) => {
@@ -131,24 +88,29 @@ export default function InventoryPage() {
     const productId = Number(selectedProduct);
     const product = products.find((p) => p.id === productId);
 
-    if (product) {
-      try {
-        const newStock = Number(stockValue);
-        const updated = await inventoryService.updateStock(productId, {
-          stock: newStock,
-          minimum_stock: product.minStock,
-          reason: "Ajuste desde el panel de inventario",
-        });
-        setProducts((current) => current.map((item) => item.id === productId ? normalizeProduct(updated) : item));
-        setModalTitle("Stock actualizado");
-        setModalMessage(`El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`);
-        setShowModal(true);
-        setEditingStock(null);
-      } catch (error) {
-        setModalTitle("No se pudo actualizar");
-        setModalMessage(error.message || "Intenta nuevamente.");
-        setShowModal(true);
-      }
+    if (!product) {
+      setModalTitle("Selecciona un producto");
+      setModalMessage("No hay un producto válido para actualizar.");
+      setShowModal(true);
+      return;
+    }
+
+    try {
+      const newStock = Number(stockValue);
+      const updated = await inventoryService.updateStock(productId, {
+        stock: newStock,
+        minimum_stock: product.minStock,
+        reason: "Ajuste desde el panel de inventario",
+      });
+      setProducts((current) => current.map((item) => item.id === productId ? normalizeProduct(updated) : item));
+      setModalTitle("Stock actualizado");
+      setModalMessage(`El stock de "${product.name}" ha sido actualizado a ${newStock} unidades.`);
+      setShowModal(true);
+      setEditingStock(null);
+    } catch (error) {
+      setModalTitle("No se pudo actualizar");
+      setModalMessage(error.message || "Intenta nuevamente.");
+      setShowModal(true);
     }
   };
 
@@ -175,86 +137,43 @@ export default function InventoryPage() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
+  if (loading) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <LoadingState message="Cargando inventario..." />
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="home-page dashboard-page">
+        <HomeHeader />
+        <ErrorMessage message={loadError} />
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <button type="button" onClick={loadInventory} className="btn-primary">
+            Volver a cargar inventario
+          </button>
+        </div>
+        <HomeFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
 
-      <section
-        className="dashboard-hero"
-        aria-label="Inventario"
-        style={{
-          backgroundImage: `url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZ1TEkqyw1tABVn-JkqxcNMuMAmqLaxjYxp3-bTP1JIg&s=10')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "200px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62, 42, 27, 0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px 20px",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
-              color: "#FFFFFF",
-              fontSize: "clamp(1.8rem, 4vw, 2.5rem)",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Playfair Display", serif',
-            }}
-          >
-            Inventario
-          </h1>
-          <p
-            className="dashboard-hero__breadcrumb"
-            style={{
-              color: "#F5EDE5",
-              fontSize: "clamp(0.9rem, 1.2vw, 1.1rem)",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              marginTop: "8px",
-            }}
-          >
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span
-              aria-hidden="true"
-              style={{ margin: "0 8px", color: "#F5EDE5" }}
-            >
-              &gt;
-            </span>
-            <span style={{ color: "#FFFFFF" }}>Inventario</span>
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Inventario"
+        eyebrow="Control de existencias"
+        image="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1800&q=82"
+        current="Inventario"
+      />
 
       <main className="dashboard-container">
-        {loading ? <p>Cargando inventario...</p> : null}
-        {loadError ? <div><p>{loadError}</p><button type="button" onClick={loadInventory}>Reintentar</button></div> : null}
         <div
           className="dashboard-header-actions"
           style={{
@@ -428,6 +347,10 @@ export default function InventoryPage() {
                         <img
                           src={product.image}
                           alt={product.name}
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = productImage({});
+                          }}
                           style={{
                             width: "50px",
                             height: "50px",
@@ -650,6 +573,10 @@ export default function InventoryPage() {
                           <img
                             src={product.image}
                             alt={product.name}
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = productImage({});
+                            }}
                             style={{
                               width: "40px",
                               height: "40px",
@@ -872,6 +799,7 @@ export default function InventoryPage() {
 
               <button
                 type="submit"
+                disabled={products.length === 0}
                 style={{
                   width: "100%",
                   padding: "14px",

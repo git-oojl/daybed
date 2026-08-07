@@ -1,4 +1,5 @@
 const DEV_VIEW_SWITCHER_STORAGE_KEY = "daybed:dev-view-switcher";
+const DEV_VIEW_SWITCHER_OPEN_STORAGE_KEY = "daybed:dev-view-switcher:open";
 const VALID_MODES = new Set(["normal", "preview"]);
 
 export function readDevViewSwitcherSelection() {
@@ -42,6 +43,37 @@ export function saveDevViewSwitcherSelection(selection) {
     window.sessionStorage.setItem(
       DEV_VIEW_SWITCHER_STORAGE_KEY,
       JSON.stringify(selection),
+    );
+  } catch {
+    // Ignore storage failures so the dev helper remains usable in restricted browsers.
+  }
+}
+
+export function readDevViewSwitcherOpenState() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(
+      DEV_VIEW_SWITCHER_OPEN_STORAGE_KEY,
+    );
+
+    return storedValue === null ? false : storedValue === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function saveDevViewSwitcherOpenState(isOpen) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      DEV_VIEW_SWITCHER_OPEN_STORAGE_KEY,
+      String(Boolean(isOpen)),
     );
   } catch {
     // Ignore storage failures so the dev helper remains usable in restricted browsers.

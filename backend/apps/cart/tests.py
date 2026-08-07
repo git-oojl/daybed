@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 
 from apps.cart.models import CartItem
 from apps.catalog.models import Category, Product
+from apps.store.models import StoreSettings
 
 pytestmark = pytest.mark.django_db
 
@@ -43,110 +44,167 @@ def create_product(name="Cart sofa", active=True, stock=8, price=Decimal("100.00
 
 
 def test_cart_requires_authentication():
-    response = api_client().get(reverse("cart-detail"))
-
-    assert response.status_code == 401
+    assert api_client().get(reverse("cart-detail")).status_code == 401
 
 
-def test_cart_requires_customer_role():
-    employee = create_user("empleado_cart", User.Roles.EMPLOYEE)
+@pytest.mark.parametrize("role", [User.Roles.CUSTOMER, User.Roles.EMPLOYEE, User.Roles.ADMIN])
+def test_every_authenticated_daybed_role_has_a_personal_cart(role):
+    user = create_user(f"cart_{role}", role)
 
-    response = api_client(employee).get(reverse("cart-detail"))
+    response = api_client(user).get(reverse("cart-detail"))
 
-    assert response.status_code == 403
+    assert response.status_code == 200
+    assert response.data["items"] == []
 
 
-def test_customer_can_add_item_and_view_subtotal_without_stock_decrement():
-    customer = create_user("cliente_cart")
+def test_add_increment_update_remove_and_clear_preserve_product_stock():
+    user = create_user("cart_lifecycle")
     product = create_product(price=Decimal("125.50"), stock=7)
+    client = api_client(user)
 
-    response = api_client(customer).post(
+    first = client.post(
         reverse("cart-item-list"),
         {"product_id": product.id, "quantity": 2},
         format="json",
     )
+    second = client.post(
+        reverse("cart-item-list"),
+        {"product_id": product.id, "quantity": 1},
+        format="json",
+    )
 
-    assert response.status_code == 201
-    assert response.data["quantity"] == 2
-    assert response.data["line_total"] == "251.00"
+    assert first.status_code == 201
+    assert second.status_code == 200
+    assert second.data["quantity"] == 3
+    assert second.data["line_total"] == "376.50"
+    assert CartItem.objects.count() == 1
+
+    updated = client.patch(
+        reverse("cart-item-detail", args=[second.data["id"]]),
+        {"quantity": 4},
+        format="json",
+    )
+    assert updated.status_code == 200
+    assert updated.data["quantity"] == 4
+
+    cart = client.get(reverse("cart-detail"))
+    assert cart.data["subtotal"] == "502.00"
+
+    removed = client.delete(reverse("cart-item-detail", args=[second.data["id"]]))
+    assert removed.status_code == 204
+
+    client.post(
+        reverse("cart-item-list"),
+        {"product_id": product.id, "quantity": 2},
+        format="json",
+    )
+    cleared = client.delete(reverse("cart-detail"))
+    assert cleared.status_code == 200
+    assert cleared.data["items"] == []
+    assert cleared.data["subtotal"] == "0.00"
 
     product.refresh_from_db()
     assert product.stock == 7
 
-    cart_response = api_client(customer).get(reverse("cart-detail"))
-    assert cart_response.status_code == 200
-    assert cart_response.data["subtotal"] == "251.00"
-    assert len(cart_response.data["items"]) == 1
 
-
-def test_adding_same_product_increments_existing_cart_item():
-    customer = create_user("cliente_increment")
+@pytest.mark.parametrize("quantity", [0, -1])
+def test_quantity_must_be_positive(quantity):
+    user = create_user(f"bad_quantity_{quantity}")
     product = create_product()
-    client = api_client(customer)
 
-    first_response = client.post(
+    response = api_client(user).post(
         reverse("cart-item-list"),
-        {"product_id": product.id, "quantity": 1},
-        format="json",
-    )
-    second_response = client.post(
-        reverse("cart-item-list"),
-        {"product_id": product.id, "quantity": 3},
+        {"product_id": product.id, "quantity": quantity},
         format="json",
     )
 
-    assert first_response.status_code == 201
-    assert second_response.status_code == 200
-    assert second_response.data["quantity"] == 4
-    assert CartItem.objects.count() == 1
+    assert response.status_code == 400
 
 
-def test_quantity_must_be_positive_when_adding_or_updating():
-    customer = create_user("cliente_quantity")
-    product = create_product()
-    client = api_client(customer)
+@pytest.mark.parametrize(
+    ("active", "stock", "expected_text"),
+    [
+        (False, 5, "product_id"),
+        (True, 0, "agotado"),
+    ],
+)
+def test_unavailable_product_cannot_be_added(active, stock, expected_text):
+    user = create_user(f"unavailable_{active}_{stock}")
+    product = create_product(active=active, stock=stock)
 
-    add_response = client.post(
-        reverse("cart-item-list"),
-        {"product_id": product.id, "quantity": 0},
-        format="json",
-    )
-
-    assert add_response.status_code == 400
-
-    valid_response = client.post(
-        reverse("cart-item-list"),
-        {"product_id": product.id, "quantity": 1},
-        format="json",
-    )
-    item_id = valid_response.data["id"]
-
-    update_response = client.patch(
-        reverse("cart-item-detail", args=[item_id]),
-        {"quantity": 0},
-        format="json",
-    )
-
-    assert update_response.status_code == 400
-
-
-def test_cannot_add_inactive_product_to_cart():
-    customer = create_user("cliente_inactive")
-    product = create_product(active=False)
-
-    response = api_client(customer).post(
+    response = api_client(user).post(
         reverse("cart-item-list"),
         {"product_id": product.id, "quantity": 1},
         format="json",
     )
 
     assert response.status_code == 400
+    assert expected_text.lower() in str(response.data).lower()
     assert CartItem.objects.count() == 0
 
 
-def test_customer_cannot_access_another_customers_cart_item():
-    owner = create_user("cliente_owner")
-    other = create_user("cliente_other")
+def test_cart_rejects_quantity_above_authoritative_stock_on_add_and_update():
+    user = create_user("cart_stock_limit")
+    product = create_product(stock=2)
+    client = api_client(user)
+
+    too_many = client.post(
+        reverse("cart-item-list"),
+        {"product_id": product.id, "quantity": 3},
+        format="json",
+    )
+    assert too_many.status_code == 400
+    assert "2" in str(too_many.data)
+
+    added = client.post(
+        reverse("cart-item-list"),
+        {"product_id": product.id, "quantity": 1},
+        format="json",
+    )
+    updated = client.patch(
+        reverse("cart-item-detail", args=[added.data["id"]]),
+        {"quantity": 3},
+        format="json",
+    )
+    assert updated.status_code == 400
+    assert CartItem.objects.get(pk=added.data["id"]).quantity == 1
+
+
+def test_paused_storefront_preserves_existing_cart_and_blocks_mutation():
+    user = create_user("paused_storefront")
+    product = create_product(stock=5)
+    client = api_client(user)
+    added = client.post(
+        reverse("cart-item-list"),
+        {"product_id": product.id, "quantity": 1},
+        format="json",
+    )
+    settings = StoreSettings.get_active()
+    settings.storefront_available = False
+    settings.save(update_fields=("storefront_available", "updated_at"))
+
+    blocked_add = client.post(
+        reverse("cart-item-list"),
+        {"product_id": product.id, "quantity": 1},
+        format="json",
+    )
+    blocked_update = client.patch(
+        reverse("cart-item-detail", args=[added.data["id"]]),
+        {"quantity": 2},
+        format="json",
+    )
+    readable = client.get(reverse("cart-detail"))
+
+    assert blocked_add.status_code == 400
+    assert blocked_update.status_code == 400
+    assert "pausadas" in str(blocked_add.data).lower()
+    assert readable.status_code == 200
+    assert readable.data["items"][0]["quantity"] == 1
+
+
+def test_user_cannot_access_another_users_cart_item():
+    owner = create_user("cart_owner")
+    other = create_user("cart_other")
     product = create_product()
     owner_response = api_client(owner).post(
         reverse("cart-item-list"),
@@ -159,39 +217,3 @@ def test_customer_cannot_access_another_customers_cart_item():
     )
 
     assert response.status_code == 404
-
-
-def test_customer_can_update_remove_and_clear_cart_without_stock_decrement():
-    customer = create_user("cliente_clear")
-    product = create_product(stock=5)
-    client = api_client(customer)
-    add_response = client.post(
-        reverse("cart-item-list"),
-        {"product_id": product.id, "quantity": 1},
-        format="json",
-    )
-    item_id = add_response.data["id"]
-
-    update_response = client.patch(
-        reverse("cart-item-detail", args=[item_id]),
-        {"quantity": 4},
-        format="json",
-    )
-    assert update_response.status_code == 200
-    assert update_response.data["quantity"] == 4
-
-    delete_response = client.delete(reverse("cart-item-detail", args=[item_id]))
-    assert delete_response.status_code == 204
-
-    client.post(
-        reverse("cart-item-list"),
-        {"product_id": product.id, "quantity": 2},
-        format="json",
-    )
-    clear_response = client.delete(reverse("cart-detail"))
-    assert clear_response.status_code == 200
-    assert clear_response.data["items"] == []
-    assert clear_response.data["subtotal"] == "0.00"
-
-    product.refresh_from_db()
-    assert product.stock == 5

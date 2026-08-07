@@ -10,12 +10,19 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=32, blank=True)
+    avatar = models.ImageField(upload_to="avatars/", blank=True)
     state = models.CharField(max_length=120, blank=True)
     city = models.CharField(max_length=120, blank=True)
     role = models.CharField(
         max_length=20,
         choices=Roles.choices,
         default=Roles.CUSTOMER,
+    )
+    operational_permission_codes = models.JSONField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="Optional per-employee operational permission override.",
     )
 
     @property

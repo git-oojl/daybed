@@ -55,3 +55,14 @@ class FoundationApiTests(SimpleTestCase):
     def test_simplejwt_signing_key_is_not_the_short_placeholder_secret(self):
         assert len(settings.SIMPLE_JWT["SIGNING_KEY"]) >= 32
         assert settings.SIMPLE_JWT["SIGNING_KEY"] != "change-me"
+
+    def test_password_minimum_matches_customer_forms(self):
+        minimum = next(
+            validator["OPTIONS"]["min_length"]
+            for validator in settings.AUTH_PASSWORD_VALIDATORS
+            if validator["NAME"].endswith("MinimumLengthValidator")
+        )
+        assert minimum == 8
+
+    def test_openrouteservice_key_may_be_empty_without_breaking_startup(self):
+        assert isinstance(settings.OPENROUTESERVICE_API_KEY, str)

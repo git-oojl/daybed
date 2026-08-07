@@ -49,6 +49,8 @@ Roles:
 Reglas principales:
 
 - El registro de cliente acepta los nombres de campos usados por las vistas actuales: `nombre`, `apellido`, `telefono`, `estado`, `ciudad`, `password` y `confirmPassword`.
+- El registro publico siempre crea cuentas `cliente`; no se permite crear empleados o administradores desde el formulario publico.
+- Las cuentas `empleado` y `administrador` se crean por administradores desde gestion interna o desde Django Admin en desarrollo.
 - El backend genera `username` si el cliente no lo envía.
 - Público: catálogo activo.
 - Cliente: perfil propio, carrito, checkout y pedidos propios.
@@ -77,10 +79,20 @@ Reglas principales:
 - Se difiere `ProductVariant`. Si una configuración tiene precio, stock, dimensiones, imágenes o inventario distinto, se registra como otro `Product` por ahora.
 - `OrderItem` guarda `product_sku` y `product_snapshot` para conservar historial aunque el producto cambie después.
 
+## Checkout y pagos
+
+- El checkout es simulado: no hay Stripe, pasarela real, webhooks ni cobros externos.
+- El backend soporta `card`, `transfer` y `cash` como metodos de pago simulados.
+- Los datos de tarjeta son write-only, se validan para la simulacion y no se guardan crudos; solo se conserva metadata enmascarada.
+- Tarjetas terminadas en `0000` simulan rechazo para probar errores.
+- Transferencia y efectivo quedan en estado pendiente hasta que staff/admin marque el pago simulado como recibido o fallido desde la gestion interna.
+- El frontend no guarda credenciales de proveedores ni datos persistentes de tarjeta.
+
 ## APIs externas
 
 - El frontend no llama APIs externas de geocodificación o rutas.
 - Backend encapsula proveedores, errores y normalización de respuestas.
+- La key de OpenRouteService se configura solo en `backend/.env` como `OPENROUTESERVICE_API_KEY`.
 - Las pruebas mockean proveedores externos.
 
 ## Infraestructura

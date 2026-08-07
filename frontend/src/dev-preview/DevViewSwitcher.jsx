@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./DevViewSwitcher.css";
+import { useAuthStore } from "../auth/authStore.js";
+import { emitSessionReplaced } from "../auth/sessionEvents.js";
+import { resetPreviewFixtures } from "../services/apiFixtures.js";
 import {
   getDefaultModeFromBackendStatus,
+  readDevViewSwitcherOpenState,
   readDevViewSwitcherSelection,
+  saveDevViewSwitcherOpenState,
   saveDevViewSwitcherSelection,
 } from "./devViewSwitcherSelection.js";
 import { useBackendStatus } from "./useBackendStatus.js";
@@ -22,7 +27,7 @@ import {
 } from "./viewPreviewRegistry.jsx";
 
 function DevViewSwitcher() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(readDevViewSwitcherOpenState);
   const [selectedMode, setSelectedMode] = useState(getInitialSelectedMode);
   const [previewControls, setPreviewControls] = useState(
     getInitialPreviewControls,
@@ -44,6 +49,9 @@ function DevViewSwitcher() {
     searchParams.get("viewer") ?? previewControls.viewerId,
   );
   const isPreviewRoute = location.pathname === "/dev/preview";
+  const activeRouteLocation = isPreviewRoute
+    ? searchParams.get("route") || activeView.path
+    : `${location.pathname}${location.search}${location.hash}`;
   const currentMode =
     selectedMode ?? getDefaultModeFromBackendStatus(backendStatus.state);
   const isLayoutAllowed = canPreviewLayout(activeView, activeLayout.id);
@@ -64,6 +72,21 @@ function DevViewSwitcher() {
   );
 
   useEffect(() => {
+    if (!isPreviewRoute) return;
+
+    saveDevViewSwitcherSelection({
+      layoutId: activeLayout.id,
+      mode: "preview",
+      viewerId: activeViewer.id,
+    });
+    setPreviewControls({
+      layoutId: activeLayout.id,
+      viewerId: activeViewer.id,
+    });
+    setSelectedMode("preview");
+  }, [activeLayout.id, activeViewer.id, isPreviewRoute]);
+
+  useEffect(() => {
     if (currentMode !== "preview" || isPreviewRoute) {
       return;
     }
@@ -74,14 +97,16 @@ function DevViewSwitcher() {
       : nextView.defaultLayout;
     const nextViewerId = getAllowedPreviewViewer(nextView, activeViewer.id).id;
 
-    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId), {
+    navigate(getPreviewPath(nextView.id, nextLayoutId, nextViewerId, `${location.pathname}${location.search}${location.hash}`), {
       replace: true,
     });
   }, [
     activeLayout.id,
     activeViewer.id,
     isPreviewRoute,
+    location.hash,
     location.pathname,
+    location.search,
     navigate,
     currentMode,
   ]);
@@ -90,7 +115,9 @@ function DevViewSwitcher() {
     nextViewId = activeView.id,
     nextLayoutId = activeLayout.id,
     nextViewerId = activeViewer.id,
+    routeLocation = null,
   ) {
+    emitSessionReplaced({ reason: "enter-preview" });
     saveDevViewSwitcherSelection({
       layoutId: nextLayoutId,
       mode: "preview",
@@ -101,7 +128,7 @@ function DevViewSwitcher() {
       layoutId: nextLayoutId,
       viewerId: nextViewerId,
     });
-    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId));
+    navigate(getPreviewPath(nextViewId, nextLayoutId, nextViewerId, routeLocation));
   }
 
   function goToAllowedPreview(
@@ -113,17 +140,29 @@ function DevViewSwitcher() {
       nextView.id,
       nextLayoutId,
       getAllowedPreviewViewer(nextView, nextViewerId).id,
+      nextView.id === activeView.id ? activeRouteLocation : nextView.path,
     );
   }
 
-  function goToRealRoute(view = activeView) {
+  async function goToRealRoute(view = activeView) {
+    resetPreviewFixtures();
     saveDevViewSwitcherSelection({
       layoutId: activeLayout.id,
       mode: "normal",
       viewerId: activeViewer.id,
     });
     setSelectedMode("normal");
-    navigate(view.path, { replace: true });
+    emitSessionReplaced({ reason: "leave-preview" });
+
+    // Revalidate any preserved real session only after preview has been disabled.
+    // Invalid refresh credentials are cleared by the global auth client; network
+    // failures leave the last known account intact instead of logging it out.
+    try {
+      await useAuthStore.getState().loadCurrentUser();
+    } catch {
+      // Friendly session-expiry handling is centralized in the auth store/router.
+    }
+    navigate(view.id === activeView.id ? activeRouteLocation : view.path, { replace: true });
   }
 
   function handleModeChange(nextMode) {
@@ -157,11 +196,11 @@ function DevViewSwitcher() {
   }
 
   function handleLayoutChange(event) {
-    goToPreview(activeView.id, event.target.value, activeViewer.id);
+    goToPreview(activeView.id, event.target.value, activeViewer.id, activeRouteLocation);
   }
 
   function handleViewerChange(event) {
-    goToPreview(activeView.id, activeLayout.id, event.target.value);
+    goToPreview(activeView.id, activeLayout.id, event.target.value, activeRouteLocation);
   }
 
   if (!isOpen) {
@@ -170,7 +209,10 @@ function DevViewSwitcher() {
         aria-label="Abrir navegador de vistas"
         className="dev-view-switcher__toggle"
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          saveDevViewSwitcherOpenState(true);
+          setIsOpen(true);
+        }}
       >
         Dev views
       </button>
@@ -190,7 +232,10 @@ function DevViewSwitcher() {
         <button
           aria-label="Cerrar navegador de vistas"
           type="button"
-          onClick={() => setIsOpen(false)}
+          onClick={() => {
+            saveDevViewSwitcherOpenState(false);
+            setIsOpen(false);
+          }}
         >
           ×
         </button>
@@ -229,7 +274,7 @@ function DevViewSwitcher() {
             onClick={() => handleModeChange("preview")}
           >
             <strong>Preview</strong>
-            <small>Sesión simulada</small>
+            <small>Sesión temporal</small>
           </button>
         </div>
 
@@ -349,7 +394,7 @@ function getModeMessage(currentMode) {
     return "Usa la sesión real guardada, envía el token real y navega por las rutas reales.";
   }
 
-  return "Usa una sesión simulada local, no guarda login real, no envía token real y bloquea escrituras.";
+  return "Usa una sesión local y temporal: no envía tokens reales y conserva cambios solo hasta salir o restablecer el preview.";
 }
 
 function getStatusMessage({ isAllowed, isLayoutAllowed, isViewerAllowed }) {

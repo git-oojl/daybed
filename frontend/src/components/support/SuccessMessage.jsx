@@ -1,5 +1,5 @@
-function SuccessMessage({ message = "Operación completada." }) {
-  return <p role="status">{message}</p>;
-}
+import { FaCheck } from "react-icons/fa";
 
-export default SuccessMessage;
+export default function SuccessMessage({ message = "Operación completada." }) {
+  return <div className="inline-notice inline-notice--success" role="status"><FaCheck /> {message}</div>;
+}

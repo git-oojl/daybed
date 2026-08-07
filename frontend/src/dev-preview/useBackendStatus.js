@@ -3,23 +3,45 @@ import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../services/apiClient.js";
 import { apiEndpoints } from "../services/apiEndpoints.js";
 
+const HEALTH_TIMEOUT_MS = 3000;
+
 const initialStatus = {
   state: "checking",
   label: "Backend: verificando",
-  detail: "Probando /api/health/",
+  detail: "Comprobando la conexión sin bloquear la interfaz.",
   checks: [
     {
       label: "Health check",
       status: "pending",
-      detail: "Esperando respuesta del backend.",
+      detail: "La tienda puede renderizar mientras termina esta comprobación.",
     },
     {
       label: "Modo",
       status: "pending",
-      detail: "El switcher espera el health check para marcar el default.",
+      detail: "El modo se resolverá cuando responda el backend o venza el tiempo límite.",
     },
   ],
 };
+
+function offlineStatus(healthUrl, detail) {
+  return {
+    state: "offline",
+    label: "Backend no disponible",
+    detail,
+    checks: [
+      {
+        label: "Health check",
+        status: "error",
+        detail: `${healthUrl} no respondió dentro del tiempo esperado.`,
+      },
+      {
+        label: "Modo preview",
+        status: "safe",
+        detail: "La interfaz y el preview continúan disponibles con datos temporales.",
+      },
+    ],
+  };
+}
 
 export function useBackendStatus() {
   const [status, setStatus] = useState(initialStatus);
@@ -27,6 +49,13 @@ export function useBackendStatus() {
   useEffect(() => {
     const controller = new AbortController();
     const healthUrl = `${API_BASE_URL}${apiEndpoints.health}`;
+    let active = true;
+    let timedOut = false;
+
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort("health-check-timeout");
+    }, HEALTH_TIMEOUT_MS);
 
     async function checkBackend() {
       setStatus(initialStatus);
@@ -36,9 +65,8 @@ export function useBackendStatus() {
           signal: controller.signal,
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!active) return;
 
         setStatus({
           state: "online",
@@ -53,38 +81,33 @@ export function useBackendStatus() {
             {
               label: "Modo normal",
               status: "safe",
-              detail: "Backend activo: las rutas reales usan sesión y tokens reales.",
+              detail: "Las rutas reales pueden usar la sesión y los datos del backend.",
             },
           ],
         });
       } catch (error) {
-        if (error.name === "AbortError") {
-          return;
-        }
-
-        setStatus({
-          state: "offline",
-          label: "Backend no disponible",
-          detail: "El preview sigue funcionando con estado simulado.",
-          checks: [
-            {
-              label: "Health check",
-              status: "error",
-              detail: `${healthUrl} no respondió.`,
-            },
-            {
-              label: "Modo preview",
-              status: "safe",
-              detail: "Backend no disponible: el preview usa sesión simulada.",
-            },
-          ],
-        });
+        if (!active) return;
+        if (error?.name === "AbortError" && !timedOut) return;
+        setStatus(
+          offlineStatus(
+            healthUrl,
+            timedOut
+              ? "La comprobación tardó demasiado; la interfaz sigue visible."
+              : "El preview sigue funcionando con datos temporales.",
+          ),
+        );
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     }
 
     checkBackend();
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+      controller.abort("component-unmounted");
+    };
   }, []);
 
   return status;

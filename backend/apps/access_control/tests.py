@@ -398,3 +398,26 @@ def test_anonymous_access_is_not_an_assignable_role_and_public_endpoints_stay_pu
     assert public_detail.status_code == 200
     assert protected_internal.status_code == 401
     assert not User.objects.filter(role="invitado").exists()
+
+
+def test_employee_individual_permissions_override_the_group_template():
+    employee = create_user("rbac_individual_override")
+    allow_only("products.view", "orders.view")
+    employee.operational_permission_codes = ["inventory.view"]
+    employee.save(update_fields=("operational_permission_codes",))
+
+    assert get_effective_permission_codes(employee) == ["inventory.view"]
+    assert api_client(employee).get(reverse("inventory-products")).status_code == 200
+    assert api_client(employee).get(reverse("staff-product-list")).status_code == 403
+
+
+def test_clearing_employee_override_restores_the_group_template():
+    employee = create_user("rbac_individual_reset")
+    allow_only("products.view")
+    employee.operational_permission_codes = ["orders.view"]
+    employee.save(update_fields=("operational_permission_codes",))
+
+    employee.operational_permission_codes = None
+    employee.save(update_fields=("operational_permission_codes",))
+
+    assert get_effective_permission_codes(employee) == ["products.view"]

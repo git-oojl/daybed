@@ -1,6 +1,9 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,8 +17,8 @@ from apps.orders.models import Order
 @extend_schema(
     summary="Consultar métricas del dashboard",
     description=(
-        "Devuelve métricas administrativas sobre pedidos, ventas simuladas, "
-        "inventario bajo, pedidos recientes y costos de entrega."
+        "Devuelve métricas administrativas reales sobre pedidos, ventas, "
+        "inventario bajo, actividad reciente y costos de entrega."
     ),
     responses=DashboardMetricsSerializer,
     tags=["Dashboard"],
@@ -24,11 +27,19 @@ class DashboardMetricsView(APIView):
     permission_classes = (operational_permission("dashboard.view"),)
 
     def get(self, request):
+        try:
+            range_days = int(request.query_params.get("range_days", 90))
+        except (TypeError, ValueError):
+            range_days = 90
+        range_days = max(7, min(range_days, 365))
+        range_start = timezone.now() - timedelta(days=range_days)
+        orders = Order.objects.filter(created_at__gte=range_start)
+
         status_counts = {
             row["status"]: row["count"]
-            for row in Order.objects.values("status").annotate(count=Count("id"))
+            for row in orders.values("status").annotate(count=Count("id"))
         }
-        order_aggregates = Order.objects.aggregate(
+        order_aggregates = orders.aggregate(
             total_orders=Count("id"),
             total_simulated_sales=Sum(
                 "total",
@@ -38,23 +49,68 @@ class DashboardMetricsView(APIView):
             average_delivery_fee=Avg("delivery_fee", default=Decimal("0.00")),
             average_delivery_distance=Avg("distance_km", default=Decimal("0.000")),
         )
-        low_stock_count = Product.objects.filter(
+        product_aggregates = Product.objects.aggregate(
+            total_products=Count("id", filter=Q(active=True)),
+            low_stock_count=Count(
+                "id",
+                filter=Q(active=True, stock__lte=F("minimum_stock")),
+            ),
+        )
+        low_stock_products = Product.objects.filter(
             active=True,
             stock__lte=F("minimum_stock"),
-        ).count()
-        recent_orders = Order.objects.order_by("-created_at", "-id")[:5]
+        ).only("id", "name", "sku", "stock", "minimum_stock").order_by(
+            "stock",
+            "name",
+        )[:5]
+        recent_orders = orders.select_related("user").order_by(
+            "-created_at",
+            "-id",
+        )[:5]
+        sales_by_month = (
+            orders.exclude(status=Order.Status.CANCELLED)
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(total=Sum("total", default=Decimal("0.00")))
+            .order_by("month")
+        )
+        total_sales = order_aggregates["total_simulated_sales"]
 
         payload = {
+            "range_days": range_days,
+            "range_start": range_start,
             "total_orders": order_aggregates["total_orders"],
-            "total_simulated_sales": order_aggregates["total_simulated_sales"],
+            "total_products": product_aggregates["total_products"],
+            "total_simulated_sales": total_sales,
+            "total_sales": total_sales,
             "orders_by_status": [
                 {"status": status, "count": status_counts.get(status, 0)}
                 for status, _label in Order.Status.choices
             ],
-            "low_stock_count": low_stock_count,
+            "low_stock_count": product_aggregates["low_stock_count"],
+            "low_stock": [
+                {
+                    "id": product.id,
+                    "name": product.name,
+                    "sku": product.sku,
+                    "stock": product.stock,
+                    "minimum_stock": product.minimum_stock,
+                }
+                for product in low_stock_products
+            ],
+            "sales_by_month": [
+                {
+                    "month": row["month"].strftime("%Y-%m"),
+                    "total": row["total"],
+                }
+                for row in sales_by_month
+                if row["month"] is not None
+            ],
             "recent_orders": [
                 {
                     "id": order.id,
+                    "customer_name": self._customer_name(order),
+                    "customer_email": order.user.email,
                     "status": order.status,
                     "total": order.total,
                     "created_at": order.created_at,
@@ -65,3 +121,7 @@ class DashboardMetricsView(APIView):
             "average_delivery_distance": order_aggregates["average_delivery_distance"],
         }
         return Response(DashboardMetricsSerializer(payload).data)
+
+    def _customer_name(self, order):
+        full_name = f"{order.user.first_name} {order.user.last_name}".strip()
+        return full_name or order.user.username or order.user.email

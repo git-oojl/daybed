@@ -1,9 +1,10 @@
+import { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 import { useAuthStore } from "../auth/authStore.js";
+import { PreviewSessionContext } from "../auth/previewSessionContext.js";
 import { viewerRoles } from "../auth/roleMapping.js";
 import { accessGroups } from "../auth/viewerAccess.js";
-import { usePreviewSession } from "../dev-preview/usePreviewSession.js";
 import { routePaths } from "./routePaths.js";
 
 function ProtectedRoute({
@@ -13,7 +14,7 @@ function ProtectedRoute({
   redirectTo = "/no-autorizado",
 }) {
   const location = useLocation();
-  const previewSession = usePreviewSession();
+  const previewSession = useContext(PreviewSessionContext);
   const storedUser = useAuthStore((state) => state.user);
   const storedViewerId = useAuthStore((state) => state.viewerId);
   const storedIsAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -42,7 +43,6 @@ function ProtectedRoute({
 
   if (
     requiredPermission &&
-    !previewSession.isPreview &&
     !hasEffectivePermission(user, requiredPermission)
   ) {
     return <Navigate to={redirectTo} replace state={{ from: location }} />;

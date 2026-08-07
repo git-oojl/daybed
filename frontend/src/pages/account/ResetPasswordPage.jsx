@@ -19,7 +19,7 @@ import {
   FaStore as StoreIcon,
 } from "react-icons/fa";
 import "../../assets/CSS/account/login-page.css";
-import loginBackground from "../../assets/LoginPage.jpg";
+import loginBackground from "../../assets/LoginPage.webp";
 import { routePaths } from "../../routes/routePaths.js";
 import { accountService } from "../../services/backendServices.js";
 
@@ -83,9 +83,9 @@ function ResetPasswordPage() {
   const [error, setError] = useState("");
 
   const missingToken = !uid || !token;
+  const passwordIsLongEnough = formData.new_password.length >= 8;
   const passwordsMatch =
-    formData.new_password &&
-    formData.new_password === formData.confirm_password;
+    passwordIsLongEnough && formData.new_password === formData.confirm_password;
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -95,9 +95,17 @@ function ResetPasswordPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
     setMessage("");
     setError("");
+    if (!passwordIsLongEnough) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (!passwordsMatch) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+    setLoading(true);
 
     try {
       await accountService.confirmPasswordReset({
@@ -120,7 +128,7 @@ function ResetPasswordPage() {
         <Box className="login-logo-wrapper">
           <StoreIcon className="login-logo-icon" />
           <Typography className="login-logo-text" variant="h1">
-            DayBed
+            Daybed
           </Typography>
         </Box>
 
@@ -153,27 +161,31 @@ function ResetPasswordPage() {
             type={showPassword ? "text" : "password"}
             value={formData.new_password}
             onChange={handleChange}
-            placeholder="Mínimo 6 caracteres"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon style={{ color: "#61470c" }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((current) => !current)}
-                    edge="end"
-                    sx={{ color: "#61470c" }}
-                    aria-label={
-                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            placeholder="Mínimo 8 caracteres"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon style={{ color: "#61470c" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((current) => !current)}
+                      edge="end"
+                      sx={{ color: "#61470c" }}
+                      aria-label={
+                        showPassword
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"
+                      }
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
             required
             autoComplete="new-password"
@@ -188,12 +200,14 @@ function ResetPasswordPage() {
             value={formData.confirm_password}
             onChange={handleChange}
             placeholder="Repite tu contraseña"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon style={{ color: "#61470c" }} />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockIcon style={{ color: "#61470c" }} />
+                  </InputAdornment>
+                ),
+              },
             }}
             required
             autoComplete="new-password"

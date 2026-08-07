@@ -1,561 +1,106 @@
-// RolesPermissionsPage.jsx
-import { useEffect, useMemo, useState } from "react";
-import "../../assets/CSS/admin/roles-permissions.css";
-import { accessService } from "../../services/backendServices.js";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaCheck, FaCrown, FaKey, FaRotateLeft, FaShieldHalved, FaUserGear, FaUsers } from "react-icons/fa6";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { routePaths } from "../../routes/routePaths.js";
+import { accessService, accountService } from "../../services/backendServices.js";
+import { readCollection } from "../../services/viewMappers.js";
 
-// ============================================
-// ICONOS SVG
-// ============================================
-function IconShield() {
-  return (
-    <svg
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 3s6 1 6 6v4.5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V9c0-5 6-6 6-6Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 12l2 2 4-4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconUserCog() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M19 10v4M21 12h-4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 12l5 5L20 7"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconUser() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM3 20.5a9 9 0 0 1 18 0"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconUsers() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M17 12a3 3 0 1 0 0-6M7 12a3 3 0 1 1 0-6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M3 20.5a9 9 0 0 1 18 0"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconLock() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="3"
-        y="11"
-        width="18"
-        height="11"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M7 11V7a5 5 0 0 1 10 0v4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconSave() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M17 21v-8H7v8M7 3v5h8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconCancel() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M6 18L18 6M6 6l12 12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-const ROLE_META = {
-  administrador: {
-    icon: <IconShield />,
-    color: "#B88E2F",
-  },
-  empleado: {
-    icon: <IconUser />,
-    color: "#6B7280",
-  },
-};
-
-const VISIBLE_ROLE_IDS = ["administrador", "empleado"];
-
-function groupPermissions(catalog) {
-  return catalog.reduce((groups, permission) => {
-    const group = groups.get(permission.category) ?? [];
-    group.push(permission);
-    groups.set(permission.category, group);
-    return groups;
-  }, new Map());
-}
-
-function getErrorMessage(error) {
-  return error?.message || "No se pudo completar la operación.";
-}
+const HERO = "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1800&q=82";
 
 export default function RolesPermissionsPage() {
-  const [selectedRole, setSelectedRole] = useState("empleado");
-  const [rolesData, setRolesData] = useState(null);
-  const [draftEmployeePermissions, setDraftEmployeePermissions] = useState([]);
-  const [editingPermissions, setEditingPermissions] = useState(false);
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
+  const [employees, setEmployees] = useState([]);
+  const [catalog, setCatalog] = useState([]);
+  const [defaultCodes, setDefaultCodes] = useState([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadRoles() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await accessService.roles();
-        if (!active) return;
-        setRolesData(response);
-        const employeeRole = response.roles.find((role) => role.id === "empleado");
-        setDraftEmployeePermissions(employeeRole?.permission_codes ?? []);
-      } catch (err) {
-        if (active) setError(getErrorMessage(err));
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    loadRoles();
-    return () => {
-      active = false;
-    };
+  const load = useCallback(async () => {
+    try {
+      setLoading(true); setError("");
+      const [roleResponse, usersResponse] = await Promise.all([accessService.roles(), accountService.users()]);
+      const roleRows = roleResponse?.roles || [];
+      const employeeRole = roleRows.find((role) => role.id === "empleado");
+      const people = readCollection(usersResponse).filter((person) => person.role === "empleado" && person.is_active !== false);
+      setCatalog(roleResponse?.permission_catalog || []);
+      setDefaultCodes(employeeRole?.permission_codes || []);
+      setEmployees(people);
+      setSelectedId((current) => current || String(people[0]?.id || ""));
+    } catch (err) { setError(err.message || "No pudimos cargar los accesos del equipo."); }
+    finally { setLoading(false); }
   }, []);
 
-  const visibleRoles = useMemo(() => {
-    return (rolesData?.roles ?? []).filter((role) =>
-      VISIBLE_ROLE_IDS.includes(role.id),
-    );
-  }, [rolesData]);
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) return navigate(routePaths.account.login);
+    if (!authLoading && isAuthenticated && getViewerIdForUser(user) !== "admin") return navigate(routePaths.support.unauthorized);
+    if (!authLoading && isAuthenticated) load();
+  }, [authLoading, isAuthenticated, load, navigate, user]);
 
-  const selectedRoleData = useMemo(() => {
-    return visibleRoles.find((role) => role.id === selectedRole) ?? visibleRoles[0];
-  }, [selectedRole, visibleRoles]);
+  const selected = useMemo(() => employees.find((employee) => String(employee.id) === String(selectedId)), [employees, selectedId]);
+  useEffect(() => {
+    if (selected) setCodes(selected.operational_permission_codes ?? selected.effective_permission_codes ?? defaultCodes);
+  }, [defaultCodes, selected]);
 
-  const groupedPermissions = useMemo(() => {
-    return Array.from(groupPermissions(rolesData?.permission_catalog ?? []));
-  }, [rolesData]);
+  const grouped = useMemo(() => catalog.reduce((groups, permission) => {
+    (groups[permission.category] ||= []).push(permission);
+    return groups;
+  }, {}), [catalog]);
 
-  const selectedPermissionSet = useMemo(() => {
-    const permissionCodes =
-      selectedRoleData?.id === "empleado"
-        ? draftEmployeePermissions
-        : selectedRoleData?.effective_permission_codes ?? [];
-    return new Set(permissionCodes);
-  }, [draftEmployeePermissions, selectedRoleData]);
-  const selectedRoleName = selectedRoleData?.name ?? "";
-  const canEditSelectedRole = selectedRoleData?.id === "empleado";
+  function toggle(code) {
+    setCodes((current) => current.includes(code) ? current.filter((item) => item !== code) : [...current, code]);
+    setNotice("");
+  }
 
-  const handleSelectRole = (roleId) => {
-    setSelectedRole(roleId);
-    setEditingPermissions(false);
-    setSuccess(null);
-    setError(null);
-  };
-
-  const toggleEmployeePermission = (permissionCode) => {
-    setSuccess(null);
-    setDraftEmployeePermissions((current) => {
-      if (current.includes(permissionCode)) {
-        return current.filter((code) => code !== permissionCode);
-      }
-      return [...current, permissionCode].sort();
-    });
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-
+  async function save(override = codes) {
+    if (!selected) return;
     try {
-      const response =
-        await accessService.updateEmployeeRole(draftEmployeePermissions);
-      setRolesData(response);
-      const employeeRole = response.roles.find((role) => role.id === "empleado");
-      setDraftEmployeePermissions(employeeRole?.permission_codes ?? []);
-      setEditingPermissions(false);
-      setSuccess("Permisos de empleado guardados.");
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
+      setSaving(true); setError(""); setNotice("");
+      const updated = await accountService.updateUser(selected.id, { operational_permission_codes: override });
+      setEmployees((current) => current.map((employee) => employee.id === updated.id ? updated : employee));
+      setCodes(updated.operational_permission_codes ?? updated.effective_permission_codes ?? defaultCodes);
+      setNotice(override === null ? "Se restauró la plantilla general para este empleado." : "Los accesos individuales quedaron guardados.");
+    } catch (err) { setError(err.message || "No fue posible guardar los accesos."); }
+    finally { setSaving(false); }
+  }
 
-  const handleCancel = () => {
-    const employeeRole = rolesData?.roles.find((role) => role.id === "empleado");
-    setDraftEmployeePermissions(employeeRole?.permission_codes ?? []);
-    setEditingPermissions(false);
-    setSuccess(null);
-    setError(null);
-  };
-
-  // ============================================
-  // ✅ RENDER CON HOMEHEADER Y HOMEFOOTER
-  // ============================================
   return (
-    <div className="home-page roles-permissions">
+    <div className="home-page team-access-v2">
       <HomeHeader />
-
-      <section className="roles-permissions-hero" aria-label="Roles y permisos">
-        <div className="roles-permissions-hero__overlay">
-          <div className="roles-permissions-hero__content">
-            <div className="roles-permissions-hero__icon">
-              <IconShield />
-            </div>
-            <div className="roles-permissions-hero__text">
-              <h1 className="roles-permissions-hero__title">
-                Roles y permisos
-              </h1>
-              <p className="roles-permissions-hero__subtitle">
-                Gestiona el paquete operativo configurable para empleados
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="roles-permissions__content">
-        {success && (
-          <div className="roles-permissions__alert roles-permissions__alert--success">
-            <IconCheck />
-            <span>{success}</span>
-          </div>
-        )}
-        {error && (
-          <div className="roles-permissions__alert roles-permissions__alert--error">
-            <span>{error}</span>
-          </div>
-        )}
-
-        <section
-          className="roles-permissions__section"
-          aria-labelledby="asignacion-roles"
-        >
-          <h2
-            id="asignacion-roles"
-            className="roles-permissions__section-title"
-          >
-            <IconUserCog />
-            Roles internos
-          </h2>
-          <p className="roles-permissions__section-desc">
-            Administrador es fijo. Empleado tiene permisos operativos
-            configurables.
-          </p>
-
-          {loading ? (
-            <div className="roles-permissions__empty">Cargando permisos...</div>
-          ) : (
-            <div className="roles-permissions__roles-grid">
-              {visibleRoles.map((role) => {
-                const meta = ROLE_META[role.id];
-                return (
-                  <button
-                    key={role.id}
-                    className={`roles-permissions__role-card ${
-                      selectedRoleData?.id === role.id
-                        ? "roles-permissions__role-card--active"
-                        : ""
-                    }`}
-                    onClick={() => handleSelectRole(role.id)}
-                    type="button"
-                  >
-                    <div
-                      className="roles-permissions__role-icon"
-                      style={{ color: meta?.color }}
-                    >
-                      {meta?.icon}
-                    </div>
-                    <div className="roles-permissions__role-info">
-                      <h3 className="roles-permissions__role-name">
-                        {role.name}
-                      </h3>
-                      <p className="roles-permissions__role-desc">
-                        {role.description}
-                      </p>
-                      <span className="roles-permissions__role-users">
-                        <IconUsers />
-                        {role.user_count} usuarios
-                      </span>
-                    </div>
-                    {selectedRoleData?.id === role.id && (
-                      <div className="roles-permissions__role-check">
-                        <IconCheck />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+      <PageHero title="Accesos del equipo" eyebrow="Administración" image={HERO} current="Accesos" />
+      <main className="team-access-v2__main">
+        <section className="team-access-v2__intro">
+          <div><p className="section-kicker">Control con sentido</p><h2>Permisos por empleado</h2><p>Los administradores conservan acceso completo. Aquí se ajusta únicamente lo que cada empleado puede consultar o modificar.</p></div>
+          <article><FaCrown /><div><strong>Administrador</strong><span>Acceso completo y protegido; no se puede degradar desde esta pantalla.</span></div></article>
         </section>
 
-        <section
-          className="roles-permissions__section"
-          aria-labelledby="control-acceso"
-        >
-          <div className="roles-permissions__section-header">
-            <div>
-              <h2
-                id="control-acceso"
-                className="roles-permissions__section-title"
-              >
-                <IconLock />
-                Control de acceso
-              </h2>
-              <p className="roles-permissions__section-desc">
-                Permisos efectivos del rol <strong>{selectedRoleName}</strong>
-              </p>
+        {error ? <div className="inline-notice inline-notice--error">{error}<button onClick={load}>Volver a cargar accesos</button></div> : null}
+        {notice ? <div className="inline-notice inline-notice--success inline-notice--stacked"><FaCheck /><span>{notice}</span></div> : null}
+
+        {loading || authLoading ? <section className="state-card"><span className="state-card__icon"><FaShieldHalved /></span><h2>Cargando accesos</h2><p>Consultando empleados y permisos operativos.</p></section> : employees.length ? (
+          <section className="team-access-v2__workspace">
+            <aside>
+              <header><FaUsers /><div><p>Equipo activo</p><h3>Selecciona una persona</h3></div></header>
+              <div className="team-access-v2__people">{employees.map((employee) => { const name = `${employee.first_name || ""} ${employee.last_name || ""}`.trim() || employee.username || employee.email; return <button className={String(employee.id) === String(selectedId) ? "is-active" : ""} key={employee.id} onClick={() => setSelectedId(String(employee.id))}><span>{name.slice(0, 1).toUpperCase()}</span><div><strong>{name}</strong><small>{employee.email}</small></div></button>; })}</div>
+            </aside>
+
+            <div className="team-access-v2__permissions">
+              <header><div><p className="section-kicker">Configuración individual</p><h3>{selected ? `${selected.first_name || ""} ${selected.last_name || ""}`.trim() || selected.email : "Empleado"}</h3><span>{selected?.operational_permission_codes == null ? "Usa la plantilla general de empleado" : "Tiene una configuración personalizada"}</span></div><div><button className="ghost-action" onClick={() => save(null)} disabled={saving}><FaRotateLeft /> Usar plantilla</button><button className="solid-action" onClick={() => save(codes)} disabled={saving}><FaKey /> {saving ? "Guardando..." : "Guardar accesos"}</button></div></header>
+              <div className="team-access-v2__groups">{Object.entries(grouped).map(([category, permissions]) => <section key={category}><h4>{category}</h4>{permissions.map((permission) => <label key={permission.code} className={codes.includes(permission.code) ? "is-enabled" : ""}><input type="checkbox" checked={codes.includes(permission.code)} onChange={() => toggle(permission.code)} /><span className="team-access-v2__check"><FaCheck /></span><div><strong>{permission.label}</strong><small>{permission.description}</small></div></label>)}</section>)}</div>
             </div>
-            {canEditSelectedRole && !loading && (
-              <div className="roles-permissions__section-actions">
-                {editingPermissions ? (
-                  <>
-                    <button
-                      className="roles-permissions__btn roles-permissions__btn--secondary"
-                      onClick={handleCancel}
-                      disabled={saving}
-                      type="button"
-                    >
-                      <IconCancel />
-                      Cancelar
-                    </button>
-                    <button
-                      className="roles-permissions__btn roles-permissions__btn--primary"
-                      onClick={handleSave}
-                      disabled={saving}
-                      type="button"
-                    >
-                      <IconSave />
-                      {saving ? "Guardando..." : "Guardar cambios"}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    className="roles-permissions__btn roles-permissions__btn--primary"
-                    onClick={() => setEditingPermissions(true)}
-                    type="button"
-                  >
-                    Editar permisos
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="roles-permissions__table-wrapper">
-            <div className="roles-permissions__table-scroll">
-              <table className="roles-permissions__table">
-                <thead>
-                  <tr>
-                    <th className="roles-permissions__table-group">Módulo</th>
-                    <th className="roles-permissions__table-perm">Permiso</th>
-                    <th className="roles-permissions__table-status">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupedPermissions.flatMap(([category, permissions]) =>
-                    permissions.map((permission, index) => {
-                      const hasPermission = selectedPermissionSet.has(
-                        permission.code,
-                      );
-                      return (
-                        <tr key={permission.code}>
-                          <td className="roles-permissions__table-group">
-                            {index === 0 ? category : ""}
-                          </td>
-                          <td className="roles-permissions__table-perm">
-                            {permission.label}
-                          </td>
-                          <td className="roles-permissions__table-status">
-                            {editingPermissions && canEditSelectedRole ? (
-                              <label className="roles-permissions__toggle">
-                                <input
-                                  type="checkbox"
-                                  checked={hasPermission}
-                                  onChange={() =>
-                                    toggleEmployeePermission(permission.code)
-                                  }
-                                />
-                                <span className="roles-permissions__slider" />
-                              </label>
-                            ) : (
-                              <span
-                                className={`roles-permissions__status-badge ${
-                                  hasPermission
-                                    ? "roles-permissions__status-badge--active"
-                                    : "roles-permissions__status-badge--inactive"
-                                }`}
-                              >
-                                {hasPermission ? "Activo" : "Inactivo"}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    }),
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section
-          className="roles-permissions__section"
-          aria-labelledby="visitante-anonimo"
-        >
-          <h2
-            id="visitante-anonimo"
-            className="roles-permissions__section-title"
-          >
-            <IconUsers />
-            Visitante no autenticado
-          </h2>
-          <p className="roles-permissions__section-desc">
-            Referencia de acceso público: catálogo, detalle de producto,
-            registro e inicio de sesión. No es un rol asignable ni configurable.
-          </p>
-        </section>
-      </div>
-
+          </section>
+        ) : <section className="state-card"><span className="state-card__icon"><FaUserGear /></span><h2>No hay empleados activos</h2><p>Crea o activa una cuenta de empleado para asignarle accesos individuales.</p><button onClick={() => navigate(routePaths.admin.rolesPermissions)}>Gestionar accesos</button></section>}
+      </main>
+      <HomeFooter />
     </div>
   );
 }

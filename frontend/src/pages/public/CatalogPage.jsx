@@ -1,586 +1,178 @@
-// CatalogPage.jsx - CORREGIDO (sin warnings de ESLint)
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FaCircleCheck, FaFilter, FaTriangleExclamation, FaXmark } from "react-icons/fa6";
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
-import { useState, useEffect, useCallback } from "react";
-import SyltherineDaybed from "../../assets/SyltherineDaybed.jpg";
-import LeviosaDaybed from "../../assets/LeviosaDaybed.jpg";
-import LolitoDaybed from "../../assets/LolitoDaybed.jpg";
-import RespiraDaybed from "../../assets/RespiraDaybed.jpg";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
+import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { Link } from "react-router-dom";
-import { routePaths } from "../../routes/routePaths.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import StoreProductCard from "../../components/store/StoreProductCard.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
 import { catalogService, cartService } from "../../services/backendServices.js";
+import { getSavedProductIds, subscribeToSavedItems, toggleSavedProduct } from "../../services/savedItems.js";
+import { readCollection } from "../../services/viewMappers.js";
 
-// ============================================================
-// ✅ MAPA DE IMÁGENES POR NOMBRE DE PRODUCTO
-// ============================================================
-const productImages = {
-  "Sofá Cama Lino Arena": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
-  "Sofá Cama Lino": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop",
-  "Mesa Centro Fresno": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
-  "Mesa Redonda Terra": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400&h=400&fit=crop",
-  "Silla Lectura Olivo": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
-  "Silla Lectura": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
-  "Mesa de Noche": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&h=400&fit=crop",
-  "Escritorio Ejecutivo": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&h=400&fit=crop",
-  "Sillón Relax": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop",
-  "Sillón": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop",
-  "Lámpara de Pie": "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&h=400&fit=crop",
-  "Sofá Esquinero": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
-  "Sofá": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop",
-  "Mesa": "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop",
-  "Silla": "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop",
-  "Banco Baúl Nogal": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop",
-  "Daybed Roble Nórdico": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop",
+const HERO_IMAGE = "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1800&q=82";
+const SORTS = {
+  recommended: "-featured,featured_order,-average_review_rating,-created_at",
+  newest: "-created_at",
+  "price-asc": "price",
+  "price-desc": "-price",
+  rating: "-average_review_rating",
+  name: "name",
+};
+const FILTER_LABELS = {
+  "category__slug": "Colección",
+  room: "Espacio",
+  material: "Material",
+  color: "Color",
+  style: "Estilo",
+  in_stock: "Disponibilidad",
+  has_storage: "Con almacenamiento",
+  is_sofa_bed: "Sofá cama",
+  featured: "Destacados",
+  min_rating: "Calificación",
+  min_price: "Precio desde",
+  max_price: "Precio hasta",
+  search: "Búsqueda",
 };
 
-// ✅ Función para obtener el nombre de la categoría (string)
-const getCategoryName = (category) => {
-  if (!category) return "";
-  if (typeof category === "string") return category;
-  if (typeof category === "object" && category.name) return category.name;
-  if (typeof category === "object" && category.title) return category.title;
-  return "";
-};
+function unique(items, key) {
+  return [...new Set(items.map((item) => item?.[key]).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "es"));
+}
 
-const normalizeCategoryDisplayName = (value = "") => {
-  const text = String(value)
-    .replace(/Ã¡/g, "á")
-    .replace(/Ã©/g, "é")
-    .replace(/Ã­/g, "í")
-    .replace(/Ã³/g, "ó")
-    .replace(/Ãº/g, "ú")
-    .replace(/Ã±/g, "ñ")
-    .replace(/Ã/g, "í")
-    .trim();
-
-  return text;
-};
-
-const getCategoryNameSafe = (category) => {
-  if (!category) return "";
-  if (typeof category === "string") return normalizeCategoryDisplayName(category);
-  if (typeof category === "object") {
-    return normalizeCategoryDisplayName(category.name || category.title || category.slug || "");
-  }
-  return "";
-};
-
-const getProductCategoryName = (product) => {
-  const categoryFromDetails = getCategoryNameSafe(product?.category_detail);
-  if (categoryFromDetails) return categoryFromDetails;
-
-  const categoryFromProduct = getCategoryNameSafe(product?.category);
-  if (categoryFromProduct) return categoryFromProduct;
-
-  return "";
-};
-
-// ✅ Función para obtener imagen según el producto
-const getProductImage = (product) => {
-  if (product.image) return product.image;
-  if (product.images?.length > 0) return product.images[0];
-  
-  const name = product.name || "";
-  
-  for (const [key, value] of Object.entries(productImages)) {
-    if (name.includes(key) || key.includes(name)) {
-      return value;
-    }
-  }
-  
-  const categoryName = getCategoryName(product.category);
-  
-  if (categoryName.includes("Sofá") || categoryName.includes("Sillón")) {
-    return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
-  }
-  if (categoryName.includes("Mesa")) {
-    return "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?w=400&h=400&fit=crop";
-  }
-  if (categoryName.includes("Silla")) {
-    return "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&h=400&fit=crop";
-  }
-  if (categoryName.includes("Banco") || categoryName.includes("Almacenamiento")) {
-    return "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=400&fit=crop";
-  }
-  
-  return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop";
-};
-
-// ============================================================
-// PRODUCTOS MOCK (FALLBACK)
-// ============================================================
-const allProductsMock = [
-  { id: 1, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas", material: "Madera", color: "Natural", style: "Moderno", specifications: { room: "Sala" } },
-  { id: 2, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas", material: "Tela", color: "Blanco", style: "Minimalista", specifications: { room: "Recámara" } },
-  { id: 3, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás", material: "Tela", color: "Gris", style: "Clásico", specifications: { room: "Sala" } },
-  { id: 4, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración", material: "Metal", color: "Negro", style: "Industrial", specifications: { room: "Comedor" } },
-  { id: 5, name: "Respira", description: "Set bar exterior", price: 2899, image: RespiraDaybed, category: "Decoración", material: "Madera", color: "Claro", style: "Escandinavo", specifications: { room: "Sala" } },
-  { id: 6, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, category: "Decoración", material: "Metal", color: "Blanco", style: "Modern", specifications: { room: "Escritorio" } },
-  { id: 7, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas", material: "Cuero", color: "Marrón", style: "Clásico", specifications: { room: "Escritorio" } },
-  { id: 8, name: "Leviosa", description: "Silla de estilo café", price: 4599, image: LeviosaDaybed, category: "Sillas", material: "Tela", color: "Verde", style: "Mid-century", specifications: { room: "Recámara" } },
-  { id: 9, name: "Syltherine", description: "Mesa de estilo café", price: 12499, image: SyltherineDaybed, badge: "-30%", category: "Mesas", material: "Madera", color: "Roble", style: "Moderno", specifications: { room: "Comedor" } },
-  { id: 10, name: "Lolito", description: "Sofá grande", price: 3499, image: LolitoDaybed, badge: "-50%", category: "Sofás", material: "Tela", color: "Beige", style: "Minimalista", specifications: { room: "Sala" } },
-  { id: 11, name: "Respira", description: "Set bar exterior", price: 5299, image: RespiraDaybed, badge: "New", badgeType: "new", category: "Decoración", material: "Metal", color: "Dorado", style: "Lujoso", specifications: { room: "Sala" } },
-  { id: 12, name: "Leviosa", description: "Silla de estilo café", price: 9799, image: LeviosaDaybed, category: "Sillas", material: "Cuero", color: "Negro", style: "Clásico", specifications: { room: "Escritorio" } },
-];
-
-const generateMockProducts = () => {
-  const products = [];
-  for (let i = 0; i < 32; i++) {
-    const base = allProductsMock[i % allProductsMock.length];
-    products.push({ ...base, id: i + 1 });
-  }
-  return products;
-};
-
-function CatalogPage() {
-  const [sortBy, setSortBy] = useState("default");
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [notification, setNotification] = useState(null);
-  const [loading, setLoading] = useState(false);
+export default function CatalogPage() {
+  const { user } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const canUseCustomerFlows = !user || viewer === "customer";
+  const [searchParams, setSearchParams] = useEffectiveSearchParams();
+  const queryKey = searchParams.toString();
   const [products, setProducts] = useState([]);
-  const [storeCategories, setStoreCategories] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notification, setNotification] = useState(null);
 
-  // ============================================================
-  // ✅ CARGAR PRODUCTOS DEL BACKEND
-  // ============================================================
-  const fetchProducts = useCallback(async () => {
+  useEffect(() => subscribeToSavedItems(setSavedIds), []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([catalogService.products({ page_size: 200 }), catalogService.categories({ page_size: 100 })])
+      .then(([productResponse, categoryResponse]) => {
+        if (!active) return;
+        setAllProducts(readCollection(productResponse));
+        setCategories(readCollection(categoryResponse));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      console.log('🔄 Cargando productos y categorías desde backend...');
-
-      const [productsResponse, categoriesResponse] = await Promise.all([
-        catalogService.products(),
-        catalogService.categories().catch(() => []),
-      ]);
-
-      console.log('📦 Respuesta del backend (productos):', productsResponse);
-      console.log('📚 Respuesta del backend (categorías):', categoriesResponse);
-
-      let productsData = [];
-      if (Array.isArray(productsResponse)) {
-        productsData = productsResponse;
-      } else if (productsResponse?.results && Array.isArray(productsResponse.results)) {
-        productsData = productsResponse.results;
-      } else {
-        productsData = productsResponse || [];
-      }
-
-      let categoriesData = [];
-      if (Array.isArray(categoriesResponse)) {
-        categoriesData = categoriesResponse;
-      } else if (categoriesResponse?.results && Array.isArray(categoriesResponse.results)) {
-        categoriesData = categoriesResponse.results;
-      } else {
-        categoriesData = categoriesResponse || [];
-      }
-
-      const realCategoryNames = categoriesData
-        .map((category) => getCategoryNameSafe(category))
-        .filter(Boolean);
-
-      setStoreCategories(realCategoryNames);
-
-      if (productsData.length > 0) {
-        console.log(`✅ ${productsData.length} productos cargados`);
-        setProducts(productsData);
-        setError(null);
-      } else {
-        console.warn('⚠️ El servidor devolvió 0 productos');
-        setProducts(generateMockProducts());
-        setError('No hay productos en el servidor, usando productos de prueba');
-      }
-
-    } catch (error) {
-      console.error('❌ Error al cargar productos:', error);
-      setProducts(generateMockProducts());
-      setStoreCategories([]);
-      setError('Error de conexión, usando productos de prueba');
+      const params = Object.fromEntries(searchParams.entries());
+      const sort = params.sort || "recommended";
+      delete params.sort;
+      params.ordering = SORTS[sort] || SORTS.recommended;
+      const response = await catalogService.products(params);
+      setProducts(readCollection(response));
+    } catch (requestError) {
+      setError(requestError);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [queryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ useEffect CORREGIDO - agregar eslint-disable-next-line
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProducts();
-  }, [fetchProducts]);
+  useEffect(() => { loadProducts(); }, [loadProducts]);
 
-  // ✅ Obtener categorías únicas de los productos reales
-  const getProductCategories = () => {
-    const categories = new Set();
-    products.forEach((product) => {
-      const categoryName = getProductCategoryName(product);
-      if (categoryName) {
-        categories.add(categoryName);
-      }
-    });
-    return [...categories];
-  };
+  const optionSets = useMemo(() => ({
+    rooms: unique(allProducts, "room"),
+    materials: unique(allProducts, "material"),
+    colors: unique(allProducts, "color"),
+    styles: unique(allProducts, "style"),
+  }), [allProducts]);
 
-  // ✅ Usar las categorías reales del backend y agregar 4 más para navegación del cliente
-  const productCategories = getProductCategories();
-  const extraCatalogCategories = [
-    "Lámparas",
-    "Roperos",
-    "Mesas de noche",
-    "Bancos y taburetes",
-  ];
-  const allCategories = [...new Set([...storeCategories, ...productCategories, ...extraCatalogCategories])];
+  const categoryMap = useMemo(() => Object.fromEntries(categories.map((category) => [category.slug, category.name])), [categories]);
+  const activeFilters = useMemo(() => [...searchParams.entries()].filter(([key, value]) => value && key !== "sort"), [queryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ CALCULAR EL PRECIO MÁXIMO
-  const maxProductPrice = products.length > 0 
-    ? Math.max(...products.map(p => typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0), 0)
-    : 10000;
-  
-  const maxPriceRounded = Math.ceil(Math.max(maxProductPrice, 1000) / 1000) * 1000;
-
-  const [priceRange, setPriceRange] = useState({ 
-    min: 0, 
-    max: maxPriceRounded 
-  });
-
-  // ✅ useEffect CORREGIDO - agregar eslint-disable-next-line
-  useEffect(() => {
-    if (products.length > 0) {
-      const newMax = Math.max(...products.map(p => 
-        typeof p.price === 'number' ? p.price : parseFloat(p.price) || 0
-      ), 0);
-      const newMaxRounded = Math.ceil(Math.max(newMax, 1000) / 1000) * 1000;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPriceRange(prev => ({ ...prev, max: newMaxRounded }));
-    }
-  }, [products]);
-
-  // Filtrar productos por precio y categoría
-  const filteredProducts = products.filter((product) => {
-    const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
-    const inPriceRange = price >= priceRange.min && price <= priceRange.max;
-
-    const categoryName = getProductCategoryName(product);
-
-    if (selectedCategories.length === 0) {
-      return inPriceRange;
-    }
-
-    return inPriceRange && selectedCategories.includes(categoryName);
-  });
-
-  // Ordenar productos
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const priceA = typeof a.price === 'number' ? a.price : parseFloat(a.price) || 0;
-    const priceB = typeof b.price === 'number' ? b.price : parseFloat(b.price) || 0;
-    
-    switch (sortBy) {
-      case "price-asc":
-        return priceA - priceB;
-      case "price-desc":
-        return priceB - priceA;
-      case "name":
-        return (a.name || '').localeCompare(b.name || '');
-      default:
-        return 0;
-    }
-  });
-
-  const formatPrice = (price) => {
-    const numPrice = typeof price === 'number' ? price : parseFloat(price) || 0;
-    return `$${numPrice.toLocaleString("es-MX")} mxn`;
-  };
-
-  const handleSortChange = (e) => {
-    setSortBy(e.target.value);
-  };
-
-  const handleClearFilters = () => {
-    setPriceRange({ min: 0, max: maxPriceRounded });
-    setSelectedCategories([]);
-    setSortBy("default");
-  };
-
-  const handleCategoryToggle = (category) => {
-    if (selectedCategories.includes(category)) {
-      setSelectedCategories(selectedCategories.filter((c) => c !== category));
-    } else {
-      setSelectedCategories([...selectedCategories, category]);
-    }
-  };
-
-  // ✅ handleAddToCart usando cartService
-  const handleAddToCart = async (product) => {
-    try {
-      if (!product.id || product.id < 1) {
-        setNotification('❌ Producto no válido');
-        setTimeout(() => setNotification(null), 3000);
-        return;
-      }
-
-      await cartService.addItem({
-        product_id: product.id,
-        quantity: 1
-      });
-      setNotification(`✅ ${product.name} agregado al carrito`);
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      console.error('❌ Error al agregar al carrito:', error);
-      
-      if (error.message?.includes('autenticación') || error.status === 401) {
-        setNotification('❌ Por favor, inicia sesión para agregar productos');
-      } else if (error.message?.includes('no existe')) {
-        setNotification(`❌ El producto "${product.name}" no existe en la base de datos`);
-      } else {
-        setNotification(`❌ Error: ${error.message || 'No se pudo agregar al carrito'}`);
-      }
-      setTimeout(() => setNotification(null), 4000);
-    }
-  };
-
-  // ============================================================
-  // ESTADOS DE CARGA Y ERROR
-  // ============================================================
-  if (loading) {
-    return (
-      <div className="home-page catalog-page">
-        <HomeHeader />
-        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p>Cargando productos...</p>
-        </div>
-        <HomeFooter />
-      </div>
-    );
+  function setFilter(key, value) {
+    const next = new URLSearchParams(searchParams);
+    if (value === "" || value == null || value === false) next.delete(key);
+    else next.set(key, String(value));
+    setSearchParams(next, { replace: true });
   }
 
-  if (error && products.length === 0) {
-    return (
-      <div className="home-page catalog-page">
-        <HomeHeader />
-        <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <p>❌ {error}</p>
-          <button 
-            onClick={fetchProducts}
-            style={{
-              marginTop: "1rem",
-              padding: "0.5rem 2rem",
-              background: "#2f2a25",
-              color: "white",
-              border: "none",
-              borderRadius: "0.3rem",
-              cursor: "pointer",
-            }}
-          >
-            Reintentar
-          </button>
-        </div>
-        <HomeFooter />
-      </div>
-    );
+  function clearFilters() {
+    const next = new URLSearchParams();
+    const sort = searchParams.get("sort");
+    if (sort && sort !== "recommended") next.set("sort", sort);
+    setSearchParams(next, { replace: true });
+  }
+
+  function chipLabel(key, value) {
+    if (key === "category__slug") return `${FILTER_LABELS[key]}: ${categoryMap[value] || value}`;
+    if (["in_stock", "has_storage", "is_sofa_bed", "featured"].includes(key)) return FILTER_LABELS[key];
+    if (key === "min_rating") return `${value}+ estrellas`;
+    if (key === "min_price" || key === "max_price") return `${FILTER_LABELS[key]}: $${Number(value).toLocaleString("es-MX")}`;
+    return `${FILTER_LABELS[key] || key}: ${value}`;
+  }
+
+  function notify(type, message) {
+    setNotification({ type, message });
+    window.setTimeout(() => setNotification(null), 2800);
+  }
+
+  function toggleSaved(product) {
+    const next = toggleSavedProduct(product.id);
+    notify("success", next.includes(String(product.id)) ? `${product.name} guardado` : `${product.name} eliminado de guardados`);
+  }
+
+  async function addToCart(product) {
+    if (Number(product.stock || 0) <= 0) return;
+    try {
+      await cartService.addItem({ product_id: product.id, quantity: 1 });
+      window.dispatchEvent(new Event("daybed:cart-updated"));
+      notify("success", `${product.name} agregado al carrito`);
+    } catch (requestError) {
+      notify("error", requestError.message || "No pudimos agregar el producto.");
+    }
   }
 
   return (
     <div className="home-page catalog-page">
       <HomeHeader />
-
-      {notification && (
-        <div className="cart-notification" style={{
-          position: "fixed",
-          top: "1rem",
-          right: "1rem",
-          background: notification.includes('❌') ? '#D32F2F' : '#2f2a25',
-          color: "white",
-          padding: "1rem 1.5rem",
-          borderRadius: "0.8rem",
-          zIndex: 9999,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
-          animation: "slideDown 0.3s ease",
-          maxWidth: "350px",
-        }}>
-          {notification}
-        </div>
-      )}
-
-      {/* Hero Section */}
-      <section className="catalog-hero" style={{
-        backgroundImage: 'url("https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1600&q=80")',
-      }}>
-        <div className="catalog-hero__overlay" />
-        <div className="catalog-hero__content">
-          <h1>Tienda</h1>
-          <p>
-            <Link to={routePaths.public.home}>Inicio</Link>
-            <span aria-hidden="true">&gt;</span>
-            <span>Tienda</span>
-          </p>
-        </div>
-      </section>
-
+      {notification ? <div className={`catalog-notification catalog-notification--${notification.type}`} role="status">{notification.type === "error" ? <FaTriangleExclamation /> : <FaCircleCheck />}<span>{notification.message}</span></div> : null}
+      <PageHero title="Tienda" image={HERO_IMAGE} eyebrow="Colección Daybed" />
       <main className="catalog-main">
-        {/* LAYOUT: Filtros a la izquierda + Productos a la derecha */}
         <div className="catalog-layout">
-          
-          {/* SIDEBAR - FILTROS */}
-          <aside className="catalog-filters-sidebar">
-            <div className="catalog-filters-header">
-              <h3>Filtros</h3>
-              <button 
-                className="catalog-filters-clear"
-                onClick={handleClearFilters}
-              >
-                Limpiar todo
-              </button>
-            </div>
+          <aside className="catalog-filters-sidebar" aria-label="Filtros del catálogo">
+            <div className="catalog-filters-header"><div><p>Encuentra tu pieza</p><h2><FaFilter /> Filtros</h2></div><button type="button" onClick={clearFilters}>Limpiar</button></div>
 
-            {/* Rango de Precio */}
-            <div className="catalog-filters-section">
-              <h4>Rango de Precio</h4>
-              <div className="catalog-filters-price-inputs">
-                <span>${(priceRange.min / 1000).toFixed(0)}k</span>
-                <span>${(priceRange.max / 1000).toFixed(0)}k</span>
-              </div>
-              <div className="catalog-filters-price-range">
-                <input
-                  type="range"
-                  min="0"
-                  max={maxPriceRounded}
-                  step="100"
-                  value={priceRange.min}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (val <= priceRange.max) {
-                      setPriceRange({ ...priceRange, min: val });
-                    }
-                  }}
-                  className="catalog-filters-range-input catalog-filters-range-input--min"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max={maxPriceRounded}
-                  step="100"
-                  value={priceRange.max}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    if (val >= priceRange.min) {
-                      setPriceRange({ ...priceRange, max: val });
-                    }
-                  }}
-                  className="catalog-filters-range-input catalog-filters-range-input--max"
-                />
-              </div>
+            <div className="catalog-filters-section"><label className="catalog-filters-sort">Ordenar<select value={searchParams.get("sort") || "recommended"} onChange={(event) => setFilter("sort", event.target.value)}><option value="recommended">Recomendados</option><option value="newest">Más recientes</option><option value="rating">Mejor calificados</option><option value="price-asc">Precio: menor a mayor</option><option value="price-desc">Precio: mayor a menor</option><option value="name">Nombre</option></select></label></div>
+            <div className="catalog-filters-section"><label>Colección<select value={searchParams.get("category__slug") || ""} onChange={(event) => setFilter("category__slug", event.target.value)}><option value="">Todas</option>{categories.filter((item) => item.active !== false).map((item) => <option value={item.slug} key={item.slug}>{item.name}</option>)}</select></label><label>Espacio<select value={searchParams.get("room") || ""} onChange={(event) => setFilter("room", event.target.value)}><option value="">Todos</option>{optionSets.rooms.map((value) => <option key={value}>{value}</option>)}</select></label></div>
+            <div className="catalog-filters-section"><label>Material<select value={searchParams.get("material") || ""} onChange={(event) => setFilter("material", event.target.value)}><option value="">Todos</option>{optionSets.materials.map((value) => <option key={value}>{value}</option>)}</select></label><label>Estilo<select value={searchParams.get("style") || ""} onChange={(event) => setFilter("style", event.target.value)}><option value="">Todos</option>{optionSets.styles.map((value) => <option key={value}>{value}</option>)}</select></label><label>Color<select value={searchParams.get("color") || ""} onChange={(event) => setFilter("color", event.target.value)}><option value="">Todos</option>{optionSets.colors.map((value) => <option key={value}>{value}</option>)}</select></label></div>
+            <div className="catalog-filters-section catalog-filter-checks">
+              <label><input type="checkbox" checked={searchParams.get("in_stock") === "true"} onChange={(event) => setFilter("in_stock", event.target.checked ? "true" : "")} />Solo disponibles</label>
+              <label><input type="checkbox" checked={searchParams.get("is_sofa_bed") === "true"} onChange={(event) => setFilter("is_sofa_bed", event.target.checked ? "true" : "")} />Sofá cama</label>
+              <label><input type="checkbox" checked={searchParams.get("has_storage") === "true"} onChange={(event) => setFilter("has_storage", event.target.checked ? "true" : "")} />Con almacenamiento</label>
+              <label><input type="checkbox" checked={searchParams.get("featured") === "true"} onChange={(event) => setFilter("featured", event.target.checked ? "true" : "")} />Selección Daybed</label>
             </div>
-
-            {/* Categorías - CON CATEGORÍAS DINÁMICAS */}
-            <div className="catalog-filters-section">
-              <h4>Categorías</h4>
-              <div className="catalog-filters-categories">
-                {allCategories.map((category) => (
-                  <label className="catalog-filters-category" key={category}>
-                    <input
-                      type="checkbox"
-                      checked={selectedCategories.includes(category)}
-                      onChange={() => handleCategoryToggle(category)}
-                    />
-                    {category}
-                  </label>
-                ))}
-              </div>
-            </div>
-
+            <div className="catalog-filters-section catalog-price-fields"><label>Precio mínimo<input type="number" min="0" step="100" value={searchParams.get("min_price") || ""} onChange={(event) => setFilter("min_price", event.target.value)} placeholder="0" /></label><label>Precio máximo<input type="number" min="0" step="100" value={searchParams.get("max_price") || ""} onChange={(event) => setFilter("max_price", event.target.value)} placeholder="Sin límite" /></label><label>Calificación<select value={searchParams.get("min_rating") || ""} onChange={(event) => setFilter("min_rating", event.target.value)}><option value="">Todas</option><option value="4">4+ estrellas</option><option value="4.5">4.5+ estrellas</option></select></label></div>
           </aside>
 
-          {/* CONTENIDO PRINCIPAL */}
-          <div className="catalog-content">
-            {/* Toolbar */}
-            <div className="catalog-toolbar">
-              <div className="catalog-toolbar__start">
-                <span className="catalog-toolbar__results">
-                  {sortedProducts.length} productos
-                </span>
-              </div>
-
-              <div className="catalog-toolbar__end">
-                <span className="catalog-toolbar__label">Ordenar por</span>
-                <select
-                  className="catalog-toolbar__select"
-                  value={sortBy}
-                  onChange={handleSortChange}
-                >
-                  <option value="default">Predeterminado</option>
-                  <option value="price-asc">Precio: Menor a Mayor</option>
-                  <option value="price-desc">Precio: Mayor a Menor</option>
-                  <option value="name">Nombre</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Grid de productos */}
-            <section className="catalog-grid">
-              {sortedProducts.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "4rem 2rem", width: "100%" }}>
-                  <p>No hay productos que coincidan con los filtros seleccionados</p>
-                  <button
-                    onClick={handleClearFilters}
-                    style={{
-                      marginTop: "1rem",
-                      padding: "0.5rem 2rem",
-                      background: "#2f2a25",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "0.3rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Limpiar filtros
-                  </button>
-                </div>
-              ) : (
-                sortedProducts.map((product) => {
-                  const productImage = getProductImage(product);
-                  const categoryName = getProductCategoryName(product);
-
-                  return (
-                    <article className="product-card" key={product.id}>
-                      <div
-                        className="product-card__image"
-                        style={{ backgroundImage: `url(${productImage})` }}
-                      >
-                        {product.badge ? (
-                          <span
-                            className={`product-card__badge ${product.badgeType === "new" ? "product-card__badge--new" : ""}`}
-                          >
-                            {product.badge}
-                          </span>
-                        ) : null}
-                        <div className="product-card__overlay">
-                          <button type="button" onClick={() => handleAddToCart(product)}>
-                            Agregar a carrito
-                          </button>
-                        </div>
-                      </div>
-                      <div className="product-card__body">
-                        <h3>{product.name}</h3>
-                        <p>{product.description || categoryName || "Mueble de calidad"}</p>
-                        <span className="product-card__price">
-                          {formatPrice(product.price)}
-                        </span>
-                      </div>
-                    </article>
-                  );
-                })
-              )}
-            </section>
-          </div>
+          <section className="catalog-content" aria-label="Productos">
+            <div className="catalog-results-heading"><div><p className="catalog-results-heading__eyebrow">Colección disponible</p><h1>{loading ? "Buscando piezas" : `${products.length} ${products.length === 1 ? "producto" : "productos"}`}</h1></div></div>
+            {activeFilters.length ? <div className="catalog-active-filters" aria-label="Filtros activos">{activeFilters.map(([key, value]) => <button type="button" key={`${key}-${value}`} onClick={() => setFilter(key, "")}>{chipLabel(key, value)} <FaXmark /></button>)}</div> : null}
+            {loading ? <FeatureState tone="loading" compact title="Aplicando filtros" message="Estamos preparando una selección coherente con tus preferencias." /> : error ? <FeatureState tone="error" title="No pudimos abrir la colección" message={error.message} actionLabel="Intentar de nuevo" onAction={loadProducts} /> : products.length ? <div className="catalog-grid">{products.map((product) => <StoreProductCard key={product.id} product={product} saved={canUseCustomerFlows && savedIds.includes(String(product.id))} onToggleSaved={canUseCustomerFlows ? toggleSaved : undefined} onAddToCart={canUseCustomerFlows ? addToCart : undefined} />)}</div> : <FeatureState tone="empty" title="No hay piezas con esta combinación" message="Quita un filtro para ampliar la colección; tus demás preferencias permanecerán activas." actionLabel="Limpiar filtros" onAction={clearFilters} />}
+          </section>
         </div>
       </main>
-
       <HomeFooter />
     </div>
   );
 }
-
-export default CatalogPage;

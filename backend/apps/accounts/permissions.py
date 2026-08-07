@@ -7,6 +7,12 @@ def is_customer(user):
     return bool(user and user.is_authenticated and user.role == User.Roles.CUSTOMER)
 
 
+def is_customer_or_admin(user):
+    return bool(user and user.is_authenticated and (
+        user.role in {User.Roles.CUSTOMER, User.Roles.ADMIN} or user.is_superuser
+    ))
+
+
 def is_employee_or_admin(user):
     return bool(
         user
@@ -26,6 +32,11 @@ def is_admin(user):
 class IsCustomer(BasePermission):
     def has_permission(self, request, view):
         return is_customer(request.user)
+
+
+class IsCustomerOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return is_customer_or_admin(request.user)
 
 
 class IsEmployeeOrAdmin(BasePermission):

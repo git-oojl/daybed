@@ -13,7 +13,9 @@ Daybed es una aplicación web full-stack para una tienda de muebles. El MVP busc
 - Perfil de usuario autenticado.
 - Gestión interna de usuarios por administrador.
 - Carrito de compras autenticado.
-- Checkout simulado sin pagos reales.
+- Checkout con pago simulado sin cobros reales.
+- Pago simulado con tarjeta, transferencia y efectivo.
+- Confirmación interna simulada para transferencia y efectivo.
 - Geocodificación de dirección desde backend.
 - Estimación de distancia, duración y tarifa de entrega desde backend.
 - Creación de pedidos con snapshot de entrega.
@@ -31,7 +33,8 @@ Daybed es una aplicación web full-stack para una tienda de muebles. El MVP busc
 No se implementa en esta versión:
 
 - Pagos reales.
-- Stripe en producción.
+- Stripe en producción, webhooks de pago o conciliación bancaria real.
+- Comprobantes reales de transferencia, caja física o terminal bancaria.
 - Integración real con transportistas.
 - Tracking real de envíos.
 - Asignación real de rutas.

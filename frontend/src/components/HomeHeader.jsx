@@ -1,557 +1,178 @@
-// HomeHeader.jsx
-import { useState, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  FaSignInAlt,
-  FaUserCircle,
-  FaSearch,
-  FaHeart,
-  FaShoppingCart,
   FaBars,
-  FaTimes,
-  FaSignOutAlt,
-  FaTachometerAlt,
-  FaCog,
-  FaBoxes,
+  FaBox,
+  FaCartShopping,
+  FaChartLine,
+  FaChevronDown,
+  FaGear,
+  FaHeart,
+  FaLayerGroup,
+  FaMagnifyingGlass,
+  FaRightFromBracket,
+  FaStore,
   FaUser,
   FaUsers,
-  FaChartBar,
-  FaChevronDown,
-  FaClipboardList,
-  FaTags,
   FaWarehouse,
-} from "react-icons/fa";
+  FaXmark,
+} from "react-icons/fa6";
 import "../assets/home-page.css";
+import Avatar from "./account/Avatar.jsx";
 import { routePaths } from "../routes/routePaths.js";
-import { useAuthStore } from "../auth/authStore.js";
+import { useEffectiveLocation } from "../dev-preview/useEffectiveRouteState.js";
+import { useEffectiveSession } from "../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../auth/roleMapping.js";
+import { cartService } from "../services/backendServices.js";
+import { getSavedProductIds, subscribeToSavedItems } from "../services/savedItems.js";
+import { useStoreSettings } from "../services/useStoreSettings.js";
 
-// ============================================
-// ICONOS
-// ============================================
-function IconUserLogin() {
-  return <FaSignInAlt size={18} />;
-}
-
-function IconUserProfile() {
-  return <FaUserCircle size={22} />;
-}
-
-function IconSearch() {
-  return <FaSearch size={18} />;
-}
-
-function IconHeart({ filled }) {
-  return <FaHeart size={18} color={filled ? "#B88E2F" : "currentColor"} />;
-}
-
-function IconCart() {
-  return <FaShoppingCart size={18} />;
-}
-
-function IconMenu() {
-  return <FaBars size={20} />;
-}
-
-function IconClose() {
-  return <FaTimes size={20} />;
-}
-
-function IconLogout() {
-  return <FaSignOutAlt size={16} />;
-}
-
-function IconDashboard() {
-  return <FaTachometerAlt size={16} />;
-}
-
-function IconProfile() {
-  return <FaUser size={16} />;
-}
-
-function IconProducts() {
-  return <FaBoxes size={16} />;
-}
-
-function IconUsers() {
-  return <FaUsers size={16} />;
-}
-
-function IconSettings() {
-  return <FaCog size={16} />;
-}
-
-function IconMetrics() {
-  return <FaChartBar size={16} />;
-}
-
-function IconChevronDown() {
-  return <FaChevronDown size={12} />;
-}
-
-function IconOrders() {
-  return <FaClipboardList size={16} />;
-}
-
-function IconCategories() {
-  return <FaTags size={16} />;
-}
-
-function IconInventory() {
-  return <FaWarehouse size={16} />;
-}
-
-// ============================================
-// CONSTANTES DE NAVEGACIÓN
-// ============================================
 const NAV_LINKS = [
-  { label: "Inicio", path: routePaths.public.home },
-  { label: "Tienda", path: routePaths.public.catalog },
-  { label: "Sobre Nosotros", path: routePaths.public.contactHelp },
-  { label: "Contacto", path: routePaths.public.contactHelp },
+  { label: "Inicio", path: routePaths.public.home, section: "home" },
+  { label: "Tienda", path: routePaths.public.catalog, section: "catalog" },
+  { label: "Nosotros y contacto", path: routePaths.public.contactHelp, section: "contactHelp" },
 ];
 
-// ============================================
-// COMPONENTE PRINCIPAL
-// ============================================
+function isPrimaryNavActive(item, location) {
+  if (item.section === "home") return location.pathname === routePaths.public.home;
+  if (item.section === "catalog") {
+    return location.pathname === routePaths.public.catalog || location.pathname.startsWith("/productos/");
+  }
+  return item.section === "contactHelp" && location.pathname === routePaths.public.contactHelp;
+}
+
+function displayName(user) {
+  return [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Mi cuenta";
+}
+
 export default function HomeHeader() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef(null);
-
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useEffectiveLocation();
+  const menuRef = useRef(null);
+  const { user, isAuthenticated, logout } = useEffectiveSession();
+  const { settings: storeSettings } = useStoreSettings();
+  const viewer = getViewerIdForUser(user);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
+  const [cartCount, setCartCount] = useState(0);
+  const storeViewer = !isAuthenticated || viewer === "customer";
 
-  // Estado de autenticación
-  const { user, isAuthenticated, logout } = useAuthStore();
+  useEffect(() => subscribeToSavedItems(setSavedIds), []);
 
-  // Determinar el rol del usuario
-  const viewerId = getViewerIdForUser(user);
-  const isAdmin = viewerId === "admin";
-  const isEmployee = viewerId === "employee";
-  const isCustomer = viewerId === "customer";
-  const isGuest = !isAuthenticated;
-
-  // Cerrar menú de usuario al hacer clic fuera
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false);
-      }
+    setMobileOpen(false);
+    setAccountOpen(false);
+  }, [location.hash, location.pathname, location.search]);
+
+  useEffect(() => {
+    const close = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) setAccountOpen(false);
     };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
   }, []);
 
-  const closeMenu = () => setMenuOpen(false);
-  const toggleUserMenu = () => setUserMenuOpen((prev) => !prev);
+  useEffect(() => {
+    let active = true;
+    async function loadCount() {
+      if (!isAuthenticated) {
+        setCartCount(0);
+        return;
+      }
+      try {
+        const cart = await cartService.get();
+        if (active) setCartCount((cart?.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0));
+      } catch {
+        if (active) setCartCount(0);
+      }
+    }
+    loadCount();
+    const update = () => loadCount();
+    window.addEventListener("daybed:cart-updated", update);
+    return () => {
+      active = false;
+      window.removeEventListener("daybed:cart-updated", update);
+    };
+  }, [isAuthenticated]);
 
-  // ============================================
-  // CERRAR SESIÓN
-  // ============================================
-  const handleLogout = async () => {
-    setUserMenuOpen(false);
+  const accountItems = useMemo(() => {
+    if (!isAuthenticated) return [];
+    const common = [["Mi perfil", routePaths.account.profile, FaUser]];
+    const customer = viewer === "customer" ? [
+      ["Mis pedidos", routePaths.account.orders, FaBox],
+      ["Guardados", routePaths.public.savedItems, FaHeart],
+    ] : [];
+    const operations = viewer === "admin" || viewer === "employee" ? [
+      ["Operación", routePaths.backOffice.dashboard, FaStore],
+      ["Productos", routePaths.backOffice.products, FaWarehouse],
+      ["Colecciones", routePaths.backOffice.categories, FaLayerGroup],
+      ["Pedidos de clientes", routePaths.backOffice.orders, FaBox],
+    ] : [];
+    const admin = viewer === "admin" ? [
+      ["Métricas", routePaths.admin.businessMetrics, FaChartLine],
+      ["Equipo y accesos", routePaths.admin.rolesPermissions, FaUsers],
+      ["Configuración de la tienda", routePaths.admin.basicSettings, FaGear],
+    ] : [];
+    return [...common, ...customer, ...operations, ...admin];
+  }, [isAuthenticated, viewer]);
+
+  function submitSearch(event) {
+    event.preventDefault();
+    const value = search.trim();
+    navigate(value ? `${routePaths.public.catalog}?search=${encodeURIComponent(value)}` : routePaths.public.catalog);
+  }
+
+  async function signOut() {
+    setAccountOpen(false);
     await logout();
-    navigate(routePaths.public.home);
-  };
+    navigate(routePaths.public.home, { replace: true });
+  }
 
-  // ============================================
-  // NAVEGACIÓN DEL MENÚ DE USUARIO
-  // ============================================
-  const navigateTo = (path) => {
-    setUserMenuOpen(false);
-    navigate(path);
-  };
-
-  // ============================================
-  // OBTENER ENLACES DE NAVEGACIÓN
-  // ============================================
-  const getNavLinks = () => {
-    return NAV_LINKS;
-  };
-
-  // ============================================
-  // OBTENER NOMBRE PARA EL BOTÓN DE USUARIO
-  // ============================================
-  const getUserButtonLabel = () => {
-    if (isAuthenticated) {
-      return user?.name || "Mi cuenta";
-    }
-    return "Iniciar sesión";
-  };
-
-  // ============================================
-  // OBTENER ROL PARA MOSTRAR EN EL DROPDOWN
-  // ============================================
-  const getRoleLabel = () => {
-    if (isAdmin) return "Administrador";
-    if (isEmployee) return "Empleado";
-    if (isCustomer) return "Cliente";
-    return "Invitado";
-  };
-
-  // ============================================
-  // ✅ OPCIONES DEL MENÚ DE USUARIO SEGÚN ROL
-  // ============================================
-  const getUserMenuItems = () => {
-    const items = [];
-
-    // ============================================
-    // 🛡️ ADMINISTRADOR
-    // ============================================
-    if (isAdmin) {
-      // Perfil
-      items.push({
-        label: "Perfil",
-        icon: <IconProfile />,
-        action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
-        isAdmin: false,
-      });
-
-      // Separador
-      items.push({ isDivider: true });
-
-      // ✅ Métricas del negocio (Dashboard del admin)
-      items.push({
-        label: "Dashboard",
-        icon: <IconMetrics />,
-        action: () => navigateTo(routePaths.admin.businessMetrics || "/admin/metricas"),
-        isAdmin: true,
-      });
-
-      // Configuración básica
-      items.push({
-        label: "Configuración básica",
-        icon: <IconSettings />,
-        action: () => navigateTo(routePaths.admin.basicSettings || "/admin/configuracion"),
-        isAdmin: true,
-      });
-
-      // Roles y permisos
-      items.push({
-        label: "Roles y permisos",
-        icon: <IconUsers />,
-        action: () => navigateTo(routePaths.admin.rolesPermissions || "/admin/roles-permisos"),
-        isAdmin: true,
-      });
-
-      // Usuarios internos
-      items.push({
-        label: "Usuarios internos",
-        icon: <IconUsers />,
-        action: () => navigateTo(routePaths.admin.internalUsers || "/admin/usuarios"),
-        isAdmin: true,
-      });
-
-      // Separador antes de cerrar sesión
-      items.push({ isDivider: true });
-
-      // Cerrar sesión
-      items.push({
-        label: "Cerrar sesión",
-        icon: <IconLogout />,
-        action: handleLogout,
-        isLogout: true,
-      });
-
-      return items;
-    }
-
-    // ============================================
-    // 👔 EMPLEADO
-    // ============================================
-    if (isEmployee) {
-      // Perfil
-      items.push({
-        label: "Perfil",
-        icon: <IconProfile />,
-        action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
-        isAdmin: false,
-      });
-
-      // Separador
-      items.push({ isDivider: true });
-
-      // Dashboard exclusivo del empleado
-      items.push({
-        label: "Dashboard",
-        icon: <IconDashboard />,
-        action: () => navigateTo(routePaths.backOffice.dashboard || "/interno"),
-        isAdmin: false,
-      });
-
-      // Productos
-      items.push({
-        label: "Productos",
-        icon: <IconProducts />,
-        action: () => navigateTo(routePaths.backOffice.products || "/interno/productos"),
-        isAdmin: false,
-      });
-
-      // Categorías
-      items.push({
-        label: "Categorías",
-        icon: <IconCategories />,
-        action: () => navigateTo(routePaths.backOffice.categories || "/interno/categorias"),
-        isAdmin: false,
-      });
-
-      // Inventario
-      items.push({
-        label: "Inventario",
-        icon: <IconInventory />,
-        action: () => navigateTo(routePaths.backOffice.inventory || "/interno/inventario"),
-        isAdmin: false,
-      });
-
-      // Pedidos internos
-      items.push({
-        label: "Pedidos internos",
-        icon: <IconOrders />,
-        action: () => navigateTo(routePaths.backOffice.orders || "/interno/pedidos"),
-        isAdmin: false,
-      });
-
-      // Separador antes de cerrar sesión
-      items.push({ isDivider: true });
-
-      // Cerrar sesión
-      items.push({
-        label: "Cerrar sesión",
-        icon: <IconLogout />,
-        action: handleLogout,
-        isLogout: true,
-      });
-
-      return items;
-    }
-
-    // ============================================
-    // 👤 CLIENTE
-    // ============================================
-    if (isCustomer) {
-      // Dashboard del cliente (Mis pedidos)
-      items.push({
-        label: "Dashboard",
-        icon: <IconDashboard />,
-        action: () => navigateTo(routePaths.account.orders || "/cuenta/pedidos"),
-        isAdmin: false,
-      });
-
-      // Mi perfil
-      items.push({
-        label: "Mi perfil",
-        icon: <IconProfile />,
-        action: () => navigateTo(routePaths.account.profile || "/cuenta/perfil"),
-        isAdmin: false,
-      });
-
-      // Separador antes de cerrar sesión
-      items.push({ isDivider: true });
-
-      // Cerrar sesión
-      items.push({
-        label: "Cerrar sesión",
-        icon: <IconLogout />,
-        action: handleLogout,
-        isLogout: true,
-      });
-
-      return items;
-    }
-
-    // ============================================
-    // 🚪 INVITADO
-    // ============================================
-    return [];
-  };
-
-  // ============================================
-  // RENDER PRINCIPAL
-  // ============================================
   return (
     <header className="home-header">
-      <div className="home-header__inner">
-        <Link
-          to={routePaths.public.home}
-          className="home-header__logo"
-          onClick={closeMenu}
-        >
-          DayBed
-        </Link>
+      {storeSettings.announcement_message || !storeSettings.storefront_available ? (
+        <div className={`home-header__announcement ${!storeSettings.storefront_available ? "home-header__announcement--paused" : ""}`} role="status">
+          {storeSettings.storefront_available
+            ? storeSettings.announcement_message
+            : storeSettings.announcement_message || "La tienda online está en pausa temporal. Puedes seguir explorando y guardar tus favoritos."}
+        </div>
+      ) : null}
+      <div className="home-header__inner home-header__inner--stable">
+        <div className="home-header__brand-region">
+          <Link className="home-header__logo" to={routePaths.public.home} aria-label={`${storeSettings.store_name || "Daybed"}, inicio`}>{storeSettings.store_name || "Daybed"}</Link>
+        </div>
 
-        <nav
-          className={`home-nav${menuOpen ? " home-nav--open" : ""}`}
-          aria-label="Navegación principal"
-        >
-          {getNavLinks().map((link) => (
-            <Link
-              key={link.label}
-              to={link.path}
-              className={`home-nav__link${
-                location.pathname === link.path ? " home-nav__link--active" : ""
-              }`}
-              onClick={closeMenu}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="home-header__nav-region" aria-label="Navegación principal">
+          {NAV_LINKS.map((item) => <Link key={item.path} to={item.path} className={isPrimaryNavActive(item, location) ? "is-active" : ""}>{item.label}</Link>)}
         </nav>
 
-        <div className="home-header__actions">
-          {/* Búsqueda */}
-          <button
-            type="button"
-            className="home-header__icon-btn"
-            aria-label="Buscar"
-            aria-expanded={searchOpen}
-            onClick={() => setSearchOpen((prev) => !prev)}
-          >
-            <IconSearch />
-          </button>
-
-          {/* Favoritos - Solo clientes o invitados */}
-          {(isCustomer || isGuest) && (
-            <button
-              type="button"
-              className="home-header__icon-btn"
-              aria-label="Lista de deseos"
-              onClick={() => navigate(routePaths.public.catalog)}
-            >
-              <IconHeart filled={false} />
+        <div className="home-header__action-region">
+          <form className="home-header__search home-header__search--inline" onSubmit={submitSearch} role="search">
+            <FaMagnifyingGlass aria-hidden="true" />
+            <input aria-label="Buscar productos" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar" />
+          </form>
+          {storeViewer ? <Link className="home-header__icon-btn" to={routePaths.public.savedItems} aria-label={`Guardados${savedIds.length ? `, ${savedIds.length}` : ""}`}><FaHeart />{savedIds.length ? <span className="home-header__badge">{savedIds.length}</span> : null}</Link> : null}
+          {storeViewer ? <Link className="home-header__icon-btn" to={routePaths.checkout.cart} aria-label={`Carrito${cartCount ? `, ${cartCount}` : ""}`}><FaCartShopping aria-hidden="true" />{cartCount ? <span className="home-header__badge">{cartCount}</span> : null}</Link> : null}
+          <div className="home-header__user-wrapper" ref={menuRef}>
+            <button className={`home-header__user-btn ${isAuthenticated ? "home-header__user-btn--logged" : "home-header__user-btn--login"}`} type="button" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
+              {isAuthenticated ? <Avatar user={user} size="sm" /> : <FaUser />}
+              <span className="home-header__user-login-label">{isAuthenticated ? displayName(user).split(" ")[0] : "Cuenta"}</span>
+              <FaChevronDown className="home-header__user-chevron" />
             </button>
-          )}
-
-          {/* Carrito - Solo clientes o invitados */}
-          {(isCustomer || isGuest) && (
-            <button
-              type="button"
-              className="home-header__icon-btn"
-              aria-label="Carrito"
-              onClick={() => navigate(routePaths.checkout.cart)}
-            >
-              <IconCart />
-            </button>
-          )}
-
-          {/* =============================================
-              MENÚ DE USUARIO CON DROPDOWN
-              ============================================= */}
-          <div className="home-header__user-wrapper" ref={userMenuRef}>
-            {isAuthenticated ? (
-              // USUARIO AUTENTICADO
-              <button
-                type="button"
-                className={`home-header__icon-btn home-header__user-btn home-header__user-btn--logged`}
-                aria-label={getUserButtonLabel()}
-                aria-expanded={userMenuOpen}
-                onClick={toggleUserMenu}
-              >
-                <IconUserProfile />
-                <span className="home-header__user-chevron">
-                  <IconChevronDown />
-                </span>
-              </button>
-            ) : (
-              // USUARIO NO AUTENTICADO
-              <button
-                type="button"
-                className="home-header__icon-btn home-header__user-btn home-header__user-btn--login"
-                aria-label="Iniciar sesión"
-                onClick={() => navigate(routePaths.account.login)}
-              >
-                <IconUserLogin />
-                <span className="home-header__user-login-label">Acceder</span>
-              </button>
-            )}
-
-            {/* DROPDOWN DE USUARIO (solo autenticado) */}
-            {isAuthenticated && userMenuOpen && (
-              <div className="home-header__user-dropdown">
-                {/* Header con info del usuario */}
-                <div className="home-header__user-header">
-                  <div className="home-header__user-avatar">
-                    {user?.name?.charAt(0) || "U"}
-                  </div>
-                  <div className="home-header__user-info">
-                    <div className="home-header__user-name">
-                      {user?.name || "Usuario"}
-                    </div>
-                    <div className="home-header__user-email">
-                      {user?.email || "usuario@email.com"}
-                    </div>
-                    <div className="home-header__user-role">
-                      {getRoleLabel()}
-                    </div>
-                  </div>
-                </div>
-
+            {accountOpen ? <div className="home-header__user-dropdown">
+              {isAuthenticated ? <>
+                <div className="home-header__user-header"><Avatar user={user} size="lg" /><div className="home-header__user-info"><strong className="home-header__user-name">{displayName(user)}</strong><span className="home-header__user-email">{user?.email}</span><span className="home-header__user-role">{viewer === "admin" ? "Administrador" : viewer === "employee" ? "Empleado" : "Cliente"}</span></div></div>
                 <div className="home-header__user-divider" />
-
-                {/* Items del menú según rol */}
-                <div className="home-header__user-items">
-                  {getUserMenuItems().map((item, index) => {
-                    if (item.isDivider) {
-                      return (
-                        <div key={`divider-${index}`} className="home-header__user-divider" />
-                      );
-                    }
-                    return (
-                      <button
-                        key={item.label}
-                        className={`home-header__user-item${
-                          item.isAdmin ? " home-header__user-item--admin" : ""
-                        }${item.isLogout ? " home-header__user-item--logout" : ""}`}
-                        onClick={item.action}
-                      >
-                        {item.icon}
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                <div className="home-header__user-items">{accountItems.map(([label, path, Icon]) => <button key={`${label}-${path}`} type="button" className="home-header__user-item" onClick={() => navigate(path)}><Icon />{label}</button>)}<button type="button" className="home-header__user-item home-header__user-item--logout" onClick={signOut}><FaRightFromBracket />Cerrar sesión</button></div>
+              </> : <div className="home-header__user-items"><button className="home-header__user-item" type="button" onClick={() => navigate(routePaths.account.login)}><FaUser />Iniciar sesión</button><button className="home-header__user-item" type="button" onClick={() => navigate(routePaths.account.register)}><FaUsers />Crear cuenta</button></div>}
+            </div> : null}
           </div>
-
-          {/* Menú móvil */}
-          <button
-            type="button"
-            className="home-header__menu-btn"
-            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((prev) => !prev)}
-          >
-            {menuOpen ? <IconClose /> : <IconMenu />}
-          </button>
+          <button className="home-header__menu-btn" type="button" aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"} onClick={() => setMobileOpen((open) => !open)}>{mobileOpen ? <FaXmark /> : <FaBars />}</button>
         </div>
       </div>
-
-      {/* Búsqueda */}
-      {searchOpen && (
-        <div className="home-search">
-          <input
-            type="search"
-            className="home-search__input"
-            placeholder="Buscar productos..."
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && searchQuery.trim()) {
-                navigate(
-                  `${routePaths.public.catalog}?search=${encodeURIComponent(
-                    searchQuery
-                  )}`
-                );
-                setSearchOpen(false);
-              }
-            }}
-            autoFocus
-          />
-        </div>
-      )}
+      {mobileOpen ? <div className="home-header__mobile-panel"><nav>{NAV_LINKS.map((item) => <Link key={item.path} to={item.path}>{item.label}</Link>)}</nav><form onSubmit={submitSearch}><FaMagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en Tienda" /></form></div> : null}
     </header>
   );
 }

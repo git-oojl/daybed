@@ -1,5 +1,5 @@
-function EmptyState({ message = "No hay información para mostrar." }) {
-  return <p>{message}</p>;
-}
+import FeatureState from "./FeatureState.jsx";
 
-export default EmptyState;
+export default function EmptyState({ message = "Aún no hay información aquí", detail = "Cuando exista contenido, aparecerá organizado en este espacio.", children }) {
+  return <FeatureState tone="empty" compact title={message} message={detail}>{children}</FeatureState>;
+}

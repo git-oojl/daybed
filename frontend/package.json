@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "node --test tests/*.test.mjs",
+    "test:boot": "node --test tests/bootRegression.test.mjs tests/packageExports.test.mjs",
+    "test:smoke": "node --test tests/routeSmoke.test.mjs",
+    "validate": "npm run lint && npm run build && npm test"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -30,6 +34,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "playwright": "1.62.0",
     "prettier": "^3.8.4",
     "vite": "^8.0.12"
   }

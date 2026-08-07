@@ -17,19 +17,8 @@ export async function registerCustomer(payload) {
   });
 }
 
-export async function refreshAccessToken(refresh) {
-  return apiRequest({
-    method: "post",
-    url: apiEndpoints.auth.refresh,
-    data: { refresh },
-  });
-}
-
 export async function logoutRefreshToken(refresh) {
-  if (!refresh) {
-    return;
-  }
-
+  if (!refresh) return;
   await apiClient.post(apiEndpoints.auth.logout, { refresh });
 }
 

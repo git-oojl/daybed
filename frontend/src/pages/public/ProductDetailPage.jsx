@@ -1,389 +1,399 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaCheckCircle, FaHeart, FaRegCopy, FaStar } from "react-icons/fa";
 import "../../assets/home-page.css";
 import "../../assets/product-detail-page.css";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import StoreProductCard from "../../components/store/StoreProductCard.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
-import { productCategoryName, productImage, readCollection } from "../../services/viewMappers.js";
-
-const DEFAULT_PRODUCT = {
-  id: 8,
-  name: "Potty",
-  subtitle: "Maceta minimalista",
-  price: 500000,
-  rating: 4.5,
-  reviews: 5,
-  sku: "PM001",
-  category: "Decoración",
-  tags: ["Casa", "Tienda", "Decoración", "Jardín"],
-  description:
-    "Embellece tu espacio con nuestra Maceta Minimalista Potty. Diseñada con líneas limpias y materiales naturales, esta maceta aporta un toque de elegancia y serenidad a cualquier rincón de tu hogar. Perfecta para plantas pequeñas y medianas.",
-  longDescription:
-    "La Maceta Minimalista Potty combina funcionalidad y estética en un diseño atemporal. Fabricada con madera de alta calidad y acabados naturales, cada pieza es única. Su forma cilíndrica y proporciones equilibradas la convierten en el complemento ideal para interiores modernos y espacios al aire libre. Fácil de mantener y duradera, Potty es la elección perfecta para quienes valoran el diseño consciente y la belleza en los detalles.",
-  images: [
-    "/images/maceta1.jpeg",
-    "/images/maceta2.jpeg",
-    "/images/maceta3.jpeg",
-    "/images/maceta4.jpeg",
-    "/images/maceta5.jpeg",
-  ],
-  galleryImages: [
-    "/images/maceta1.jpeg",
-    "/images/macetabotom2.jpeg",
-    "/images/macetabotom3.jpeg",
-    "/images/macetabotom4.jpeg",
-  ],
-  sizes: ["13", "15"],
-  colors: [
-    { id: "sage", value: "#b5c4a8" },
-    { id: "wood", value: "#c4a882" },
-  ],
-};
-
-const RELATED_PRODUCTS = [
-  {
-    id: 1,
-    name: "Syltherine",
-    description: "Elegante mesa y silla estilo café",
-    price: 2500000,
-    oldPrice: 3500000,
-    discount: "-30%",
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&q=80",
-  },
-  {
-    id: 2,
-    name: "Leviosa",
-    description: "Comodo y estilo",
-    price: 2500000,
-    oldPrice: null,
-    discount: null,
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1683793837504-318275ff665d?q=80&w=687&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Lolito",
-    description: "La mejor cama que existió",
-    price: 7000000,
-    oldPrice: 14000000,
-    discount: "-50%",
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=500&q=80",
-  },
-  {
-    id: 4,
-    name: "Respira",
-    description: "Sofá respira",
-    price: 500000,
-    oldPrice: null,
-    discount: null,
-    isNew: false,
-    image:
-      "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=80",
-  },
-];
+import {
+  getSavedProductIds,
+  subscribeToSavedItems,
+  toggleSavedProduct,
+} from "../../services/savedItems.js";
+import {
+  assetUrl,
+  productCategoryName,
+  productImage,
+  readCollection,
+} from "../../services/viewMappers.js";
+import useStoreSettings from "../../services/useStoreSettings.js";
 
 function formatPrice(amount) {
-  return `$${amount.toLocaleString("es-MX").replace(/,/g, ".")} mxn`;
+  return `$${(Number(amount) || 0).toLocaleString("es-MX")} MXN`;
 }
 
-function IconStar({ filled }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      aria-hidden="true"
-    >
-      <path
-        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+function formatMeasure(value, unit) {
+  if (value === null || value === undefined || value === "") return "";
+  return `${Number(value).toLocaleString("es-MX")} ${unit}`;
 }
 
-function IconFacebook() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2Z" />
-    </svg>
-  );
+function formatSpecLabel(key) {
+  return String(key)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function IconLinkedIn() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-12h4v2a4 4 0 0 1 4-4Z" />
-      <rect x="2" y="9" width="4" height="12" />
-      <circle cx="4" cy="4" r="2" />
-    </svg>
-  );
+function formatSpecValue(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (value === null || value === undefined) return "";
+  return String(value);
 }
 
-function IconTwitter() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2Z" />
-    </svg>
-  );
+function stockLabel(product) {
+  const stock = Number(product?.stock || 0);
+  if (stock <= 0) return "Agotado por ahora";
+  if (product?.low_stock) return `Últimas ${stock} piezas`;
+  return "Disponible para entrega";
+}
+
+function normalizeReviews(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((review, index) => ({
+    id: review?.id || `${review?.author || "cliente"}-${index}`,
+    author: review?.author || "Cliente",
+    rating: Math.min(5, Math.max(1, Number(review?.rating || 5))),
+    title: review?.title || "Buena experiencia",
+    body: review?.body || review?.text || "Producto recomendado.",
+    verifiedPurchase: Boolean(review?.verified_purchase),
+    date: review?.date || review?.created_at || "",
+  }));
+}
+
+function formatReviewDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
 }
 
 export default function ProductDetailPage() {
-  const { productId } = useParams();
+  const { settings } = useStoreSettings();
+  const { productId } = useEffectiveParams(routePaths.public.productDetail);
+  const { user, isAuthenticated } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const canUseCustomerFlows = !user || viewer === "customer";
   const [activeImage, setActiveImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState("13");
-  const [selectedColor, setSelectedColor] = useState("sage");
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("descripcion");
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [cartMessage, setCartMessage] = useState("");
+  const [notice, setNotice] = useState("");
+  const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", body: "" });
+  const [reviewSaving, setReviewSaving] = useState(false);
+
+  useEffect(() => subscribeToSavedItems(setSavedIds), []);
 
   useEffect(() => {
     let active = true;
-    Promise.resolve().then(() => {
-      if (active) {
-        setLoading(true);
-        setError("");
-      }
-      return Promise.all([catalogService.product(productId), catalogService.products()]);
-    })
+    setLoading(true);
+    setError("");
+
+    Promise.all([
+      catalogService.product(productId),
+      catalogService.products(),
+    ])
       .then(([detail, list]) => {
         if (!active) return;
-        const normalized = {
+        if (!detail) throw new Error("El producto que buscas ya no está disponible.");
+        const galleryImages = (detail.images || [])
+          .filter((image) => image?.active !== false)
+          .map((image) => assetUrl(image))
+          .filter(Boolean);
+        const images = [productImage(detail), ...galleryImages].filter(
+          (image, index, all) => image && all.indexOf(image) === index,
+        );
+
+        setProduct({
           ...detail,
-          subtitle: detail.description || detail.name,
-          category: productCategoryName(detail),
-          tags: [detail.material, detail.color, detail.style].filter(Boolean),
-          rating: 0,
-          reviews: 0,
-          images: detail.images?.length ? detail.images.map((image) => typeof image === "string" ? image : image.image) : [productImage(detail)],
-          galleryImages: detail.images?.length ? detail.images.map((image) => typeof image === "string" ? image : image.image) : [productImage(detail)],
-          sizes: ["Único"],
-          colors: detail.color ? [{ id: detail.color, value: detail.color }] : [],
-          longDescription: detail.description || "Sin descripción disponible.",
-        };
-        setProduct(normalized);
-        setRelatedProducts(readCollection(list).filter((item) => item.id !== detail.id).slice(0, 4));
+          categoryName: productCategoryName(detail),
+          images: images.length ? images : [productImage({})],
+          reviews: normalizeReviews(detail.reviews),
+        });
+        setActiveImage(0);
+        setQuantity(1);
+        setRelatedProducts(
+          readCollection(list)
+            .filter((item) => String(item.id) !== String(detail.id))
+            .slice(0, 4),
+        );
       })
       .catch((requestError) => {
-        if (active) setError(requestError.message || "No se pudo cargar el producto.");
+        if (active) {
+          setError(requestError.message || "No pudimos cargar este producto.");
+        }
       })
       .finally(() => active && setLoading(false));
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+    };
   }, [productId]);
 
+  const reviews = product?.reviews || [];
+  const averageRating = useMemo(() => {
+    if (!reviews.length) return Number(product?.average_rating || 0);
+    return reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+  }, [product?.average_rating, reviews]);
+
+  const additionalInfo = useMemo(() => {
+    if (!product) return [];
+    const dimensions = product.structured_dimensions || {};
+    const specs = product.specifications || {};
+    return [
+      ["Material", product.material],
+      ["Color", product.color],
+      ["Estilo", product.style],
+      ["Ancho", formatMeasure(dimensions.width_cm, "cm")],
+      ["Alto", formatMeasure(dimensions.height_cm, "cm")],
+      ["Fondo", formatMeasure(dimensions.depth_cm, "cm")],
+      ["Largo", formatMeasure(dimensions.length_cm, "cm")],
+      ["Diámetro", formatMeasure(dimensions.diameter_cm, "cm")],
+      ["Peso", formatMeasure(dimensions.weight_kg, "kg")],
+      ...Object.entries(specs).map(([key, value]) => [
+        formatSpecLabel(key),
+        formatSpecValue(value),
+      ]),
+    ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
+  }, [product]);
+
+  const flashNotice = (message) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 3600);
+  };
+
   const handleAddToCart = async () => {
+    if (!product || Number(product.stock || 0) <= 0 || settings.storefront_available === false) return;
     try {
-      await cartService.addItem({ product_id: PRODUCT.id, quantity });
-      setCartMessage("Producto agregado al carrito.");
+      await cartService.addItem({ product_id: product.id, quantity });
+      window.dispatchEvent(new Event("daybed:cart-updated"));
+      flashNotice(`${product.name} se agregó al carrito.`);
     } catch (requestError) {
-      setCartMessage(requestError.status === 401 ? "Inicia sesión para agregar productos." : "No se pudo agregar el producto.");
+      flashNotice(
+        requestError.status === 401
+          ? "Inicia sesión para agregar productos al carrito."
+          : requestError.message || "No pudimos agregar el producto.",
+      );
     }
   };
 
-  const PRODUCT = product || DEFAULT_PRODUCT;
+  const handleToggleSaved = () => {
+    if (!product) return;
+    const nextIds = toggleSavedProduct(product.id);
+    flashNotice(
+      nextIds.includes(String(product.id))
+        ? "Producto guardado para después."
+        : "Producto eliminado de guardados.",
+    );
+  };
 
-  const fullTitle = `${PRODUCT.name} ${PRODUCT.subtitle}`;
+  const handleRelatedAddToCart = async (item) => {
+    if (settings.storefront_available === false) { flashNotice("Las compras están pausadas temporalmente."); return; }
+    try {
+      await cartService.addItem({ product_id: item.id, quantity: 1 });
+      window.dispatchEvent(new Event("daybed:cart-updated"));
+      flashNotice(`${item.name} se agregó al carrito.`);
+    } catch (requestError) {
+      flashNotice(requestError.status === 401 ? "Inicia sesión para agregar productos." : requestError.message || "No pudimos agregar el producto.");
+    }
+  };
 
-  if (loading) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">Cargando producto...</p><HomeFooter /></div>;
-  if (error) return <div className="home-page product-detail-page"><HomeHeader /><p className="product-detail__state">{error}</p><HomeFooter /></div>;
+  const handleRelatedSaved = (item) => {
+    const nextIds = toggleSavedProduct(item.id);
+    flashNotice(nextIds.includes(String(item.id)) ? `${item.name} guardado.` : `${item.name} eliminado de guardados.`);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: product?.name || "Producto",
+      text: product?.description || "Mira esta pieza.",
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else {
+        await navigator.clipboard.writeText(window.location.href);
+        flashNotice("Enlace copiado.");
+      }
+    } catch (shareError) {
+      if (shareError?.name !== "AbortError") flashNotice("No pudimos compartir el enlace.");
+    }
+  };
+
+  const submitReview = async (event) => {
+    event.preventDefault();
+    if (!reviewForm.title.trim() || !reviewForm.body.trim()) {
+      flashNotice("Agrega un título y cuéntanos tu experiencia.");
+      return;
+    }
+    setReviewSaving(true);
+    try {
+      const created = await catalogService.createReview(product.id, reviewForm);
+      setProduct((current) => ({
+        ...current,
+        reviews: [normalizeReviews([created])[0], ...(current.reviews || [])],
+      }));
+      setReviewForm({ rating: 5, title: "", body: "" });
+      flashNotice("Gracias. Tu reseña ya está publicada.");
+    } catch (requestError) {
+      flashNotice(requestError.message || "No pudimos publicar la reseña.");
+    } finally {
+      setReviewSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="home-page product-detail-page">
+        <HomeHeader />
+        <main className="product-state" role="status">
+          <span className="product-state__eyebrow">Tienda</span>
+          <h1>Preparando los detalles</h1>
+          <p>Estamos cargando imágenes, medidas y disponibilidad.</p>
+        </main>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="home-page product-detail-page">
+        <HomeHeader />
+        <main className="product-state product-state--error">
+          <span className="product-state__eyebrow">No disponible</span>
+          <h1>No encontramos esta pieza</h1>
+          <p>{error || "El producto ya no está disponible."}</p>
+          <Link to={routePaths.public.catalog}>Volver a la tienda</Link>
+        </main>
+        <HomeFooter />
+      </div>
+    );
+  }
+
+  const isSaved = canUseCustomerFlows && savedIds.includes(String(product.id));
+  const maxQuantity = Math.max(1, Number(product.stock || 0));
+  const tags = [product.categoryName, product.material, product.style].filter(Boolean);
 
   return (
     <div className="home-page product-detail-page">
       <HomeHeader />
 
+      {notice ? <div className="product-notice" role="status">{notice}</div> : null}
+
       <nav className="product-breadcrumb" aria-label="Ruta de navegación">
         <div className="product-breadcrumb__inner">
           <Link to={routePaths.public.home}>Inicio</Link>
-          <span className="product-breadcrumb__separator" aria-hidden="true">
-            &gt;
-          </span>
+          <span aria-hidden="true">/</span>
           <Link to={routePaths.public.catalog}>Tienda</Link>
-          <span className="product-breadcrumb__separator" aria-hidden="true">
-            &gt;
-          </span>
-          <span className="product-breadcrumb__current">
-            {PRODUCT.subtitle}
-          </span>
+          <span aria-hidden="true">/</span>
+          <span>{product.name}</span>
         </div>
       </nav>
 
       <main className="product-detail">
-        <section
-          className="product-detail__gallery"
-          aria-label="Imágenes del producto"
-        >
+        <section className="product-detail__gallery" aria-label="Imágenes del producto">
           <div className="product-detail__thumbs">
-            {PRODUCT.images.map((src, index) => (
+            {product.images.map((src, index) => (
               <button
-                key={src}
+                key={`${src}-${index}`}
                 type="button"
                 className={`product-detail__thumb${activeImage === index ? " product-detail__thumb--active" : ""}`}
                 onClick={() => setActiveImage(index)}
                 aria-label={`Ver imagen ${index + 1}`}
-                aria-current={activeImage === index ? "true" : undefined}
               >
-                <img src={src} alt="" />
+                <img
+                  src={src}
+                  alt=""
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = productImage({});
+                  }}
+                />
               </button>
             ))}
           </div>
           <div className="product-detail__main-img">
-            <img src={PRODUCT.images[activeImage]} alt={fullTitle} />
+            <img
+              src={product.images[activeImage]}
+              alt={product.name}
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = productImage({});
+              }}
+            />
           </div>
         </section>
 
-        <section
-          className="product-detail__info"
-          aria-label="Información del producto"
-        >
-          <h1 className="product-detail__title">{fullTitle}</h1>
-          <p className="product-detail__price">{formatPrice(PRODUCT.price)}</p>
+        <section className="product-detail__info" aria-label="Información del producto">
+          <p className="product-detail__eyebrow">{product.categoryName}</p>
+          <h1 className="product-detail__title">{product.name}</h1>
+          <p className="product-detail__price">{formatPrice(product.price)}</p>
 
-          <div className="product-detail__rating">
-            <div
-              className="product-detail__stars"
-              aria-label={`${PRODUCT.rating} de 5 estrellas`}
-            >
-              {[1, 2, 3, 4, 5].map((star) => (
-                <IconStar
-                  key={star}
-                  filled={star <= Math.floor(PRODUCT.rating)}
-                />
-              ))}
-            </div>
-            <span
-              className="product-detail__rating-divider"
-              aria-hidden="true"
-            />
-            <span>({PRODUCT.reviews} customer reviews)</span>
+          <div className="product-detail__status-row">
+            <span className={Number(product.stock || 0) > 0 ? "is-available" : "is-sold-out"}>
+              {stockLabel(product)}
+            </span>
+            {reviews.length ? (
+              <button type="button" onClick={() => setActiveTab("reviews")}>
+                <FaStar aria-hidden="true" />
+                {averageRating.toFixed(1)} · {reviews.length} reseñas
+              </button>
+            ) : null}
           </div>
 
-          <p className="product-detail__desc">{PRODUCT.description}</p>
+          <p className="product-detail__desc">{product.description}</p>
 
-          <div className="product-detail__option">
-            <span className="product-detail__option-label">Modelo</span>
-            <div className="product-detail__sizes">
-              {PRODUCT.sizes.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  className={`product-detail__size-btn${selectedSize === size ? " product-detail__size-btn--active" : ""}`}
-                  onClick={() => setSelectedSize(size)}
-                  aria-pressed={selectedSize === size}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="product-detail__option">
-            <span className="product-detail__option-label">Color</span>
-            <div className="product-detail__colors">
-              {PRODUCT.colors.map((color) => (
-                <button
-                  key={color.id}
-                  type="button"
-                  className={`product-detail__color-swatch${selectedColor === color.id ? " product-detail__color-swatch--active" : ""}`}
-                  style={{ backgroundColor: color.value }}
-                  onClick={() => setSelectedColor(color.id)}
-                  aria-label={`Color ${color.id}`}
-                  aria-pressed={selectedColor === color.id}
-                />
-              ))}
-            </div>
+          <div className="product-detail__highlights">
+            {[product.material, product.color, product.style].filter(Boolean).map((value) => (
+              <span key={value}>{value}</span>
+            ))}
           </div>
 
           <div className="product-detail__actions">
-            <div className="product-detail__quantity">
-              <button
-                type="button"
-                aria-label="Disminuir cantidad"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                -
-              </button>
+            {canUseCustomerFlows ? <div className="product-detail__quantity" aria-label="Cantidad">
+              <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button>
               <span>{quantity}</span>
-              <button
-                type="button"
-                aria-label="Aumentar cantidad"
-                onClick={() => setQuantity((q) => q + 1)}
-              >
-                +
-              </button>
-            </div>
-            <button
+              <button type="button" onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}>+</button>
+            </div> : null}
+            {canUseCustomerFlows ? <button
               type="button"
               className="product-detail__btn product-detail__btn--cart"
               onClick={handleAddToCart}
+              disabled={Number(product.stock || 0) <= 0 || settings.storefront_available === false}
             >
-              Agregar al carrito
-            </button>
-            <button type="button" className="product-detail__btn">
-              + Comparar
-            </button>
+              {Number(product.stock || 0) <= 0 ? "Sin existencias" : settings.storefront_available === false ? "Compra pausada" : "Agregar al carrito"}
+            </button> : null}
+            {canUseCustomerFlows ? <button
+              type="button"
+              className={`product-detail__btn product-detail__btn--save${isSaved ? " product-detail__btn--save-active" : ""}`}
+              onClick={handleToggleSaved}
+              aria-pressed={isSaved}
+            >
+              <FaHeart aria-hidden="true" /> {isSaved ? "Guardado" : "Guardar"}
+            </button> : null}
           </div>
-          {cartMessage ? <p className="product-detail__cart-message">{cartMessage}</p> : null}
+          {!canUseCustomerFlows ? <p className="checkout-field-hint" style={{ margin: "8px 0 0" }}>Las cuentas internas pueden revisar la ficha, pero no usan favoritos ni compra desde el escaparate.</p> : null}
 
           <div className="product-detail__meta">
-            <div className="product-detail__meta-row">
-              <span className="product-detail__meta-label">SKU :</span>
-              <span className="product-detail__meta-value">{PRODUCT.sku}</span>
-            </div>
-            <div className="product-detail__meta-row">
-              <span className="product-detail__meta-label">Categoría :</span>
-              <span className="product-detail__meta-value">
-                {PRODUCT.category}
-              </span>
-            </div>
-            <div className="product-detail__meta-row">
-              <span className="product-detail__meta-label">Etiquetas :</span>
-              <span className="product-detail__meta-value">
-                {PRODUCT.tags.join(", ")}
-              </span>
-            </div>
-            <div className="product-detail__meta-row product-detail__share">
-              <span className="product-detail__meta-label">Compartir :</span>
-              <div className="product-detail__share-icons">
-                <a href="#" aria-label="Compartir en Facebook">
-                  <IconFacebook />
-                </a>
-                <a href="#" aria-label="Compartir en LinkedIn">
-                  <IconLinkedIn />
-                </a>
-                <a href="#" aria-label="Compartir en Twitter">
-                  <IconTwitter />
-                </a>
-              </div>
+            <div><span>SKU</span><strong>{product.sku || `DAY-${product.id}`}</strong></div>
+            <div><span>Etiquetas</span><strong>{tags.join(" · ") || "Mobiliario"}</strong></div>
+            <div>
+              <span>Compartir</span>
+              <button type="button" onClick={handleShare}><FaRegCopy aria-hidden="true" /> Copiar enlace</button>
             </div>
           </div>
         </section>
@@ -393,8 +403,8 @@ export default function ProductDetailPage() {
         <div className="product-tabs__nav" role="tablist">
           {[
             { id: "descripcion", label: "Descripción" },
-            { id: "info", label: "Información Adicional" },
-            { id: "reviews", label: `Reviews [${PRODUCT.reviews}]` },
+            { id: "info", label: "Medidas y materiales" },
+            { id: "reviews", label: `Reseñas (${reviews.length})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -408,87 +418,129 @@ export default function ProductDetailPage() {
             </button>
           ))}
         </div>
+
         <div className="product-tabs__content" role="tabpanel">
-          {activeTab === "descripcion" && <p>{PRODUCT.longDescription}</p>}
-          {activeTab === "info" && (
-            <p>
-              Material: Madera natural. Dimensiones: 13 cm / 15 cm de diámetro.
-              Peso: 0.8 kg. Incluye drenaje interno. Recomendado para uso
-              interior y exterior protegido.
-            </p>
-          )}
-          {activeTab === "reviews" && (
-            <p>
-              {PRODUCT.reviews} reseñas de clientes satisfechos con la calidad y
-              el diseño de Potty.
-            </p>
-          )}
-        </div>
-      </section>
+          {activeTab === "descripcion" ? (
+            <div className="product-tabs__prose">
+              <h2>Diseñada para vivirla</h2>
+              <p>{product.description}</p>
+              <p>
+                Cada pieza se revisa antes de salir de tienda. Nuestro equipo puede ayudarte a confirmar medidas, acceso y condiciones de entrega antes de comprar.
+              </p>
+            </div>
+          ) : null}
 
-      <div className="product-inline-gallery" aria-label="Galería de imágenes">
-        {PRODUCT.galleryImages.map((src, index) => (
-          <div key={src} className="product-inline-gallery__item">
-            <img
-              src={src}
-              alt={`${fullTitle} vista ${index + 1}`}
-              loading="lazy"
-            />
-          </div>
-        ))}
-      </div>
+          {activeTab === "info" ? (
+            additionalInfo.length ? (
+              <dl className="product-tabs__specs">
+                {additionalInfo.map(([label, value]) => (
+                  <div key={label} className="product-tabs__spec-row">
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="product-tabs__empty">Nuestro equipo puede confirmar medidas y materiales antes de tu compra.</p>
+            )
+          ) : null}
 
-      <section
-        className="home-section product-related"
-        aria-labelledby="productos-revelantes"
-      >
-        <h2 id="productos-revelantes" className="home-section__title">
-          Productos revelantes
-        </h2>
-        <div className="home-products">
-          {(relatedProducts.length ? relatedProducts : RELATED_PRODUCTS).map((product) => (
-            <article className="home-product" key={product.id}>
-              <div className="home-product__img-wrap">
-                <img
-                  className="home-product__img"
-                  src={productImage(product)}
-                  alt={product.name}
-                  loading="lazy"
-                />
-                {product.discount && (
-                  <span className="home-product__badge home-product__badge--sale">
-                    {product.discount}
-                  </span>
-                )}
-                {product.isNew && !product.discount && (
-                  <span className="home-product__badge home-product__badge--new">
-                    New
-                  </span>
-                )}
-              </div>
-              <div className="home-product__info">
-                <h3 className="home-product__name">{product.name}</h3>
-                <p className="home-product__desc">{product.description}</p>
-                <div className="home-product__prices">
-                  <span className="home-product__price">
-                    {formatPrice(product.price)}
-                  </span>
-                  {product.oldPrice && (
-                    <span className="home-product__old-price">
-                      {formatPrice(product.oldPrice)}
-                    </span>
-                  )}
+          {activeTab === "reviews" ? (
+            <div className="product-reviews-layout">
+              <div className="product-reviews-summary">
+                <span>{averageRating ? averageRating.toFixed(1) : "—"}</span>
+                <div>
+                  <div className="product-reviews-summary__stars" aria-hidden="true">
+                    {[1, 2, 3, 4, 5].map((star) => <FaStar key={star} />)}
+                  </div>
+                  <strong>{reviews.length ? `${reviews.length} opiniones de clientes` : "Tu opinión puede ser la primera"}</strong>
+                  <p>Reseñas de personas que compran y viven sus muebles.</p>
                 </div>
               </div>
-            </article>
-          ))}
-        </div>
-        <div className="home-show-more">
-          <Link to={routePaths.public.catalog} className="home-show-more__btn">
-            Mostrar más
-          </Link>
+
+              <div className="product-reviews">
+                {reviews.length ? reviews.map((review) => (
+                  <article className="product-review" key={review.id}>
+                    <div className="product-review__header">
+                      <div>
+                        <strong>{review.author}</strong>
+                        {review.verifiedPurchase ? <span className="product-review__verified"><FaCheckCircle /> Compra verificada</span> : null}
+                      </div>
+                      <span><FaStar aria-hidden="true" /> {review.rating.toFixed(1)}</span>
+                    </div>
+                    <h3>{review.title}</h3>
+                    <p>{review.body}</p>
+                    {review.date ? <time>{formatReviewDate(review.date)}</time> : null}
+                  </article>
+                )) : (
+                  <div className="product-review product-review--empty">
+                    <h3>Aún no hay reseñas</h3>
+                    <p>Comparte cómo se siente, se ve y funciona esta pieza en tu espacio.</p>
+                  </div>
+                )}
+              </div>
+
+              {isAuthenticated ? (
+                <form className="product-review-form" onSubmit={submitReview}>
+                  <div>
+                    <p className="product-review-form__eyebrow">Comparte tu experiencia</p>
+                    <h3>Escribe una reseña</h3>
+                  </div>
+                  <label>
+                    Calificación
+                    <select value={reviewForm.rating} onChange={(event) => setReviewForm((current) => ({ ...current, rating: Number(event.target.value) }))}>
+                      <option value={5}>5 · Excelente</option>
+                      <option value={4}>4 · Muy buena</option>
+                      <option value={3}>3 · Buena</option>
+                      <option value={2}>2 · Puede mejorar</option>
+                      <option value={1}>1 · Mala experiencia</option>
+                    </select>
+                  </label>
+                  <label>
+                    Título
+                    <input value={reviewForm.title} maxLength={120} onChange={(event) => setReviewForm((current) => ({ ...current, title: event.target.value }))} placeholder="¿Qué fue lo mejor?" />
+                  </label>
+                  <label>
+                    Tu reseña
+                    <textarea value={reviewForm.body} rows={4} onChange={(event) => setReviewForm((current) => ({ ...current, body: event.target.value }))} placeholder="Cuéntanos sobre calidad, comodidad, medidas o entrega." />
+                  </label>
+                  <button type="submit" disabled={reviewSaving}>{reviewSaving ? "Publicando…" : "Publicar reseña"}</button>
+                </form>
+              ) : (
+                <div className="product-review-signin">
+                  <strong>¿Ya compraste esta pieza?</strong>
+                  <span>Inicia sesión para compartir tu experiencia.</span>
+                  <Link to={routePaths.account.login}>Iniciar sesión</Link>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
       </section>
+
+      {relatedProducts.length ? (
+        <section className="home-section product-related" aria-labelledby="related-title">
+          <div className="home-section__heading product-related__heading">
+            <p>También puede gustarte...</p>
+            <h2 id="related-title">Piezas para completar el espacio</h2>
+            <span>Texturas, escalas y tonos elegidos para acompañar esta pieza sin competir con ella.</span>
+          </div>
+          <div className="home-products">
+            {relatedProducts.map((item) => (
+              <StoreProductCard
+                key={item.id}
+                product={item}
+                saved={canUseCustomerFlows && savedIds.includes(String(item.id))}
+                onToggleSaved={canUseCustomerFlows ? handleRelatedSaved : undefined}
+                onAddToCart={canUseCustomerFlows ? handleRelatedAddToCart : undefined}
+              />
+            ))}
+          </div>
+          <div className="home-show-more">
+            <Link className="home-show-more__btn" to={routePaths.public.catalog}>Ver toda la tienda</Link>
+          </div>
+        </section>
+      ) : null}
 
       <HomeFooter />
     </div>

@@ -3,6 +3,7 @@ export const routePaths = {
     home: "/",
     catalog: "/catalogo",
     productDetail: "/productos/:productId",
+    savedItems: "/guardados",
     contactHelp: "/contacto-ayuda",
     cart: "/carrito", // Añadido para el carrito de compras
   },
@@ -40,5 +41,7 @@ export const routePaths = {
     loadingStates: "/soporte/cargando",
     emptyStates: "/soporte/vacio",
     feedbackMessages: "/soporte/mensajes",
+    success: "/soporte/exito",
+    error: "/soporte/error",
   },
 };

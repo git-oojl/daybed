@@ -11,12 +11,9 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import {
-  FaEnvelope as EmailIcon,
-  FaStore as StoreIcon,
-} from "react-icons/fa";
+import { FaEnvelope as EmailIcon, FaStore as StoreIcon } from "react-icons/fa";
 import "../../assets/CSS/account/login-page.css";
-import loginBackground from "../../assets/LoginPage.jpg";
+import loginBackground from "../../assets/LoginPage.webp";
 import { routePaths } from "../../routes/routePaths.js";
 import { accountService } from "../../services/backendServices.js";
 
@@ -94,7 +91,7 @@ function ForgotPasswordPage() {
         <Box className="login-logo-wrapper">
           <StoreIcon className="login-logo-icon" />
           <Typography className="login-logo-text" variant="h1">
-            DayBed
+            Daybed
           </Typography>
         </Box>
 
@@ -123,12 +120,14 @@ function ForgotPasswordPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="correo@ejemplo.com"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon style={{ color: "#61470c" }} />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailIcon style={{ color: "#61470c" }} />
+                  </InputAdornment>
+                ),
+              },
             }}
             required
             autoComplete="email"

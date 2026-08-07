@@ -95,11 +95,16 @@ def test_dashboard_metrics_for_employee():
 
     assert response.status_code == 200
     assert response.data["total_orders"] == 2
+    assert response.data["total_products"] == 2
     assert response.data["total_simulated_sales"] == "200.00"
+    assert response.data["total_sales"] == "200.00"
     assert response.data["low_stock_count"] == 1
+    assert response.data["low_stock"][0]["name"] == "Low dashboard product"
     assert response.data["average_delivery_fee"] == "60.00"
     assert response.data["average_delivery_distance"] == "10.000"
     assert response.data["recent_orders"][0]["id"] >= confirmed.id
+    assert response.data["recent_orders"][0]["customer_email"] == customer.email
+    assert response.data["sales_by_month"][0]["total"] == "200.00"
 
     counts = {
         item["status"]: item["count"] for item in response.data["orders_by_status"]
@@ -116,9 +121,31 @@ def test_dashboard_metrics_handles_empty_database():
 
     assert response.status_code == 200
     assert response.data["total_orders"] == 0
+    assert response.data["total_products"] == 0
     assert response.data["total_simulated_sales"] == "0.00"
+    assert response.data["total_sales"] == "0.00"
     assert response.data["orders_by_status"]
     assert response.data["low_stock_count"] == 0
+    assert response.data["low_stock"] == []
+    assert response.data["sales_by_month"] == []
     assert response.data["recent_orders"] == []
     assert response.data["average_delivery_fee"] == "0.00"
     assert response.data["average_delivery_distance"] == "0.000"
+
+
+def test_dashboard_range_days_filters_orders_and_reports_period():
+    from datetime import timedelta
+    from django.utils import timezone
+
+    employee = create_user("empleado_dashboard_range")
+    customer = create_user("cliente_dashboard_range", User.Roles.CUSTOMER)
+    recent = create_order(customer, Order.Status.CONFIRMED, total="200.00")
+    old = create_order(customer, Order.Status.CONFIRMED, total="300.00")
+    Order.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=120))
+
+    response = api_client(employee).get(reverse("dashboard-metrics"), {"range_days": 30})
+
+    assert response.status_code == 200
+    assert response.data["range_days"] == 30
+    assert response.data["total_orders"] == 1
+    assert response.data["recent_orders"][0]["id"] == recent.id

@@ -7,12 +7,16 @@ class Category(models.Model):
     slug = models.SlugField(max_length=140, unique=True, blank=True)
     description = models.TextField(blank=True)
     specification_schema = models.JSONField(default=list, blank=True)
+    filter_attributes = models.JSONField(default=list, blank=True)
+    image = models.ImageField(upload_to="collections/", blank=True)
+    display_order = models.PositiveIntegerField(default=0)
+    homepage_visible = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ("name",)
+        ordering = ("display_order", "name")
         verbose_name_plural = "categories"
 
     def save(self, *args, **kwargs):
@@ -37,6 +41,12 @@ class Product(models.Model):
     material = models.CharField(max_length=120, blank=True)
     color = models.CharField(max_length=80, blank=True)
     style = models.CharField(max_length=80, blank=True)
+    room = models.CharField(max_length=80, blank=True)
+    furniture_type = models.CharField(max_length=80, blank=True)
+    has_storage = models.BooleanField(default=False)
+    is_sofa_bed = models.BooleanField(default=False)
+    featured = models.BooleanField(default=False)
+    featured_order = models.PositiveIntegerField(default=0)
     width_cm = models.DecimalField(
         max_digits=8, decimal_places=2, null=True, blank=True
     )
@@ -64,10 +74,12 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ("name",)
+        ordering = ("featured_order", "name")
         indexes = [
             models.Index(fields=("active", "category")),
             models.Index(fields=("price",)),
+            models.Index(fields=("featured", "featured_order")),
+            models.Index(fields=("room",)),
             models.Index(fields=("width_cm",)),
             models.Index(fields=("height_cm",)),
             models.Index(fields=("depth_cm",)),
@@ -146,3 +158,39 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return self.alt_text or f"Image for {self.product}"
+
+
+class ProductReview(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="product_reviews",
+    )
+    rating = models.PositiveSmallIntegerField()
+    title = models.CharField(max_length=120)
+    body = models.TextField()
+    verified_purchase = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("product", "user"),
+                name="unique_product_review_per_user",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(rating__gte=1, rating__lte=5),
+                name="product_review_rating_between_1_and_5",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.product} · {self.rating}/5 · {self.user}"

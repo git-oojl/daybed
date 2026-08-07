@@ -1,5 +1,5 @@
-function LoadingState({ message = "Cargando..." }) {
-  return <div role="status">{message}</div>;
-}
+import FeatureState from "./FeatureState.jsx";
 
-export default LoadingState;
+export default function LoadingState({ message = "Preparando la información…", detail = "Conservaremos tu lugar mientras termina de cargar." }) {
+  return <FeatureState tone="loading" compact title={message} message={detail} />;
+}

@@ -42,7 +42,10 @@ class CartSerializer(serializers.ModelSerializer):
 
 class CartItemWriteSerializer(serializers.Serializer):
     product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.filter(active=True, category__active=True),
+        queryset=Product.objects.filter(
+            active=True,
+            category__active=True,
+        ).select_related("category"),
         source="product",
     )
     quantity = serializers.IntegerField(min_value=1)

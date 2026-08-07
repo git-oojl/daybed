@@ -4,127 +4,96 @@ import {
   getCurrentUser,
   loginWithEmail,
   logoutRefreshToken,
-  refreshAccessToken,
 } from "./authService.js";
 import { getViewerIdForUser, viewerRoles } from "./roleMapping.js";
+import {
+  emitSessionReplaced,
+  subscribeToSessionExpired,
+  subscribeToTokensRefreshed,
+} from "./sessionEvents.js";
 import {
   clearStoredSession,
   getAccessToken,
   getRefreshToken,
   getStoredUser,
   setStoredSession,
-  setStoredTokens,
   setStoredUser,
 } from "./tokenStorage.js";
 
-const initialUser = getStoredUser();
+const initialAccessToken = getAccessToken();
+const initialRefreshToken = getRefreshToken();
+const initialUser = initialAccessToken || initialRefreshToken ? getStoredUser() : null;
+
+if (!initialAccessToken && !initialRefreshToken) clearStoredSession();
 
 export const useAuthStore = create((set, get) => ({
-  accessToken: getAccessToken(),
-  refreshToken: getRefreshToken(),
+  accessToken: initialAccessToken,
+  refreshToken: initialRefreshToken,
   user: initialUser,
   viewerId: getViewerIdForUser(initialUser),
-  isAuthenticated: Boolean(getAccessToken() && initialUser),
+  isAuthenticated: Boolean(initialAccessToken && initialUser),
   isLoading: false,
   error: null,
 
-  // ✅ SET SESSION - GUARDA EN LOCALSTORAGE SIEMPRE
   setSession(session) {
-    // ✅ ELIMINAR BLOQUEO DE DEV PREVIEW
-    // if (isDevPreviewRoute()) {
-    //   return;
-    // }
-
-    // ✅ Guardar siempre en localStorage
-    if (session?.access) {
-      setStoredSession(session);
-      set({
-        accessToken: session.access,
-        refreshToken: session.refresh || get().refreshToken,
-        user: session.user,
-        viewerId: getViewerIdForUser(session.user),
-        isAuthenticated: Boolean(session.access && session.user),
-        error: null,
-      });
-    } else {
-      console.warn("⚠️ Intento de setSession sin token de acceso");
-    }
+    if (!session?.access || !session?.user) return;
+    clearStoredSession();
+    setStoredSession(session);
+    emitSessionReplaced({ reason: "login", userId: session.user.id });
+    set({
+      accessToken: session.access,
+      refreshToken: session.refresh || null,
+      user: session.user,
+      viewerId: getViewerIdForUser(session.user),
+      isAuthenticated: true,
+      error: null,
+    });
   },
 
-  // ✅ CLEAR SESSION - LIMPIA LOCALSTORAGE
-  clearSession() {
-    // if (isDevPreviewRoute()) {
-    //   return;
-    // }
-
+  clearSession({ message = null, emit = true } = {}) {
     clearStoredSession();
+    if (emit) emitSessionReplaced({ reason: "logout" });
     set({
       accessToken: null,
       refreshToken: null,
       user: null,
       viewerId: viewerRoles.guest,
       isAuthenticated: false,
-      error: null,
+      isLoading: false,
+      error: message ? new Error(message) : null,
     });
   },
 
-  // ✅ SET USER - GUARDA USUARIO EN LOCALSTORAGE
   setUser(user) {
-    // if (isDevPreviewRoute()) {
-    //   return;
-    // }
-
-    if (user) {
-      setStoredUser(user);
-      set({
-        user,
-        viewerId: getViewerIdForUser(user),
-        isAuthenticated: Boolean(get().accessToken && user),
-      });
-    }
+    if (!user) return;
+    setStoredUser(user);
+    set({
+      user,
+      viewerId: getViewerIdForUser(user),
+      isAuthenticated: Boolean(get().accessToken && user),
+    });
   },
 
-  // ✅ LOGIN - CORREGIDO CON MANEJO DE ERRORES
   async login(credentials) {
-    // ⚠️ COMENTADO PARA PERMITIR LOGIN EN DESARROLLO
-    // if (isDevPreviewRoute()) {
-    //   throw new Error(
-    //     "Dev preview does not persist real sessions. Use /login to test backend auth.",
-    //   );
-    // }
-
+    get().clearSession({ emit: true });
     set({ isLoading: true, error: null });
     try {
       const session = await loginWithEmail(credentials);
-      
-      // ✅ Verificar que el token existe antes de guardar
-      if (!session?.access) {
-        throw new Error("No se recibió token de acceso");
+      if (!session?.access || !session?.user) {
+        throw new Error("No se pudo iniciar una sesión válida.");
       }
-      
-      // ✅ Guardar sesión
       get().setSession(session);
-      
-      console.log("✅ Login exitoso, token guardado");
       return session;
     } catch (error) {
-      console.error("❌ Error en login:", error);
-      set({ error: error.message || "Error al iniciar sesión" });
+      set({ error });
       throw error;
     } finally {
       set({ isLoading: false });
     }
   },
 
-  // ✅ LOAD CURRENT USER
   async loadCurrentUser() {
-    // if (isDevPreviewRoute()) {
-    //   return null;
-    // }
-
-    if (!get().accessToken) {
-      return null;
-    }
+    if (!get().accessToken && !get().refreshToken) return null;
 
     set({ isLoading: true, error: null });
     try {
@@ -133,67 +102,60 @@ export const useAuthStore = create((set, get) => ({
       set({
         user,
         viewerId: getViewerIdForUser(user),
-        isAuthenticated: Boolean(get().accessToken && user),
+        isAuthenticated: Boolean(getAccessToken() && user),
+        accessToken: getAccessToken(),
+        refreshToken: getRefreshToken(),
       });
       return user;
     } catch (error) {
-      set({ error });
+      if (error?.kind === "auth_expired" || error?.status === 401) {
+        get().clearSession({ message: error.message, emit: false });
+      } else {
+        set({ error });
+      }
       throw error;
     } finally {
       set({ isLoading: false });
     }
   },
 
-  // ✅ REFRESH SESSION
   async refreshSession() {
-    // if (isDevPreviewRoute()) {
-    //   return null;
-    // }
-
-    const refreshToken = get().refreshToken;
-    if (!refreshToken) {
-      get().clearSession();
+    if (!getRefreshToken()) {
+      get().clearSession({ emit: false });
       return null;
     }
 
-    set({ isLoading: true, error: null });
-    try {
-      const tokens = await refreshAccessToken(refreshToken);
-      setStoredTokens(tokens);
-      set({
-        accessToken: tokens.access,
-        refreshToken: tokens.refresh ?? refreshToken,
-        isAuthenticated: Boolean(tokens.access && get().user),
-      });
-      return tokens;
-    } catch (error) {
-      get().clearSession();
-      set({ error });
-      throw error;
-    } finally {
-      set({ isLoading: false });
-    }
+    // getCurrentUser goes through the global API client. A stale access token
+    // therefore uses the same single-flight refresh coordinator as every other
+    // protected request instead of creating a competing refresh path.
+    return get().loadCurrentUser();
   },
 
-  // ✅ LOGOUT
   async logout() {
-    // if (isDevPreviewRoute()) {
-    //   return;
-    // }
-
-    const refreshToken = get().refreshToken;
-    get().clearSession();
+    const refreshToken = getRefreshToken();
+    get().clearSession({ emit: true });
     if (refreshToken) {
-      await logoutRefreshToken(refreshToken);
+      try {
+        await logoutRefreshToken(refreshToken);
+      } catch {
+        // The local session is already closed. A stale/blacklisted refresh token
+        // must never prevent logout or leave credentials behind.
+      }
     }
   },
 }));
 
-// ✅ FUNCIÓN PARA DETECTAR DEV PREVIEW (se mantiene pero no bloquea)
-function isDevPreviewRoute() {
-  return (
-    import.meta.env.DEV &&
-    typeof window !== "undefined" &&
-    window.location.pathname === "/dev/preview"
-  );
-}
+subscribeToTokensRefreshed((tokens) => {
+  useAuthStore.setState((state) => ({
+    accessToken: tokens.access,
+    refreshToken: tokens.refresh || state.refreshToken,
+    isAuthenticated: Boolean(tokens.access && state.user),
+  }));
+});
+
+subscribeToSessionExpired(({ message } = {}) => {
+  useAuthStore.getState().clearSession({
+    message: message || "Tu sesión venció. Inicia sesión nuevamente.",
+    emit: false,
+  });
+});

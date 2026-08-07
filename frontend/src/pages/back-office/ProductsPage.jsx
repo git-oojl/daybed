@@ -1,13 +1,15 @@
 // ProductsPage.jsx - CON VALIDACIÓN DE ACCESO
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
+import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
 import {
   FaPlus,
   FaEdit,
@@ -26,26 +28,55 @@ import {
   FaLink,
 } from "react-icons/fa";
 import { catalogService } from "../../services/backendServices.js";
-import { getAccessToken } from "../../auth/tokenStorage.js";
+import { productImage } from "../../services/viewMappers.js";
 import LoadingState from "../../components/support/LoadingState.jsx";
 import ErrorMessage from "../../components/support/ErrorMessage.jsx";
 import EmptyState from "../../components/support/EmptyState.jsx";
 
-const API_URL = "http://localhost:8000";
-const DELETED_PRODUCTS_KEY = 'daybed_deleted_products';
+const PAGE_SIZE = 10;
+const ROOM_OPTIONS = ["sala", "recámara", "comedor", "oficina", "exterior"];
+const STYLE_OPTIONS = [
+  "Contemporáneo",
+  "Moderno",
+  "Nórdico",
+  "Japandi",
+  "Orgánico",
+  "Clásico",
+  "Mid-century",
+  "Industrial",
+  "Minimalista",
+  "Escandinavo",
+  "Modular",
+];
+const TYPE_OPTIONS = [
+  "sofá cama",
+  "sofá",
+  "mesa de centro",
+  "mesa auxiliar",
+  "silla de acento",
+  "sillón",
+  "cama",
+  "buró",
+  "comedor",
+  "escritorio",
+  "repisa",
+  "banco",
+];
 
 export default function ProductsPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const [searchParams] = useEffectiveSearchParams();
+  const categoryParam = searchParams.get("categoria") || "";
+  const { user, isAuthenticated, isLoading: authLoading } = useEffectiveSession();
   const viewerId = getViewerIdForUser(user);
   const isAdmin = viewerId === "admin";
   const isEmployee = viewerId === "employee";
   const effectivePermissionCodes = user?.effective_permission_codes ?? [];
   
-  // ✅ PERMISOS: Empleado puede CREAR y EDITAR, pero NO ELIMINAR
+  // Permisos de catálogo alineados con el backend.
   const canCreate = isAdmin || effectivePermissionCodes.includes("products.create");
   const canUpdate = isAdmin || effectivePermissionCodes.includes("products.update");
-  const canDelete = isAdmin; // ✅ SOLO ADMIN
+  const canDelete = isAdmin || effectivePermissionCodes.includes("products.deactivate");
   const canView = isAdmin || effectivePermissionCodes.includes("products.view");
 
   // ============================================
@@ -76,24 +107,37 @@ export default function ProductsPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
+  const [filterCategory, setFilterCategory] = useState(categoryParam);
   const [filterStatus, setFilterStatus] = useState("");
   const [deletingId, setDeletingId] = useState(null);
-  const [deletedIds, setDeletedIds] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
-
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
+    sku: "",
     description: "",
     price: "",
     stock: "",
+    minimum_stock: "",
     category: "",
+    material: "",
+    color: "",
+    style: "",
+    room: "",
+    furniture_type: "",
+    has_storage: false,
+    is_sofa_bed: false,
+    featured: false,
+    featured_order: 0,
+    width_cm: "",
+    height_cm: "",
+    depth_cm: "",
+    weight_kg: "",
+    specifications: "",
     status: "active",
     image_url: "",
     image_file: null,
@@ -105,41 +149,7 @@ export default function ProductsPage() {
   const initialLoad = useRef(true);
   const isFetching = useRef(false);
 
-  const getToken = () => {
-    return getAccessToken() || localStorage.getItem('access_token');
-  };
-
-  // Cargar categorías y productos eliminados
-  useEffect(() => {
-    const saved = localStorage.getItem(DELETED_PRODUCTS_KEY);
-    if (saved) {
-      try {
-        setDeletedIds(JSON.parse(saved));
-      } catch (e) {
-        setDeletedIds([]);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      fetchCategories();
-      fetchProducts();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!initialLoad.current && !isFetching.current) {
-      fetchProducts();
-    }
-  }, [currentPage, filterCategory, filterStatus, searchTerm, deletedIds]);
-
-// ProductsPage.jsx - fetchProducts CORREGIDO
-
-// ProductsPage.jsx - fetchProducts CORREGIDO PARA ADMIN Y EMPLEADO
-
-async function fetchProducts() {
+const fetchProducts = useCallback(async () => {
   if (isFetching.current) return;
   isFetching.current = true;
   
@@ -147,7 +157,7 @@ async function fetchProducts() {
     setLoading(true);
     const params = {
       page: currentPage,
-      page_size: pageSize,
+      page_size: PAGE_SIZE,
     };
     if (searchTerm) params.search = searchTerm;
     if (filterCategory) params.category = filterCategory;
@@ -161,35 +171,20 @@ async function fetchProducts() {
     const response = await catalogService.manageProducts(params);
     let productsData = response.results || response || [];
     
-    // ✅ 1. FILTRAR POR ESTADO (si el filtro está activo)
     if (filterStatus === "active") {
       productsData = productsData.filter(p => p.active === true);
     } else if (filterStatus === "inactive") {
       productsData = productsData.filter(p => p.active === false);
     }
-    
-    // ✅ 2. FILTRAR PRODUCTOS ELIMINADOS (USANDO deletedIds)
-    // Esto aplica para TODOS los usuarios (admin y empleado)
-    if (deletedIds.length > 0) {
-      productsData = productsData.filter(p => !deletedIds.includes(p.id));
-      console.log(`🗑️ Filtrados ${deletedIds.length} productos eliminados`);
-    }
-    
-    // ✅ 3. FILTRAR POR ESTADO REAL (active: false) - SOLO para admin
-    // Los admin pueden ver productos inactivos, pero los eliminados lógicamente
-    // deberían tener active: false y no mostrarse como activos
-    if (filterStatus === "active") {
-      productsData = productsData.filter(p => p.active === true);
-    } else if (filterStatus === "inactive") {
-      productsData = productsData.filter(p => p.active === false);
-    }
+
+    const total = typeof response.count === "number"
+      ? response.count
+      : productsData.length;
     
     setProducts(productsData);
-    setTotalCount(productsData.length || 0);
-    setTotalPages(Math.ceil((productsData.length || 0) / pageSize));
+    setTotalCount(total);
+    setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
     setError(null);
-    
-    console.log(`✅ ${productsData.length} productos cargados`);
     
   } catch (err) {
     console.error("Error al cargar productos:", err);
@@ -198,16 +193,11 @@ async function fetchProducts() {
     setLoading(false);
     isFetching.current = false;
   }
-}
-  async function fetchCategories() {
+}, [currentPage, filterCategory, filterStatus, searchTerm]);
+
+  const fetchCategories = useCallback(async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        console.warn("No hay token para cargar categorías");
-        return;
-      }
-      
-      const response = await catalogService.manageCategories();
+      const response = await catalogService.manageCategories({ page_size: 100 });
       let categoriesData = [];
       if (Array.isArray(response)) {
         categoriesData = response;
@@ -219,23 +209,23 @@ async function fetchProducts() {
       setCategories(categoriesData);
     } catch (err) {
       console.error("Error al cargar categorías:", err);
-      try {
-        const token = getToken();
-        const response = await fetch(`${API_URL}/api/catalog/manage/categories/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data.results || data || []);
-        }
-      } catch (e) {
-        console.error("Error en fetch directo:", e);
-      }
+      setCategories([]);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (initialLoad.current) {
+      initialLoad.current = false;
+      fetchCategories();
+      fetchProducts();
+    }
+  }, [fetchCategories, fetchProducts]);
+
+  useEffect(() => {
+    if (!initialLoad.current && !isFetching.current) {
+      fetchProducts();
+    }
+  }, [fetchProducts]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -298,15 +288,7 @@ async function fetchProducts() {
 
   const getProductImageUrl = (product) => {
     if (!product) return null;
-    if (product.image) {
-      if (product.image.startsWith("http")) return product.image;
-      return `${API_URL}${product.image}`;
-    }
-    if (product.image_url) {
-      if (product.image_url.startsWith("http")) return product.image_url;
-      return `${API_URL}${product.image_url}`;
-    }
-    return null;
+    return productImage(product);
   };
 
   const handleOpenModal = (product = null) => {
@@ -314,10 +296,26 @@ async function fetchProducts() {
       setEditingProduct(product);
       setFormData({
         name: product.name,
+        sku: product.sku || "",
         description: product.description || "",
         price: product.price,
         stock: product.stock,
+        minimum_stock: product.minimum_stock ?? "",
         category: product.category?.id || product.category,
+        material: product.material || "",
+        color: product.color || "",
+        style: product.style || "",
+        room: product.room || "",
+        furniture_type: product.furniture_type || "",
+        has_storage: Boolean(product.has_storage),
+        is_sofa_bed: Boolean(product.is_sofa_bed),
+        featured: Boolean(product.featured),
+        featured_order: product.featured_order || 0,
+        width_cm: product.width_cm || "",
+        height_cm: product.height_cm || "",
+        depth_cm: product.depth_cm || "",
+        weight_kg: product.weight_kg || "",
+        specifications: product.specifications && Object.keys(product.specifications).length ? JSON.stringify(product.specifications, null, 2) : "",
         status: getStatusString(product.active),
         image_url: product.image_url || "",
         image_file: null,
@@ -328,10 +326,26 @@ async function fetchProducts() {
       setEditingProduct(null);
       setFormData({
         name: "",
+        sku: "",
         description: "",
         price: "",
         stock: "",
+        minimum_stock: "",
         category: "",
+        material: "",
+        color: "",
+        style: "",
+        room: "",
+        furniture_type: "",
+        has_storage: false,
+        is_sofa_bed: false,
+        featured: false,
+        featured_order: 0,
+        width_cm: "",
+        height_cm: "",
+        depth_cm: "",
+        weight_kg: "",
+        specifications: "",
         status: "active",
         image_url: "",
         image_file: null,
@@ -350,7 +364,8 @@ async function fetchProducts() {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, type, checked, value } = e.target;
+    setFormData((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleImageFileChange = (e) => {
@@ -377,14 +392,36 @@ async function fetchProducts() {
       const formDataToSend = new FormData();
       
       formDataToSend.append("name", formData.name);
+      formDataToSend.append("sku", formData.sku || "");
       formDataToSend.append("description", formData.description || `${formData.name} - Mueble de calidad`);
       formDataToSend.append("price", Number(formData.price));
       formDataToSend.append("stock", Number(formData.stock));
+      formDataToSend.append("minimum_stock", Number(formData.minimum_stock || 0));
       formDataToSend.append("category", Number(formData.category) || formData.category);
+      formDataToSend.append("material", formData.material || "");
+      formDataToSend.append("color", formData.color || "");
+      formDataToSend.append("style", formData.style || "");
+      formDataToSend.append("room", formData.room || "");
+      formDataToSend.append("furniture_type", formData.furniture_type || "");
+      formDataToSend.append("has_storage", String(Boolean(formData.has_storage)));
+      formDataToSend.append("is_sofa_bed", String(Boolean(formData.is_sofa_bed)));
+      formDataToSend.append("featured", String(Boolean(formData.featured)));
+      formDataToSend.append("featured_order", String(Number(formData.featured_order || 0)));
+      ["width_cm", "height_cm", "depth_cm", "weight_kg"].forEach((field) => {
+        if (formData[field] !== "") formDataToSend.append(field, Number(formData[field]));
+      });
+      if (formData.specifications.trim()) {
+        try {
+          formDataToSend.append("specifications", formData.specifications);
+          JSON.parse(formData.specifications);
+        } catch {
+          throw new Error("Las especificaciones avanzadas deben usar JSON válido.");
+        }
+      }
       formDataToSend.append("active", formData.status === "active");
       
       if (formData.image_file) {
-        formDataToSend.append("image", formData.image_file);
+        formDataToSend.append("main_image", formData.image_file);
       }
       if (formData.image_url && !formData.image_file) {
         formDataToSend.append("image_url", formData.image_url);
@@ -422,50 +459,21 @@ async function fetchProducts() {
     }
   };
 
-// ProductsPage.jsx - handleDelete CORREGIDO
-
 const handleDelete = async (id) => {
-  if (!isAdmin) {
-    setError("No tienes permisos para eliminar productos");
+  if (!canDelete) {
+    setError("No tienes permisos para desactivar productos");
     return;
   }
   
   if (window.confirm("¿Desactivar este producto? (Se ocultará del catálogo)")) {
     try {
       setDeletingId(id);
-      const token = getToken();
-      
-      if (!token) {
-        setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
-        setDeletingId(null);
-        return;
-      }
+      await catalogService.updateProduct(id, { active: false });
+      setError(null);
 
-      // ✅ USAR PATCH para desactivar lógicamente
-      const response = await fetch(`${API_URL}/api/catalog/manage/products/${id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ active: false })
-      });
-
-      if (response.ok) {
-        // ✅ Actualizar estado local
-        setProducts(prev => prev.filter(p => p.id !== id));
-        setTotalCount(prev => prev - 1);
-        
-        // ✅ Guardar en localStorage para ocultar en futuras cargas
-        const newDeletedIds = [...deletedIds, id];
-        setDeletedIds(newDeletedIds);
-        localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(newDeletedIds));
-        
-        setError(null);
-        console.log(`🗑️ Producto ${id} desactivado correctamente`);
+      if (products.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(errorData.detail || "Error al desactivar producto");
         await fetchProducts();
       }
     } catch (err) {
@@ -484,7 +492,7 @@ const handleDelete = async (id) => {
       <div className="home-page dashboard-page">
         <HomeHeader />
         <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-          <h2>🔒 Acceso no autorizado</h2>
+          <h2>Acceso no autorizado</h2>
           <p style={{ color: "#7A6B5A" }}>No tienes permisos para ver esta página.</p>
           <Link to={routePaths.public.home} style={{
             display: "inline-block",
@@ -518,7 +526,7 @@ const handleDelete = async (id) => {
         <ErrorMessage message={error} />
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <button onClick={fetchProducts} className="btn-primary">
-            Reintentar
+            Volver a cargar productos
           </button>
         </div>
         <HomeFooter />
@@ -533,78 +541,12 @@ const handleDelete = async (id) => {
     <div className="home-page dashboard-page">
       <HomeHeader />
 
-      <section
-        className="dashboard-hero"
-        aria-label="Productos"
-        style={{
-          backgroundImage:
-            "url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZ1TEkqyw1tABVn-JkqxcNMuMAmqLaxjYxp3-bTP1JIg&s=10')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          width: "100%",
-          minHeight: "180px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          className="dashboard-hero__overlay"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(62,42,27,0.75)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px 15px",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <h1
-            className="dashboard-hero__title"
-            style={{
-              color: "#FFFFFF",
-              fontSize: "2rem",
-              fontWeight: 700,
-              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-              margin: 0,
-              fontFamily: '"Playfair Display", serif',
-              textAlign: "center",
-            }}
-          >
-            Productos
-          </h1>
-          <p
-            className="dashboard-hero__breadcrumb"
-            style={{
-              color: "#F5EDE5",
-              fontSize: "0.95rem",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              marginTop: "8px",
-              textAlign: "center",
-            }}
-          >
-            <Link
-              to={routePaths.public.home}
-              style={{ color: "#FFD700", textDecoration: "none" }}
-            >
-              Inicio
-            </Link>
-            <span aria-hidden="true" style={{ margin: "0 8px", color: "#F5EDE5" }}>
-              &gt;
-            </span>
-            <span style={{ color: "#FFFFFF" }}>Productos</span>
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Productos internos"
+        eyebrow="Catálogo operativo"
+        image="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1800&q=82"
+        current="Productos internos"
+      />
 
       <main className="dashboard-container" style={{ padding: "16px" }}>
         <div
@@ -626,7 +568,6 @@ const handleDelete = async (id) => {
             }}
           >
             Lista de productos {totalCount > 0 && `(${totalCount})`}
-            {deletedIds.length > 0 && ` (${deletedIds.length} eliminados)`}
           </h2>
           {canCreate && (
             <button
@@ -870,8 +811,9 @@ const handleDelete = async (id) => {
                                     borderRadius: "4px",
                                     border: "1px solid #E8DCCC",
                                   }}
-                                  onError={(e) => {
-                                    e.target.style.display = "none";
+                                  onError={(event) => {
+                                    event.currentTarget.onerror = null;
+                                    event.currentTarget.src = productImage({ name: product.name, category: getProductCategoryName(product) });
                                   }}
                                 />
                               ) : (
@@ -909,7 +851,7 @@ const handleDelete = async (id) => {
                               fontSize: "0.85rem",
                             }}
                           >
-                            ${product.price?.toLocaleString()}
+                            ${Number(product.price || 0).toLocaleString("es-MX")}
                           </td>
                           <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <span
@@ -932,21 +874,37 @@ const handleDelete = async (id) => {
                             </span>
                           </td>
                           <td style={{ textAlign: "center", padding: "10px 8px" }}>
-                            <button
-                              onClick={() => handleToggleStatus(product.id)}
-                              style={{
-                                padding: "3px 12px",
-                                borderRadius: "20px",
-                                border: "none",
-                                fontWeight: 600,
-                                fontSize: "0.7rem",
-                                cursor: "pointer",
-                                background: getStatusBg(product.active),
-                                color: getStatusColor(product.active),
-                              }}
-                            >
-                              {getStatusLabel(product.active)}
-                            </button>
+                            {canUpdate ? (
+                              <button
+                                onClick={() => handleToggleStatus(product.id)}
+                                style={{
+                                  padding: "3px 12px",
+                                  borderRadius: "20px",
+                                  border: "none",
+                                  fontWeight: 600,
+                                  fontSize: "0.7rem",
+                                  cursor: "pointer",
+                                  background: getStatusBg(product.active),
+                                  color: getStatusColor(product.active),
+                                }}
+                              >
+                                {getStatusLabel(product.active)}
+                              </button>
+                            ) : (
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "3px 12px",
+                                  borderRadius: "20px",
+                                  fontWeight: 600,
+                                  fontSize: "0.7rem",
+                                  background: getStatusBg(product.active),
+                                  color: getStatusColor(product.active),
+                                }}
+                              >
+                                {getStatusLabel(product.active)}
+                              </span>
+                            )}
                           </td>
                           <td style={{ textAlign: "center", padding: "10px 8px" }}>
                             <div
@@ -1000,7 +958,7 @@ const handleDelete = async (id) => {
                                   disabled={deletingId === product.id}
                                 >
                                   <FaTrash size={11} />{" "}
-                                  {deletingId === product.id ? "Eliminando..." : "Eliminar"}
+                                  {deletingId === product.id ? "Desactivando..." : "Desactivar"}
                                 </button>
                               )}
                             </div>
@@ -1103,7 +1061,7 @@ const handleDelete = async (id) => {
               background: "#FFFFFF",
               borderRadius: "16px",
               padding: "24px",
-              maxWidth: "500px",
+              maxWidth: "780px",
               width: "100%",
               maxHeight: "90vh",
               overflowY: "auto",
@@ -1159,8 +1117,7 @@ const handleDelete = async (id) => {
                 >
                   Descripción
                 </label>
-                <input
-                  type="text"
+                <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
@@ -1171,6 +1128,8 @@ const handleDelete = async (id) => {
                     border: "1px solid #E8DCCC",
                     borderRadius: "8px",
                     fontSize: "0.9rem",
+                    minHeight: "96px",
+                    resize: "vertical",
                   }}
                 />
               </div>
@@ -1272,6 +1231,53 @@ const handleDelete = async (id) => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <section className="product-editor__section">
+                <div className="product-editor__section-heading">
+                  <strong>Ficha comercial</strong>
+                  <span>Información que ayuda a vender y administrar la pieza.</span>
+                </div>
+                <div className="product-editor__grid">
+                  <label>SKU<input name="sku" value={formData.sku} onChange={handleChange} placeholder="Se genera automáticamente" /></label>
+                  <label>Stock mínimo<input type="number" min="0" name="minimum_stock" value={formData.minimum_stock} onChange={handleChange} /></label>
+                  <label>Material<input list="product-material-options" name="material" value={formData.material} onChange={handleChange} placeholder="Lino, roble, acero..." /></label>
+                  <label>Color<input list="product-color-options" name="color" value={formData.color} onChange={handleChange} placeholder="Arena, nogal..." /></label>
+                  <label>Estilo<select name="style" value={formData.style} onChange={handleChange}><option value="">Selecciona o deja vacío</option>{STYLE_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                  <label>Espacio<select name="room" value={formData.room} onChange={handleChange}><option value="">Selecciona o deja vacío</option>{ROOM_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                  <label>Tipo de mueble<select name="furniture_type" value={formData.furniture_type} onChange={handleChange}><option value="">Selecciona o deja vacío</option>{TYPE_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+                </div>
+                <datalist id="product-material-options"><option value="Madera" /><option value="Roble" /><option value="Nogal" /><option value="Fresno" /><option value="Lino" /><option value="Bouclé" /><option value="Terciopelo" /><option value="Metal" /><option value="MDF enchapado" /></datalist>
+                <datalist id="product-color-options"><option value="Natural" /><option value="Arena" /><option value="Nogal oscuro" /><option value="Nogal claro" /><option value="Miel" /><option value="Terracota" /><option value="Gris" /><option value="Marfil" /><option value="Verde olivo" /><option value="Azul petróleo" /></datalist>
+              </section>
+
+              <section className="product-editor__section product-editor__section--merchandising">
+                <div className="product-editor__section-heading">
+                  <strong>Merchandising de la tienda</strong>
+                  <span>Estos controles alimentan Inicio y los filtros reales del catálogo.</span>
+                </div>
+                <div className="product-editor__toggles">
+                  <label><input type="checkbox" name="has_storage" checked={formData.has_storage} onChange={handleChange} />Incluye almacenamiento</label>
+                  <label><input type="checkbox" name="is_sofa_bed" checked={formData.is_sofa_bed} onChange={handleChange} />Es sofá cama</label>
+                  <label><input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />Mostrar en “Nuestros productos”</label>
+                  <label className={formData.featured ? "" : "is-disabled"}>Orden destacado<input type="number" min="1" max="4" name="featured_order" value={formData.featured_order} onChange={handleChange} disabled={!formData.featured} /></label>
+                </div>
+                <p className="product-editor__hint">La portada muestra hasta cuatro productos destacados activos. Los agotados se excluyen automáticamente.</p>
+              </section>
+
+              <section className="product-editor__section">
+                <div className="product-editor__section-heading"><strong>Dimensiones</strong><span>Medidas en centímetros y peso en kilogramos.</span></div>
+                <div className="product-editor__grid product-editor__grid--dimensions">
+                  <label>Ancho total (cm)<input type="number" min="0" step="0.01" name="width_cm" value={formData.width_cm} onChange={handleChange} placeholder="180" /><small>Medida exterior de lado a lado.</small></label>
+                  <label>Alto total (cm)<input type="number" min="0" step="0.01" name="height_cm" value={formData.height_cm} onChange={handleChange} placeholder="85" /><small>Incluye respaldo o punto más alto.</small></label>
+                  <label>Profundidad total (cm)<input type="number" min="0" step="0.01" name="depth_cm" value={formData.depth_cm} onChange={handleChange} placeholder="92" /><small>Del frente hacia el fondo.</small></label>
+                  <label>Peso (kg)<input type="number" min="0" step="0.01" name="weight_kg" value={formData.weight_kg} onChange={handleChange} placeholder="42" /><small>Peso aproximado para entrega y carga.</small></label>
+                </div>
+              </section>
+
+              <div className="form-group product-editor__advanced" style={{ marginBottom: "14px" }}>
+                <label>Especificaciones avanzadas <small>JSON opcional, por ejemplo {`{"tapiz":"desenfundable"}`}</small></label>
+                <textarea name="specifications" value={formData.specifications} onChange={handleChange} placeholder={'{"cuidados":"Limpieza en seco"}'} />
               </div>
 
               <div className="form-group" style={{ marginBottom: "14px" }}>
@@ -1378,8 +1384,8 @@ const handleDelete = async (id) => {
                         padding: "4px",
                         background: "#FDF8F0",
                       }}
-                      onError={(e) => {
-                        e.target.style.display = "none";
+                      onError={() => {
+                        setImagePreview("");
                       }}
                     />
                   </div>

@@ -1,0 +1,21 @@
+.support-outcome-page { background: #f7efe5; }
+.support-outcome { width: min(760px, calc(100% - 32px)); min-height: 440px; margin: 66px auto 84px; padding: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px solid #dfcdb8; border-radius: 22px; background: #fffaf3; box-shadow: 0 22px 60px rgba(67,47,30,.08); }
+.support-outcome__icon { width: 78px; height: 78px; display: grid; place-items: center; border-radius: 50%; font-size: 1.9rem; }
+.support-outcome--success .support-outcome__icon { background: #e3eddf; color: #4e6a47; }
+.support-outcome--error .support-outcome__icon { background: #f1ded9; color: #974c41; }
+.support-outcome__eyebrow { margin: 22px 0 8px; color: #9a6f49; text-transform: uppercase; letter-spacing: .15em; font-size: .72rem; font-weight: 800; }
+.support-outcome h1 { margin: 0; color: #3e2e23; font-size: clamp(2rem,5vw,3rem); letter-spacing: -.035em; }
+.support-outcome > p:not(.support-outcome__eyebrow) { max-width: 560px; margin: 16px 0 24px; color: #685546; line-height: 1.7; }
+.support-outcome__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.support-outcome__actions a, .support-outcome__actions button { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #765238; border-radius: 9px; background: #765238; color: #fffaf3; padding: 0 20px; text-decoration: none; font: inherit; font-weight: 750; cursor: pointer; }
+.support-outcome__actions a:last-child { background: transparent; color: #765238; }
+@media (max-width: 560px) { .support-outcome { padding: 38px 20px; margin-block: 38px 54px; } }
+.support-outcome:not(.support-outcome--success):not(.support-outcome--error) .support-outcome__icon { background: #efe1d0; color: #765238; }
+.support-outcome--warning .support-outcome__icon { background: #f6e8c9; color: #8a6125; }
+.support-outcome__icon--spin svg { animation: support-spin 1s linear infinite; }
+.support-outcome__skeleton { width: min(460px,100%); display: grid; gap: 10px; margin: 2px 0 24px; }
+.support-outcome__skeleton i { height: 14px; overflow: hidden; border-radius: 999px; background: linear-gradient(90deg,#eadccc 20%,#f7efe5 40%,#eadccc 60%); background-size: 220% 100%; animation: support-shimmer 1.5s linear infinite; }
+.support-outcome__skeleton i:nth-child(2) { width: 82%; justify-self: center; }
+.support-outcome__skeleton i:nth-child(3) { width: 58%; justify-self: center; }
+@keyframes support-spin { to { transform: rotate(360deg); } }
+@keyframes support-shimmer { to { background-position: -220% 0; } }

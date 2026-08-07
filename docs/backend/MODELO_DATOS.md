@@ -29,6 +29,8 @@ Reglas:
 
 - `email` es único y se normaliza a minúsculas en registro y gestión interna.
 - El login público usa `email` + `password`.
+- El registro público crea únicamente usuarios `cliente`.
+- Los usuarios `empleado` y `administrador` se crean por un administrador desde gestión interna o desde Django Admin/superuser en desarrollo.
 - `username` se conserva por compatibilidad con Django/Admin y se genera desde el correo cuando el registro de cliente no lo envía.
 - `state` y `city` guardan los campos de ubicación básica que ya capturan las vistas actuales de registro.
 - Al cambiar `role`, la membresía del grupo operativo de empleado se sincroniza automáticamente.
@@ -201,6 +203,11 @@ Campos principales:
 - `products_subtotal`
 - `delivery_fee`
 - `total`
+- `payment_method`
+- `payment_status`
+- `payment_reference`
+- `payment_processed_at`
+- `payment_snapshot`
 - `created_at`
 - `updated_at`
 
@@ -225,6 +232,19 @@ Estados:
 - `delivered`
 - `cancelled`
 
+Métodos de pago simulados:
+
+- `card`
+- `transfer`
+- `cash`
+
+Estados de pago:
+
+- `authorized`
+- `awaiting_transfer`
+- `pay_on_delivery`
+- `failed`
+
 Transiciones permitidas:
 
 ```text
@@ -240,13 +260,16 @@ Reglas:
 
 - El stock se descuenta una sola vez al pasar a `confirmed`.
 - Los datos de entrega guardados desde checkout no aceptan coordenadas, distancia, duración o tarifa fuera de rango válido.
-- `delivery_fee` se recalcula al crear el pedido usando la configuración activa de tienda. El cliente no define el precio final.
+- `delivery_fee` se recalcula al crear el pedido usando la configuración global de Daybed. El cliente no define el precio final.
+- El pago es simulado; no hay cobro real ni integración con Stripe.
+- Datos crudos de tarjeta no se guardan en `Order`; `payment_snapshot` conserva solo metadata segura para mostrar.
+- Transferencia y efectivo quedan pendientes hasta que staff/admin marque el pago simulado como recibido o fallido.
 
 ## Store
 
 ### StoreSettings
 
-Configuración singleton-style de la tienda y sus reglas de entrega.
+Configuración singleton de la única empresa Daybed, su escaparate y sus reglas de entrega.
 
 Campos:
 
@@ -359,15 +382,17 @@ Usuarios:
 | Rol | Email | Password |
 | --- | --- | --- |
 | `cliente` | `cliente@example.com` | `DemoPassword123!` |
+| `cliente` | `cliente.plus@example.com` | `DemoPassword123!` |
 | `empleado` | `empleado@example.com` | `DemoPassword123!` |
 | `administrador` | `admin@example.com` | `DemoPassword123!` |
 
 Contenido incluido:
 
+- Configuración global de Daybed para identidad, escaparate, tarifas y envío gratis.
 - Categorías activas para catálogo y una categoría inactiva para validar filtros internos.
-- Productos activos, un producto inactivo, SKUs, dimensiones estructuradas, especificaciones flexibles, stock bajo y stock agotado.
-- Carrito prellenado para `cliente@example.com`.
-- Pedidos del cliente en `pending`, `confirmed`, `preparing`, `shipped`, `delivered` y `cancelled`.
+- Productos activos, un producto inactivo, SKUs, dimensiones estructuradas, especificaciones flexibles, imágenes principales, galerías demo, stock bajo y stock agotado.
+- Carritos prellenados para `cliente@example.com` y `cliente.plus@example.com`.
+- Pedidos de clientes en `pending`, `confirmed`, `preparing`, `shipped`, `delivered` y `cancelled`, con métodos y estados de pago simulados variados.
 - Movimientos de inventario por pedidos confirmados y un ajuste manual demo.
 
 Regla de equipo: no compartir ni versionar `db.sqlite3`. El estado inicial compartido debe vivir en migraciones, fixtures/semillas y documentación.

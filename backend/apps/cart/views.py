@@ -1,10 +1,12 @@
+from django.db import transaction
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsCustomer
+from rest_framework.permissions import IsAuthenticated
 from apps.cart.models import Cart, CartItem
 from apps.cart.serializers import (
     CartItemQuantitySerializer,
@@ -12,14 +14,58 @@ from apps.cart.serializers import (
     CartItemWriteSerializer,
     CartSerializer,
 )
+from apps.catalog.models import Product, ProductImage
+from apps.store.models import StoreSettings
+
+
+def validate_storefront_and_stock(product, requested_quantity):
+    settings = StoreSettings.get_active()
+    if not settings.storefront_available:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({"storefront": "Las compras están pausadas temporalmente. Tu carrito se conserva."})
+    if product.stock <= 0:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({"product_id": "Este producto está agotado."})
+    if requested_quantity > product.stock:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({"quantity": f"Solo hay {product.stock} unidades disponibles."})
+
+
+def cart_item_queryset():
+    return CartItem.objects.select_related(
+        "product",
+        "product__category",
+    ).prefetch_related(
+        Prefetch(
+            "product__images",
+            queryset=ProductImage.objects.filter(active=True).order_by(
+                "sort_order",
+                "id",
+            ),
+        )
+    )
 
 
 class CustomerCartMixin:
-    permission_classes = (IsCustomer,)
+    permission_classes = (IsAuthenticated,)
+
+    def get_cart_queryset(self):
+        return Cart.objects.prefetch_related(
+            Prefetch("items", queryset=cart_item_queryset())
+        )
 
     def get_cart(self):
-        cart, _created = Cart.objects.get_or_create(user=self.request.user)
+        cart, _created = self.get_cart_queryset().get_or_create(
+            user=self.request.user
+        )
         return cart
+
+    def get_cart_id(self):
+        cart, _created = Cart.objects.only("id").get_or_create(user=self.request.user)
+        return cart.id
+
+    def get_cart_by_id(self, cart_id):
+        return self.get_cart_queryset().get(id=cart_id)
 
 
 @extend_schema_view(
@@ -43,6 +89,7 @@ class CartDetailView(CustomerCartMixin, APIView):
     def delete(self, request):
         cart = self.get_cart()
         cart.items.all().delete()
+        cart = self.get_cart_by_id(cart.id)
         return Response(CartSerializer(cart).data)
 
 
@@ -70,29 +117,30 @@ class CartItemListView(CustomerCartMixin, generics.ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return CartItem.objects.none()
-        return (
-            self.get_cart()
-            .items.select_related("product", "product__category")
-            .prefetch_related("product__images")
-        )
+        return cart_item_queryset().filter(cart_id=self.get_cart_id())
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = CartItemWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         cart = self.get_cart()
-        product = serializer.validated_data["product"]
+        submitted_product = serializer.validated_data["product"]
         quantity = serializer.validated_data["quantity"]
+        product = Product.objects.select_for_update().get(pk=submitted_product.pk)
+        item = CartItem.objects.select_for_update().filter(cart=cart, product=product).first()
+        requested_quantity = quantity + (item.quantity if item else 0)
+        validate_storefront_and_stock(product, requested_quantity)
 
-        item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            defaults={"quantity": quantity},
-        )
-        if not created:
-            item.quantity += quantity
+        if item:
+            item.quantity = requested_quantity
             item.save(update_fields=("quantity", "updated_at"))
+            created = False
+        else:
+            item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+            created = True
 
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        item = cart_item_queryset().get(pk=item.pk)
         return Response(CartItemSerializer(item).data, status=status_code)
 
 
@@ -131,18 +179,19 @@ class CartItemDetailView(CustomerCartMixin, generics.RetrieveUpdateDestroyAPIVie
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return CartItem.objects.none()
-        return (
-            self.get_cart()
-            .items.select_related("product", "product__category")
-            .prefetch_related("product__images")
-        )
+        return cart_item_queryset().filter(cart_id=self.get_cart_id())
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         item = self.get_object()
         serializer = CartItemQuantitySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        item.quantity = serializer.validated_data["quantity"]
+        product = Product.objects.select_for_update().get(pk=item.product_id)
+        requested_quantity = serializer.validated_data["quantity"]
+        validate_storefront_and_stock(product, requested_quantity)
+        item.quantity = requested_quantity
         item.save(update_fields=("quantity", "updated_at"))
+        item = cart_item_queryset().get(pk=item.pk)
         return Response(CartItemSerializer(item).data)
 
     def destroy(self, request, *args, **kwargs):

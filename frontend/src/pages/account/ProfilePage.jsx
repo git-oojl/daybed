@@ -4,7 +4,10 @@ import "../../assets/home-page.css";
 import "../../assets/CSS/account/profile-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
-import { useAuthStore } from "../../auth/authStore.js";
+import PageHero from "../../components/layout/PageHero.jsx";
+import Avatar from "../../components/account/Avatar.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
 import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { accountService } from "../../services/backendServices.js";
 import { routePaths } from "../../routes/routePaths.js";
@@ -105,27 +108,6 @@ function IconLogout() {
   );
 }
 
-function IconLoading() {
-  return (
-    <svg
-      className="profile-loading__spinner"
-      width="40"
-      height="40"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" stroke="#e5e7eb" strokeWidth="2" />
-      <path
-        d="M12 2a10 10 0 0 1 10 10"
-        stroke="#B88E2F"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 const EMPTY_FORM = {
   first_name: "",
   last_name: "",
@@ -147,6 +129,19 @@ const ROLE_BADGE_CLASSES = {
   administrador: "profile-role-badge--admin",
 };
 
+const PERSONAL_SHORTCUTS = [
+  { title: "Tienda", description: "Descubre piezas y colecciones", path: routePaths.public.catalog },
+  { title: "Mis pedidos", description: "Consulta compras, entrega y pago", path: routePaths.account.orders },
+  { title: "Guardados", description: "Retoma los productos que te gustaron", path: routePaths.public.savedItems },
+  { title: "Carrito", description: "Continúa una compra pendiente", path: routePaths.checkout.cart },
+  { title: "Ayuda y contacto", description: "Resuelve dudas o revisa los datos de contacto", path: routePaths.public.contactHelp },
+];
+
+const STAFF_SHORTCUTS = [
+  { title: "Tienda", description: "Revisar catálogo público", path: routePaths.public.catalog },
+  { title: "Ayuda y contacto", description: "Datos públicos y soporte", path: routePaths.public.contactHelp },
+];
+
 const EMPLOYEE_SHORTCUTS = [
   {
     permission: "dashboard.view",
@@ -156,8 +151,8 @@ const EMPLOYEE_SHORTCUTS = [
   },
   {
     permission: "products.view",
-    title: "Productos",
-    description: "Catálogo y categorías internas",
+    title: "Productos internos",
+    description: "Catálogo, fichas y colecciones",
     path: routePaths.backOffice.products,
   },
   {
@@ -176,18 +171,28 @@ const EMPLOYEE_SHORTCUTS = [
 
 const ADMIN_SHORTCUTS = [
   {
+    title: "Mis pedidos",
+    description: "Consulta tus compras personales",
+    path: routePaths.account.orders,
+  },
+  {
+    title: "Carrito",
+    description: "Continúa una compra personal",
+    path: routePaths.checkout.cart,
+  },
+  {
+    title: "Guardados",
+    description: "Retoma piezas guardadas",
+    path: routePaths.public.savedItems,
+  },
+  {
     title: "Métricas del negocio",
     description: "Panel administrativo",
     path: routePaths.admin.businessMetrics,
   },
   {
-    title: "Usuarios internos",
-    description: "Gestión de cuentas y roles",
-    path: routePaths.admin.internalUsers,
-  },
-  {
-    title: "Roles y permisos",
-    description: "Paquete operativo de empleados",
+    title: "Accesos del equipo",
+    description: "Permisos individuales de empleados",
     path: routePaths.admin.rolesPermissions,
   },
   {
@@ -228,13 +233,15 @@ export default function ProfilePage() {
     logout,
     clearSession,
     setUser,
-  } = useAuthStore();
+  } = useEffectiveSession();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [formError, setFormError] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -297,20 +304,24 @@ export default function ProfilePage() {
     setSuccessMessage("");
 
     try {
-      const payload = {
+      const payload = new FormData();
+      Object.entries({
         first_name: editForm.first_name,
         last_name: editForm.last_name,
         email: editForm.email,
         phone: editForm.phone,
         state: editForm.state,
         city: editForm.city,
-      };
+      }).forEach(([key, value]) => payload.append(key, value ?? ""));
+      if (avatarFile) payload.append("avatar", avatarFile);
       const updated = await accountService.updateMe(payload);
 
       setProfile(updated);
       setEditForm(formFromProfile(updated));
       setUser(updated);
       setEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview("");
       setSuccessMessage("Perfil actualizado exitosamente");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
@@ -361,7 +372,27 @@ export default function ProfilePage() {
     setEditForm((current) => ({ ...current, [name]: value }));
   };
 
+  useEffect(() => () => {
+    if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+  }, [avatarPreview]);
+
+  const handleAvatarChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(file.type) || file.size > 5 * 1024 * 1024) {
+      setFormError("Selecciona una imagen JPG, PNG o WebP de hasta 5 MB.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setEditing(true);
+    setFormError(null);
+  };
+
   const handleCancel = () => {
+    setAvatarFile(null);
+    setAvatarPreview("");
     setEditForm(formFromProfile(profile));
     setEditing(false);
     setFormError(null);
@@ -371,10 +402,7 @@ export default function ProfilePage() {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
-        <div className="profile-loading">
-          <IconLoading />
-          <p>Cargando tu perfil...</p>
-        </div>
+<main className="profile-container"><FeatureState tone="loading" title="Cargando tu perfil" message="Estamos reuniendo tus datos, compras y accesos." /></main>
         <HomeFooter />
       </div>
     );
@@ -384,12 +412,7 @@ export default function ProfilePage() {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
-        <div className="profile-error">
-          <p>{loadError}</p>
-          <button onClick={fetchProfile} type="button">
-            Reintentar
-          </button>
-        </div>
+<main className="profile-container"><FeatureState tone="error" title="No pudimos abrir tu perfil" message={loadError} actionLabel="Intentar de nuevo" onAction={fetchProfile} secondaryLabel="Volver al inicio" secondaryTo={routePaths.public.home} /></main>
         <HomeFooter />
       </div>
     );
@@ -399,9 +422,7 @@ export default function ProfilePage() {
     return (
       <div className="home-page profile-page">
         <HomeHeader />
-        <div className="profile-empty">
-          <p>No se encontraron datos de perfil</p>
-        </div>
+<main className="profile-container"><FeatureState tone="empty" title="No encontramos datos de perfil" message="Vuelve a iniciar sesión para reconstruir la información de tu cuenta." actionLabel="Iniciar sesión" actionTo={routePaths.account.login} /></main>
         <HomeFooter />
       </div>
     );
@@ -411,20 +432,19 @@ export default function ProfilePage() {
     <div className="home-page profile-page">
       <HomeHeader />
 
-      <section className="profile-hero" aria-label="Perfil de usuario">
-        <div className="profile-hero__overlay">
-          <div className="profile-hero__content">
-            <h1 className="profile-hero__title">Mi perfil</h1>
-            <p className="profile-hero__breadcrumb">
-              <a href={routePaths.public.home}>Inicio</a>
-              <span aria-hidden="true">&gt;</span>
-              Mi perfil
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero title="Mi perfil" eyebrow="Tu cuenta" image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82" current="Mi perfil" />
 
       <main className="profile-container">
+        <section className="profile-identity-card">
+          <div className="profile-identity-card__avatar">
+            <Avatar user={profile} src={avatarPreview || profile.avatar} size="xl" />
+            <label className="profile-avatar-upload" aria-label="Agregar o cambiar foto de perfil" title="Agregar o cambiar foto de perfil">
+              <span aria-hidden="true">+</span>
+              <input aria-label="Agregar o cambiar foto de perfil" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
+            </label>
+          </div>
+          <div><p className="section-kicker">Cuenta personal</p><h1>{getDisplayName(profile)}</h1><p>{profile.email} · {roleLabel}</p><span>La foto se usa en tu perfil y en el control de cuenta de la barra de navegación.</span></div>
+        </section>
         {successMessage && (
           <div className="profile__alert profile__alert--success">
             <IconCheck />
@@ -653,47 +673,36 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h2 id="profile-shortcuts" className="profile-card__title">
-                    Accesos
+                    Tu espacio
                   </h2>
                   <p className="profile-card__desc">
-                    Enlaces útiles según tu rol y permisos efectivos
+                    Accesos personales y herramientas de trabajo
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="profile-card__body">
-              {viewerId === "customer" && (
-                <div className="profile-employee-options">
-                  <button
-                    className="profile-employee-option"
-                    onClick={() => navigate(routePaths.account.orders)}
-                    type="button"
-                  >
-                    <IconUser />
-                    <span>
-                      <span className="profile-employee-option__title">
-                        Mis pedidos
-                      </span>
-                      <span className="profile-employee-option__desc">
-                        Historial y seguimiento de compras
-                      </span>
-                    </span>
-                  </button>
+              <div className="profile-shortcut-groups">
+                <div>
+                  <h3 className="profile-shortcut-group__title">Cuenta personal</h3>
+                  <ShortcutList shortcuts={viewerId === "customer" ? PERSONAL_SHORTCUTS : STAFF_SHORTCUTS} navigate={navigate} />
                 </div>
-              )}
 
-              {viewerId === "employee" && (
-                <ShortcutList shortcuts={employeeShortcuts} navigate={navigate} />
-              )}
+                {viewerId === "employee" ? (
+                  <div>
+                    <h3 className="profile-shortcut-group__title">Operación</h3>
+                    <ShortcutList shortcuts={employeeShortcuts} navigate={navigate} />
+                  </div>
+                ) : null}
 
-              {viewerId === "admin" && (
-                <ShortcutList
-                  shortcuts={ADMIN_SHORTCUTS}
-                  navigate={navigate}
-                  admin
-                />
-              )}
+                {viewerId === "admin" ? (
+                  <div>
+                    <h3 className="profile-shortcut-group__title">Administración</h3>
+                    <ShortcutList shortcuts={ADMIN_SHORTCUTS.slice(3)} navigate={navigate} admin />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
 

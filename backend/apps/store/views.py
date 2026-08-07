@@ -5,10 +5,10 @@ from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdmin
 from apps.store.models import StoreSettings
-from apps.store.serializers import StoreSettingsSerializer
+from apps.store.serializers import ContactRequestSerializer, StoreSettingsSerializer
 
 
-@extend_schema(tags=["Configuracion de tienda"])
+@extend_schema(tags=["Configuración de Daybed"])
 class StoreSettingsView(APIView):
     def get_permissions(self):
         if self.request.method == "PATCH":
@@ -16,7 +16,7 @@ class StoreSettingsView(APIView):
         return [AllowAny()]
 
     @extend_schema(
-        summary="Consultar configuracion activa de la tienda",
+        summary="Consultar configuración global de Daybed",
         responses=StoreSettingsSerializer,
     )
     def get(self, request):
@@ -24,7 +24,7 @@ class StoreSettingsView(APIView):
         return Response(serializer.data)
 
     @extend_schema(
-        summary="Actualizar configuracion activa de la tienda",
+        summary="Actualizar configuración global de Daybed",
         request=StoreSettingsSerializer,
         responses=StoreSettingsSerializer,
     )
@@ -39,3 +39,19 @@ class StoreSettingsView(APIView):
         serializer.save(updated_by=request.user)
         return Response(serializer.data)
 
+
+
+@extend_schema(tags=["Contacto"])
+class ContactRequestView(APIView):
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        summary="Enviar solicitud de contacto",
+        request=ContactRequestSerializer,
+        responses={201: ContactRequestSerializer},
+    )
+    def post(self, request):
+        serializer = ContactRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        contact_request = serializer.save()
+        return Response(ContactRequestSerializer(contact_request).data, status=201)

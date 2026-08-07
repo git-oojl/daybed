@@ -238,18 +238,33 @@
 }
 
 .dashboard-page .dashboard-hero__overlay {
-  padding: 24px 20px !important;
+  align-items: flex-start !important;
+  background: rgba(62, 42, 27, 0.72) !important;
+  padding: 2rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem)) !important;
+  text-align: left !important;
 }
 
 .dashboard-page .dashboard-hero h1,
 .dashboard-page .dashboard-hero__title {
   font-family: "Montserrat", sans-serif !important;
-  font-size: clamp(1.65rem, 3vw, 2.2rem) !important;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.65rem, 3vw, 2.35rem) !important;
+  letter-spacing: 0 !important;
+  text-align: left !important;
 }
 
 .dashboard-page .dashboard-hero__breadcrumb {
-  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 15px !important;
+  text-align: left !important;
+}
+
+.dashboard-page .dashboard-hero__breadcrumb a {
+  color: #fce5c7 !important;
+}
+
+.dashboard-page .dashboard-hero__breadcrumb a:hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
 }
 
 .dashboard-page .dashboard-container {
@@ -273,24 +288,169 @@
   box-shadow: 0 6px 18px rgba(53, 39, 24, 0.04);
 }
 
+.dashboard-page .dashboard-card {
+  overflow: hidden;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.dashboard-page .dashboard-card:hover {
+  box-shadow: 0 10px 26px rgba(53, 39, 24, 0.07);
+}
+
+.dashboard-page .dashboard-table {
+  color: #2f2a25;
+}
+
+.dashboard-page .dashboard-table thead tr {
+  background: #f7efe5;
+}
+
+.dashboard-page .dashboard-table th {
+  font-size: 0.78rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.dashboard-page .dashboard-table td,
+.dashboard-page .dashboard-table th {
+  line-height: 1.35;
+}
+
+.dashboard-page .dashboard-table tbody tr {
+  transition: background-color 0.16s ease;
+}
+
+.dashboard-page .dashboard-table tbody tr:hover {
+  background: #fffaf2;
+}
+
+.dashboard-page .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dashboard-page .table-actions {
+  align-items: center;
+}
+
 .dashboard-page .btn-primary,
 .dashboard-page .btn-view,
-.dashboard-page .pagination-btn {
+.dashboard-page .pagination-btn,
+.dashboard-page .btn-edit,
+.dashboard-page .btn-delete,
+.dashboard-page .btn-cancel,
+.dashboard-page .btn-submit {
   width: fit-content !important;
   min-height: 36px;
   padding: 8px 14px !important;
   font-family: "Montserrat", sans-serif !important;
   white-space: nowrap;
+  border-radius: 8px !important;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.dashboard-page .btn-primary,
+.dashboard-page .btn-view,
+.dashboard-page .btn-submit {
+  background: #765238 !important;
+  border: 1px solid #765238 !important;
+  color: #fffaf3 !important;
+  text-decoration: none !important;
+}
+
+.dashboard-page .btn-edit {
+  background: #f5ebdf !important;
+  border: 1px solid #d8c2ab !important;
+  color: #61442f !important;
+  text-decoration: none !important;
+}
+
+.dashboard-page .btn-cancel {
+  background: #f7f1e8 !important;
+  border: 1px solid #d9c8b5 !important;
+  color: #6a5442 !important;
+  text-decoration: none !important;
+}
+
+.dashboard-page .btn-delete {
+  background: #fdf0ec !important;
+  border: 1px solid #e1b3a9 !important;
+  color: #9f4336 !important;
+  text-decoration: none !important;
 }
 
 .dashboard-page .dashboard-card .btn-primary {
   align-self: flex-start;
 }
 
+.dashboard-page .btn-primary:hover,
+.dashboard-page .btn-view:hover,
+.dashboard-page .btn-edit:hover,
+.dashboard-page .btn-submit:hover {
+  box-shadow: 0 6px 18px rgba(139, 94, 60, 0.18);
+}
+
+.dashboard-page .btn-delete:hover {
+  box-shadow: 0 6px 18px rgba(211, 47, 47, 0.16);
+}
+
+.dashboard-page .btn-primary:disabled,
+.dashboard-page .btn-edit:disabled,
+.dashboard-page .btn-delete:disabled,
+.dashboard-page .btn-submit:disabled,
+.dashboard-page .pagination-btn:disabled {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .dashboard-page input,
 .dashboard-page select,
+.dashboard-page textarea,
 .dashboard-page button {
   font-family: "Montserrat", sans-serif;
+}
+
+.dashboard-page input,
+.dashboard-page select,
+.dashboard-page textarea {
+  min-height: 38px;
+}
+
+.dashboard-page input:focus,
+.dashboard-page select:focus,
+.dashboard-page textarea:focus {
+  outline: 3px solid rgba(184, 142, 47, 0.24) !important;
+  outline-offset: 1px;
+}
+
+.dashboard-page .modal-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.dashboard-page .modal-content {
+  border: 1px solid rgba(232, 220, 204, 0.9);
+  box-shadow: 0 24px 60px rgba(31, 24, 16, 0.22);
+}
+
+.dashboard-page .form-group label {
+  color: #4f3a27 !important;
+}
+
+.dashboard-page .form-actions {
+  padding-top: 4px;
+}
+
+.dashboard-page img {
+  background: #f3ede5;
 }
 
 @media (max-width: 768px) {

@@ -16,6 +16,17 @@ class Order(models.Model):
         DELIVERED = "delivered", "Delivered"
         CANCELLED = "cancelled", "Cancelled"
 
+    class PaymentMethod(models.TextChoices):
+        CARD = "card", "Tarjeta"
+        TRANSFER = "transfer", "Transferencia"
+        CASH = "cash", "Efectivo contra entrega"
+
+    class PaymentStatus(models.TextChoices):
+        AUTHORIZED = "authorized", "Autorizado"
+        AWAITING_TRANSFER = "awaiting_transfer", "Pendiente de transferencia"
+        PAY_ON_DELIVERY = "pay_on_delivery", "Pago contra entrega"
+        FAILED = "failed", "Fallido"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -27,20 +38,58 @@ class Order(models.Model):
         default=Status.PENDING,
     )
     stock_decremented_at = models.DateTimeField(null=True, blank=True)
+    stock_released_at = models.DateTimeField(null=True, blank=True)
 
     original_address = models.CharField(max_length=500)
     formatted_address = models.CharField(max_length=500)
-    latitude = models.DecimalField(max_digits=12, decimal_places=8)
-    longitude = models.DecimalField(max_digits=12, decimal_places=8)
-    distance_km = models.DecimalField(max_digits=10, decimal_places=3)
-    estimated_duration_minutes = models.DecimalField(max_digits=10, decimal_places=1)
+    latitude = models.DecimalField(
+        max_digits=12,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+    longitude = models.DecimalField(
+        max_digits=12,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+    distance_km = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    estimated_duration_minutes = models.DecimalField(
+        max_digits=10,
+        decimal_places=1,
+        null=True,
+        blank=True,
+    )
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_zone = models.CharField(max_length=80, default="standard")
     geocoding_provider = models.CharField(max_length=80, blank=True)
     distance_provider = models.CharField(max_length=80, blank=True)
 
     products_subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     total = models.DecimalField(max_digits=10, decimal_places=2)
+    delivery_notes = models.TextField(blank=True)
+    internal_notes = models.TextField(blank=True)
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.CASH,
+    )
+    payment_status = models.CharField(
+        max_length=30,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PAY_ON_DELIVERY,
+    )
+    payment_reference = models.CharField(max_length=40, blank=True)
+    payment_processed_at = models.DateTimeField(null=True, blank=True)
+    payment_snapshot = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -48,8 +97,12 @@ class Order(models.Model):
     class Meta:
         ordering = ("-created_at", "-id")
 
+    @property
+    def order_code(self):
+        return f"DAY-{self.id:05d}" if self.id else "DAY-PENDIENTE"
+
     def __str__(self):
-        return f"Order #{self.id} for {self.user}"
+        return f"{self.order_code} for {self.user}"
 
     @classmethod
     def allowed_status_transitions(cls):
@@ -64,8 +117,11 @@ class Order(models.Model):
 
     def can_transition_to(self, status):
         if status == self.status:
-            return True
-        return status in self.allowed_status_transitions()[self.status]
+            return False
+        return status in self.allowed_status_transitions().get(self.status, set())
+
+    def available_status_transitions(self):
+        return sorted(self.allowed_status_transitions().get(self.status, set()))
 
     def validate_status_transition(self, status):
         if not self.can_transition_to(status):
@@ -124,14 +180,58 @@ class Order(models.Model):
         self.stock_decremented_at = timezone.now()
         self.save(update_fields=("status", "stock_decremented_at", "updated_at"))
 
-    def transition_to(self, status, actor=None):
+    @transaction.atomic
+    def release_reserved_stock(self, actor=None):
+        if not self.stock_decremented_at or self.stock_released_at:
+            return
+
+        from django.utils import timezone
+        from apps.inventory.models import InventoryMovement
+        from apps.inventory.services import record_inventory_movement
+
+        items = list(self.items.select_related("product"))
+        products = {
+            product.id: product
+            for product in Product.objects.select_for_update().filter(
+                id__in=[item.product_id for item in items]
+            )
+        }
+        for item in items:
+            product = products[item.product_id]
+            previous_stock = product.stock
+            product.stock += item.quantity
+            product.save(update_fields=("stock", "updated_at"))
+            record_inventory_movement(
+                product=product,
+                movement_type=InventoryMovement.Types.ORDER_CANCELLED,
+                previous_stock=previous_stock,
+                new_stock=product.stock,
+                reason=f"{self.order_code} cancelled; reserved stock released",
+                order=self,
+                created_by=actor,
+            )
+        self.stock_released_at = timezone.now()
+        self.save(update_fields=("stock_released_at", "updated_at"))
+
+    @transaction.atomic
+    def transition_to(self, status, actor=None, note=""):
+        previous_status = self.status
+        self.validate_status_transition(status)
         if status == self.Status.CONFIRMED:
             self.confirm(actor=actor)
-            return
-        self.validate_status_transition(status)
-        if status != self.status:
+        else:
+            if status == self.Status.CANCELLED:
+                self.release_reserved_stock(actor=actor)
             self.status = status
             self.save(update_fields=("status", "updated_at"))
+
+        OrderStatusEvent.objects.create(
+            order=self,
+            from_status=previous_status,
+            to_status=status,
+            note=note,
+            actor=actor,
+        )
 
 
 class OrderItem(models.Model):
@@ -171,6 +271,7 @@ class OrderItem(models.Model):
         return {
             "sku": product.sku,
             "name": product.name,
+            "main_image": product.main_image.url if product.main_image else "",
             "material": product.material,
             "color": product.color,
             "style": product.style,
@@ -183,3 +284,24 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product_name}"
+
+
+class OrderStatusEvent(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    from_status = models.CharField(max_length=20, blank=True)
+    to_status = models.CharField(max_length=20, choices=Order.Status.choices)
+    note = models.CharField(max_length=300, blank=True)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_status_events",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at", "id")
+
+    def __str__(self):
+        return f"{self.order.order_code}: {self.from_status or 'created'} → {self.to_status}"

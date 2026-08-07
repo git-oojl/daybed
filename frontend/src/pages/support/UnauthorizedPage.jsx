@@ -1,19 +1,10 @@
-function UnauthorizedPage() {
-  return (
-    <main>
-      <h1>Acceso no autorizado</h1>
-      <section aria-labelledby="acceso-no-autorizado-mensaje-de-acceso-no-autorizado">
-        <h2 id="acceso-no-autorizado-mensaje-de-acceso-no-autorizado">
-          Mensaje de acceso no autorizado
-        </h2>
-      </section>
-      <section aria-labelledby="acceso-no-autorizado-acciones-de-navegacion">
-        <h2 id="acceso-no-autorizado-acciones-de-navegacion">
-          Acciones de navegación
-        </h2>
-      </section>
-    </main>
-  );
-}
+import { Link } from "react-router-dom";
+import { FaLock } from "react-icons/fa";
+import HomeHeader from "../../components/HomeHeader.jsx";
+import HomeFooter from "../../components/HomeFooter.jsx";
+import { routePaths } from "../../routes/routePaths.js";
+import "../../assets/support-outcome.css";
 
-export default UnauthorizedPage;
+export default function UnauthorizedPage() {
+  return <div className="home-page support-outcome-page"><HomeHeader /><main className="support-outcome support-outcome--warning"><div className="support-outcome__icon"><FaLock /></div><p className="support-outcome__eyebrow">Acceso protegido</p><h1>Esta herramienta no corresponde a tu cuenta</h1><p>Tu sesión funciona correctamente, pero este espacio requiere otro permiso. Puedes volver a tu cuenta o a la tienda.</p><div className="support-outcome__actions"><Link to={routePaths.account.profile}>Ir a mi cuenta</Link><Link to={routePaths.public.catalog}>Volver a la tienda</Link></div></main><HomeFooter /></div>;
+}

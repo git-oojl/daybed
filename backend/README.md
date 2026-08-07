@@ -1,6 +1,6 @@
 # Backend de Daybed
 
-Backend REST para Daybed, una tienda de muebles academica con usuarios por rol, catalogo, carrito, checkout simulado, entregas, pedidos, inventario y metricas operativas.
+Backend REST para Daybed, una sola empresa de muebles con usuarios por rol, catálogo, carrito, checkout, entregas, pedidos, inventario y métricas operativas.
 
 Este archivo es el resumen rapido. La documentacion completa vive en `/docs`.
 
@@ -82,12 +82,18 @@ FRONTEND_PASSWORD_RESET_URL=http://localhost:5173/restablecer-password
 ```
 
 Los valores `STORE_LATITUDE`, `STORE_LONGITUDE`, `DELIVERY_BASE_FEE` y
-`DELIVERY_PRICE_PER_KM` son fallback/bootstrap para crear la configuración
-persistente inicial de tienda. Después de creada, la API usa
+`DELIVERY_PRICE_PER_KM` son fallback/bootstrap para crear la configuración global
+persistente de Daybed. Después de creada, la API usa
 `/api/store/settings/` como fuente de verdad para origen, tarifas y umbral de
 envío gratis.
 
-`OPENROUTESERVICE_API_KEY` puede quedar vacio para instalar, probar y correr el backend. El endpoint real de estimacion devuelve error controlado si no esta configurado.
+`OPENROUTESERVICE_API_KEY` puede quedar vacía para instalar, probar y ejecutar el backend. Cuando no existe, está vencida o el proveedor no responde, Daybed conserva la sesión, el carrito y la dirección seleccionada; devuelve una estimación aproximada marcada como no confirmable y evita únicamente el envío final del pedido hasta obtener una ruta segura. Para usar distancia y duración viales reales, configúrala en `backend/.env`:
+
+```env
+OPENROUTESERVICE_API_KEY=tu_api_key_de_openrouteservice
+```
+
+Las variables de entorno se leen al iniciar el proceso. Después de agregar o cambiar la key, reinicia el backend; si también cambiaste una variable `VITE_*`, reinicia el frontend. Una falla de OpenRouteService nunca debe cerrar la sesión ni borrar el carrito. No pongas la key real en archivos versionados ni en variables del frontend. Nominatim/OpenStreetMap no requiere key; ambos proveedores se consumen exclusivamente desde el backend.
 
 En desarrollo, `EMAIL_BACKEND` usa consola para imprimir los enlaces de
 recuperacion de contraseña. En producción debe configurarse un backend SMTP o
@@ -118,10 +124,11 @@ Usuarios demo:
 | Rol | Email | Password |
 | --- | --- | --- |
 | Cliente | `cliente@example.com` | `DemoPassword123!` |
+| Cliente secundario | `cliente.plus@example.com` | `DemoPassword123!` |
 | Empleado | `empleado@example.com` | `DemoPassword123!` |
 | Administrador | `admin@example.com` | `DemoPassword123!` |
 
-La semilla incluye categorias activas e inactivas, productos activos e inactivos, SKUs, dimensiones estructuradas, especificaciones flexibles, stock bajo, stock agotado, carrito del cliente, pedidos en todos los estados e historial de inventario.
+La semilla incluye configuracion de tienda, categorias activas e inactivas, productos activos e inactivos, SKUs, dimensiones estructuradas, especificaciones flexibles, imagen principal y galerias demo, stock bajo, stock agotado, carritos de clientes, pedidos en todos los estados, pagos simulados e historial de inventario.
 
 Estos usuarios son suficientes para probar endpoints y vistas frontend. Para usar el panel Django Admin en `/admin/` o crear datos manualmente desde la interfaz administrativa de Django, crea un superusuario local:
 
@@ -186,6 +193,17 @@ POST /api/accounts/register/
 Content-Type: application/json
 ```
 
+Este endpoint de registro publico siempre crea cuentas `cliente`. Las cuentas `empleado` y `administrador` son privilegiadas y deben crearse desde la gestion interna de usuarios por un administrador o, en desarrollo local, desde Django Admin/superuser.
+
+Checkout y pago simulado:
+
+```http
+POST /api/checkout/
+Content-Type: application/json
+```
+
+`payment_method` acepta `card`, `transfer` o `cash`. Para `card`, los campos `card_number`, `card_expiry` y `card_cvv` son solo de entrada: el backend valida formato basico, simula autorizacion y guarda solo datos enmascarados. Tarjetas terminadas en `0000` simulan rechazo. Para `transfer` y `cash`, el pedido queda pendiente de confirmacion simulada hasta que staff/admin marque el pago como recibido desde la vista interna o con `PATCH /api/manage/orders/{id}/`.
+
 ```json
 {
   "nombre": "Cliente",
@@ -230,12 +248,15 @@ settings no son togglables. La API rechaza roles fuera de `cliente`,
 ## Reglas backend relevantes
 
 - El correo de usuarios se normaliza a minusculas y se valida como unico sin distinguir mayusculas/minusculas.
+- `/api/accounts/register/` crea solamente cuentas `cliente`; empleados y administradores se gestionan por administradores.
 - `/api/accounts/me/` devuelve `effective_permission_codes`; se calculan contra permisos actuales, no como claims permanentes del JWT.
 - No se permite desactivar o degradar accidentalmente al ultimo administrador/superuser activo desde la gestion interna.
 - La gestion de productos rechaza precios negativos.
 - Checkout rechaza datos de entrega negativos o coordenadas fuera de rango.
 - Checkout recalcula `delivery_fee` desde la configuración persistente de tienda y aplica envío gratis por umbral.
 - Checkout rechaza carritos con productos inactivos o categorias inactivas.
+- Checkout simula pagos con tarjeta, transferencia y efectivo; no guarda datos crudos de tarjeta ni realiza cobros reales.
+- Staff/admin puede marcar pagos simulados de transferencia o efectivo como recibidos desde el detalle interno del pedido.
 - El stock se descuenta al confirmar el pedido, no al agregar al carrito ni al crear el pedido `pending`.
 - `Product` sigue siendo el item comprable/SKU del MVP: tiene `sku`, dimensiones estructuradas opcionales y `specifications` JSON para especificaciones por categoría sin introducir variantes ni EAV.
 - No existe campo libre `dimensions`; las dimensiones se guardan en campos numéricos.

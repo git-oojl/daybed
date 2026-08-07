@@ -9,6 +9,8 @@ class InventoryMovement(models.Model):
     class Types(models.TextChoices):
         MANUAL_ADJUSTMENT = "manual_adjustment", "Manual adjustment"
         ORDER_CONFIRMED = "order_confirmed", "Order confirmed"
+        ORDER_RESERVED = "order_reserved", "Order reserved"
+        ORDER_CANCELLED = "order_cancelled", "Order cancelled"
 
     product = models.ForeignKey(
         Product,

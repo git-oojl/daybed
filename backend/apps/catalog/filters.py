@@ -2,11 +2,13 @@ from decimal import Decimal, InvalidOperation
 
 import django_filters
 from rest_framework.exceptions import ValidationError
+from django.db.models import Avg
 
 from apps.catalog.models import Category, Product
 
 
 class ProductFilter(django_filters.FilterSet):
+    ids = django_filters.CharFilter(method="filter_ids")
     category__slug = django_filters.CharFilter(
         field_name="category__slug",
         lookup_expr="exact",
@@ -14,6 +16,7 @@ class ProductFilter(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(field_name="price", lookup_expr="gte")
     max_price = django_filters.NumberFilter(field_name="price", lookup_expr="lte")
     in_stock = django_filters.BooleanFilter(method="filter_in_stock")
+    min_rating = django_filters.NumberFilter(method="filter_min_rating")
     min_width_cm = django_filters.NumberFilter(field_name="width_cm", lookup_expr="gte")
     max_width_cm = django_filters.NumberFilter(field_name="width_cm", lookup_expr="lte")
     min_height_cm = django_filters.NumberFilter(
@@ -38,17 +41,41 @@ class ProductFilter(django_filters.FilterSet):
     class Meta:
         model = Product
         fields = (
+            "ids",
             "category",
             "category__slug",
             "material",
             "color",
             "style",
+            "room",
+            "furniture_type",
+            "has_storage",
+            "is_sofa_bed",
+            "featured",
         )
 
     def filter_in_stock(self, queryset, name, value):
         if value:
             return queryset.filter(stock__gt=0)
         return queryset.filter(stock=0)
+
+    def filter_ids(self, queryset, name, value):
+        values = [
+            int(item)
+            for item in str(value or "").split(",")
+            if str(item).strip().isdigit()
+        ]
+        if not values:
+            return queryset.none()
+        return queryset.filter(id__in=values)
+
+    def filter_min_rating(self, queryset, name, value):
+        if value is None:
+            return queryset
+        return queryset.annotate(public_rating=Avg("reviews__rating")).filter(
+            public_rating__gte=value,
+            reviews__active=True,
+        ).distinct()
 
 
 class StaffProductFilter(ProductFilter):
