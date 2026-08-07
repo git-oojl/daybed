@@ -67,7 +67,7 @@ export function normalizeOrder(raw = {}) {
     return {
       ...item,
       productId: item.product || snapshot.id,
-      name: item.product_name || snapshot.name || "Producto Daybed",
+      name: item.product_name || snapshot.name || "Producto de la tienda",
       sku: item.product_sku || snapshot.sku || "Sin SKU",
       description: snapshot.description || item.description || "Pieza seleccionada para este pedido.",
       options: normalizeOptions(item, snapshot),
@@ -89,7 +89,7 @@ export function normalizeOrder(raw = {}) {
     id: raw.id,
     number: orderNumber(raw.id, raw.order_code),
     label: `PEDIDO ${orderNumber(raw.id, raw.order_code)}`,
-    customerName: raw.customer_name || "Cliente Daybed",
+    customerName: raw.customer_name || "Cliente",
     customerEmail: raw.customer_email || "Sin correo disponible",
     customerPhone: raw.customer_phone || "Sin teléfono disponible",
     status: raw.status || "pending",

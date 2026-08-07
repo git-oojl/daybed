@@ -3,6 +3,8 @@ import { FaCircleCheck, FaFilter, FaTriangleExclamation, FaXmark } from "react-i
 import "../../assets/catalog-page.css";
 import "../../assets/home-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { useEffectiveSearchParams } from "../../dev-preview/useEffectiveRouteState.js";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
@@ -42,6 +44,9 @@ function unique(items, key) {
 }
 
 export default function CatalogPage() {
+  const { user } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const canUseCustomerFlows = !user || viewer === "customer";
   const [searchParams, setSearchParams] = useEffectiveSearchParams();
   const queryKey = searchParams.toString();
   const [products, setProducts] = useState([]);
@@ -163,7 +168,7 @@ export default function CatalogPage() {
           <section className="catalog-content" aria-label="Productos">
             <div className="catalog-results-heading"><div><p className="catalog-results-heading__eyebrow">Colección disponible</p><h1>{loading ? "Buscando piezas" : `${products.length} ${products.length === 1 ? "producto" : "productos"}`}</h1></div></div>
             {activeFilters.length ? <div className="catalog-active-filters" aria-label="Filtros activos">{activeFilters.map(([key, value]) => <button type="button" key={`${key}-${value}`} onClick={() => setFilter(key, "")}>{chipLabel(key, value)} <FaXmark /></button>)}</div> : null}
-            {loading ? <FeatureState tone="loading" compact title="Aplicando filtros" message="Estamos preparando una selección coherente con tus preferencias." /> : error ? <FeatureState tone="error" title="No pudimos abrir la colección" message={error.message} actionLabel="Intentar de nuevo" onAction={loadProducts} /> : products.length ? <div className="catalog-grid">{products.map((product) => <StoreProductCard key={product.id} product={product} saved={savedIds.includes(String(product.id))} onToggleSaved={toggleSaved} onAddToCart={addToCart} />)}</div> : <FeatureState tone="empty" title="No hay piezas con esta combinación" message="Quita un filtro para ampliar la colección; tus demás preferencias permanecerán activas." actionLabel="Limpiar filtros" onAction={clearFilters} />}
+            {loading ? <FeatureState tone="loading" compact title="Aplicando filtros" message="Estamos preparando una selección coherente con tus preferencias." /> : error ? <FeatureState tone="error" title="No pudimos abrir la colección" message={error.message} actionLabel="Intentar de nuevo" onAction={loadProducts} /> : products.length ? <div className="catalog-grid">{products.map((product) => <StoreProductCard key={product.id} product={product} saved={canUseCustomerFlows && savedIds.includes(String(product.id))} onToggleSaved={canUseCustomerFlows ? toggleSaved : undefined} onAddToCart={canUseCustomerFlows ? addToCart : undefined} />)}</div> : <FeatureState tone="empty" title="No hay piezas con esta combinación" message="Quita un filtro para ampliar la colección; tus demás preferencias permanecerán activas." actionLabel="Limpiar filtros" onAction={clearFilters} />}
           </section>
         </div>
       </main>

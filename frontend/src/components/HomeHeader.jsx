@@ -56,6 +56,7 @@ export default function HomeHeader() {
   const [search, setSearch] = useState("");
   const [savedIds, setSavedIds] = useState(() => getSavedProductIds());
   const [cartCount, setCartCount] = useState(0);
+  const storeViewer = !isAuthenticated || viewer === "customer";
 
   useEffect(() => subscribeToSavedItems(setSavedIds), []);
 
@@ -97,11 +98,11 @@ export default function HomeHeader() {
 
   const accountItems = useMemo(() => {
     if (!isAuthenticated) return [];
-    const common = [
-      ["Mi perfil", routePaths.account.profile, FaUser],
+    const common = [["Mi perfil", routePaths.account.profile, FaUser]];
+    const customer = viewer === "customer" ? [
       ["Mis pedidos", routePaths.account.orders, FaBox],
       ["Guardados", routePaths.public.savedItems, FaHeart],
-    ];
+    ] : [];
     const operations = viewer === "admin" || viewer === "employee" ? [
       ["Operación", routePaths.backOffice.dashboard, FaStore],
       ["Productos", routePaths.backOffice.products, FaWarehouse],
@@ -110,9 +111,9 @@ export default function HomeHeader() {
     const admin = viewer === "admin" ? [
       ["Métricas", routePaths.admin.businessMetrics, FaChartLine],
       ["Equipo y accesos", routePaths.admin.rolesPermissions, FaUsers],
-      ["Configuración de Daybed", routePaths.admin.basicSettings, FaGear],
+      ["Configuración de la tienda", routePaths.admin.basicSettings, FaGear],
     ] : [];
-    return [...common, ...operations, ...admin];
+    return [...common, ...customer, ...operations, ...admin];
   }, [isAuthenticated, viewer]);
 
   function submitSearch(event) {
@@ -150,8 +151,8 @@ export default function HomeHeader() {
             <FaMagnifyingGlass aria-hidden="true" />
             <input aria-label="Buscar productos" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar" />
           </form>
-          <Link className="home-header__icon-btn" to={routePaths.public.savedItems} aria-label={`Guardados${savedIds.length ? `, ${savedIds.length}` : ""}`}><FaHeart />{savedIds.length ? <span className="home-header__badge">{savedIds.length}</span> : null}</Link>
-          <Link className="home-header__icon-btn" to={routePaths.checkout.cart} aria-label={`Carrito${cartCount ? `, ${cartCount}` : ""}`}><FaCartShopping aria-hidden="true" />{cartCount ? <span className="home-header__badge">{cartCount}</span> : null}</Link>
+          {storeViewer ? <Link className="home-header__icon-btn" to={routePaths.public.savedItems} aria-label={`Guardados${savedIds.length ? `, ${savedIds.length}` : ""}`}><FaHeart />{savedIds.length ? <span className="home-header__badge">{savedIds.length}</span> : null}</Link> : null}
+          {storeViewer ? <Link className="home-header__icon-btn" to={routePaths.checkout.cart} aria-label={`Carrito${cartCount ? `, ${cartCount}` : ""}`}><FaCartShopping aria-hidden="true" />{cartCount ? <span className="home-header__badge">{cartCount}</span> : null}</Link> : null}
           <div className="home-header__user-wrapper" ref={menuRef}>
             <button className={`home-header__user-btn ${isAuthenticated ? "home-header__user-btn--logged" : "home-header__user-btn--login"}`} type="button" aria-expanded={accountOpen} onClick={() => setAccountOpen((open) => !open)}>
               {isAuthenticated ? <Avatar user={user} size="sm" /> : <FaUser />}

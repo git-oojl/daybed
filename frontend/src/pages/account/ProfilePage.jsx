@@ -134,7 +134,12 @@ const PERSONAL_SHORTCUTS = [
   { title: "Mis pedidos", description: "Consulta compras, entrega y pago", path: routePaths.account.orders },
   { title: "Guardados", description: "Retoma los productos que te gustaron", path: routePaths.public.savedItems },
   { title: "Carrito", description: "Continúa una compra pendiente", path: routePaths.checkout.cart },
-  { title: "Ayuda y contacto", description: "Resuelve dudas o habla con Daybed", path: routePaths.public.contactHelp },
+  { title: "Ayuda y contacto", description: "Resuelve dudas o revisa los datos de contacto", path: routePaths.public.contactHelp },
+];
+
+const STAFF_SHORTCUTS = [
+  { title: "Tienda", description: "Revisar catálogo público", path: routePaths.public.catalog },
+  { title: "Ayuda y contacto", description: "Datos públicos y soporte", path: routePaths.public.contactHelp },
 ];
 
 const EMPLOYEE_SHORTCUTS = [
@@ -427,7 +432,7 @@ export default function ProfilePage() {
     <div className="home-page profile-page">
       <HomeHeader />
 
-      <PageHero title="Mi perfil" eyebrow="Cuenta Daybed" image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82" current="Mi perfil" />
+      <PageHero title="Mi perfil" eyebrow="Tu cuenta" image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=82" current="Mi perfil" />
 
       <main className="profile-container">
         <section className="profile-identity-card">
@@ -438,7 +443,7 @@ export default function ProfilePage() {
               <input aria-label="Agregar o cambiar foto de perfil" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
             </label>
           </div>
-          <div><p className="section-kicker">Cuenta Daybed</p><h1>{getDisplayName(profile)}</h1><p>{profile.email} · {roleLabel}</p><span>La foto se usa en tu perfil y en el control de cuenta de la barra de navegación.</span></div>
+          <div><p className="section-kicker">Cuenta personal</p><h1>{getDisplayName(profile)}</h1><p>{profile.email} · {roleLabel}</p><span>La foto se usa en tu perfil y en el control de cuenta de la barra de navegación.</span></div>
         </section>
         {successMessage && (
           <div className="profile__alert profile__alert--success">
@@ -668,10 +673,10 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h2 id="profile-shortcuts" className="profile-card__title">
-                    Tu espacio Daybed
+                    Tu espacio
                   </h2>
                   <p className="profile-card__desc">
-                    Compras, favoritos, soporte y herramientas de trabajo
+                    Accesos personales y herramientas de trabajo
                   </p>
                 </div>
               </div>
@@ -681,7 +686,7 @@ export default function ProfilePage() {
               <div className="profile-shortcut-groups">
                 <div>
                   <h3 className="profile-shortcut-group__title">Cuenta personal</h3>
-                  <ShortcutList shortcuts={PERSONAL_SHORTCUTS} navigate={navigate} />
+                  <ShortcutList shortcuts={viewerId === "customer" ? PERSONAL_SHORTCUTS : STAFF_SHORTCUTS} navigate={navigate} />
                 </div>
 
                 {viewerId === "employee" ? (

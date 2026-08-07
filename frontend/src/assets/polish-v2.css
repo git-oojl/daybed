@@ -214,6 +214,7 @@
 .inline-notice button { margin-left: auto; border: 0; background: transparent; color: #765238; font: inherit; font-weight: 800; cursor: pointer; }
 .inline-notice--error { border-color: #e0bcb4; background: #fbefec; color: #87483f; }
 .inline-notice--success { border-color: #c4d5bc; background: #edf4e9; color: #4f6a48; }
+.inline-notice--stacked span { display: inline-block; }
 .soft-fallback { padding: 24px; border: 1px dashed #d4bfa6; border-radius: 12px; background: #f7eee3; color: #786452; line-height: 1.6; text-align: center; }
 .back-inline { width: fit-content; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 22px; color: #765238; text-decoration: none; font-weight: 800; }
 .section-kicker { margin: 0 0 6px; color: #9b704b; text-transform: uppercase; letter-spacing: .13em; font-size: .68rem; font-weight: 850; }
@@ -471,6 +472,7 @@
   .metrics-v2__cards { grid-template-columns: 1fr; }
   .metrics-v2__metric { grid-template-columns: 42px 1fr; }
   .team-access-v2__permissions > header { align-items: flex-start; flex-direction: column; }
+  .internal-order-actions { grid-template-columns: 1fr; }
   .product-editor__grid, .product-editor__grid--dimensions { grid-template-columns: 1fr 1fr; }
   .detail-stat-row { grid-template-columns: 1fr; }
 }
@@ -895,7 +897,7 @@
 /* Internal order controls and history. */
 .internal-order-overview { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 20px; padding: 22px 24px; border: 1px solid #d9c4aa; border-radius: 17px; background: #efe1d0; }
 .internal-order-overview h1 { margin: 0; color: #433126; }
-.internal-order-actions { padding: 18px; }
+.internal-order-actions { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 18px; align-items: center; padding: 18px; border: 1px solid #dfcdb8; border-radius: 17px; background: #fffaf3; box-shadow: 0 12px 34px rgba(67,46,29,.05); }
 .internal-order-actions__buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .internal-order-actions__buttons button {
   min-height: 40px;
@@ -937,10 +939,12 @@
 .status-history strong { color: #4d392b; font-size: .74rem; }
 .status-history p { margin: 3px 0 0; color: #806c59; font-size: .66rem; line-height: 1.45; }
 .status-history small { display: block; margin-top: 4px; color: #99816b; font-size: .61rem; line-height: 1.45; }
-.delivery-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; padding: 15px 18px 18px; }
+.delivery-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; padding: 15px 18px 18px; }
 .delivery-stat-grid div { padding: 11px; border-radius: 10px; background: #f5ebdf; }
-.delivery-stat-grid span { display: block; color: #8a745f; font-size: .62rem; }
-.delivery-stat-grid strong { display: block; margin-top: 3px; color: #49362b; font-size: .8rem; }
+.delivery-stat-grid dt { display: flex; align-items: center; gap: 7px; margin: 0; color: #8a745f; font-size: .62rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.delivery-stat-grid dd { display: block; margin: 5px 0 0; color: #49362b; font-size: .84rem; font-weight: 800; }
+.internal-notes-form { display: grid; gap: 12px; }
+.internal-notes-form textarea { width: 100%; min-height: 128px; border: 1px solid #d9c3aa; border-radius: 10px; background: #fffdf9; color: #443227; padding: 12px; font: inherit; box-sizing: border-box; resize: vertical; }
 
 /* Checkout: local errors remain inside delivery. */
 .checkout-v3__heading > span { display: inline-flex; align-items: center; gap: 8px; max-width: 290px; padding: 12px 14px; border: 1px solid #d8c09f; border-radius: 12px; background: #efe1d0; color: #694c36; font-size: .7rem; font-weight: 750; line-height: 1.45; }
@@ -978,6 +982,12 @@
 .inline-notice { display: grid; gap: 5px; margin: 13px 20px 0; padding: 13px 15px; border: 1px solid #e1bcb5; border-radius: 11px; background: #fff1ee; color: #7e443d; font-size: .72rem; line-height: 1.5; }
 .inline-notice { margin: 0 0 17px; }
 .inline-notice--success { border-color: #bdd2bd; background: #edf5ed; color: #436044; }
+.delivery-manual-card { display: grid; grid-template-columns: 38px 1fr; gap: 12px; align-items: start; margin: 16px 20px 0; padding: 14px; border: 1px dashed #d4bfa6; border-radius: 12px; background: #f8efe5; color: #715c4b; }
+.delivery-manual-card > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #efe1d0; color: #765238; }
+.delivery-manual-card strong { display: block; color: #4d392c; }
+.delivery-manual-card p { margin: 4px 0 0; line-height: 1.55; }
+.delivery-estimate-card span small { display: block; margin-top: 6px; color: #806a57; font-size: .63rem; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.delivery-estimate-card span strong { display: block; margin-top: 3px; }
 .checkout-local-error button,
 .checkout-local-error a,
 .inline-notice a { width: fit-content; border: 0; background: transparent; color: inherit; padding: 0; font: inherit; font-weight: 850; text-decoration: underline; cursor: pointer; }
@@ -1023,7 +1033,7 @@
 
 /* Global Daybed settings. */
 .daybed-settings-intro { margin-bottom: 26px; padding-bottom: 4px; }
-.daybed-settings-effect { display: flex; align-items: center; gap: 10px; max-width: 340px; padding: 13px 15px; border: 1px solid #d9c2a7; border-radius: 12px; background: #efe1d0; color: #684d38; font-size: .7rem; line-height: 1.45; }
+.daybed-settings-effect { display: flex; align-items: center; gap: 12px; width: calc(100% - 40px); margin: 0 20px 20px; padding: 14px 16px; border: 1px solid #d9c2a7; border-radius: 14px; background: #efe1d0; color: #684d38; font-size: .77rem; line-height: 1.55; box-sizing: border-box; }
 .daybed-settings-form { display: grid; gap: 18px; }
 .daybed-settings-group { overflow: hidden; border: 1px solid #dfcdb8; border-radius: 17px; background: #fffaf3; box-shadow: 0 12px 35px rgba(67,46,31,.05); }
 .daybed-settings-group > header { padding: 18px 20px; border-bottom: 1px solid #eadccd; background: #f1e5d7; }
@@ -1038,7 +1048,8 @@
 .daybed-setting-field small { color: #88735f; font-weight: 500; line-height: 1.45; }
 .daybed-setting-toggle { display: grid; grid-template-columns: 18px minmax(0,1fr); gap: 9px; align-items: start; padding: 12px; border: 1px solid #e1d0bd; border-radius: 10px; background: #f9f1e7; color: #5d4838; font-size: .72rem; line-height: 1.45; cursor: pointer; }
 .daybed-settings-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 20px; }
-.daybed-settings-links a { display: grid; gap: 4px; padding: 15px; border: 1px solid #dfcbb4; border-radius: 12px; background: #f8efe5; color: #634831; text-decoration: none; }
+.daybed-settings-links a { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 12px; align-items: center; padding: 15px; border: 1px solid #dfcbb4; border-radius: 14px; background: #f8efe5; color: #634831; text-decoration: none; }
+.daybed-settings-links a > svg { width: 42px; height: 42px; padding: 11px; border-radius: 12px; background: #765238; color: #fffaf3; box-sizing: border-box; }
 .daybed-settings-links strong { color: #49362b; }
 .daybed-settings-links span { font-size: .68rem; line-height: 1.45; }
 .daybed-settings-actions { position: sticky; bottom: 14px; z-index: 20; display: flex; justify-content: flex-end; gap: 10px; padding: 13px; border: 1px solid rgba(202,177,147,.82); border-radius: 14px; background: rgba(255,250,243,.93); box-shadow: 0 13px 35px rgba(55,37,24,.13); backdrop-filter: blur(12px); }

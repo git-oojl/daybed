@@ -5,6 +5,8 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import StoreProductCard from "../../components/store/StoreProductCard.jsx";
 import FeatureState from "../../components/support/FeatureState.jsx";
+import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
 import {
@@ -93,6 +95,9 @@ const GALLERY_IMAGES = [
 
 function HomePage() {
   const navigate = useNavigate();
+  const { user } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const canUseCustomerFlows = !user || viewer === "customer";
   const [products, setProducts] = useState([]);
   const [homeCategories, setHomeCategories] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
@@ -120,7 +125,7 @@ function HomePage() {
           setHomeCategories(readCollection(categoryResponse).filter((item) => item.homepage_visible !== false).sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)).slice(0, 4));
         }
       } catch (error) {
-        if (active) setProductsError(error.message || "No fue posible cargar la selección Daybed.");
+        if (active) setProductsError(error.message || "No fue posible cargar la selección destacada.");
       } finally {
         if (active) setProductsLoading(false);
       }
@@ -186,7 +191,7 @@ function HomePage() {
             </h1>
             <p className="home-hero__text">
               Diseña la comodidad para cada rincón de tu hogar, transforma
-              espacios y crea experiencias con Daybed
+              espacios y crea experiencias con piezas pensadas para vivir mejor
             </p>
             <button
               type="button"
@@ -203,7 +208,7 @@ function HomePage() {
           aria-labelledby="home-categories-title"
         >
           <p className="home-section__eyebrow">
-            El confort que buscabas está en Daybed
+            Descubre por ambiente
           </p>
           <h2 className="home-section__title" id="home-categories-title">
             Navega en nuestras diferentes secciones
@@ -229,18 +234,18 @@ function HomePage() {
           <h2 className="home-section__title" id="home-products-title">
             Nuestros productos
           </h2>
-          <p className="home-products__intro">Cuatro piezas elegidas deliberadamente por Daybed. La selección se administra desde productos y permanece estable.</p>
-          {productsLoading ? <FeatureState compact tone="loading" title="Preparando la selección Daybed" message="Estamos reuniendo las piezas destacadas disponibles." /> : productsError ? <FeatureState compact tone="error" title="La selección no está disponible" message={productsError} actionLabel="Explorar Tienda" actionTo={routePaths.public.catalog} /> : visibleProducts.length ? <div className="home-products">
+          <p className="home-products__intro">Cuatro piezas elegidas para representar lo mejor de la tienda. La selección se administra desde productos y permanece estable.</p>
+          {productsLoading ? <FeatureState compact tone="loading" title="Preparando la selección destacada" message="Estamos reuniendo las piezas disponibles." /> : productsError ? <FeatureState compact tone="error" title="La selección no está disponible" message={productsError} actionLabel="Explorar Tienda" actionTo={routePaths.public.catalog} /> : visibleProducts.length ? <div className="home-products">
             {visibleProducts.map((product) => (
               <StoreProductCard
                 key={product.id}
                 product={product}
-                saved={wishlist.includes(String(product.id))}
-                onAddToCart={handleAddToCart}
-                onToggleSaved={(item) => handleToggleWishlist(item.id)}
+                saved={canUseCustomerFlows && wishlist.includes(String(product.id))}
+                onAddToCart={canUseCustomerFlows ? handleAddToCart : undefined}
+                onToggleSaved={canUseCustomerFlows ? (item) => handleToggleWishlist(item.id) : undefined}
               />
             ))}
-          </div> : <FeatureState compact tone="empty" title="La selección está por definirse" message="Mientras Daybed prepara sus destacados, puedes consultar toda la colección." actionLabel="Ir a Tienda" actionTo={routePaths.public.catalog} />}
+          </div> : <FeatureState compact tone="empty" title="La selección está por definirse" message="Mientras definimos los destacados, puedes consultar toda la colección." actionLabel="Ir a Tienda" actionTo={routePaths.public.catalog} />}
           <div className="home-show-more"><Link className="home-show-more__btn" to={`${routePaths.public.catalog}?in_stock=true`}>Ver toda la colección disponible</Link></div>
         </section>
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaArrowLeft,
+  FaClock,
   FaCreditCard,
   FaLocationDot,
   FaPen,
@@ -24,6 +25,7 @@ import useStoreSettings from "../../services/useStoreSettings.js";
 
 const HERO = "https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82";
 const REQUIRED_ADDRESS_FIELDS = ["street", "city", "state", "postal_code"];
+const LOOKUP_ADDRESS_FIELDS = ["street", "state"];
 
 function clean(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -122,6 +124,9 @@ export default function CheckoutSummaryPage() {
   const effectiveShipping = deliveryEstimate ? Number(deliveryEstimate.delivery_fee || 0) : baseDeliveryFee;
   const total = subtotal + effectiveShipping;
   const addressComplete = REQUIRED_ADDRESS_FIELDS.every((field) => clean(address[field])) && /^\d{5}$/.test(clean(address.postal_code));
+  const addressReadyForLookup = LOOKUP_ADDRESS_FIELDS.every((field) => clean(address[field]))
+    && (clean(address.city) || /^\d{5}$/.test(clean(address.postal_code)));
+  const postalCodeLooksValid = !clean(address.postal_code) || /^\d{5}$/.test(clean(address.postal_code));
 
   function updateAddress(event) {
     const { name, value } = event.target;
@@ -151,8 +156,8 @@ export default function CheckoutSummaryPage() {
   }
 
   async function verifyAddress() {
-    if (!addressComplete) {
-      setAddressError({ kind: API_ERROR_KINDS.VALIDATION, message: "Completa calle y número, municipio o ciudad, entidad y un código postal mexicano de cinco dígitos." });
+    if (!addressReadyForLookup || !postalCodeLooksValid) {
+      setAddressError({ kind: API_ERROR_KINDS.VALIDATION, message: "Para ubicarla en el mapa necesitamos calle y número, entidad y al menos ciudad o código postal válido." });
       return;
     }
     try {
@@ -205,6 +210,10 @@ export default function CheckoutSummaryPage() {
       setSubmitError({ message: !acceptedTerms ? "Acepta los términos de compra para continuar." : "Revisa los datos de la tarjeta." });
       return;
     }
+    if (!addressComplete) {
+      setSubmitError({ message: "Completa calle, ciudad o municipio, entidad y código postal de cinco dígitos." });
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -239,22 +248,22 @@ export default function CheckoutSummaryPage() {
   }
 
   if (loading || authLoading) {
-    return <div className="home-page checkout-v3"><HomeHeader /><PageHero title="Resumen de pedido" eyebrow="Compra Daybed" image={HERO} /><main className="checkout-v3__main"><FeatureState tone="loading" title="Preparando tu pedido" message="Comprobamos el carrito y la disponibilidad sin modificar tu selección." /></main><HomeFooter /></div>;
+    return <div className="home-page checkout-v3"><HomeHeader /><PageHero title="Resumen de pedido" eyebrow="Checkout" image={HERO} /><main className="checkout-v3__main"><FeatureState tone="loading" title="Preparando tu pedido" message="Comprobamos el carrito y la disponibilidad sin modificar tu selección." /></main><HomeFooter /></div>;
   }
 
   if (pageError) {
     const expired = [API_ERROR_KINDS.AUTH_EXPIRED, API_ERROR_KINDS.AUTH_INVALID].includes(pageError.kind);
-    return <div className="home-page checkout-v3"><HomeHeader /><PageHero title="Resumen de pedido" eyebrow="Compra Daybed" image={HERO} /><main className="checkout-v3__main"><FeatureState tone={expired ? "auth" : "error"} title={expired ? "Tu sesión terminó" : "No pudimos abrir el checkout"} message={expired ? "Inicia sesión de nuevo. El carrito permanece asociado a tu cuenta." : pageError.message} actionLabel={expired ? "Iniciar sesión" : "Intentar de nuevo"} actionTo={expired ? routePaths.account.login : undefined} onAction={expired ? undefined : loadCheckout} secondaryLabel="Volver al carrito" secondaryTo={routePaths.checkout.cart} /></main><HomeFooter /></div>;
+    return <div className="home-page checkout-v3"><HomeHeader /><PageHero title="Resumen de pedido" eyebrow="Checkout" image={HERO} /><main className="checkout-v3__main"><FeatureState tone={expired ? "auth" : "error"} title={expired ? "Tu sesión terminó" : "No pudimos abrir el checkout"} message={expired ? "Inicia sesión de nuevo. El carrito permanece asociado a tu cuenta." : pageError.message} actionLabel={expired ? "Iniciar sesión" : "Intentar de nuevo"} actionTo={expired ? routePaths.account.login : undefined} onAction={expired ? undefined : loadCheckout} secondaryLabel="Volver al carrito" secondaryTo={routePaths.checkout.cart} /></main><HomeFooter /></div>;
   }
 
   if (!cartItems.length) {
-    return <div className="home-page checkout-v3"><HomeHeader /><PageHero title="Resumen de pedido" eyebrow="Compra Daybed" image={HERO} /><main className="checkout-v3__main"><FeatureState tone="empty" title="Tu carrito está listo para una nueva pieza" message="Agrega un producto disponible para preparar la entrega." actionLabel="Explorar Tienda" actionTo={routePaths.public.catalog} secondaryLabel="Ver guardados" secondaryTo={routePaths.public.savedItems} /></main><HomeFooter /></div>;
+    return <div className="home-page checkout-v3"><HomeHeader /><PageHero title="Resumen de pedido" eyebrow="Checkout" image={HERO} /><main className="checkout-v3__main"><FeatureState tone="empty" title="Tu carrito está listo para una nueva pieza" message="Agrega un producto disponible para preparar la entrega." actionLabel="Explorar Tienda" actionTo={routePaths.public.catalog} secondaryLabel="Ver guardados" secondaryTo={routePaths.public.savedItems} /></main><HomeFooter /></div>;
   }
 
   return (
     <div className="home-page checkout-v3">
       <HomeHeader />
-      <PageHero title="Resumen de pedido" eyebrow="Compra Daybed" image={HERO} />
+      <PageHero title="Resumen de pedido" eyebrow="Checkout" image={HERO} />
       <main className="checkout-v3__main">
         <Link className="back-inline" to={routePaths.checkout.cart}><FaArrowLeft /> Volver al carrito</Link>
         <section className="checkout-v3__heading"><div><p className="section-kicker">Compra protegida</p><h1>Confirma entrega y pago</h1><p>Tu identidad proviene de la cuenta. Aquí solo decides dónde entregar y cómo pagar.</p></div></section>
@@ -267,7 +276,7 @@ export default function CheckoutSummaryPage() {
           <div className="checkout-v3__flow">
             <section className="checkout-section-card">
               <header><FaUser /><div><p>Paso 1</p><h2>Cuenta que realiza la compra</h2></div></header>
-              <div className="checkout-account-readonly"><Avatar user={user} size="lg" /><div><strong>{[user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Usuario Daybed"}</strong><span>{user?.email}</span><span>{user?.phone || "Agrega un teléfono en tu perfil para facilitar la entrega"}</span></div><Link to={routePaths.account.profile}><FaPen /> Editar perfil</Link></div>
+              <div className="checkout-account-readonly"><Avatar user={user} size="lg" /><div><strong>{[user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Tu cuenta"}</strong><span>{user?.email}</span><span>{user?.phone || "Agrega un teléfono en tu perfil para facilitar la entrega"}</span></div><Link to={routePaths.account.profile}><FaPen /> Editar perfil</Link></div>
               <p className="checkout-help-copy">Nombre, correo y teléfono pertenecen a tu cuenta y se adjuntan automáticamente al pedido; no se duplican como campos editables.</p>
             </section>
 
@@ -282,14 +291,15 @@ export default function CheckoutSummaryPage() {
                 <label className="is-wide">Referencia adicional<input name="reference" value={address.reference} onChange={updateAddress} placeholder="Portón blanco, entre calle 4 y 5" /></label>
                 <label className="is-wide">Indicaciones de entrega<textarea name="delivery_notes" value={address.delivery_notes} onChange={updateAddress} rows="3" placeholder="Piso, acceso, horario o referencias útiles" /></label>
               </div>
-              <button className="solid-action" type="button" disabled={!addressComplete || geocoding} onClick={verifyAddress}>{geocoding ? "Buscando coincidencias…" : "Verificar en el mapa"}</button>
-              {!addressComplete ? <p className="checkout-field-hint">Completa calle, ciudad o municipio, entidad y un código postal mexicano de cinco dígitos.</p> : <p className="checkout-field-hint">La verificación en mapa es opcional. Si no aparece una coincidencia útil, puedes continuar con la dirección escrita.</p>}
+              <button className="solid-action" type="button" disabled={!addressReadyForLookup || !postalCodeLooksValid || geocoding} onClick={verifyAddress}>{geocoding ? "Buscando coincidencias…" : "Buscar esta dirección"}</button>
+              {!addressReadyForLookup || !postalCodeLooksValid ? <p className="checkout-field-hint">Para buscarla en el mapa basta con calle y número, entidad, y al menos ciudad o código postal válido. Para finalizar el pedido sí pedimos la dirección completa.</p> : <p className="checkout-field-hint">La verificación en mapa es opcional. Si no aparece una coincidencia útil, puedes continuar con la dirección escrita.</p>}
 
               {addressError ? <div className="checkout-local-error" role="alert"><strong>{addressError.kind === API_ERROR_KINDS.EXTERNAL_SERVICE ? "No pudimos validar la ubicación ahora" : "Revisa la dirección"}</strong><p>{addressError.message}</p><p>Puedes continuar con la dirección manual. Si vuelves a verificar y encontramos una coincidencia, también guardaremos la ubicación del pedido.</p>{selectedCandidate ? <button type="button" onClick={() => calculateEstimate(selectedCandidate)}>Recalcular entrega</button> : null}</div> : null}
 
               {candidates.length ? <fieldset className="address-candidates"><legend>Selecciona la coincidencia correcta</legend>{candidates.map((candidate, index) => <label key={`${candidate.latitude}-${candidate.longitude}-${index}`} className={selectedCandidate === candidate ? "is-selected" : ""}><input type="radio" name="candidate" checked={selectedCandidate === candidate} onChange={() => chooseCandidate(candidate)} /><span><strong>{candidate.formatted_address}</strong><small>{candidate.address?.postcode ? `C.P. ${candidate.address.postcode}` : "Verifica la ubicación antes de continuar"}</small></span></label>)}</fieldset> : null}
 
-              {selectedCandidate ? <div className="checkout-map-block"><OpenStreetMapEmbed compact latitude={selectedCandidate.latitude} longitude={selectedCandidate.longitude} label={selectedCandidate.formatted_address} title="Destino de entrega seleccionado" />{estimating ? <p className="checkout-field-hint">Calculando entrega…</p> : deliveryEstimate ? <div className="delivery-estimate-card"><span><FaTruck /><strong>{Number(deliveryEstimate.distance_km).toFixed(1)} km</strong></span><span><strong>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</strong> estimados</span><span><strong>{Number(deliveryEstimate.delivery_fee) ? formatMoney(deliveryEstimate.delivery_fee) : "Envío gratis"}</strong></span></div> : null}</div> : null}
+              {selectedCandidate ? <div className="checkout-map-block"><OpenStreetMapEmbed compact latitude={selectedCandidate.latitude} longitude={selectedCandidate.longitude} label={selectedCandidate.formatted_address} title="Destino de entrega seleccionado" />{estimating ? <p className="checkout-field-hint">Calculando entrega…</p> : deliveryEstimate ? <div className="delivery-estimate-card"><span><FaTruck /><small>Distancia</small><strong>{Number(deliveryEstimate.distance_km).toFixed(1)} km</strong></span><span><FaClock /><small>Tiempo estimado</small><strong>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</strong></span><span><FaLocationDot /><small>Envío</small><strong>{Number(deliveryEstimate.delivery_fee) ? formatMoney(deliveryEstimate.delivery_fee) : "Gratis"}</strong></span></div> : null}</div> : null}
+              {!selectedCandidate ? <div className="delivery-manual-card"><span><FaPen /></span><div><strong>Entrega con dirección escrita</strong><p>Si prefieres no usar mapa o no encontramos una coincidencia clara, el pedido se procesa igual con la dirección manual y la tarifa configurada por la tienda.</p></div></div> : null}
             </section>
 
             <section className="checkout-section-card">
@@ -300,7 +310,7 @@ export default function CheckoutSummaryPage() {
           </div>
 
           <aside className="checkout-v3__summary">
-            <section className="checkout-order-card"><p className="section-kicker">Tu selección</p><h2>{cartItems.length} {cartItems.length === 1 ? "pieza" : "piezas"}</h2><div className="checkout-product-list">{cartItems.map((item) => { const product = productFor(item); return <article key={item.id}><img src={productImage(product)} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productImage({}); }} /><div><strong>{product.name}</strong><span>{item.quantity} × {formatMoney(product.price)}</span>{Number(product.stock || 0) < Number(item.quantity || 0) ? <em>Sin existencias suficientes</em> : null}</div><b>{formatMoney(Number(product.price || 0) * Number(item.quantity || 0))}</b></article>; })}</div><dl className="order-money-list"><div><dt>Productos</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Envío</dt><dd>{effectiveShipping ? formatMoney(effectiveShipping) : "Gratis"}</dd></div>{deliveryEstimate ? <><div><dt>Distancia estimada</dt><dd>{Number(deliveryEstimate.distance_km).toFixed(1)} km</dd></div><div><dt>Tiempo estimado</dt><dd>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</dd></div></> : <div><dt>Estimación</dt><dd>Envío base sin mapa</dd></div>}<div className="is-total"><dt>Total</dt><dd>{formatMoney(total)}</dd></div></dl><label className="checkout-terms"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>Acepto los términos de compra y confirmo que la dirección escrita es correcta.</span></label><button className="checkout-submit" type="button" disabled={storeSettings.storefront_available === false || submitting || soldOutItems.length > 0 || !acceptedTerms || !paymentReady() || !addressComplete} onClick={submitOrder}>{submitting ? "Creando pedido…" : "Confirmar pedido"}</button><p>El servidor vuelve a comprobar existencias y aplica el envío real según la configuración actual de la tienda.</p></section>
+            <section className="checkout-order-card"><p className="section-kicker">Tu selección</p><h2>{cartItems.length} {cartItems.length === 1 ? "pieza" : "piezas"}</h2><div className="checkout-product-list">{cartItems.map((item) => { const product = productFor(item); return <article key={item.id}><img src={productImage(product)} alt={product.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productImage({}); }} /><div><strong>{product.name}</strong><span>{item.quantity} × {formatMoney(product.price)}</span>{Number(product.stock || 0) < Number(item.quantity || 0) ? <em>Sin existencias suficientes</em> : null}</div><b>{formatMoney(Number(product.price || 0) * Number(item.quantity || 0))}</b></article>; })}</div><dl className="order-money-list"><div><dt>Productos</dt><dd>{formatMoney(subtotal)}</dd></div><div><dt>Envío</dt><dd>{effectiveShipping ? formatMoney(effectiveShipping) : "Gratis"}</dd></div>{deliveryEstimate ? <><div><dt>Distancia estimada</dt><dd>{Number(deliveryEstimate.distance_km).toFixed(1)} km</dd></div><div><dt>Tiempo estimado</dt><dd>{Math.round(Number(deliveryEstimate.estimated_duration_minutes))} min</dd></div><div><dt>Zona</dt><dd>{deliveryEstimate.delivery_zone || "Cobertura general"}</dd></div></> : <div><dt>Estimación</dt><dd>{selectedCandidate ? "Calculando con mapa" : "Se aplicará la tarifa base configurada"}</dd></div>}<div className="is-total"><dt>Total</dt><dd>{formatMoney(total)}</dd></div></dl><label className="checkout-terms"><input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} /><span>Acepto los términos de compra y confirmo que la dirección escrita es correcta.</span></label><button className="checkout-submit" type="button" disabled={storeSettings.storefront_available === false || submitting || soldOutItems.length > 0 || !acceptedTerms || !paymentReady() || !addressComplete} onClick={submitOrder}>{submitting ? "Creando pedido…" : "Confirmar pedido"}</button><p>El servidor vuelve a comprobar existencias y aplica el envío real según la configuración actual de la tienda.</p></section>
           </aside>
         </div>
       </main>

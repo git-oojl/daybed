@@ -508,8 +508,8 @@
 
 .home-categories {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .home-category {
@@ -525,7 +525,7 @@
 .home-category__img-wrap {
   overflow: hidden;
   border-radius: 10px;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
 }
 
 .home-category__img {
@@ -541,9 +541,9 @@
 
 .home-category__label {
   text-align: center;
-  font-size: 1.35rem;
+  font-size: 1.08rem;
   font-weight: 600;
-  margin: 20px 0 0;
+  margin: 14px 0 0;
 }
 
 /* ── Products ── */

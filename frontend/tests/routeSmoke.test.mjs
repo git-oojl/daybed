@@ -2,38 +2,50 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 const baseUrl = process.env.DAYBED_SMOKE_BASE_URL;
-const routes = [
-  { path: "/", selector: ".home-category", count: 4 },
-  { path: "/catalogo/" },
-  { path: "/productos/1", text: "Daybed Roble Nórdico" },
-  { path: "/login" },
-  { path: "/cuenta/perfil" },
-  { path: "/carrito" },
-  { path: "/checkout" },
-  { path: "/cuenta/pedidos" },
-  { path: "/admin/configuracion" },
-  { path: "/admin/roles-permisos" },
-  { path: "/dev/preview?view=home&layout=public&viewer=guest", selector: ".home-category", count: 4 },
-  {
-    path: "/dev/preview?view=productDetail&layout=public&viewer=guest&route=%2Fproductos%2F1",
-    text: "Daybed Roble Nórdico",
-    absentText: "No encontramos esta pieza",
-  },
-  {
-    path: "/dev/preview?view=orderDetail&layout=customer&viewer=customer&route=%2Fcuenta%2Fpedidos%2FDAY-00803",
-    text: "PEDIDO DAY-00803",
-  },
-  {
-    path: "/dev/preview?view=internalOrderDetail&layout=backOffice&viewer=employee&route=%2Finterno%2Fpedidos%2FDAY-00802",
-    text: "PEDIDO DAY-00802",
-  },
-];
+
+async function resolveSmokeProduct() {
+  const response = await fetch(new URL("/api/catalog/products/?in_stock=true&page_size=1", baseUrl));
+  assert.equal(response.ok, true, "Smoke test could not resolve a product from the backend.");
+  const payload = await response.json();
+  const product = payload?.results?.[0];
+  assert.ok(product?.id, "Smoke test did not find any in-stock product.");
+  assert.ok(product?.name, "Smoke product is missing a name.");
+  return product;
+}
 
 test("direct routes populate #root without uncaught page errors", async (t) => {
   if (!baseUrl) {
     t.skip("Set DAYBED_SMOKE_BASE_URL after starting Vite to run browser smoke tests.");
     return;
   }
+
+  const smokeProduct = await resolveSmokeProduct();
+  const routes = [
+    { path: "/", selector: ".home-category", count: 4 },
+    { path: "/catalogo/" },
+    { path: `/productos/${smokeProduct.id}`, text: smokeProduct.name },
+    { path: "/login" },
+    { path: "/cuenta/perfil" },
+    { path: "/carrito" },
+    { path: "/checkout" },
+    { path: "/cuenta/pedidos" },
+    { path: "/admin/configuracion" },
+    { path: "/admin/roles-permisos" },
+    { path: "/dev/preview?view=home&layout=public&viewer=guest", selector: ".home-category", count: 4 },
+    {
+      path: "/dev/preview?view=productDetail&layout=public&viewer=guest&route=%2Fproductos%2F1",
+      text: "Daybed Roble Nórdico",
+      absentText: "No encontramos esta pieza",
+    },
+    {
+      path: "/dev/preview?view=orderDetail&layout=customer&viewer=customer&route=%2Fcuenta%2Fpedidos%2FDAY-00803",
+      text: "PEDIDO DAY-00803",
+    },
+    {
+      path: "/dev/preview?view=internalOrderDetail&layout=backOffice&viewer=employee&route=%2Finterno%2Fpedidos%2FDAY-00802",
+      text: "PEDIDO DAY-00802",
+    },
+  ];
 
   let chromium;
   try {

@@ -7,6 +7,7 @@ import HomeFooter from "../../components/HomeFooter.jsx";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import StoreProductCard from "../../components/store/StoreProductCard.jsx";
 import { useEffectiveSession } from "../../auth/useEffectiveSession.js";
+import { getViewerIdForUser } from "../../auth/roleMapping.js";
 import { routePaths } from "../../routes/routePaths.js";
 import { useEffectiveParams } from "../../dev-preview/useEffectiveRouteState.js";
 import { cartService, catalogService } from "../../services/backendServices.js";
@@ -56,7 +57,7 @@ function normalizeReviews(value) {
   if (!Array.isArray(value)) return [];
   return value.map((review, index) => ({
     id: review?.id || `${review?.author || "cliente"}-${index}`,
-    author: review?.author || "Cliente Daybed",
+    author: review?.author || "Cliente",
     rating: Math.min(5, Math.max(1, Number(review?.rating || 5))),
     title: review?.title || "Buena experiencia",
     body: review?.body || review?.text || "Producto recomendado.",
@@ -79,7 +80,9 @@ function formatReviewDate(value) {
 export default function ProductDetailPage() {
   const { settings } = useStoreSettings();
   const { productId } = useEffectiveParams(routePaths.public.productDetail);
-  const { isAuthenticated } = useEffectiveSession();
+  const { user, isAuthenticated } = useEffectiveSession();
+  const viewer = getViewerIdForUser(user);
+  const canUseCustomerFlows = !user || viewer === "customer";
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("descripcion");
@@ -215,8 +218,8 @@ export default function ProductDetailPage() {
 
   const handleShare = async () => {
     const shareData = {
-      title: product?.name || "Daybed",
-      text: product?.description || "Mira esta pieza en Daybed.",
+      title: product?.name || "Producto",
+      text: product?.description || "Mira esta pieza.",
       url: window.location.href,
     };
     try {
@@ -257,7 +260,7 @@ export default function ProductDetailPage() {
       <div className="home-page product-detail-page">
         <HomeHeader />
         <main className="product-state" role="status">
-          <span className="product-state__eyebrow">Tienda Daybed</span>
+          <span className="product-state__eyebrow">Tienda</span>
           <h1>Preparando los detalles</h1>
           <p>Estamos cargando imágenes, medidas y disponibilidad.</p>
         </main>
@@ -281,7 +284,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const isSaved = savedIds.includes(String(product.id));
+  const isSaved = canUseCustomerFlows && savedIds.includes(String(product.id));
   const maxQuantity = Math.max(1, Number(product.stock || 0));
   const tags = [product.categoryName, product.material, product.style].filter(Boolean);
 
@@ -361,32 +364,33 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="product-detail__actions">
-            <div className="product-detail__quantity" aria-label="Cantidad">
+            {canUseCustomerFlows ? <div className="product-detail__quantity" aria-label="Cantidad">
               <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button>
               <span>{quantity}</span>
               <button type="button" onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}>+</button>
-            </div>
-            <button
+            </div> : null}
+            {canUseCustomerFlows ? <button
               type="button"
               className="product-detail__btn product-detail__btn--cart"
               onClick={handleAddToCart}
               disabled={Number(product.stock || 0) <= 0 || settings.storefront_available === false}
             >
               {Number(product.stock || 0) <= 0 ? "Sin existencias" : settings.storefront_available === false ? "Compra pausada" : "Agregar al carrito"}
-            </button>
-            <button
+            </button> : null}
+            {canUseCustomerFlows ? <button
               type="button"
               className={`product-detail__btn product-detail__btn--save${isSaved ? " product-detail__btn--save-active" : ""}`}
               onClick={handleToggleSaved}
               aria-pressed={isSaved}
             >
               <FaHeart aria-hidden="true" /> {isSaved ? "Guardado" : "Guardar"}
-            </button>
+            </button> : null}
           </div>
+          {!canUseCustomerFlows ? <p className="checkout-field-hint" style={{ margin: "8px 0 0" }}>Las cuentas internas pueden revisar la ficha, pero no usan favoritos ni compra desde el escaparate.</p> : null}
 
           <div className="product-detail__meta">
             <div><span>SKU</span><strong>{product.sku || `DAY-${product.id}`}</strong></div>
-            <div><span>Etiquetas</span><strong>{tags.join(" · ") || "Mobiliario Daybed"}</strong></div>
+            <div><span>Etiquetas</span><strong>{tags.join(" · ") || "Mobiliario"}</strong></div>
             <div>
               <span>Compartir</span>
               <button type="button" onClick={handleShare}><FaRegCopy aria-hidden="true" /> Copiar enlace</button>
@@ -504,7 +508,7 @@ export default function ProductDetailPage() {
                 </form>
               ) : (
                 <div className="product-review-signin">
-                  <strong>¿Ya compraste en Daybed?</strong>
+                  <strong>¿Ya compraste esta pieza?</strong>
                   <span>Inicia sesión para compartir tu experiencia.</span>
                   <Link to={routePaths.account.login}>Iniciar sesión</Link>
                 </div>
@@ -526,9 +530,9 @@ export default function ProductDetailPage() {
               <StoreProductCard
                 key={item.id}
                 product={item}
-                saved={savedIds.includes(String(item.id))}
-                onToggleSaved={handleRelatedSaved}
-                onAddToCart={handleRelatedAddToCart}
+                saved={canUseCustomerFlows && savedIds.includes(String(item.id))}
+                onToggleSaved={canUseCustomerFlows ? handleRelatedSaved : undefined}
+                onAddToCart={canUseCustomerFlows ? handleRelatedAddToCart : undefined}
               />
             ))}
           </div>

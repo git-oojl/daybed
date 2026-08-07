@@ -1262,16 +1262,16 @@ const handleDelete = async (id) => {
                   <label><input type="checkbox" name="featured" checked={formData.featured} onChange={handleChange} />Mostrar en “Nuestros productos”</label>
                   <label className={formData.featured ? "" : "is-disabled"}>Orden destacado<input type="number" min="1" max="4" name="featured_order" value={formData.featured_order} onChange={handleChange} disabled={!formData.featured} /></label>
                 </div>
-                <p className="product-editor__hint">Daybed muestra hasta cuatro productos destacados activos. Los agotados se excluyen de la portada.</p>
+                <p className="product-editor__hint">La portada muestra hasta cuatro productos destacados activos. Los agotados se excluyen automáticamente.</p>
               </section>
 
               <section className="product-editor__section">
                 <div className="product-editor__section-heading"><strong>Dimensiones</strong><span>Medidas en centímetros y peso en kilogramos.</span></div>
                 <div className="product-editor__grid product-editor__grid--dimensions">
-                  <label>Ancho<input type="number" min="0" step="0.01" name="width_cm" value={formData.width_cm} onChange={handleChange} /></label>
-                  <label>Alto<input type="number" min="0" step="0.01" name="height_cm" value={formData.height_cm} onChange={handleChange} /></label>
-                  <label>Profundidad<input type="number" min="0" step="0.01" name="depth_cm" value={formData.depth_cm} onChange={handleChange} /></label>
-                  <label>Peso<input type="number" min="0" step="0.01" name="weight_kg" value={formData.weight_kg} onChange={handleChange} /></label>
+                  <label>Ancho total (cm)<input type="number" min="0" step="0.01" name="width_cm" value={formData.width_cm} onChange={handleChange} placeholder="180" /><small>Medida exterior de lado a lado.</small></label>
+                  <label>Alto total (cm)<input type="number" min="0" step="0.01" name="height_cm" value={formData.height_cm} onChange={handleChange} placeholder="85" /><small>Incluye respaldo o punto más alto.</small></label>
+                  <label>Profundidad total (cm)<input type="number" min="0" step="0.01" name="depth_cm" value={formData.depth_cm} onChange={handleChange} placeholder="92" /><small>Del frente hacia el fondo.</small></label>
+                  <label>Peso (kg)<input type="number" min="0" step="0.01" name="weight_kg" value={formData.weight_kg} onChange={handleChange} placeholder="42" /><small>Peso aproximado para entrega y carga.</small></label>
                 </div>
               </section>
 

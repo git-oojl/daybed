@@ -1,192 +1,196 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "../../assets/home-page.css";
 import "../../assets/dashboard-page.css";
 import HomeHeader from "../../components/HomeHeader.jsx";
 import HomeFooter from "../../components/HomeFooter.jsx";
 import PageHero from "../../components/layout/PageHero.jsx";
+import FeatureState from "../../components/support/FeatureState.jsx";
 import { routePaths } from "../../routes/routePaths.js";
 import {
-  FaShoppingBag,
+  FaBoxOpen,
   FaBoxes,
+  FaClipboardList,
   FaDollarSign,
   FaExclamationTriangle,
-  FaClipboardList,
-  FaBoxOpen,
+  FaShoppingBag,
   FaTags,
   FaUserTie,
 } from "react-icons/fa";
 import { dashboardService } from "../../services/backendServices.js";
-import LoadingState from "../../components/support/LoadingState.jsx";
-import ErrorMessage from "../../components/support/ErrorMessage.jsx";
+
+function translateStatus(status) {
+  const labels = {
+    pending: "Pendiente",
+    confirmed: "Confirmado",
+    preparing: "Preparando",
+    shipped: "En camino",
+    delivered: "Entregado",
+    cancelled: "Cancelado",
+    paid: "Pagado",
+    processing: "Procesando",
+    completed: "Completado",
+  };
+  return labels[String(status || "").toLowerCase()] || status || "Pendiente";
+}
+
+function statusColor(label) {
+  const colors = {
+    Pendiente: "#C78526",
+    Confirmado: "#3A6EA5",
+    Preparando: "#8A5CB5",
+    "En camino": "#3C8D9E",
+    Entregado: "#3F7B4E",
+    Cancelado: "#A5524A",
+    Pagado: "#6A8E35",
+    Procesando: "#B96726",
+    Completado: "#3F7B4E",
+  };
+  return colors[label] || "#8B5E3C";
+}
+
+function formatMoney(value) {
+  return `$${Number(value || 0).toLocaleString("es-MX")}`;
+}
 
 export default function DashboardPage() {
-  // ✅ Estados para datos del backend
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [metrics, setMetrics] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [lowStock, setLowStock] = useState([]);
+  const [salesByMonth, setSalesByMonth] = useState([]);
 
-  // ✅ Estados para los datos del dashboard
-  const [ventasPorMes, setVentasPorMes] = useState([]);
-
-  const [productosBajoStock, setProductosBajoStock] = useState([]);
-
-  const [pedidos, setPedidos] = useState([]);
-
-  const [metrics, setMetrics] = useState([
-    {
-      icon: <FaShoppingBag size={28} />,
-      label: "Pedidos",
-      value: 18,
-      color: "#8B5E3C",
-    },
-    {
-      icon: <FaDollarSign size={28} />,
-      label: "Ventas",
-      value: "$24,850",
-      color: "#2E7D32",
-    },
-    {
-      icon: <FaBoxes size={28} />,
-      label: "Productos",
-      value: 128,
-      color: "#1565C0",
-    },
-    {
-      icon: <FaExclamationTriangle size={28} />,
-      label: "Bajo Stock",
-      value: 6,
-      color: "#D84315",
-    },
-  ]);
-
-  // ✅ Función para traducir estados del backend a español
-  const traducirEstado = useCallback((estado) => {
-    const estados = {
-      'pending': 'Pendiente',
-      'confirmed': 'Confirmado',
-      'preparing': 'Preparando',
-      'shipped': 'Enviado',
-      'delivered': 'Entregado',
-      'cancelled': 'Cancelado',
-      'paid': 'Pagado',
-      'processing': 'Procesando',
-      'completed': 'Completado',
-    };
-    return estados[estado?.toLowerCase()] || estado || 'Pendiente';
-  }, []);
-
-  // ✅ Función para obtener color según estado
-  const getEstadoColor = (estado) => {
-    const colores = {
-      'Pendiente': '#FF9800',
-      'Confirmado': '#2196F3',
-      'Preparando': '#9C27B0',
-      'Enviado': '#00BCD4',
-      'Entregado': '#4CAF50',
-      'Cancelado': '#F44336',
-      'Pagado': '#8BC34A',
-      'Procesando': '#FF5722',
-      'Completado': '#2E7D32',
-    };
-    return colores[estado] || '#8B5E3C';
-  };
-
-  const fetchDashboardData = useCallback(async () => {
+  const loadDashboard = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
       const data = await dashboardService.metrics();
 
-      // ✅ Actualizar métricas con datos del backend
       setMetrics([
         {
-          icon: <FaShoppingBag size={28} />,
+          icon: <FaShoppingBag size={24} />,
           label: "Pedidos",
           value: data.total_orders || data.orders_count || 0,
-          color: "#8B5E3C",
+          tone: "#8B5E3C",
         },
         {
-          icon: <FaDollarSign size={28} />,
+          icon: <FaDollarSign size={24} />,
           label: "Ventas",
-          value: data.total_sales 
-            ? `$${Number(data.total_sales).toLocaleString()}`
-            : data.sales_total 
-              ? `$${Number(data.sales_total).toLocaleString()}`
-              : "$0",
-          color: "#2E7D32",
+          value: formatMoney(data.total_sales || data.sales_total || 0),
+          tone: "#4D7B57",
         },
         {
-          icon: <FaBoxes size={28} />,
+          icon: <FaBoxes size={24} />,
           label: "Productos",
           value: data.total_products || data.products_count || 0,
-          color: "#1565C0",
+          tone: "#546E8A",
         },
         {
-          icon: <FaExclamationTriangle size={28} />,
-          label: "Bajo Stock",
+          icon: <FaExclamationTriangle size={24} />,
+          label: "Bajo stock",
           value: data.low_stock_count || data.low_stock?.length || 0,
-          color: "#D84315",
+          tone: "#B96726",
         },
       ]);
 
-      // ✅ Actualizar pedidos recientes con estados traducidos
-      if (Array.isArray(data.recent_orders)) {
-        setPedidos(data.recent_orders.map(order => {
-          const estadoTraducido = traducirEstado(order.status || order.estado);
-          const orderId = order.id || order.order_id;
-          return {
-            id: orderId ? `#DAY-${String(orderId).padStart(4, "0")}` : "-",
-            cliente: order.customer_name || order.cliente || order.customer || "Cliente",
-            total: order.total ? `$${Number(order.total).toLocaleString()}` : "$0",
-            estado: estadoTraducido,
-            _estadoOriginal: order.status || order.estado, // Guardamos original por si acaso
-          };
-        }));
-      }
+      setOrders(
+        Array.isArray(data.recent_orders)
+          ? data.recent_orders.map((order) => {
+              const state = translateStatus(order.status || order.estado);
+              return {
+                id: order.id || order.order_id,
+                code: `DAY-${String(order.id || order.order_id || 0).padStart(5, "0")}`,
+                customer:
+                  order.customer_name ||
+                  order.cliente ||
+                  order.customer ||
+                  "Cliente",
+                total: formatMoney(order.total || 0),
+                status: state,
+              };
+            })
+          : [],
+      );
 
-      // ✅ Actualizar productos con bajo stock
-      if (Array.isArray(data.low_stock)) {
-        setProductosBajoStock(data.low_stock.map(item => ({
-          nombre: item.name || item.nombre || "Producto",
-          stock: item.stock || item.cantidad || 0,
-        })));
-      }
+      setLowStock(
+        Array.isArray(data.low_stock)
+          ? data.low_stock.map((item) => ({
+              name: item.name || item.nombre || "Producto",
+              stock: item.stock || item.cantidad || 0,
+            }))
+          : [],
+      );
 
-      // ✅ Actualizar ventas por mes
-      if (Array.isArray(data.sales_by_month)) {
-        setVentasPorMes(data.sales_by_month.map(item => ({
-          mes: item.month || item.mes || "Mes",
-          monto: Number(item.total || item.monto || item.amount || 0),
-        })));
-      }
-
-    } catch (err) {
-      console.error("Error al cargar dashboard:", err);
-      setError(err.message || "Error al cargar los datos del dashboard");
+      setSalesByMonth(
+        Array.isArray(data.sales_by_month)
+          ? data.sales_by_month.map((item) => ({
+              month: item.month || item.mes || "Mes",
+              amount: Number(item.total || item.monto || item.amount || 0),
+            }))
+          : [],
+      );
+    } catch (requestError) {
+      setError(
+        requestError?.message || "No pudimos cargar el resumen operativo.",
+      );
     } finally {
       setLoading(false);
     }
-  }, [traducirEstado]);
+  }, []);
 
-  const handleRetry = () => {
-    setLoading(true);
-    setError(null);
-    fetchDashboardData();
-  };
-
-  // ✅ Cargar datos del dashboard desde el backend
   useEffect(() => {
-    const timeoutId = window.setTimeout(fetchDashboardData, 0);
+    const timeoutId = window.setTimeout(loadDashboard, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadDashboard]);
 
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [fetchDashboardData]);
+  const topSalesMonth = useMemo(
+    () =>
+      salesByMonth.reduce(
+        (best, item) => (item.amount > best.amount ? item : best),
+        { month: "—", amount: 0 },
+      ),
+    [salesByMonth],
+  );
 
-  // ✅ Estados de carga y error
+  const quickLinks = [
+    {
+      icon: <FaClipboardList />,
+      title: "Pedidos",
+      text: "Seguimiento y cambios de estado",
+      to: routePaths.backOffice.orders,
+    },
+    {
+      icon: <FaBoxOpen />,
+      title: "Productos",
+      text: "Fichas, imágenes y destacados",
+      to: routePaths.backOffice.products,
+    },
+    {
+      icon: <FaTags />,
+      title: "Colecciones",
+      text: "Portada, orden y filtros",
+      to: routePaths.backOffice.categories,
+    },
+    {
+      icon: <FaUserTie />,
+      title: "Inventario",
+      text: "Stock real y alertas",
+      to: routePaths.backOffice.inventory,
+    },
+  ];
+
   if (loading) {
     return (
       <div className="home-page dashboard-page">
         <HomeHeader />
-        <LoadingState message="Cargando dashboard..." />
+        <main className="dashboard-container">
+          <FeatureState
+            tone="loading"
+            title="Cargando operación"
+            message="Estamos reuniendo pedidos, ventas, catálogo e inventario."
+          />
+        </main>
         <HomeFooter />
       </div>
     );
@@ -196,697 +200,453 @@ export default function DashboardPage() {
     return (
       <div className="home-page dashboard-page">
         <HomeHeader />
-        <ErrorMessage message={error} />
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button onClick={handleRetry} className="btn-primary">
-            Actualizar resumen
-          </button>
-        </div>
+        <main className="dashboard-container">
+          <FeatureState
+            tone="error"
+            title="No pudimos cargar la operación"
+            message={error}
+            actionLabel="Actualizar resumen"
+            onAction={loadDashboard}
+          />
+        </main>
         <HomeFooter />
       </div>
     );
   }
 
-  // ✅ El resto del diseño se mantiene IGUAL
   return (
     <div className="home-page dashboard-page">
       <HomeHeader />
-
       <PageHero
         title="Panel operativo"
-        eyebrow="Operación Daybed"
+        eyebrow="Operación"
         image="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1800&q=82"
         current="Panel operativo"
       />
 
       <main className="dashboard-container">
-        <div className="dashboard-header-actions">
+        <section className="dashboard-header-actions">
           <div>
-            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)" }}>
-              Dashboard de Empleado
-            </h2>
+            <p className="section-kicker">Resumen del día</p>
+            <h2>Pedidos, catálogo e inventario</h2>
             <p
               style={{
-                color: "#777",
-                marginTop: "10px",
-                fontSize: "clamp(0.9rem, 1.5vw, 1.1rem)",
+                color: "#705c4b",
+                marginTop: "8px",
+                fontSize: "0.98rem",
               }}
             >
-              Administra pedidos, productos, colecciones e inventario.
+              Vista rápida de lo que requiere atención y accesos directos a las
+              áreas operativas.
             </p>
           </div>
-        </div>
+        </section>
 
-        {/* Tarjetas de métricas - Responsive */}
-        <div
+        <section
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "20px",
-            marginBottom: "40px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+            gap: "18px",
+            marginBottom: "24px",
           }}
         >
-          {metrics.map((metric, index) => (
-            <div
-              key={index}
+          {metrics.map((metric) => (
+            <article
+              key={metric.label}
               className="stat-summary-card"
               style={{
                 padding: "20px",
-                background: "#FDF8F0",
-                border: "1px solid #E8DCCC",
-                borderRadius: "16px",
-                textAlign: "center",
-                transition: "transform 0.2s",
-                cursor: "default",
+                border: "1px solid #dfcdb8",
+                borderRadius: "18px",
+                background: "#fffaf3",
+                display: "grid",
+                gap: "10px",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.transform = "translateY(-5px)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }
             >
-              <div style={{ color: metric.color, marginBottom: "8px" }}>
-                {metric.icon}
-              </div>
               <span
-                className="stat-summary-label"
-                style={{ display: "block", fontSize: "0.85rem", color: "#666" }}
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  display: "grid",
+                  placeItems: "center",
+                  borderRadius: "14px",
+                  background: `${metric.tone}18`,
+                  color: metric.tone,
+                }}
+              >
+                {metric.icon}
+              </span>
+              <span
+                style={{
+                  color: "#7c6856",
+                  fontSize: ".78rem",
+                  textTransform: "uppercase",
+                  letterSpacing: ".08em",
+                  fontWeight: 800,
+                }}
               >
                 {metric.label}
               </span>
-              <span
-                className="stat-summary-value"
+              <strong
                 style={{
-                  display: "block",
-                  fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
-                  fontWeight: 700,
-                  color: metric.color,
+                  color: "#403025",
+                  fontSize: "clamp(1.45rem, 3vw, 2rem)",
                 }}
               >
                 {metric.value}
-              </span>
-            </div>
+              </strong>
+            </article>
           ))}
-        </div>
+        </section>
 
-        {/* Grid principal - Pedidos recientes + Inventario crítico */}
-        <div
+        <section
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
-            gap: "30px",
-            marginBottom: "35px",
+            gridTemplateColumns: "1.45fr .95fr",
+            gap: "22px",
+            marginBottom: "24px",
           }}
         >
-          {/* Pedidos recientes */}
-          <div
+          <article
             className="dashboard-card"
             style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
+              padding: "22px",
+              border: "1px solid #dfcdb8",
+              borderRadius: "18px",
+              background: "#fffaf3",
             }}
           >
             <div
-              className="dashboard-card-header"
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "20px",
+                gap: "12px",
+                marginBottom: "16px",
               }}
             >
-              <h3
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
-                  color: "#8B5E3C",
-                }}
-              >
-                <FaClipboardList /> Pedidos recientes
-              </h3>
-              <Link
-                to={routePaths.backOffice.orders}
-                className="btn-primary"
-                style={{
-                  background: "#8B5E3C",
-                  color: "#fff",
-                  padding: "8px 16px",
-                  borderRadius: "8px",
-                  textDecoration: "none",
-                  fontSize: "0.85rem",
-                }}
-              >
-                Ver todos
+              <div>
+                <p className="section-kicker">Actividad reciente</p>
+                <h3 style={{ margin: 0, color: "#49362b" }}>
+                  <FaClipboardList /> Pedidos recientes
+                </h3>
+              </div>
+              <Link to={routePaths.backOffice.orders} className="btn-primary">
+                Ver pedidos
               </Link>
             </div>
-            <div className="table-responsive" style={{ overflowX: "auto" }}>
+
+            <div className="table-responsive">
               <table
                 className="dashboard-table"
                 style={{ width: "100%", borderCollapse: "collapse" }}
               >
                 <thead>
-                  <tr style={{ borderBottom: "2px solid #E8DCCC" }}>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 8px",
-                        color: "#6B4A2B",
-                      }}
-                    >
+                  <tr style={{ borderBottom: "2px solid #eadccc" }}>
+                    <th style={{ textAlign: "left", padding: "10px 8px" }}>
                       Pedido
                     </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 8px",
-                        color: "#6B4A2B",
-                      }}
-                    >
+                    <th style={{ textAlign: "left", padding: "10px 8px" }}>
                       Cliente
                     </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 8px",
-                        color: "#6B4A2B",
-                      }}
-                    >
+                    <th style={{ textAlign: "left", padding: "10px 8px" }}>
                       Total
                     </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 8px",
-                        color: "#6B4A2B",
-                      }}
-                    >
+                    <th style={{ textAlign: "left", padding: "10px 8px" }}>
                       Estado
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pedidos.length > 0 ? (
-                    pedidos.map((pedido) => (
+                  {orders.length ? (
+                    orders.map((order) => (
                       <tr
-                        key={pedido.id}
-                        style={{ borderBottom: "1px solid #F0EBE3" }}
+                        key={order.code}
+                        style={{ borderBottom: "1px solid #f1e7da" }}
                       >
                         <td
                           style={{
                             padding: "10px 8px",
-                            fontWeight: 600,
-                            color: "#8B5E3C",
+                            fontWeight: 700,
+                            color: "#7a5840",
                           }}
                         >
-                          {pedido.id}
+                          <Link
+                            to={routePaths.backOffice.orderDetail.replace(
+                              ":orderId",
+                              order.id,
+                            )}
+                            style={{
+                              color: "inherit",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {order.code}
+                          </Link>
                         </td>
-                        <td style={{ padding: "10px 8px" }}>{pedido.cliente}</td>
-                        <td style={{ padding: "10px 8px", fontWeight: 600 }}>
-                          {pedido.total}
+                        <td style={{ padding: "10px 8px" }}>{order.customer}</td>
+                        <td style={{ padding: "10px 8px", fontWeight: 700 }}>
+                          {order.total}
                         </td>
                         <td style={{ padding: "10px 8px" }}>
                           <span
                             style={{
-                              background: `${getEstadoColor(pedido.estado)}22`,
-                              color: getEstadoColor(pedido.estado),
-                              padding: "4px 14px",
-                              borderRadius: "20px",
-                              fontWeight: 600,
-                              fontSize: ".8rem",
-                              display: "inline-block",
-                              border: `1px solid ${getEstadoColor(pedido.estado)}44`,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              minHeight: "28px",
+                              padding: "0 12px",
+                              borderRadius: "999px",
+                              background: `${statusColor(order.status)}20`,
+                              color: statusColor(order.status),
+                              fontSize: ".76rem",
+                              fontWeight: 800,
                             }}
                           >
-                            {pedido.estado}
+                            {order.status}
                           </span>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" style={{ padding: "18px 8px", textAlign: "center", color: "#777" }}>
-                        No hay pedidos recientes
+                      <td
+                        colSpan="4"
+                        style={{
+                          padding: "16px 8px",
+                          textAlign: "center",
+                          color: "#7c6856",
+                        }}
+                      >
+                        No hay pedidos recientes.
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
-          </div>
+          </article>
 
-          {/* Inventario crítico */}
-          <div
+          <article
             className="dashboard-card"
             style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
+              padding: "22px",
+              border: "1px solid #dfcdb8",
+              borderRadius: "18px",
+              background: "#fffaf3",
             }}
           >
-            <div
-              className="dashboard-card-header"
-              style={{ marginBottom: "20px" }}
+            <p className="section-kicker">Atención inmediata</p>
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginTop: 0,
+                color: "#49362b",
+              }}
             >
-              <h3
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
-                  color: "#8B5E3C",
-                }}
-              >
-                <FaBoxes /> Inventario crítico
-              </h3>
-            </div>
-            {productosBajoStock.length > 0 ? (
-              productosBajoStock.map((producto) => (
-                <div
-                  key={producto.nombre}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "14px 0",
-                    borderBottom: "1px solid #F0EBE3",
-                  }}
-                >
-                  <div>
-                    <strong style={{ fontSize: "clamp(0.9rem, 1.2vw, 1rem)" }}>
-                      {producto.nombre}
-                    </strong>
+              <FaExclamationTriangle /> Inventario crítico
+            </h3>
+
+            {lowStock.length ? (
+              <div style={{ display: "grid", gap: "10px" }}>
+                {lowStock.map((item) => (
+                  <div
+                    key={`${item.name}-${item.stock}`}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px 14px",
+                      border: "1px solid #eadccc",
+                      borderRadius: "12px",
+                      background: "#f8efe5",
+                    }}
+                  >
+                    <span style={{ fontWeight: 600 }}>{item.name}</span>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        minHeight: "28px",
+                        padding: "0 10px",
+                        borderRadius: "999px",
+                        background: "#fff2df",
+                        color: "#b96726",
+                        fontSize: ".76rem",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {item.stock} en stock
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: "#7c6856" }}>
+                Todo el inventario está en niveles saludables.
+              </p>
+            )}
+
+            <Link
+              to={routePaths.backOffice.inventory}
+              className="btn-primary"
+              style={{ marginTop: "16px" }}
+            >
+              Abrir inventario
+            </Link>
+          </article>
+        </section>
+
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "22px",
+          }}
+        >
+          <article
+            className="dashboard-card"
+            style={{
+              padding: "22px",
+              border: "1px solid #dfcdb8",
+              borderRadius: "18px",
+              background: "#fffaf3",
+            }}
+          >
+            <p className="section-kicker">Ventas</p>
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginTop: 0,
+                color: "#49362b",
+              }}
+            >
+              <FaDollarSign /> Ritmo mensual
+            </h3>
+            <p style={{ margin: "0 0 18px", color: "#755f4c" }}>
+              Mes más alto:{" "}
+              <strong style={{ color: "#49362b" }}>
+                {topSalesMonth.month}
+              </strong>{" "}
+              con {formatMoney(topSalesMonth.amount)}
+            </p>
+
+            {salesByMonth.length ? (
+              <div style={{ display: "grid", gap: "14px" }}>
+                {salesByMonth.map((item) => (
+                  <div key={item.month}>
                     <div
                       style={{
-                        color: "#888",
-                        fontSize: "0.8rem",
-                        marginTop: "4px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        marginBottom: "6px",
                       }}
                     >
-                      Requiere reposición
+                      <span style={{ fontWeight: 600 }}>{item.month}</span>
+                      <span style={{ fontWeight: 700 }}>
+                        {formatMoney(item.amount)}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: "8px",
+                        borderRadius: "999px",
+                        overflow: "hidden",
+                        background: "#eadccc",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.min(
+                            (item.amount /
+                              Math.max(...salesByMonth.map((row) => row.amount), 1)) *
+                              100,
+                            100,
+                          )}%`,
+                          height: "100%",
+                          borderRadius: "999px",
+                          background:
+                            "linear-gradient(90deg, #8B5E3C, #C08C5A)",
+                        }}
+                      />
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: "#7c6856" }}>
+                Sin datos de ventas por mes.
+              </p>
+            )}
+          </article>
+
+          <article
+            className="dashboard-card"
+            style={{
+              padding: "22px",
+              border: "1px solid #dfcdb8",
+              borderRadius: "18px",
+              background: "#fffaf3",
+            }}
+          >
+            <p className="section-kicker">Accesos rápidos</p>
+            <h3
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginTop: 0,
+                color: "#49362b",
+              }}
+            >
+              <FaUserTie /> Áreas operativas
+            </h3>
+
+            <div style={{ display: "grid", gap: "12px" }}>
+              {quickLinks.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "42px 1fr",
+                    gap: "12px",
+                    alignItems: "center",
+                    padding: "14px",
+                    border: "1px solid #eadccc",
+                    borderRadius: "14px",
+                    background: "#f8efe5",
+                    color: "#4f3a2c",
+                    textDecoration: "none",
+                  }}
+                >
                   <span
                     style={{
-                      background: producto.stock === 0 ? "#FDECEA" : "#FFF3E0",
-                      color: producto.stock === 0 ? "#C62828" : "#EF6C00",
-                      padding: "6px 16px",
-                      borderRadius: "25px",
-                      fontWeight: 700,
-                      fontSize: "0.9rem",
+                      width: "42px",
+                      height: "42px",
+                      display: "grid",
+                      placeItems: "center",
+                      borderRadius: "12px",
+                      background: "#765238",
+                      color: "#fffaf3",
                     }}
                   >
-                    {producto.stock}
+                    {item.icon}
                   </span>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: "#777", margin: 0 }}>No hay inventario crítico.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Segunda fila - Ventas por mes + Productos bajo stock */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
-            gap: "30px",
-            marginBottom: "35px",
-          }}
-        >
-          {/* Ventas por mes */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <h3
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
-                color: "#8B5E3C",
-                marginBottom: "20px",
-              }}
-            >
-              <FaDollarSign /> Ventas por mes
-            </h3>
-            {ventasPorMes.length > 0 ? (
-              ventasPorMes.map((venta) => (
-                <div
-                  key={venta.mes}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    padding: "12px 0",
-                    borderBottom: "1px solid #F0EBE3",
-                  }}
-                >
-                  <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
-                    {venta.mes}
+                  <span style={{ display: "grid", gap: "3px" }}>
+                    <strong>{item.title}</strong>
+                    <small style={{ color: "#7b6655" }}>{item.text}</small>
                   </span>
-                  <strong style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
-                    ${venta.monto.toLocaleString()}
-                  </strong>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: "#777", margin: 0 }}>No hay ventas registradas.</p>
-            )}
-            <div
-              style={{
-                marginTop: "15px",
-                paddingTop: "15px",
-                borderTop: "2px solid #8B5E3C",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: "bold",
-                fontSize: "clamp(0.95rem, 1.2vw, 1.05rem)",
-              }}
-            >
-              <span>Total del año</span>
-              <strong>
-                $
-                {ventasPorMes
-                  .reduce((acc, v) => acc + v.monto, 0)
-                  .toLocaleString()}{" "}
-                MX
-              </strong>
-            </div>
-          </div>
-
-          {/* Productos con bajo stock */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <h3
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
-                color: "#8B5E3C",
-                marginBottom: "20px",
-              }}
-            >
-              <FaExclamationTriangle /> Productos con bajo stock
-            </h3>
-            {productosBajoStock.length > 0 ? (
-              productosBajoStock.map((producto) => (
-                <div
-                  key={producto.nombre}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    padding: "12px 0",
-                    borderBottom: "1px solid #F0EBE3",
-                  }}
-                >
-                  <span style={{ fontSize: "clamp(0.9rem, 1.1vw, 1rem)" }}>
-                    {producto.nombre}
-                  </span>
-                  <strong
-                    style={{
-                      color: producto.stock === 0 ? "#D32F2F" : "#D28B00",
-                      fontSize: "clamp(0.9rem, 1.1vw, 1rem)",
-                    }}
-                  >
-                    Stock {producto.stock}
-                  </strong>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: "#777", margin: 0 }}>No hay productos con bajo stock.</p>
-            )}
-            <div
-              style={{
-                marginTop: "15px",
-                paddingTop: "15px",
-                borderTop: "2px solid #D32F2F",
-                textAlign: "center",
-                color: "#D32F2F",
-                fontWeight: "bold",
-                fontSize: "clamp(0.85rem, 1.1vw, 1rem)",
-              }}
-            >
-              {productosBajoStock.filter(p => p.stock === 0).length} producto{productosBajoStock.filter(p => p.stock === 0).length !== 1 ? 's' : ''} necesita reabastecimiento inmediato.
-            </div>
-          </div>
-        </div>
-
-        {/* Accesos rápidos + Información del empleado */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
-            gap: "30px",
-            marginBottom: "50px",
-          }}
-        >
-          {/* Accesos rápidos */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <div
-              className="dashboard-card-header"
-              style={{ marginBottom: "20px" }}
-            >
-              <h3
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
-                  color: "#8B5E3C",
-                }}
-              >
-                <FaBoxOpen /> Accesos rápidos
-              </h3>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                gap: "16px",
-              }}
-            >
-              {[
-                {
-                  to: routePaths.backOffice.products,
-                  icon: <FaBoxOpen size={32} color="#8B5E3C" />,
-                  label: "Productos",
-                },
-                {
-                  to: routePaths.backOffice.categories,
-                  icon: <FaTags size={32} color="#8B5E3C" />,
-                  label: "Colecciones",
-                },
-                {
-                  to: routePaths.backOffice.inventory,
-                  icon: <FaBoxes size={32} color="#8B5E3C" />,
-                  label: "Inventario",
-                },
-                {
-                  to: routePaths.backOffice.orders,
-                  icon: <FaShoppingBag size={32} color="#8B5E3C" />,
-                  label: "Pedidos",
-                },
-              ].map((item, index) => (
-                <Link
-                  key={index}
-                  to={item.to}
-                  style={{ textDecoration: "none" }}
-                >
-                  <div
-                    style={{
-                      background: "#F8F3ED",
-                      border: "1px solid #E8DCCC",
-                      borderRadius: "16px",
-                      padding: "20px",
-                      textAlign: "center",
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-4px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 6px 20px rgba(0,0,0,0.08)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
-                  >
-                    <div style={{ marginBottom: "12px" }}>{item.icon}</div>
-                    <h4
-                      style={{
-                        margin: 0,
-                        color: "#5C2E0B",
-                        fontSize: "clamp(0.85rem, 1.1vw, 1rem)",
-                      }}
-                    >
-                      {item.label}
-                    </h4>
-                  </div>
                 </Link>
               ))}
             </div>
-          </div>
-
-          {/* Información del empleado */}
-          <div
-            className="dashboard-card"
-            style={{
-              padding: "24px",
-              background: "#FDF8F0",
-              border: "1px solid #E8DCCC",
-              borderRadius: "16px",
-            }}
-          >
-            <div
-              className="dashboard-card-header"
-              style={{ marginBottom: "20px" }}
-            >
-              <h3
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontSize: "clamp(1.1rem, 1.8vw, 1.3rem)",
-                  color: "#8B5E3C",
-                }}
-              >
-                <FaUserTie /> Información del empleado
-              </h3>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "20px",
-                marginBottom: "25px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div
-                style={{
-                  width: "75px",
-                  height: "75px",
-                  borderRadius: "50%",
-                  background: "#E8DCCC",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <FaUserTie size={34} color="#8B5E3C" />
-              </div>
-              <div>
-                <h3
-                  style={{
-                    marginBottom: "6px",
-                    color: "#5C2E0B",
-                    fontSize: "clamp(1rem, 1.3vw, 1.2rem)",
-                  }}
-                >
-                  Empleado Daybed
-                </h3>
-                <p
-                  style={{
-                    color: "#777",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                >
-                  Área de ventas
-                </p>
-              </div>
-            </div>
-            <div style={{ display: "grid", gap: "14px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid #F0EBE3",
-                  paddingBottom: "10px",
-                }}
-              >
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  Pedidos procesados hoy
-                </span>
-                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  {pedidos.length}
-                </strong>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid #F0EBE3",
-                  paddingBottom: "10px",
-                }}
-              >
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  Productos registrados
-                </span>
-                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  {metrics.find(m => m.label === "Productos")?.value || 0}
-                </strong>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid #F0EBE3",
-                  paddingBottom: "10px",
-                }}
-              >
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  Colecciones activas
-                </span>
-                <strong style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  12
-                </strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "clamp(0.85rem, 1vw, 0.95rem)" }}>
-                  Estado del sistema
-                </span>
-                <strong
-                  style={{
-                    color: "#2E7D32",
-                    fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
-                  }}
-                >
-                  Operativo
-                </strong>
-              </div>
-            </div>
-          </div>
-        </div>
+          </article>
+        </section>
       </main>
 
       <HomeFooter />

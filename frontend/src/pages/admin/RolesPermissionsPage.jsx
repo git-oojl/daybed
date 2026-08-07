@@ -84,7 +84,7 @@ export default function RolesPermissionsPage() {
         </section>
 
         {error ? <div className="inline-notice inline-notice--error">{error}<button onClick={load}>Volver a cargar accesos</button></div> : null}
-        {notice ? <div className="inline-notice inline-notice--success"><FaCheck /> {notice}</div> : null}
+        {notice ? <div className="inline-notice inline-notice--success inline-notice--stacked"><FaCheck /><span>{notice}</span></div> : null}
 
         {loading || authLoading ? <section className="state-card"><span className="state-card__icon"><FaShieldHalved /></span><h2>Cargando accesos</h2><p>Consultando empleados y permisos operativos.</p></section> : employees.length ? (
           <section className="team-access-v2__workspace">

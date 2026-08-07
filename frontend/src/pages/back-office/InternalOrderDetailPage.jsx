@@ -4,6 +4,7 @@ import {
   FaArrowLeft,
   FaBoxOpen,
   FaCheck,
+  FaClock,
   FaClockRotateLeft,
   FaCreditCard,
   FaEnvelope,
@@ -93,7 +94,7 @@ export default function InternalOrderDetailPage() {
       setSaving(true);
       setError(null);
       const updated = normalizeOrder(await orderService.updateStatus(order.id, nextStatus, {
-        status_note: STATUS_EXPLANATIONS[nextStatus] || "Estado actualizado por el equipo Daybed.",
+        status_note: STATUS_EXPLANATIONS[nextStatus] || "Estado actualizado por el equipo.",
         internal_notes: internalNotes,
       }));
       setOrder(updated);
@@ -138,7 +139,7 @@ export default function InternalOrderDetailPage() {
   return (
     <div className="home-page internal-order-detail-v3">
       <HomeHeader />
-      <PageHero title={order ? order.label : "Detalle de pedido"} eyebrow="Operación Daybed" image={HERO} current="Detalle de pedido" />
+      <PageHero title={order ? order.label : "Detalle de pedido"} eyebrow="Operación" image={HERO} current="Detalle de pedido" />
       <main className="internal-order-detail-v3__main">
         <Link className="back-inline" to={location.state?.from || routePaths.backOffice.orders}><FaArrowLeft /> Volver a gestión de pedidos</Link>
 
@@ -157,9 +158,9 @@ export default function InternalOrderDetailPage() {
 
             <section className="internal-order-actions">
               <div>
-                <p className="section-kicker">Siguiente acción</p>
-                <h2>{nextStatuses.length ? "Avanza solo a un estado válido" : "Este pedido ya no admite cambios de estado"}</h2>
-                <p>{order.status === "cancelled" ? "Un pedido cancelado no puede reactivarse desde la operación normal." : order.status === "delivered" ? "La entrega está cerrada. El historial permanece disponible." : "Las acciones imposibles están ocultas para proteger la integridad del pedido."}</p>
+                <p className="section-kicker">Estado del pedido</p>
+                <h2>{order.statusInfo.shortLabel}</h2>
+                <p>{nextStatuses.length ? "Selecciona el siguiente estado disponible." : order.status === "cancelled" ? "Pedido cancelado." : "Pedido cerrado."}</p>
               </div>
               {canUpdate && nextStatuses.length ? <div className="internal-order-actions__buttons">{nextStatuses.map((status) => <button key={status.value} className={status.value === "cancelled" ? "is-danger" : ""} disabled={saving} type="button" onClick={() => changeStatus(status.value)}>{status.shortLabel}</button>)}</div> : null}
             </section>
@@ -182,15 +183,15 @@ export default function InternalOrderDetailPage() {
                   <p className="order-detail-address">{order.address}</p>
                   {order.latitude != null && order.longitude != null ? <OpenStreetMapEmbed latitude={order.latitude} longitude={order.longitude} label={`Entrega · ${order.address}`} title={`Entrega de ${order.label}`} /> : <FeatureState compact tone="map" title="Sin coordenadas confirmadas" message="La dirección sigue disponible. Corrige la ubicación desde checkout o registra la entrega manualmente." />}
                   <dl className="delivery-stat-grid">
-                    <div><dt>Distancia</dt><dd>{order.distanceKm == null ? "Sin cálculo" : `${order.distanceKm.toFixed(1)} km`}</dd></div>
-                    <div><dt>Tiempo estimado</dt><dd>{order.durationMinutes == null ? "Sin cálculo" : `${Math.round(order.durationMinutes)} min`}</dd></div>
-                    <div><dt>Zona</dt><dd>{order.deliveryZone}</dd></div>
+                    <div><dt><FaTruck />Distancia</dt><dd>{order.distanceKm == null ? "Sin cálculo" : `${order.distanceKm.toFixed(1)} km`}</dd></div>
+                    <div><dt><FaClock />Tiempo estimado</dt><dd>{order.durationMinutes == null ? "Sin cálculo" : `${Math.round(order.durationMinutes)} min`}</dd></div>
+                    <div><dt><FaLocationDot />Zona</dt><dd>{order.deliveryZone}</dd></div>
                   </dl>
                 </section>
 
                 <section className="order-detail-panel">
                   <header><FaClockRotateLeft /><div><p>Trazabilidad</p><h2>Historial de estados</h2></div></header>
-                  {order.statusHistory.length ? <ol className="status-history">{order.statusHistory.map((event) => <li key={event.id || `${event.to_status}-${event.created_at}`}><div><strong>{ORDER_STATUSES.find((status) => status.value === event.to_status)?.shortLabel || event.to_status}</strong><p>{event.note || "Cambio registrado por Daybed."}</p><small>{formatOrderDate(event.created_at, true)} · {event.actor_name || "Daybed"}</small></div></li>)}</ol> : <FeatureState compact tone="empty" title="Sin historial previo" message="Los próximos cambios quedarán registrados aquí." />}
+                  {order.statusHistory.length ? <ol className="status-history">{order.statusHistory.map((event) => <li key={event.id || `${event.to_status}-${event.created_at}`}><div><strong>{ORDER_STATUSES.find((status) => status.value === event.to_status)?.shortLabel || event.to_status}</strong><p>{event.note || "Cambio registrado por el equipo."}</p><small>{formatOrderDate(event.created_at, true)} · {event.actor_name || "Equipo"}</small></div></li>)}</ol> : <FeatureState compact tone="empty" title="Sin historial previo" message="Los próximos cambios quedarán registrados aquí." />}
                 </section>
               </div>
 
@@ -198,7 +199,7 @@ export default function InternalOrderDetailPage() {
                 <section className="order-detail-panel order-detail-panel--compact"><header><FaUser /><div><p>Cliente</p><h2>Contacto</h2></div></header><ul className="contact-facts"><li><FaUser /><span>{order.customerName}</span></li><li><FaEnvelope /><a href={`mailto:${order.customerEmail}`}>{order.customerEmail}</a></li><li><FaPhone /><a href={`tel:${order.customerPhone}`}>{order.customerPhone}</a></li></ul></section>
                 <section className="order-detail-panel order-detail-panel--compact"><header><FaCreditCard /><div><p>Cobro</p><h2>Pago</h2></div></header><dl className="order-fact-list"><div><dt>Método</dt><dd>{paymentMethodLabel(order.payment_method)}</dd></div><div><dt>Estado</dt><dd>{paymentStatusLabel(order.payment_status)}</dd></div>{order.payment_reference ? <div><dt>Referencia</dt><dd>{order.payment_reference}</dd></div> : null}</dl>{canUpdate && order.payment_status === "awaiting_transfer" ? <button className="solid-action" disabled={saving} type="button" onClick={confirmPayment}><FaCheck /> Confirmar transferencia</button> : null}</section>
                 <section className="order-detail-panel order-detail-panel--compact"><header><FaTruck /><div><p>Importes</p><h2>Totales</h2></div></header><dl className="order-money-list"><div><dt>Productos</dt><dd>{formatMoney(order.subtotal)}</dd></div><div><dt>Entrega</dt><dd>{formatMoney(order.deliveryFee)}</dd></div>{order.discountTotal ? <div><dt>Descuento</dt><dd>-{formatMoney(order.discountTotal)}</dd></div> : null}<div className="is-total"><dt>Total</dt><dd>{formatMoney(order.total)}</dd></div></dl></section>
-                <section className="order-detail-panel order-detail-panel--compact"><header><FaNoteSticky /><div><p>Equipo</p><h2>Notas internas</h2></div></header><textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder="Incidencias, acuerdos o instrucciones para el equipo" rows="5" /><button className="ghost-action" disabled={saving || internalNotes === order.internalNotes} type="button" onClick={saveNotes}>Guardar notas</button></section>
+                <section className="order-detail-panel order-detail-panel--compact"><header><FaNoteSticky /><div><p>Equipo</p><h2>Notas internas</h2></div></header><div className="internal-notes-form"><textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} placeholder="Incidencias, acuerdos o instrucciones para el equipo" rows="5" /><button className="ghost-action" disabled={saving || internalNotes === order.internalNotes} type="button" onClick={saveNotes}>Guardar notas</button></div></section>
               </aside>
             </div>
           </>

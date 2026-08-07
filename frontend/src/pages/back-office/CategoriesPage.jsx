@@ -208,8 +208,8 @@ export default function CategoriesPage() {
     <div className="home-page dashboard-page">
       <HomeHeader />
       <PageHero
-        title="Colecciones y atributos"
-        eyebrow="Merchandising Daybed"
+        title="Colecciones del catálogo"
+        eyebrow="Catálogo interno"
         image="https://images.unsplash.com/photo-1618220179428-22790b461013?w=1800&q=82"
         current="Colecciones"
       />
@@ -217,9 +217,9 @@ export default function CategoriesPage() {
       <main className="collection-manager dashboard-container">
         <header className="collection-manager__intro">
           <div>
-            <p className="section-kicker">Una sola tienda, una sola estructura</p>
-            <h1>Organiza cómo se descubre el catálogo</h1>
-            <p>Las colecciones pertenecen al negocio Daybed. Define su orden, visibilidad en Inicio y los atributos que realmente pueden filtrar sus productos.</p>
+            <p className="section-kicker">Inicio y catálogo</p>
+            <h1>Orden, visibilidad y filtros</h1>
+            <p>Aquí decides qué colecciones aparecen en la portada, en qué orden se muestran y qué filtros ayudan a encontrarlas.</p>
           </div>
           {canCreate ? <button className="btn-primary" type="button" onClick={() => openEditor()}><FaPlus /> Nueva colección</button> : null}
         </header>
@@ -231,7 +231,7 @@ export default function CategoriesPage() {
         </section>
 
         {error ? <FeatureState tone="error" compact title="No pudimos completar la acción" message={error.message || "Revisa los datos e inténtalo de nuevo."} actionLabel="Volver a cargar" onAction={loadCollections} /> : null}
-        {loading ? <FeatureState tone="loading" title="Cargando colecciones" message="Estamos preparando la estructura de merchandising de Daybed." /> : filtered.length ? (
+        {loading ? <FeatureState tone="loading" title="Cargando colecciones" message="Estamos preparando la estructura de catálogo." /> : filtered.length ? (
           <div className="collection-table-wrap">
             <table className="collection-table">
               <thead><tr><th>Orden</th><th>Colección</th><th>Productos</th><th>Inicio</th><th>Filtros asociados</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
@@ -248,7 +248,7 @@ export default function CategoriesPage() {
               ))}</tbody>
             </table>
           </div>
-        ) : <FeatureState tone="empty" title="No encontramos colecciones" message="Prueba otro término o crea una colección para organizar el catálogo de Daybed." actionLabel={canCreate ? "Crear colección" : undefined} onAction={canCreate ? () => openEditor() : undefined} />}
+        ) : <FeatureState tone="empty" title="No encontramos colecciones" message="Prueba otro término o crea una colección para organizar el catálogo." actionLabel={canCreate ? "Crear colección" : undefined} onAction={canCreate ? () => openEditor() : undefined} />}
       </main>
 
       {isEditorOpen ? (
