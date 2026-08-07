@@ -230,7 +230,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="home-section" aria-labelledby="home-products-title">
+        <section className="home-section home-section--products" aria-labelledby="home-products-title">
           <h2 className="home-section__title" id="home-products-title">
             Nuestros productos
           </h2>

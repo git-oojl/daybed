@@ -358,6 +358,36 @@
     transform 0.2s ease;
 }
 
+.dashboard-page .btn-primary,
+.dashboard-page .btn-view,
+.dashboard-page .btn-submit {
+  background: #765238 !important;
+  border: 1px solid #765238 !important;
+  color: #fffaf3 !important;
+  text-decoration: none !important;
+}
+
+.dashboard-page .btn-edit {
+  background: #f5ebdf !important;
+  border: 1px solid #d8c2ab !important;
+  color: #61442f !important;
+  text-decoration: none !important;
+}
+
+.dashboard-page .btn-cancel {
+  background: #f7f1e8 !important;
+  border: 1px solid #d9c8b5 !important;
+  color: #6a5442 !important;
+  text-decoration: none !important;
+}
+
+.dashboard-page .btn-delete {
+  background: #fdf0ec !important;
+  border: 1px solid #e1b3a9 !important;
+  color: #9f4336 !important;
+  text-decoration: none !important;
+}
+
 .dashboard-page .dashboard-card .btn-primary {
   align-self: flex-start;
 }

@@ -504,6 +504,14 @@
   margin: 0 0 48px;
 }
 
+.home-section--products {
+  padding-top: 18px;
+}
+
+.home-section--products .home-section__title {
+  margin-bottom: 14px;
+}
+
 /* ── Categories ── */
 
 .home-categories {
@@ -556,8 +564,11 @@
 
 .home-products__intro {
   max-width: 760px;
-  margin: 0 auto 28px;
+  margin: 0 auto 30px;
   text-align: center;
+  color: #8a7665;
+  line-height: 1.6;
+  font-weight: 500;
 }
 
 .home-product {

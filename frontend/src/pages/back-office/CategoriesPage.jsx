@@ -218,7 +218,7 @@ export default function CategoriesPage() {
         <header className="collection-manager__intro">
           <div>
             <p className="section-kicker">Inicio y catálogo</p>
-            <h1>Orden, visibilidad y filtros</h1>
+            <h1>Manejo de colecciones</h1>
             <p>Aquí decides qué colecciones aparecen en la portada, en qué orden se muestran y qué filtros ayudan a encontrarlas.</p>
           </div>
           {canCreate ? <button className="btn-primary" type="button" onClick={() => openEditor()}><FaPlus /> Nueva colección</button> : null}
@@ -239,7 +239,7 @@ export default function CategoriesPage() {
                 <tr key={collection.id || collection.slug}>
                   <td><div className="collection-order"><strong>{Number(collection.display_order || index + 1)}</strong>{canEdit ? <span><button type="button" onClick={() => move(collection, -1)} disabled={index === 0} aria-label={`Subir ${collection.name}`}><FaArrowUp /></button><button type="button" onClick={() => move(collection, 1)} disabled={index === filtered.length - 1} aria-label={`Bajar ${collection.name}`}><FaArrowDown /></button></span> : null}</div></td>
                   <td><div className="collection-identity"><span className="collection-identity__fallback"><FaBoxOpen /></span>{collection.image ? <img src={collection.image} alt="" onError={(event) => { event.currentTarget.remove(); }} /> : null}<div><strong>{collection.name}</strong><code>/{collection.slug}</code><small>{collection.description || "Sin descripción pública."}</small></div></div></td>
-                  <td><Link to={`${routePaths.backOffice.products}?categoria=${collection.id}`}>{collection.product_count || 0}</Link></td>
+                  <td><Link className="collection-count-link" to={`${routePaths.backOffice.products}?categoria=${collection.id}`}>{collection.product_count || 0}</Link></td>
                   <td>{canEdit ? <button className={`collection-toggle ${collection.homepage_visible ? "is-on" : ""}`} type="button" onClick={() => patchCollection(collection, { homepage_visible: !collection.homepage_visible })}>{collection.homepage_visible ? <FaToggleOn /> : <FaToggleOff />}<span>{collection.homepage_visible ? "Visible" : "Oculta"}</span></button> : collection.homepage_visible ? "Visible" : "Oculta"}</td>
                   <td><div className="collection-attributes">{(collection.filter_attributes || []).slice(0, 4).map((key) => <span key={key}>{FILTER_OPTIONS.find(([value]) => value === key)?.[1] || key}</span>)}{(collection.filter_attributes || []).length > 4 ? <span>+{collection.filter_attributes.length - 4}</span> : null}</div></td>
                   <td><span className={`status-pill ${collection.active === false ? "status-pill--muted" : "status-pill--success"}`}>{collection.active === false ? "Inactiva" : "Activa"}</span></td>

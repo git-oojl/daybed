@@ -10,15 +10,20 @@
   right: 0 !important;
   bottom: 0 !important;
   width: 100vw !important;
-  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
   display: flex !important;
   justify-content: center !important;
-  align-items: center !important;
-  padding: 24px !important;
+  align-items: flex-start !important;
+  padding: 88px 24px 40px !important;
   box-sizing: border-box !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
 }
 
 /* ===== PAPER / CARD ===== */
@@ -32,9 +37,9 @@
   box-shadow: 0 8px 40px rgba(74, 53, 32, 0.2) !important;
   position: relative !important;
   z-index: 1 !important;
-  overflow: hidden !important;
-  overflow-y: auto !important;
-  max-height: 84vh !important;
+  overflow: clip !important;
+  max-height: none !important;
+  margin: 0 auto !important;
 }
 
 /* Scrollbar personalizada */
@@ -335,7 +340,7 @@
 /* ===== TABLETS (md) ===== */
 @media (max-width: 1024px) {
   .register-container {
-    padding: 24px !important;
+    padding: 84px 24px 32px !important;
   }
 
   .register-paper {
@@ -348,14 +353,14 @@
 /* ===== MÓVILES (sm) ===== */
 @media (max-width: 768px) {
   .register-container {
-    padding: 16px !important;
+    padding: 72px 16px 24px !important;
   }
 
   .register-paper {
     width: 95% !important;
     max-width: 400px !important;
     padding: 24px !important;
-    max-height: 60vh !important;
+    max-height: none !important;
   }
 
   .register-brand {

@@ -22,6 +22,116 @@ DEMO_PASSWORD = "DemoPassword123!"
 SEED_PRODUCT_IMAGE_DIR = (
     Path(__file__).resolve().parents[2] / "seed_assets" / "products"
 )
+CURATED_PRODUCT_MEDIA = {
+    "DAY-SOFA-ROB-001": (
+        "daybed-roble-nordico.png",
+        ["sofa-cama-lino-arena.png"],
+    ),
+    "DAY-SOFA-LIN-002": (
+        "sofa-cama-lino-arena.png",
+        ["daybed-roble-nordico.png"],
+    ),
+    "DAY-MESA-FRE-001": (
+        "mesa-centro-fresno.png",
+        ["mesa-redonda-terra.png"],
+    ),
+    "DAY-MESA-TER-002": (
+        "mesa-redonda-terra.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-SILLA-OLI-001": (
+        "silla-lectura-olivo.png",
+        ["banco-baul-nogal.png"],
+    ),
+    "DAY-BANCO-NOG-001": (
+        "banco-baul-nogal.png",
+        ["daybed-roble-nordico.png"],
+    ),
+    "DAY-DECO-BRU-001": (
+        "mesa-redonda-terra.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-SOFA-CHA-003": (
+        "sofa-cama-lino-arena.png",
+        ["daybed-roble-nordico.png"],
+    ),
+    "DAY-SOFA-CAP-004": (
+        "sofa-cama-lino-arena.png",
+        ["daybed-roble-nordico.png"],
+    ),
+    "DAY-MESA-NID-003": (
+        "mesa-redonda-terra.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-MESA-ELE-004": (
+        "mesa-centro-fresno.png",
+        ["mesa-redonda-terra.png"],
+    ),
+    "DAY-SILLA-BOU-002": (
+        "silla-lectura-olivo.png",
+        ["banco-baul-nogal.png"],
+    ),
+    "DAY-SILLA-PIE-003": (
+        "silla-lectura-olivo.png",
+        ["sofa-cama-lino-arena.png"],
+    ),
+    "DAY-ALM-CRE-002": (
+        "banco-baul-nogal.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-ALM-LIB-003": (
+        "banco-baul-nogal.png",
+        ["silla-lectura-olivo.png"],
+    ),
+    "DAY-REC-CAM-001": (
+        "daybed-roble-nordico.png",
+        ["banco-baul-nogal.png"],
+    ),
+    "DAY-REC-CAB-002": (
+        "daybed-roble-nordico.png",
+        ["sofa-cama-lino-arena.png"],
+    ),
+    "DAY-REC-BUR-003": (
+        "banco-baul-nogal.png",
+        ["daybed-roble-nordico.png"],
+    ),
+    "DAY-COM-MES-001": (
+        "mesa-centro-fresno.png",
+        ["mesa-redonda-terra.png"],
+    ),
+    "DAY-COM-SIL-002": (
+        "silla-lectura-olivo.png",
+        ["mesa-redonda-terra.png"],
+    ),
+    "DAY-COM-BAN-003": (
+        "banco-baul-nogal.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-OFI-ESC-001": (
+        "mesa-centro-fresno.png",
+        ["silla-lectura-olivo.png"],
+    ),
+    "DAY-OFI-SIL-002": (
+        "silla-lectura-olivo.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-OFI-REP-003": (
+        "banco-baul-nogal.png",
+        ["mesa-centro-fresno.png"],
+    ),
+    "DAY-EXT-SAL-001": (
+        "sofa-cama-lino-arena.png",
+        ["mesa-redonda-terra.png"],
+    ),
+    "DAY-EXT-BAN-002": (
+        "banco-baul-nogal.png",
+        ["mesa-redonda-terra.png"],
+    ),
+    "DAY-EXT-MES-003": (
+        "mesa-redonda-terra.png",
+        ["mesa-centro-fresno.png"],
+    ),
+}
 
 DEMO_REVIEW_POOL = [
     {
@@ -1230,6 +1340,17 @@ class Command(BaseCommand):
                 "gallery_assets": ["LeviosaDaybed.jpg"],
             },
         ]
+
+        for item in product_data:
+            image_asset, gallery_assets = CURATED_PRODUCT_MEDIA.get(
+                item["sku"],
+                (
+                    item["image_asset"],
+                    item.get("gallery_assets", []),
+                ),
+            )
+            item["image_asset"] = image_asset
+            item["gallery_assets"] = list(gallery_assets)
 
         self._validate_product_images(product_data)
         products = {}

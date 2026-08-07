@@ -90,6 +90,14 @@ export default function InternalOrderDetailPage() {
 
   async function changeStatus(nextStatus) {
     if (!order?.availableTransitions.includes(nextStatus)) return;
+    if (
+      nextStatus === "cancelled"
+      && !window.confirm(
+        "Vas a cancelar este pedido. La cancelación es definitiva y libera el inventario reservado. ¿Quieres continuar?",
+      )
+    ) {
+      return;
+    }
     try {
       setSaving(true);
       setError(null);
@@ -161,8 +169,9 @@ export default function InternalOrderDetailPage() {
                 <p className="section-kicker">Estado del pedido</p>
                 <h2>{order.statusInfo.shortLabel}</h2>
                 <p>{nextStatuses.length ? "Selecciona el siguiente estado disponible." : order.status === "cancelled" ? "Pedido cancelado." : "Pedido cerrado."}</p>
+                {order.availableTransitions.includes("cancelled") ? <p className="internal-order-actions__warning">Cancelar cierra el pedido y no se puede deshacer.</p> : null}
               </div>
-              {canUpdate && nextStatuses.length ? <div className="internal-order-actions__buttons">{nextStatuses.map((status) => <button key={status.value} className={status.value === "cancelled" ? "is-danger" : ""} disabled={saving} type="button" onClick={() => changeStatus(status.value)}>{status.shortLabel}</button>)}</div> : null}
+              {canUpdate && nextStatuses.length ? <div className="internal-order-actions__buttons">{nextStatuses.map((status) => <button key={status.value} className={status.value === "cancelled" ? "is-danger" : ""} disabled={saving} type="button" onClick={() => changeStatus(status.value)}>{status.value === "cancelled" ? "Cancelar pedido" : status.shortLabel}</button>)}</div> : null}
             </section>
 
             <div className="internal-order-layout">
@@ -172,7 +181,7 @@ export default function InternalOrderDetailPage() {
                   <div className="internal-product-list">{order.items.map((item) => (
                     <article className="internal-product-row" key={item.id || `${item.productId}-${item.name}`}>
                       <img src={item.image} alt={item.name} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = productImage({}); }} />
-                      <div><span>{item.sku}</span><h3>{item.name}</h3><p>{item.description}</p>{item.productId ? <Link to={`${routePaths.backOffice.products}?producto=${item.productId}`}>Abrir en productos</Link> : null}</div>
+                      <div><span>{item.sku}</span><h3>{item.name}</h3><p>{item.description}</p>{item.productId ? <Link className="internal-inline-link" to={`${routePaths.backOffice.products}?producto=${item.productId}`}>Abrir en productos</Link> : null}</div>
                       <dl><div><dt>Cantidad</dt><dd>{item.quantity}</dd></div><div><dt>Unidad</dt><dd>{formatMoney(item.unitPrice)}</dd></div><div><dt>Total</dt><dd>{formatMoney(item.lineTotal)}</dd></div></dl>
                     </article>
                   ))}</div>

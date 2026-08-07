@@ -8,6 +8,7 @@ import {
   FaChevronDown,
   FaGear,
   FaHeart,
+  FaLayerGroup,
   FaMagnifyingGlass,
   FaRightFromBracket,
   FaStore,
@@ -106,6 +107,7 @@ export default function HomeHeader() {
     const operations = viewer === "admin" || viewer === "employee" ? [
       ["Operación", routePaths.backOffice.dashboard, FaStore],
       ["Productos", routePaths.backOffice.products, FaWarehouse],
+      ["Colecciones", routePaths.backOffice.categories, FaLayerGroup],
       ["Pedidos de clientes", routePaths.backOffice.orders, FaBox],
     ] : [];
     const admin = viewer === "admin" ? [
